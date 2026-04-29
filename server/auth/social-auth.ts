@@ -30,6 +30,26 @@ function buildCallbackUrl(path: string): string {
 }
 
 /**
+ * 요청에서 실제 사용된 호스트를 감지하여 콜백 URL을 동적으로 생성합니다.
+ * 사용자가 실제로 접속한 도메인(hitalez.com 등)을 그대로 사용해
+ * Google/Kakao/Naver의 redirect_uri 검증을 통과합니다.
+ * 우선순위: OAUTH_CALLBACK_BASE_URL(명시적 강제) > 요청 호스트 > 환경 변수 fallback
+ */
+function getDynamicCallbackUrl(req: Request, path: string): string {
+  if (process.env.OAUTH_CALLBACK_BASE_URL) {
+    return `${process.env.OAUTH_CALLBACK_BASE_URL.replace(/\/+$/, '')}${path}`;
+  }
+  const forwardedProto = (req.headers['x-forwarded-proto'] as string)?.split(',')[0]?.trim();
+  const forwardedHost = (req.headers['x-forwarded-host'] as string)?.split(',')[0]?.trim();
+  const protocol = forwardedProto || req.protocol || 'https';
+  const host = forwardedHost || req.get('host');
+  if (host) {
+    return `${protocol}://${host}${path}`;
+  }
+  return buildCallbackUrl(path);
+}
+
+/**
  * 소셜 로그인 전략 설정
  */
 export function setupSocialAuth(app: Express) {
@@ -75,15 +95,22 @@ export function setupSocialAuth(app: Express) {
       )
     );
     
-    // 카카오 로그인 라우트
-    app.get('/api/auth/kakao', passport.authenticate('kakao'));
+    // 카카오 로그인 라우트 (동적 콜백 URL 사용)
+    app.get('/api/auth/kakao', (req, res, next) => {
+      const callbackURL = getDynamicCallbackUrl(req, '/api/auth/kakao/callback');
+      passport.authenticate('kakao', { callbackURL } as any)(req, res, next);
+    });
     
-    // 카카오 로그인 콜백 라우트
+    // 카카오 로그인 콜백 라우트 (동적 콜백 URL 사용)
     app.get(
       '/api/auth/kakao/callback',
-      passport.authenticate('kakao', {
-        failureRedirect: '/auth?error=social-login-failed',
-      }),
+      (req, res, next) => {
+        const callbackURL = getDynamicCallbackUrl(req, '/api/auth/kakao/callback');
+        passport.authenticate('kakao', {
+          failureRedirect: '/auth?error=social-login-failed',
+          callbackURL,
+        } as any)(req, res, next);
+      },
       (req, res) => {
         const user = req.user as any;
         
@@ -164,15 +191,22 @@ export function setupSocialAuth(app: Express) {
       )
     );
     
-    // 네이버 로그인 라우트
-    app.get('/api/auth/naver', passport.authenticate('naver'));
+    // 네이버 로그인 라우트 (동적 콜백 URL 사용)
+    app.get('/api/auth/naver', (req, res, next) => {
+      const callbackURL = getDynamicCallbackUrl(req, '/api/auth/naver/callback');
+      passport.authenticate('naver', { callbackURL } as any)(req, res, next);
+    });
     
-    // 네이버 로그인 콜백 라우트
+    // 네이버 로그인 콜백 라우트 (동적 콜백 URL 사용)
     app.get(
       '/api/auth/naver/callback',
-      passport.authenticate('naver', {
-        failureRedirect: '/auth?error=social-login-failed',
-      }),
+      (req, res, next) => {
+        const callbackURL = getDynamicCallbackUrl(req, '/api/auth/naver/callback');
+        passport.authenticate('naver', {
+          failureRedirect: '/auth?error=social-login-failed',
+          callbackURL,
+        } as any)(req, res, next);
+      },
       (req, res) => {
         const user = req.user as any;
         
@@ -249,19 +283,27 @@ export function setupSocialAuth(app: Express) {
       )
     );
     
-    // 구글 로그인 라우트 (state CSRF 보호)
-    app.get('/api/auth/google', passport.authenticate('google', {
-      scope: ['profile', 'email'],
-      state: true,
-    } as any));
+    // 구글 로그인 라우트 (state CSRF 보호 + 동적 콜백 URL 사용)
+    app.get('/api/auth/google', (req, res, next) => {
+      const callbackURL = getDynamicCallbackUrl(req, '/api/auth/google/callback');
+      passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        state: true,
+        callbackURL,
+      } as any)(req, res, next);
+    });
     
-    // 구글 로그인 콜백 라우트
+    // 구글 로그인 콜백 라우트 (동적 콜백 URL 사용)
     app.get(
       '/api/auth/google/callback',
-      passport.authenticate('google', {
-        failureRedirect: '/auth?error=social-login-failed',
-        state: true,
-      } as any),
+      (req, res, next) => {
+        const callbackURL = getDynamicCallbackUrl(req, '/api/auth/google/callback');
+        passport.authenticate('google', {
+          failureRedirect: '/auth?error=social-login-failed',
+          state: true,
+          callbackURL,
+        } as any)(req, res, next);
+      },
       (req, res) => {
         const user = req.user as any;
         
