@@ -140,13 +140,13 @@ export function setupSocialAuth(app: Express) {
     console.warn('[SocialAuth] KAKAO_CLIENT_ID가 설정되지 않아 카카오 로그인 기능이 비활성화됩니다.');
   }
   
-  // 네이버 로그인 전략 설정
-  if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
+  // 네이버 로그인 전략 설정 (V2 시크릿 사용)
+  if (process.env.NAVER_CLIENT_ID_V2 && process.env.NAVER_CLIENT_SECRET_V2) {
     passport.use(
       new NaverStrategy(
         {
-          clientID: process.env.NAVER_CLIENT_ID,
-          clientSecret: process.env.NAVER_CLIENT_SECRET,
+          clientID: process.env.NAVER_CLIENT_ID_V2,
+          clientSecret: process.env.NAVER_CLIENT_SECRET_V2,
           callbackURL: buildCallbackUrl('/api/auth/naver/callback'),
         },
         async (accessToken, refreshToken, profile, done) => {
