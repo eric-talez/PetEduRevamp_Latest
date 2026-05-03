@@ -388,6 +388,7 @@ import { setupCommissionRoutes } from './commission/routes';
 import { registerAnalyticsRoutes } from './routes/analytics';
 import { setupSocialRoutes } from './routes/social';
 import { registerCourseManagementRoutes } from './routes/course-management';
+import { registerCourseAttendanceRoutes } from './routes/course-attendance';
 import { registerAIErrorFixRoutes } from './routes/ai-error-fix';
 import { registerAIUsageRoutes } from './routes/ai-usage';
 import { weatherRoutes } from './routes/weather';
@@ -792,6 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 대시보드 라우트 등록
   registerDashboardRoutes(app);
+  registerCourseAttendanceRoutes(app);
 
   // 관리자 라우트 등록
   registerAdminRoutes(app);

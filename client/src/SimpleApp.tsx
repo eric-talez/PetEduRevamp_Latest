@@ -552,6 +552,46 @@ function AuthenticatedRoutes() {
         <Route path="/events/calendar" component={EventCalendarPage} />
         <Route path="/events/:id" component={EventDetailPage} />
         <Route path="/my-courses" component={MyCourses} />
+        <Route path="/my-courses/:id/progress">
+          {() => {
+            const CourseProgressPage = lazy(() => import('./pages/courses/Progress'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <CourseProgressPage />
+              </Suspense>
+            );
+          }}
+        </Route>
+        <Route path="/my-courses/:id/certificate">
+          {() => {
+            const CertificatePage = lazy(() => import('./pages/courses/Certificate'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <CertificatePage />
+              </Suspense>
+            );
+          }}
+        </Route>
+        <Route path="/trainer/attendance">
+          {() => {
+            const TrainerAttendance = lazy(() => import('./pages/trainer/Attendance'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedTrainerRoute component={TrainerAttendance} />
+              </Suspense>
+            );
+          }}
+        </Route>
+        <Route path="/admin/attendance-stats">
+          {() => {
+            const AttendanceStats = lazy(() => import('./pages/admin/AttendanceStats'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedAdminRoute component={AttendanceStats} />
+              </Suspense>
+            );
+          }}
+        </Route>
 
         <Route path="/my-pets" component={MyPets} />
 

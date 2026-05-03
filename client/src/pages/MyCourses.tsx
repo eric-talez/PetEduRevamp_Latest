@@ -159,7 +159,7 @@ export default function MyCourses() {
                   progress={course.progress}
                   trainer={course.trainer}
                   status={course.status}
-                  onClick={() => window.location.href = `/courses/${course.id}`}
+                  onClick={() => setLocation(`/my-courses/${course.id}/progress`)}
                 >
                   {course.nextLesson && (
                     <div className="mt-3 flex items-center text-xs text-gray-600 dark:text-gray-400">
@@ -167,6 +167,15 @@ export default function MyCourses() {
                       <span>{course.nextLesson}</span>
                     </div>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={(e) => { e.stopPropagation(); setLocation(`/my-courses/${course.id}/progress`); }}
+                    data-testid={`button-view-progress-${course.id}`}
+                  >
+                    회차 & 출석 보기
+                  </Button>
                 </CourseCard>
               ))}
             </div>

@@ -32,6 +32,8 @@ class Storage {
   courseProgress: any[] = [];
   progressSharing: any[] = [];
   lessonSessions: any[] = [];
+  courseSessions: any[] = [];
+  sessionAttendance: any[] = [];
   trainerActivityLogs: any[] = [];
   pointSettings: any = {};
   logoSettings: any = {};

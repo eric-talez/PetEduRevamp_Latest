@@ -3110,3 +3110,41 @@ export const insertNoseVerificationLogSchema = createInsertSchema(noseVerificati
 export type InsertNoseVerificationLog = z.infer<typeof insertNoseVerificationLogSchema>;
 export type NoseVerificationLog = typeof noseVerificationLogs.$inferSelect;
 
+// 코스 회차 (수업 차시) 테이블
+export const courseSessions = pgTable("course_sessions", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  sessionNumber: integer("session_number").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  scheduledDate: timestamp("scheduled_date"),
+  durationMinutes: integer("duration_minutes").default(60),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCourseSessionSchema = createInsertSchema(courseSessions).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCourseSession = z.infer<typeof insertCourseSessionSchema>;
+export type CourseSession = typeof courseSessions.$inferSelect;
+
+// 회차별 출석 기록 테이블
+export const attendanceStatusEnum = z.enum(["present", "late", "absent", "scheduled"]);
+
+export const sessionAttendance = pgTable("session_attendance", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").references(() => courseSessions.id).notNull(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  petId: integer("pet_id").references(() => pets.id),
+  status: varchar("status", { length: 20 }).default("scheduled"),
+  memo: text("memo"),
+  checkedBy: integer("checked_by").references(() => users.id),
+  checkedAt: timestamp("checked_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSessionAttendanceSchema = createInsertSchema(sessionAttendance).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSessionAttendance = z.infer<typeof insertSessionAttendanceSchema>;
+export type SessionAttendance = typeof sessionAttendance.$inferSelect;
+
