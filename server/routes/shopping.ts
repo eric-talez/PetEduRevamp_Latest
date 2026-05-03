@@ -3,7 +3,7 @@ import { db } from "../db";
 import { products, shopCategories, cartItems } from "../../shared/schema";
 import { eq, and, or, like, gte, lte, desc, count } from "drizzle-orm";
 import type { IStorage } from "../storage";
-import { logServerError } from '../middleware/audit-logger';
+import { recordAuditLog, logServerError } from '../middleware/audit-logger';
 
 // 관리자 권한 검사 미들웨어
 const requireAdmin = (req: any, res: Response, next: NextFunction) => {
@@ -489,6 +489,14 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
 
       console.log('새 상품 등록됨:', newProduct[0]);
 
+      await recordAuditLog(req, {
+        action: 'admin.product.create',
+        targetType: 'product',
+        targetId: newProduct[0]?.id,
+        targetName: newProduct[0]?.name,
+        payload: { price, discountPrice, categoryId, stock, brand, model },
+      });
+
       res.status(201).json({
         message: 'Product created successfully',
         product: newProduct[0]
@@ -515,6 +523,8 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
       const productId = parseInt(req.params.id);
       const updateData = { ...req.body, updatedAt: new Date() };
 
+      const previous = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+
       const updatedProduct = await db
         .update(products)
         .set(updateData)
@@ -526,6 +536,24 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
       }
 
       console.log('상품 수정됨:', updatedProduct[0]);
+
+      const before = previous[0] || {};
+      const after = updatedProduct[0];
+      const priceChanged = 'price' in req.body && String(before.price) !== String(after.price);
+      const discountChanged = 'discountPrice' in req.body && String(before.discountPrice) !== String(after.discountPrice);
+      const action = priceChanged || discountChanged ? 'admin.product.price_change' : 'admin.product.update';
+      await recordAuditLog(req, {
+        action,
+        targetType: 'product',
+        targetId: productId,
+        targetName: after.name,
+        payload: {
+          before: { price: before.price, discountPrice: before.discountPrice, stock: before.stock, isActive: before.isActive },
+          after: { price: after.price, discountPrice: after.discountPrice, stock: after.stock, isActive: after.isActive },
+          priceChanged,
+          discountChanged,
+        },
+      });
 
       res.json({
         message: 'Product updated successfully',
@@ -567,6 +595,14 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
       }
 
       console.log('상품 비활성화됨:', deactivatedProduct[0]);
+
+      await recordAuditLog(req, {
+        action: 'admin.product.deactivate',
+        targetType: 'product',
+        targetId: productId,
+        targetName: deactivatedProduct[0]?.name,
+        payload: { isActive: false },
+      });
 
       res.json({
         message: 'Product deactivated successfully',

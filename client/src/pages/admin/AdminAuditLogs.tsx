@@ -47,6 +47,16 @@ const ACTION_OPTIONS = [
   { value: 'institute.trainer_application', label: '기관 훈련사 매칭' },
   { value: 'admin.commission', label: '수수료 변경' },
   { value: 'admin.settlement', label: '정산 승인' },
+  { value: 'admin.user.create', label: '사용자 생성' },
+  { value: 'admin.user.update', label: '사용자 수정' },
+  { value: 'admin.user.role_change', label: '사용자 역할 변경' },
+  { value: 'admin.user.delete', label: '사용자 삭제' },
+  { value: 'admin.product.create', label: '상품 생성' },
+  { value: 'admin.product.update', label: '상품 수정' },
+  { value: 'admin.product.price_change', label: '상품 가격/할인 변경' },
+  { value: 'admin.product.deactivate', label: '상품 비활성화' },
+  { value: 'payment.stripe.refund', label: 'Stripe 환불' },
+  { value: 'payment.toss.cancel', label: 'Toss 결제 취소' },
 ];
 
 export default function AdminAuditLogs() {

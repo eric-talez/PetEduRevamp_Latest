@@ -1326,6 +1326,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[Admin] 새 사용자 추가됨:', { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role });
 
+      await recordAuditLog(req, {
+        action: 'admin.user.create',
+        targetType: 'user',
+        targetId: newUser.id,
+        targetName: newUser.name || newUser.email,
+        payload: { name: newUser.name, email: newUser.email, role: newUser.role },
+      });
+
       res.json({ 
         success: true, 
         message: '사용자가 성공적으로 추가되었습니다.',
@@ -1398,6 +1406,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('[Admin] 사용자 정보 수정됨:', { id: userId, name: updatedUser.name, role: updatedUser.role });
 
+      const roleChanged = role && role !== existingUser.role;
+      await recordAuditLog(req, {
+        action: roleChanged ? 'admin.user.role_change' : 'admin.user.update',
+        targetType: 'user',
+        targetId: userId,
+        targetName: updatedUser.name || updatedUser.email,
+        payload: {
+          before: { name: existingUser.name, email: existingUser.email, role: existingUser.role },
+          after: { name: updatedUser.name, email: updatedUser.email, role: updatedUser.role },
+          roleChanged: !!roleChanged,
+        },
+      });
+
       res.json({ 
         success: true, 
         message: '사용자 정보가 수정되었습니다.',
@@ -1445,6 +1466,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (deleted) {
         console.log('[Admin] 사용자 삭제됨:', { id: userId, name: existingUser.name });
+        await recordAuditLog(req, {
+          action: 'admin.user.delete',
+          targetType: 'user',
+          targetId: userId,
+          targetName: existingUser.name || existingUser.email,
+          payload: { email: existingUser.email, role: existingUser.role },
+        });
         res.json({ 
           success: true, 
           message: '사용자가 삭제되었습니다.'
@@ -9590,6 +9618,12 @@ app.get('/api/search', async (req, res) => {
       }
 
       console.log(`[Commission] 수수료율 수정 완료`);
+      await recordAuditLog(req, {
+        action: 'admin.commission.product_rate_change',
+        targetType: 'product',
+        targetId: productId,
+        payload: { commissionRate },
+      });
       res.json({ success: true, message: '수수료율이 수정되었습니다.' });
     } catch (error) {
       logServerError('[Commission] 수수료율 수정 오류:', error, req);
@@ -12898,6 +12932,20 @@ app.get('/api/search', async (req, res) => {
 
       console.log('💰 환불 처리 완료:', refund.id);
 
+      await recordAuditLog(req, {
+        action: 'payment.stripe.refund',
+        targetType: 'payment',
+        targetId: paymentIntentId,
+        payload: {
+          refundId: refund.id,
+          status: refund.status,
+          amount: refund.amount,
+          reason: reason || 'requested_by_customer',
+          sourceType: req.body?.sourceType,
+          sourceId: req.body?.sourceId,
+        },
+      });
+
       // 트레이너 정산 항목 자동 취소 (refund metadata에 sourceType/sourceId 포함된 경우)
       try {
         const sourceType = req.body?.sourceType as ('course' | 'order' | 'lesson' | undefined);
@@ -12920,6 +12968,18 @@ app.get('/api/search', async (req, res) => {
 
     } catch (error: any) {
       logServerError('환불 처리 오류:', error, req);
+      await recordAuditLog(req, {
+        action: 'payment.stripe.refund',
+        targetType: 'payment',
+        targetId: req.body?.paymentIntentId,
+        payload: {
+          reason: req.body?.reason,
+          sourceType: req.body?.sourceType,
+          sourceId: req.body?.sourceId,
+        },
+        status: 'failure',
+        errorMessage: error?.message,
+      });
       res.status(500).json({ 
         error: '환불 처리 중 오류가 발생했습니다.',
         details: error.message 
@@ -19119,6 +19179,16 @@ export function registerTrainerCertificationRoutes(app: Express) {
 
       console.log('[Toss] 결제 취소 성공:', paymentKey);
 
+      await recordAuditLog(req, {
+        action: 'payment.toss.cancel',
+        targetType: 'payment',
+        targetId: paymentKey,
+        payload: {
+          cancelReason,
+          cancelAmount: cancelAmount ? parseInt(cancelAmount) : undefined,
+        },
+      });
+
       res.json({
         success: true,
         message: '결제가 성공적으로 취소되었습니다.',
@@ -19126,6 +19196,14 @@ export function registerTrainerCertificationRoutes(app: Express) {
       });
     } catch (error: any) {
       logServerError('[Toss] 결제 취소 오류:', error.response?.data || error.message, req);
+      await recordAuditLog(req, {
+        action: 'payment.toss.cancel',
+        targetType: 'payment',
+        targetId: req.body?.paymentKey,
+        payload: { cancelReason: req.body?.cancelReason, cancelAmount: req.body?.cancelAmount },
+        status: 'failure',
+        errorMessage: error?.response?.data?.message || error?.message,
+      });
       res.status(400).json({
         success: false,
         message: '결제 취소에 실패했습니다.',
