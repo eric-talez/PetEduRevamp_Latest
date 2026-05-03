@@ -29,6 +29,7 @@ import {
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
+import { PageSkeleton } from '@/components/ui/SkeletonLoader';
 
 interface EarningRecord {
   id: number;
@@ -309,14 +310,7 @@ export default function TrainerEarnings() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="flex flex-col items-center gap-2">
-          <DollarSign className="h-8 w-8 animate-pulse text-primary" />
-          <p className="text-sm text-muted-foreground">수익 정보 로딩 중...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="grid" count={6} />;
   }
 
   return (

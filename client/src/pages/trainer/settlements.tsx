@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign, Download, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
+import { SkeletonTable, FetchingOverlay } from '@/components/ui/SkeletonLoader';
+import { keepPreviousData } from '@tanstack/react-query';
 
 interface SummaryData {
   currentMonth: string;
@@ -45,7 +47,7 @@ export default function TrainerSettlementsPage() {
   const { data: summaryRes, isLoading: loadingSummary } = useQuery<{ success: boolean; data: SummaryData }>({
     queryKey: ['/api/trainer/settlements/summary'],
   });
-  const { data: itemsRes, isLoading: loadingItems } = useQuery<{ success: boolean; data: ItemRow[] }>({
+  const { data: itemsRes, isLoading: loadingItems, isFetching: fetchingItems } = useQuery<{ success: boolean; data: ItemRow[] }>({
     queryKey: ['/api/trainer/settlements/items', monthFilter !== 'all' ? monthFilter : '', statusFilter !== 'all' ? statusFilter : ''],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -54,6 +56,7 @@ export default function TrainerSettlementsPage() {
       const res = await fetch(`/api/trainer/settlements/items?${params}`);
       return res.json();
     },
+    placeholderData: keepPreviousData,
   });
 
   const summary = summaryRes?.data;
@@ -124,7 +127,7 @@ export default function TrainerSettlementsPage() {
         </CardHeader>
         <CardContent>
           {loadingSummary ? (
-            <p className="text-muted-foreground">로딩 중...</p>
+            <SkeletonTable rows={4} columns={5} />
           ) : (summary?.history?.length || 0) === 0 ? (
             <div className="flex items-center gap-2 text-muted-foreground">
               <AlertCircle className="h-4 w-4" />
@@ -189,15 +192,16 @@ export default function TrainerSettlementsPage() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           {loadingItems ? (
-            <p className="text-muted-foreground">로딩 중...</p>
+            <SkeletonTable rows={6} columns={8} />
           ) : items.length === 0 ? (
             <div className="flex items-center gap-2 text-muted-foreground">
               <AlertCircle className="h-4 w-4" />
               조회된 항목이 없습니다.
             </div>
           ) : (
+            <FetchingOverlay isFetching={fetchingItems && !loadingItems}>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -232,6 +236,7 @@ export default function TrainerSettlementsPage() {
                 </TableBody>
               </Table>
             </div>
+            </FetchingOverlay>
           )}
         </CardContent>
       </Card>

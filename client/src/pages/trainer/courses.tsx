@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { PageSkeleton } from '@/components/ui/SkeletonLoader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -431,17 +432,7 @@ export default function TrainerCoursesPage() {
       {/* 강좌 목록 */}
       <div className="grid gap-4">
         {coursesLoading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <PageSkeleton header={false} variant="list" count={4} className="p-0" />
         ) : filteredCourses && filteredCourses.length > 0 ? (
           filteredCourses.map((course: Course) => (
             <Card 

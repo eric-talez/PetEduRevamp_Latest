@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Download, Lock, RefreshCw, Trash2, Plus, CheckCircle2, Ban } from 'lucide-react';
+import { SkeletonTable, FetchingOverlay } from '@/components/ui/SkeletonLoader';
+import { keepPreviousData } from '@tanstack/react-query';
 
 interface MonthlyRow {
   trainerId: number;
@@ -81,7 +83,7 @@ export default function AdminTrainerSettlementsPage() {
   });
 
   // 상세 항목
-  const { data: itemsRes, isLoading } = useQuery<ItemsResponse>({
+  const { data: itemsRes, isLoading, isFetching } = useQuery<ItemsResponse>({
     queryKey: ['/api/admin/trainer-settlements/items', month, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams({ month });
@@ -89,6 +91,7 @@ export default function AdminTrainerSettlementsPage() {
       const res = await fetch(`/api/admin/trainer-settlements/items?${params}`);
       return res.json();
     },
+    placeholderData: keepPreviousData,
   });
 
   // 수수료율 목록
@@ -233,7 +236,11 @@ export default function AdminTrainerSettlementsPage() {
                 </SelectContent>
               </Select>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative">
+              {isLoading ? (
+                <SkeletonTable rows={6} columns={9} />
+              ) : (
+              <FetchingOverlay isFetching={isFetching && !isLoading}>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -249,8 +256,7 @@ export default function AdminTrainerSettlementsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading && <TableRow><TableCell colSpan={9} className="text-center">로딩...</TableCell></TableRow>}
-                  {!isLoading && items.length === 0 && (
+                  {items.length === 0 && (
                     <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">항목 없음</TableCell></TableRow>
                   )}
                   {items.map((it) => (
@@ -274,6 +280,8 @@ export default function AdminTrainerSettlementsPage() {
                   ))}
                 </TableBody>
               </Table>
+              </FetchingOverlay>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

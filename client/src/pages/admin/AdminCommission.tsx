@@ -38,6 +38,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PageSkeleton, SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -845,8 +846,8 @@ export default function AdminCommission() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {isLoading ? (
-                <div className="col-span-2 flex justify-center py-10">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                <div className="col-span-2">
+                  <PageSkeleton header={false} variant="grid" count={4} className="p-0" />
                 </div>
               ) : policies.length > 0 ? (
                 policies.map(policy => (
@@ -1001,11 +1002,8 @@ export default function AdminCommission() {
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-10">
-                          <div className="flex justify-center">
-                            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                          </div>
-                          <div className="mt-2 text-sm text-muted-foreground">데이터를 불러오고 있습니다...</div>
+                        <TableCell colSpan={8} className="p-0">
+                          <SkeletonTable rows={6} columns={8} showHeader={false} className="border-0 rounded-none" />
                         </TableCell>
                       </TableRow>
                     ) : paginatedTransactions.length > 0 ? (
@@ -1173,11 +1171,8 @@ export default function AdminCommission() {
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-10">
-                          <div className="flex justify-center">
-                            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                          </div>
-                          <div className="mt-2 text-sm text-muted-foreground">데이터를 불러오고 있습니다...</div>
+                        <TableCell colSpan={8} className="p-0">
+                          <SkeletonTable rows={6} columns={8} showHeader={false} className="border-0 rounded-none" />
                         </TableCell>
                       </TableRow>
                     ) : paginatedSettlements.length > 0 ? (
