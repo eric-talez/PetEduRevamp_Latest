@@ -2,196 +2,120 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { 
-  Search, 
-  AlertTriangle, 
-  Check, 
-  X, 
-  Eye, 
-  Clock, 
+import {
+  Search,
+  AlertTriangle,
+  Check,
+  X,
+  Eye,
+  Clock,
   MessageSquare,
   Flag,
   User,
-  FileText
+  FileText,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface Report {
   id: number;
-  type: 'spam' | 'inappropriate' | 'harassment' | 'fake' | 'other';
-  reportedBy: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  targetType: 'user' | 'course' | 'comment' | 'post';
+  reportType: 'spam' | 'inappropriate' | 'harassment' | 'fake' | 'other';
+  reporterId: number | null;
+  targetType: 'user' | 'course' | 'comment' | 'post' | 'product' | 'content';
   targetId: number;
-  targetName: string;
+  targetName: string | null;
   reason: string;
-  description: string;
+  description: string | null;
   status: 'pending' | 'investigating' | 'resolved' | 'dismissed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   createdAt: string;
   updatedAt: string;
-  assignedTo?: string;
+  resolvedBy?: number | null;
+  resolvedAt?: string | null;
+  resolutionComment?: string | null;
+}
+
+interface ReportStats {
+  pending: number;
+  investigating: number;
+  resolved: number;
+  dismissed: number;
+  urgent: number;
+  total: number;
 }
 
 export default function AdminReports() {
-  const [reports, setReports] = useState<Report[]>([]);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [actionComment, setActionComment] = useState('');
   const { toast } = useToast();
 
-  // 샘플 신고 데이터
-  const sampleReports: Report[] = [
-    {
-      id: 1,
-      type: 'inappropriate',
-      reportedBy: {
-        id: 123,
-        name: '김신고',
-        email: 'reporter@example.com'
-      },
-      targetType: 'user',
-      targetId: 456,
-      targetName: '문제유저',
-      reason: '부적절한 언어 사용',
-      description: '댓글에서 욕설과 비방을 계속 사용하고 있습니다.',
-      status: 'pending',
-      priority: 'high',
-      createdAt: '2025-01-25T14:30:00Z',
-      updatedAt: '2025-01-25T14:30:00Z'
-    },
-    {
-      id: 2,
-      type: 'spam',
-      reportedBy: {
-        id: 234,
-        name: '박제보',
-        email: 'reporter2@example.com'
-      },
-      targetType: 'course',
-      targetId: 789,
-      targetName: '가짜 강의 홍보',
-      reason: '스팸 강의',
-      description: '허위 정보로 강의를 홍보하고 있습니다.',
-      status: 'investigating',
-      priority: 'medium',
-      createdAt: '2025-01-24T10:15:00Z',
-      updatedAt: '2025-01-24T16:20:00Z'
-    },
-    {
-      id: 3,
-      type: 'harassment',
-      reportedBy: {
-        id: 345,
-        name: '이피해',
-        email: 'victim@example.com'
-      },
-      targetType: 'comment',
-      targetId: 101,
-      targetName: '악성 댓글',
-      reason: '지속적인 괴롭힘',
-      description: '계속해서 따라다니며 악성 댓글을 달고 있습니다.',
-      status: 'pending',
-      priority: 'urgent',
-      createdAt: '2025-01-25T09:45:00Z',
-      updatedAt: '2025-01-25T09:45:00Z'
-    }
-  ];
-
-  useEffect(() => {
-    loadReports();
-  }, []);
-
-  useEffect(() => {
-    filterReports();
-  }, [reports, searchTerm, statusFilter, priorityFilter]);
-
-  const loadReports = async () => {
-    try {
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setReports(sampleReports);
-    } catch (error) {
-      console.error('신고 목록 로딩 실패:', error);
-      toast({
-        title: "데이터 로딩 실패",
-        description: "신고 목록을 불러올 수 없습니다.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const { data, isLoading } = useQuery<{ success: boolean; data: { reports: Report[]; stats: ReportStats } }>({
+    queryKey: ['/api/admin/reports'],
+  });
+  const reports: Report[] = data?.data?.reports ?? [];
+  const stats: ReportStats = data?.data?.stats ?? {
+    pending: 0, investigating: 0, resolved: 0, dismissed: 0, urgent: 0, total: 0,
   };
 
-  const filterReports = () => {
-    let filtered = reports;
-
-    if (searchTerm) {
-      filtered = filtered.filter(report => 
-        report.targetName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.reportedBy.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(report => report.status === statusFilter);
-    }
-
-    if (priorityFilter !== 'all') {
-      filtered = filtered.filter(report => report.priority === priorityFilter);
-    }
-
-    setFilteredReports(filtered);
-  };
-
-  const handleReportAction = async (reportId: number, action: 'resolve' | 'dismiss', comment?: string) => {
-    setIsProcessing(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      setReports(prev => 
-        prev.map(report => 
-          report.id === reportId 
-            ? { ...report, status: action === 'resolve' ? 'resolved' : 'dismissed' as const }
-            : report
-        )
-      );
-
-      toast({
-        title: action === 'resolve' ? "처리 완료" : "기각 완료",
-        description: `신고가 ${action === 'resolve' ? '처리' : '기각'}되었습니다.`,
-        variant: "default"
+  const updateMutation = useMutation({
+    mutationFn: async (vars: { id: number; status: 'resolved' | 'dismissed'; comment?: string }) => {
+      const res = await apiRequest('PATCH', `/api/admin/reports/${vars.id}`, {
+        status: vars.status,
+        resolutionComment: vars.comment || undefined,
       });
-
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/reports'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dashboard/stats'] });
+      toast({
+        title: vars.status === 'resolved' ? '처리 완료' : '기각 완료',
+        description: `신고가 ${vars.status === 'resolved' ? '처리' : '기각'}되었습니다.`,
+      });
       setIsDetailModalOpen(false);
       setSelectedReport(null);
       setActionComment('');
-    } catch (error) {
-      console.error('신고 처리 실패:', error);
-      toast({
-        title: "처리 실패",
-        description: "신고 처리 중 오류가 발생했습니다.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
+    },
+    onError: () => {
+      toast({ title: '처리 실패', description: '신고 처리 중 오류가 발생했습니다.', variant: 'destructive' });
+    },
+  });
+  const isProcessing = updateMutation.isPending;
+
+  useEffect(() => {
+    let filtered = reports;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(r =>
+        (r.targetName || '').toLowerCase().includes(term) ||
+        (r.reason || '').toLowerCase().includes(term) ||
+        String(r.reporterId ?? '').includes(term)
+      );
     }
+    if (statusFilter !== 'all') filtered = filtered.filter(r => r.status === statusFilter);
+    if (priorityFilter !== 'all') filtered = filtered.filter(r => r.priority === priorityFilter);
+    setFilteredReports(filtered);
+  }, [reports, searchTerm, statusFilter, priorityFilter]);
+
+  const handleReportAction = (reportId: number, action: 'resolve' | 'dismiss', comment?: string) => {
+    updateMutation.mutate({
+      id: reportId,
+      status: action === 'resolve' ? 'resolved' : 'dismissed',
+      comment,
+    });
   };
 
   const handleViewDetail = (report: Report) => {
@@ -263,7 +187,7 @@ export default function AdminReports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">대기중</p>
-                <p className="text-2xl font-bold">{reports.filter(r => r.status === 'pending').length}</p>
+                <p className="text-2xl font-bold" data-testid="stat-pending">{stats.pending}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-500" />
             </div>
@@ -275,7 +199,7 @@ export default function AdminReports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">조사중</p>
-                <p className="text-2xl font-bold">{reports.filter(r => r.status === 'investigating').length}</p>
+                <p className="text-2xl font-bold" data-testid="stat-investigating">{stats.investigating}</p>
               </div>
               <Eye className="h-8 w-8 text-blue-500" />
             </div>
@@ -287,7 +211,7 @@ export default function AdminReports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">긴급</p>
-                <p className="text-2xl font-bold">{reports.filter(r => r.priority === 'urgent').length}</p>
+                <p className="text-2xl font-bold" data-testid="stat-urgent">{stats.urgent}</p>
               </div>
               <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
@@ -299,7 +223,7 @@ export default function AdminReports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">처리됨</p>
-                <p className="text-2xl font-bold">{reports.filter(r => r.status === 'resolved').length}</p>
+                <p className="text-2xl font-bold" data-testid="stat-resolved">{stats.resolved}</p>
               </div>
               <Check className="h-8 w-8 text-green-500" />
             </div>
@@ -380,19 +304,19 @@ export default function AdminReports() {
                 <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="flex items-center space-x-4">
                     <Avatar>
-                      <AvatarFallback>{report.reportedBy.name[0]}</AvatarFallback>
+                      <AvatarFallback>{report.reporterId ? `#${report.reporterId}` : '?'}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        {getTypeIcon(report.type)}
-                        <span className="font-semibold">{report.targetName}</span>
-                        <Badge variant="outline">{getTypeName(report.type)}</Badge>
+                        {getTypeIcon(report.reportType)}
+                        <span className="font-semibold">{report.targetName || `${report.targetType} #${report.targetId}`}</span>
+                        <Badge variant="outline">{getTypeName(report.reportType)}</Badge>
                         {getPriorityBadge(report.priority)}
                         {getStatusBadge(report.status)}
                       </div>
                       <p className="text-sm text-gray-600">{report.reason}</p>
                       <p className="text-xs text-gray-400">
-                        {report.reportedBy.name}님이 {new Date(report.createdAt).toLocaleDateString()} 신고
+                        {report.reporterId ? `신고자 #${report.reporterId}` : '익명'} · {new Date(report.createdAt).toLocaleDateString()} 신고
                       </p>
                     </div>
                   </div>
@@ -444,8 +368,8 @@ export default function AdminReports() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  {getTypeIcon(selectedReport.type)}
-                  {selectedReport.targetName} 신고
+                  {getTypeIcon(selectedReport.reportType)}
+                  {selectedReport.targetName || `${selectedReport.targetType} #${selectedReport.targetId}`} 신고
                 </DialogTitle>
               </DialogHeader>
 
@@ -453,11 +377,11 @@ export default function AdminReports() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">신고자</Label>
-                    <p className="mt-1 font-semibold">{selectedReport.reportedBy.name}</p>
+                    <p className="mt-1 font-semibold">{selectedReport.reporterId ? `#${selectedReport.reporterId}` : '익명'}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium">신고 유형</Label>
-                    <p className="mt-1">{getTypeName(selectedReport.type)}</p>
+                    <p className="mt-1">{getTypeName(selectedReport.reportType)}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium">우선순위</Label>

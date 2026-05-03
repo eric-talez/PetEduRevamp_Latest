@@ -22,6 +22,13 @@
       "when": 1777276800000,
       "tag": "0002_admin_stats_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777976400000,
+      "tag": "0003_content_reports",
+      "breakpoints": true
     }
   ]
 }

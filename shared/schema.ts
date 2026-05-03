@@ -3461,3 +3461,45 @@ export type TrainerReviewReply = typeof trainerReviewReplies.$inferSelect;
 export type InsertTrainerReviewReply = z.infer<typeof insertTrainerReviewReplySchema>;
 export type TrainerReviewReport = typeof trainerReviewReports.$inferSelect;
 export type InsertTrainerReviewReport = z.infer<typeof insertTrainerReviewReportSchema>;
+
+// 콘텐츠/사용자 신고 테이블 (Task #50)
+// Dedicated moderation tickets, separate from regular notifications.
+export const contentReports = pgTable("content_reports", {
+  id: serial("id").primaryKey(),
+  reporterId: integer("reporter_id").references(() => users.id),
+  targetType: varchar("target_type", { length: 30 }).notNull(), // user, course, comment, post, product, content
+  targetId: integer("target_id").notNull(),
+  targetName: varchar("target_name", { length: 200 }),
+  reportType: varchar("report_type", { length: 30 }).notNull().default("other"), // spam, inappropriate, harassment, fake, other
+  reason: varchar("reason", { length: 200 }).notNull(),
+  description: text("description"),
+  priority: varchar("priority", { length: 20 }).default("medium"), // low, medium, high, urgent
+  status: varchar("status", { length: 20 }).default("pending"), // pending, investigating, resolved, dismissed
+  assignedTo: integer("assigned_to").references(() => users.id),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  resolutionComment: text("resolution_comment"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertContentReportSchema = createInsertSchema(contentReports, {
+  targetType: z.enum(["user", "course", "comment", "post", "product", "content"]),
+  reportType: z.enum(["spam", "inappropriate", "harassment", "fake", "other"]).optional(),
+  reason: z.string().min(2).max(200),
+  description: z.string().max(2000).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+}).omit({
+  id: true,
+  status: true,
+  assignedTo: true,
+  resolvedBy: true,
+  resolvedAt: true,
+  resolutionComment: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ContentReport = typeof contentReports.$inferSelect;
+export type InsertContentReport = z.infer<typeof insertContentReportSchema>;

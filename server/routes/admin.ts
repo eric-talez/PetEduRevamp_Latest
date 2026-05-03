@@ -1,5 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
+import { insertContentReportSchema } from "../../shared/schema";
+import { z } from "zod";
 
 // 임시 에러 핸들러
 const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
@@ -509,6 +511,66 @@ export function registerAdminRoutes(app: Express) {
       });
     }
   });
+
+  // ===== 신고 관리 (Task #50) =====
+  // 신고 생성 (로그인 사용자 또는 익명)
+  app.post('/api/reports', asyncHandler(async (req: any, res: any) => {
+    const parsed = insertContentReportSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        message: '신고 데이터가 올바르지 않습니다.',
+        errors: parsed.error.flatten(),
+      });
+    }
+    const reporterId = req.user?.id ?? null;
+    const report = await storage.createContentReport({ ...parsed.data, reporterId });
+    res.status(201).json(successResponse(report));
+  }));
+
+  // 관리자: 신고 목록
+  app.get('/api/admin/reports', requireAdmin, asyncHandler(async (req: any, res: any) => {
+    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+    const targetType = typeof req.query.targetType === 'string' ? req.query.targetType : undefined;
+    const limit = req.query.limit ? Math.min(parseInt(String(req.query.limit), 10) || 200, 500) : 200;
+    const reports = await storage.listContentReports({ status, targetType, limit });
+    const stats = await storage.getContentReportStats();
+    res.json(successResponse({ reports, stats }));
+  }));
+
+  // 관리자: 단건 조회
+  app.get('/api/admin/reports/:id', requireAdmin, asyncHandler(async (req: any, res: any) => {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ success: false, message: '잘못된 ID입니다.' });
+    const report = await storage.getContentReport(id);
+    if (!report) return res.status(404).json({ success: false, message: '신고를 찾을 수 없습니다.' });
+    res.json(successResponse(report));
+  }));
+
+  // 관리자: 신고 처리/상태 변경
+  const updateReportSchema = z.object({
+    status: z.enum(['pending', 'investigating', 'resolved', 'dismissed']),
+    resolutionComment: z.string().max(2000).optional(),
+  });
+  app.patch('/api/admin/reports/:id', requireAdmin, asyncHandler(async (req: any, res: any) => {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ success: false, message: '잘못된 ID입니다.' });
+    const parsed = updateReportSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        message: '요청 데이터가 올바르지 않습니다.',
+        errors: parsed.error.flatten(),
+      });
+    }
+    const updated = await storage.updateContentReportStatus(id, {
+      status: parsed.data.status,
+      resolverId: req.user?.id ?? null,
+      resolutionComment: parsed.data.resolutionComment ?? null,
+    });
+    if (!updated) return res.status(404).json({ success: false, message: '신고를 찾을 수 없습니다.' });
+    res.json(successResponse(updated));
+  }));
 
   return app;
 }

@@ -18,6 +18,9 @@ import {
   coursePurchases as coursePurchasesTable,
   reservations as reservationsTable,
   courseProgress as courseProgressTable,
+  contentReports as contentReportsTable,
+  type ContentReport,
+  type InsertContentReport,
 } from "../shared/schema";
 
 class Storage {
@@ -26,6 +29,7 @@ class Storage {
   courses: any[] = [];
   curriculums: any[] = [];
   notifications: any[] = [];
+  contentReports: any[] = [];
   registrations: any[] = [];
   institutes: any[] = [];
   subscriptionPlans: any[] = [];
@@ -6278,7 +6282,147 @@ class HybridStorage extends Storage {
     }
   }
 
-  // 관리자 대시보드 집계 (실 데이터)
+  // ===== Content Reports (Task #50) =====
+  async createContentReport(
+    input: InsertContentReport & { reporterId?: number | null }
+  ): Promise<ContentReport> {
+    const now = new Date();
+    const base = {
+      reporterId: input.reporterId ?? null,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      targetName: input.targetName ?? null,
+      reportType: input.reportType ?? 'other',
+      reason: input.reason,
+      description: input.description ?? null,
+      priority: input.priority ?? 'medium',
+      metadata: input.metadata ?? null,
+    } satisfies Partial<ContentReport>;
+    try {
+      const [row] = await db.insert(contentReportsTable).values(base).returning();
+      return row;
+    } catch {
+      const id = (this.contentReports.reduce(
+        (m: number, r: ContentReport) => Math.max(m, r.id || 0), 0
+      ) || 0) + 1;
+      const report: ContentReport = {
+        id,
+        ...base,
+        status: 'pending',
+        assignedTo: null,
+        resolvedBy: null,
+        resolvedAt: null,
+        resolutionComment: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.contentReports.push(report);
+      return report;
+    }
+  }
+
+  async listContentReports(
+    opts: { status?: string; targetType?: string; limit?: number } = {}
+  ): Promise<ContentReport[]> {
+    const { status, targetType, limit } = opts;
+    try {
+      const conds = [
+        status && status !== 'all' ? eq(contentReportsTable.status, status) : undefined,
+        targetType && targetType !== 'all' ? eq(contentReportsTable.targetType, targetType) : undefined,
+      ].filter((c): c is NonNullable<typeof c> => c !== undefined);
+      const where = conds.length ? and(...conds) : undefined;
+      const base = db.select().from(contentReportsTable);
+      const filtered = where ? base.where(where) : base;
+      const ordered = filtered.orderBy(desc(contentReportsTable.createdAt));
+      const rows = await (limit ? ordered.limit(limit) : ordered);
+      return rows;
+    } catch {
+      let list: ContentReport[] = this.contentReports.slice();
+      if (status && status !== 'all') {
+        list = list.filter((r) => (r.status || 'pending') === status);
+      }
+      if (targetType && targetType !== 'all') {
+        list = list.filter((r) => r.targetType === targetType);
+      }
+      list.sort((a, b) =>
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+      return limit ? list.slice(0, limit) : list;
+    }
+  }
+
+  async getContentReport(id: number): Promise<ContentReport | null> {
+    try {
+      const [row] = await db.select().from(contentReportsTable).where(eq(contentReportsTable.id, id));
+      return row ?? null;
+    } catch {
+      return this.contentReports.find((r: ContentReport) => r.id === id) ?? null;
+    }
+  }
+
+  async updateContentReportStatus(
+    id: number,
+    update: {
+      status: 'pending' | 'investigating' | 'resolved' | 'dismissed';
+      resolverId?: number | null;
+      resolutionComment?: string | null;
+    }
+  ): Promise<ContentReport | null> {
+    const isFinal = update.status === 'resolved' || update.status === 'dismissed';
+    const patch = {
+      status: update.status,
+      updatedAt: new Date(),
+      resolvedBy: isFinal ? (update.resolverId ?? null) : null,
+      resolvedAt: isFinal ? new Date() : null,
+      resolutionComment: update.resolutionComment ?? null,
+    } satisfies Partial<ContentReport>;
+    try {
+      const [row] = await db
+        .update(contentReportsTable)
+        .set(patch)
+        .where(eq(contentReportsTable.id, id))
+        .returning();
+      return row ?? null;
+    } catch {
+      const idx = this.contentReports.findIndex((r: ContentReport) => r.id === id);
+      if (idx === -1) return null;
+      this.contentReports[idx] = { ...this.contentReports[idx], ...patch };
+      return this.contentReports[idx];
+    }
+  }
+
+  async getContentReportStats(): Promise<{ pending: number; investigating: number; resolved: number; dismissed: number; urgent: number; total: number }> {
+    try {
+      const rows = await db.select({
+        pending: sql<number>`count(*) filter (where ${contentReportsTable.status} = 'pending')`,
+        investigating: sql<number>`count(*) filter (where ${contentReportsTable.status} = 'investigating')`,
+        resolved: sql<number>`count(*) filter (where ${contentReportsTable.status} = 'resolved')`,
+        dismissed: sql<number>`count(*) filter (where ${contentReportsTable.status} = 'dismissed')`,
+        urgent: sql<number>`count(*) filter (where ${contentReportsTable.priority} = 'urgent' and ${contentReportsTable.status} in ('pending','investigating'))`,
+        total: sql<number>`count(*)`,
+      }).from(contentReportsTable);
+      const r = rows[0] || ({} as any);
+      return {
+        pending: Number(r.pending) || 0,
+        investigating: Number(r.investigating) || 0,
+        resolved: Number(r.resolved) || 0,
+        dismissed: Number(r.dismissed) || 0,
+        urgent: Number(r.urgent) || 0,
+        total: Number(r.total) || 0,
+      };
+    } catch {
+      const list = this.contentReports;
+      return {
+        pending: list.filter((r: any) => (r.status || 'pending') === 'pending').length,
+        investigating: list.filter((r: any) => r.status === 'investigating').length,
+        resolved: list.filter((r: any) => r.status === 'resolved').length,
+        dismissed: list.filter((r: any) => r.status === 'dismissed').length,
+        urgent: list.filter((r: any) => r.priority === 'urgent' && (r.status === 'pending' || r.status === 'investigating')).length,
+        total: list.length,
+      };
+    }
+  }
+
   async getAdminDashboardAggregates(opts: { startDate?: Date; endDate?: Date } = {}): Promise<{
     totalCourses: number;
     totalOrders: number;
@@ -6363,33 +6507,26 @@ class HybridStorage extends Storage {
         .reduce((s: number, p: any) => s + (parseFloat(p.purchaseAmount) || 0), 0);
     }
 
-    // unread reports = unread system notifications of report type, fallback to all unread (period-aware)
+    // unread reports = open moderation tickets in dedicated content_reports table (Task #50)
+    // pending or investigating reports count as "unread" for the admin dashboard.
     let unreadReports = 0;
     try {
-      const baseConds: any[] = [eq(notificationsTable.isRead, false)];
-      if (startDate) baseConds.push(gte(notificationsTable.createdAt, startDate));
-      if (endDate) baseConds.push(lte(notificationsTable.createdAt, endDate));
+      const baseConds: any[] = [
+        sql`${contentReportsTable.status} in ('pending','investigating')`,
+      ];
+      if (startDate) baseConds.push(gte(contentReportsTable.createdAt, startDate));
+      if (endDate) baseConds.push(lte(contentReportsTable.createdAt, endDate));
 
       const rows = await db.select({
         count: sql<number>`count(*)`
-      }).from(notificationsTable).where(
-        and(
-          ...baseConds,
-          sql`${notificationsTable.type} in ('report','content_report','user_report')`
-        )
-      );
+      }).from(contentReportsTable).where(and(...baseConds));
       unreadReports = Number(rows[0]?.count) || 0;
-      if (unreadReports === 0) {
-        const fallback = await db.select({
-          count: sql<number>`count(*)`
-        }).from(notificationsTable).where(and(...baseConds));
-        unreadReports = Number(fallback[0]?.count) || 0;
-      }
     } catch {
-      unreadReports = (this.notifications || []).filter((n: any) => {
-        if (n.isRead) return false;
+      unreadReports = (this.contentReports || []).filter((r: any) => {
+        const status = r.status || 'pending';
+        if (status !== 'pending' && status !== 'investigating') return false;
         if (!startDate && !endDate) return true;
-        const d = n.createdAt ? new Date(n.createdAt) : null;
+        const d = r.createdAt ? new Date(r.createdAt) : null;
         if (!d) return false;
         if (startDate && d < startDate) return false;
         if (endDate && d > endDate) return false;
