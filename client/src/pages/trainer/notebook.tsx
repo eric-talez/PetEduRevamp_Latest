@@ -43,6 +43,8 @@ import { format, subDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
 import { JournalAttachmentManager } from '@/components/notebook/JournalAttachmentManager';
+import { JournalHomeworkChecklist } from '@/components/notebook/JournalHomeworkChecklist';
+import { ListChecks, X as XIcon } from 'lucide-react';
 
 interface Journal {
   id: number;
@@ -168,6 +170,10 @@ export default function TrainerNotebookPage() {
   const [isAiDraftFlag, setIsAiDraftFlag] = useState(false);
   // AI 초안 적용 직전의 본문 스냅샷 — "AI 초안 취소" 시 복원
   const [aiDraftBackup, setAiDraftBackup] = useState<AiDraftFields | null>(null);
+
+  const [draftHomework, setDraftHomework] = useState<Array<{ label: string; dueDate: string }>>([]);
+  const [draftHomeworkLabel, setDraftHomeworkLabel] = useState('');
+  const [draftHomeworkDue, setDraftHomeworkDue] = useState('');
 
   const [notebookForm, setNotebookForm] = useState({
     title: '',
@@ -336,6 +342,21 @@ export default function TrainerNotebookPage() {
         const msg = data?.error || data?.message || `요청 실패 (${response.status})`;
         throw new Error(msg);
       }
+      // 작성 시 입력한 숙제 항목을 새 일지에 일괄 저장
+      const newJournalId = data?.data?.id;
+      if (Number.isFinite(newJournalId) && draftHomework.length > 0) {
+        try {
+          await secureRequest(`/api/notebook/entries/${newJournalId}/homework`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: draftHomework.map(h => ({ label: h.label, dueDate: h.dueDate || null })),
+            }),
+          });
+        } catch (e) {
+          console.warn('숙제 저장 실패(알림장은 생성됨):', e);
+        }
+      }
       return data;
     },
     onSuccess: () => {
@@ -363,10 +384,14 @@ export default function TrainerNotebookPage() {
         }
       });
       queryClient.invalidateQueries({ queryKey: ['/api/trainer/journals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notebook/homework/weekly-stats'] });
       setIsAiDraftFlag(false);
       setAiKeywords('');
       setAiUsageInfo(null);
       setAiDraftBackup(null);
+      setDraftHomework([]);
+      setDraftHomeworkLabel('');
+      setDraftHomeworkDue('');
     },
     onError: (error) => {
       toast({
@@ -567,6 +592,18 @@ export default function TrainerNotebookPage() {
     () => (filteredJournals || []).map(j => j.id).sort((a, b) => a - b).join(','),
     [filteredJournals],
   );
+  const { data: weeklyHomeworkStats } = useQuery<{ success: boolean; stats: Record<string, { total: number; completed: number; rate: number }> }>({
+    queryKey: ['/api/notebook/homework/weekly-stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/notebook/homework/weekly-stats', { credentials: 'include' });
+      if (!res.ok) return { success: true, stats: {} };
+      return res.json();
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 60000,
+  });
+  const homeworkStatsByPet = weeklyHomeworkStats?.stats || {};
+
   const { data: commentCountsData } = useQuery<{ success: boolean; counts: Record<number, { total: number; new: number }> }>({
     queryKey: ['/api/notebook/comments/counts', 'trainer', journalIdsKey],
     queryFn: async () => {
@@ -829,6 +866,74 @@ export default function TrainerNotebookPage() {
                         placeholder="다음 세션의 목표나 계획을 적어주세요..."
                         rows={3}
                       />
+                    </div>
+
+                    {/* 숙제 체크리스트(작성 시 입력) */}
+                    <div className="border rounded-lg p-4 bg-muted/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ListChecks className="h-4 w-4 text-primary" />
+                        <Label className="font-semibold">숙제 체크리스트 (선택)</Label>
+                        {draftHomework.length > 0 && (
+                          <Badge variant="secondary">{draftHomework.length}개</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        보호자가 집에서 체크할 수 있는 숙제를 추가하세요. 모두 완료되면 알림이 도착합니다.
+                      </p>
+                      <div className="space-y-2 mb-3">
+                        {draftHomework.map((h, idx) => (
+                          <div key={idx} className="flex items-center gap-2 rounded-md border bg-background p-2" data-testid={`draft-homework-${idx}`}>
+                            <span className="flex-1 text-sm">{h.label}</span>
+                            {h.dueDate && (
+                              <span className="text-xs text-muted-foreground">마감 {h.dueDate}</span>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => setDraftHomework(prev => prev.filter((_, i) => i !== idx))}
+                              data-testid={`button-draft-homework-remove-${idx}`}
+                            >
+                              <XIcon className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Input
+                          placeholder="새 숙제 (예: 매일 5분 앉아 훈련)"
+                          value={draftHomeworkLabel}
+                          onChange={(e) => setDraftHomeworkLabel(e.target.value)}
+                          maxLength={200}
+                          data-testid="input-draft-homework-label"
+                        />
+                        <Input
+                          type="date"
+                          value={draftHomeworkDue}
+                          onChange={(e) => setDraftHomeworkDue(e.target.value)}
+                          className="sm:w-44"
+                          data-testid="input-draft-homework-duedate"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const label = draftHomeworkLabel.trim();
+                            if (!label) return;
+                            if (draftHomework.length >= 50) {
+                              toast({ title: '최대 50개까지 추가할 수 있습니다.', variant: 'destructive' });
+                              return;
+                            }
+                            setDraftHomework(prev => [...prev, { label, dueDate: draftHomeworkDue }]);
+                            setDraftHomeworkLabel('');
+                            setDraftHomeworkDue('');
+                          }}
+                          data-testid="button-draft-homework-add"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />추가
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1325,6 +1430,17 @@ export default function TrainerNotebookPage() {
                               {commentCounts[journal.id].total}
                             </Badge>
                           )}
+                          {homeworkStatsByPet[String(journal.student.pet.id)] && homeworkStatsByPet[String(journal.student.pet.id)].total > 0 && (
+                            <Badge
+                              variant={homeworkStatsByPet[String(journal.student.pet.id)].rate === 100 ? 'default' : 'outline'}
+                              className="ml-1"
+                              data-testid={`badge-homework-week-${journal.student.pet.id}`}
+                              title="이번 주 숙제 완료율"
+                            >
+                              <ListChecks className="h-3 w-3 mr-1" />
+                              주간 {homeworkStatsByPet[String(journal.student.pet.id)].rate}%
+                            </Badge>
+                          )}
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
@@ -1641,6 +1757,9 @@ export default function TrainerNotebookPage() {
 
                 {/* 사진·영상 첨부 (트레이너 편집) */}
                 <JournalAttachmentManager journalId={selectedJournal.id} canEdit={true} />
+
+                {/* 숙제 체크리스트 (트레이너 편집) */}
+                <JournalHomeworkChecklist journalId={selectedJournal.id} canEdit={true} />
 
                 {/* 댓글 & 이모지 반응 */}
                 <JournalCommentSection journalId={selectedJournal.id} />

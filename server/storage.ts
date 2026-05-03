@@ -45,6 +45,7 @@ class Storage {
   journalComments: any[] = [];
   journalReactions: any[] = [];
   notebookAttachments: any[] = [];
+  notebookHomeworkItems: any[] = [];
   posts: any[] = [];
   coursePurchases: any[] = [];
   courseProgress: any[] = [];

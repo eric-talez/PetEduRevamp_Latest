@@ -52,6 +52,7 @@ import NotebookBannerImage from '@assets/stock_images/pet_training_journal_3a3d5
 import { PageBanner } from '@/components/PageBanner';
 import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
 import { JournalAttachmentManager } from '@/components/notebook/JournalAttachmentManager';
+import { JournalHomeworkChecklist } from '@/components/notebook/JournalHomeworkChecklist';
 
 // 알림장 엔트리 타입 정의
 interface NotebookEntry {
@@ -2489,6 +2490,11 @@ export default function NotebookPage() {
               {/* 사진·영상 첨부 (보호자: 보기 전용 + 라이트박스) */}
               {Number.isFinite(Number(selectedEntry.id)) && (
                 <JournalAttachmentManager journalId={Number(selectedEntry.id)} canEdit={false} />
+              )}
+
+              {/* 숙제 체크리스트 (보호자 체크) */}
+              {Number.isFinite(Number(selectedEntry.id)) && (
+                <JournalHomeworkChecklist journalId={Number(selectedEntry.id)} canEdit={false} />
               )}
 
               {/* 댓글 & 이모지 반응 */}

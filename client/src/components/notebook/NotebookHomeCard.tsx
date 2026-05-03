@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, ChevronRight, FileText, AlertCircle } from 'lucide-react';
+import { BookOpen, ChevronRight, FileText, AlertCircle, ListChecks } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -36,6 +36,17 @@ export function NotebookHomeCard() {
   const entries = data?.data ?? [];
   const unreadCount = entries.filter((e) => !e.isRead).length;
 
+  const { data: overdueData } = useQuery<{ success: boolean; overdue: number }>({
+    queryKey: ['/api/notebook/homework/overdue-count'],
+    queryFn: async () => {
+      const res = await fetch('/api/notebook/homework/overdue-count', { credentials: 'include' });
+      if (!res.ok) return { success: true, overdue: 0 };
+      return res.json();
+    },
+    refetchInterval: 60000,
+  });
+  const overdueCount = overdueData?.overdue || 0;
+
   return (
     <Card className="w-full" data-testid="card-notebook-home">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -45,6 +56,12 @@ export function NotebookHomeCard() {
           {unreadCount > 0 && (
             <Badge variant="destructive" className="ml-1" data-testid="badge-notebook-unread">
               미확인 {unreadCount}
+            </Badge>
+          )}
+          {overdueCount > 0 && (
+            <Badge variant="destructive" className="ml-1" data-testid="badge-notebook-overdue-homework">
+              <ListChecks className="h-3 w-3 mr-1" />
+              지연 숙제 {overdueCount}
             </Badge>
           )}
         </CardTitle>

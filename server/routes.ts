@@ -5629,6 +5629,251 @@ ${keywords}
     }
   });
 
+  // ============ 알림장 숙제 체크리스트 ============
+  type HomeworkItem = {
+    id: number;
+    journalId: number;
+    label: string;
+    dueDate: string | null;
+    completedAt: string | null;
+    completedByUserId: number | null;
+    sortOrder: number;
+    createdAt: string;
+  };
+  const homeworkStore = (): HomeworkItem[] => {
+    if (!storage.notebookHomeworkItems) storage.notebookHomeworkItems = [];
+    return storage.notebookHomeworkItems as HomeworkItem[];
+  };
+  const nextHomeworkId = (): number => {
+    const arr = homeworkStore();
+    return (arr.reduce((m, x) => Math.max(m, x.id || 0), 0) || 0) + 1;
+  };
+  const listHomeworkForJournal = (journalId: number): HomeworkItem[] =>
+    homeworkStore()
+      .filter((h) => h.journalId === journalId)
+      .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.id - b.id));
+
+  const parseDueDate = (raw: unknown): string | null => {
+    if (raw == null || raw === '') return null;
+    const d = new Date(String(raw));
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  };
+
+  // GET 숙제 목록 — 일지 접근 권한 필요
+  app.get('/api/notebook/entries/:id/homework', requireAuth(), async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) return res.status(404).json({ error: '훈련 일지 없음' });
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '권한이 없습니다.' });
+      }
+      const items = listHomeworkForJournal(journalId);
+      const total = items.length;
+      const completed = items.filter((i) => !!i.completedAt).length;
+      res.json({ success: true, items, stats: { total, completed, completionRate: total ? Math.round((completed / total) * 100) : 0 } });
+    } catch (error) {
+      logServerError('[알림장 숙제] 조회 실패:', error, req);
+      res.status(500).json({ error: '조회 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // POST 숙제 추가 — 트레이너 전용. body: {label, dueDate?} 또는 {items: [...]}
+  app.post('/api/notebook/entries/:id/homework', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) return res.status(404).json({ error: '훈련 일지 없음' });
+      if (!storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '숙제를 추가할 권한이 없습니다.' });
+      }
+
+      const arr = homeworkStore();
+      const existing = listHomeworkForJournal(journalId);
+      let baseSort = existing.length ? Math.max(...existing.map((i) => i.sortOrder)) + 1 : 0;
+      const created: HomeworkItem[] = [];
+
+      const incoming: Array<{ label: string; dueDate?: string | null }> = Array.isArray(req.body?.items)
+        ? req.body.items
+        : (req.body?.label ? [{ label: req.body.label, dueDate: req.body.dueDate }] : []);
+      if (incoming.length === 0) return res.status(400).json({ error: '추가할 항목이 없습니다.' });
+      if (existing.length + incoming.length > 50) {
+        return res.status(400).json({ error: '한 알림장에 최대 50개까지 추가할 수 있습니다.' });
+      }
+
+      for (const raw of incoming) {
+        const label = String(raw.label || '').trim().slice(0, 200);
+        if (!label) continue;
+        const item: HomeworkItem = {
+          id: nextHomeworkId(),
+          journalId,
+          label,
+          dueDate: parseDueDate(raw.dueDate),
+          completedAt: null,
+          completedByUserId: null,
+          sortOrder: baseSort++,
+          createdAt: new Date().toISOString(),
+        };
+        arr.push(item);
+        created.push(item);
+      }
+      res.json({ success: true, items: listHomeworkForJournal(journalId), created });
+    } catch (error) {
+      logServerError('[알림장 숙제] 추가 실패:', error, req);
+      res.status(500).json({ error: '추가 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // PATCH 숙제 수정(라벨/마감일/순서) — 트레이너 전용
+  app.patch('/api/notebook/homework/:itemId', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.itemId, 10);
+      if (!Number.isFinite(itemId)) return res.status(400).json({ error: '올바른 ID가 필요합니다.' });
+      const currentUser = req.session.user!;
+      const item = homeworkStore().find((i) => i.id === itemId);
+      if (!item) return res.status(404).json({ error: '항목을 찾을 수 없습니다.' });
+      const journal = storage.getTrainingJournalById(item.journalId);
+      if (!journal || !storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '권한이 없습니다.' });
+      }
+      if (typeof req.body?.label === 'string') {
+        const label = req.body.label.trim().slice(0, 200);
+        if (label) item.label = label;
+      }
+      if ('dueDate' in (req.body || {})) item.dueDate = parseDueDate(req.body.dueDate);
+      if (typeof req.body?.sortOrder === 'number') item.sortOrder = req.body.sortOrder;
+      res.json({ success: true, item });
+    } catch (error) {
+      logServerError('[알림장 숙제] 수정 실패:', error, req);
+      res.status(500).json({ error: '수정 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // DELETE 숙제 삭제 — 트레이너 전용
+  app.delete('/api/notebook/homework/:itemId', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.itemId, 10);
+      if (!Number.isFinite(itemId)) return res.status(400).json({ error: '올바른 ID가 필요합니다.' });
+      const currentUser = req.session.user!;
+      const arr = homeworkStore();
+      const idx = arr.findIndex((i) => i.id === itemId);
+      if (idx < 0) return res.status(404).json({ error: '항목을 찾을 수 없습니다.' });
+      const item = arr[idx];
+      const journal = storage.getTrainingJournalById(item.journalId);
+      if (!journal || !storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '권한이 없습니다.' });
+      }
+      arr.splice(idx, 1);
+      res.json({ success: true });
+    } catch (error) {
+      logServerError('[알림장 숙제] 삭제 실패:', error, req);
+      res.status(500).json({ error: '삭제 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // PATCH 완료 토글 — 보호자(또는 트레이너) 가능. body: {completed: boolean}
+  app.patch('/api/notebook/homework/:itemId/complete', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.itemId, 10);
+      if (!Number.isFinite(itemId)) return res.status(400).json({ error: '올바른 ID가 필요합니다.' });
+      const currentUser = req.session.user!;
+      const item = homeworkStore().find((i) => i.id === itemId);
+      if (!item) return res.status(404).json({ error: '항목을 찾을 수 없습니다.' });
+      const journal = storage.getTrainingJournalById(item.journalId);
+      if (!journal || !storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '권한이 없습니다.' });
+      }
+      const completed = req.body?.completed !== false; // default true
+      const wasCompleted = !!item.completedAt;
+      item.completedAt = completed ? new Date().toISOString() : null;
+      item.completedByUserId = completed ? currentUser.id : null;
+
+      // 모든 항목 완료 시 트레이너 알림(전이 발생 시에만)
+      const all = listHomeworkForJournal(item.journalId);
+      const allDone = all.length > 0 && all.every((i) => !!i.completedAt);
+      if (completed && !wasCompleted && allDone && journal.trainerId && journal.trainerId !== currentUser.id) {
+        try {
+          const { notificationService } = await import('./notifications/notification-service');
+          const pet = storage.getPet(journal.petId);
+          await notificationService.sendNotification({
+            userId: journal.trainerId,
+            type: 'training',
+            title: '숙제가 모두 완료됐어요',
+            message: `${pet?.name || '반려동물'}의 "${journal.title || '알림장'}" 숙제 ${all.length}개가 모두 완료되었습니다.`,
+            actionUrl: `/trainer/notebook?journalId=${journal.id}`,
+            data: { journalId: journal.id, petId: journal.petId, totalItems: all.length },
+          });
+        } catch (e) {
+          logServerError('[알림장 숙제] 완료 알림 실패:', e, req);
+        }
+      }
+      const total = all.length;
+      const completedCount = all.filter((i) => !!i.completedAt).length;
+      res.json({
+        success: true,
+        item,
+        stats: { total, completed: completedCount, completionRate: total ? Math.round((completedCount / total) * 100) : 0 },
+        allCompleted: allDone,
+      });
+    } catch (error) {
+      logServerError('[알림장 숙제] 완료 토글 실패:', error, req);
+      res.status(500).json({ error: '처리 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // GET 보호자 — 마감 지난 미완료 숙제 카운트(홈 카드 빨간 뱃지)
+  app.get('/api/notebook/homework/overdue-count', requireAuth(), async (req, res) => {
+    try {
+      const currentUser = req.session.user!;
+      const journals = (storage.trainingJournals || []).filter(
+        (j: any) => storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, j),
+      );
+      const journalIds = new Set(journals.map((j: any) => j.id));
+      const now = Date.now();
+      const overdue = homeworkStore().filter((h) =>
+        journalIds.has(h.journalId) && !h.completedAt && h.dueDate && new Date(h.dueDate).getTime() < now,
+      );
+      res.json({ success: true, overdue: overdue.length });
+    } catch (error) {
+      logServerError('[알림장 숙제] overdue 카운트 실패:', error, req);
+      res.status(500).json({ error: '조회 중 오류가 발생했습니다.', overdue: 0 });
+    }
+  });
+
+  // GET 트레이너 — 펫별 주간 숙제 완료율
+  app.get('/api/notebook/homework/weekly-stats', requireAuth('trainer'), async (req, res) => {
+    try {
+      const currentUser = req.session.user!;
+      const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const myJournals = (storage.trainingJournals || []).filter((j: any) =>
+        j.trainerId === currentUser.id &&
+        new Date(j.trainingDate || j.createdAt || 0).getTime() >= since,
+      );
+      const byPet = new Map<number, { total: number; completed: number }>();
+      for (const j of myJournals) {
+        const items = listHomeworkForJournal(j.id);
+        if (!items.length) continue;
+        const stat = byPet.get(j.petId) || { total: 0, completed: 0 };
+        stat.total += items.length;
+        stat.completed += items.filter((i) => !!i.completedAt).length;
+        byPet.set(j.petId, stat);
+      }
+      const result: Record<string, { total: number; completed: number; rate: number }> = {};
+      byPet.forEach((s, petId) => {
+        result[String(petId)] = { ...s, rate: s.total ? Math.round((s.completed / s.total) * 100) : 0 };
+      });
+      res.json({ success: true, stats: result });
+    } catch (error) {
+      logServerError('[알림장 숙제] 주간 통계 실패:', error, req);
+      res.status(500).json({ error: '조회 중 오류가 발생했습니다.', stats: {} });
+    }
+  });
+
   // 6. 특정 펫의 훈련 일지 조회
   app.get("/api/pets/:petId/notebook", requireAuth(), async (req, res) => {
     try {

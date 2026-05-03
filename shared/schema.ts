@@ -1146,6 +1146,41 @@ export const insertNotebookAttachmentSchema = createInsertSchema(notebookAttachm
 export type NotebookAttachment = typeof notebookAttachments.$inferSelect;
 export type InsertNotebookAttachment = z.infer<typeof insertNotebookAttachmentSchema>;
 
+// 알림장 숙제 체크리스트 — 보호자가 집에서 수행할 액션 아이템
+export const notebookHomeworkItems = pgTable("notebook_homework_items", {
+  id: serial("id").primaryKey(),
+  journalId: integer("journal_id").references(() => trainingJournals.id).notNull(),
+  label: varchar("label", { length: 200 }).notNull(),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  completedByUserId: integer("completed_by_user_id").references(() => users.id),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => ({
+  byJournal: index("idx_notebook_homework_journal").on(t.journalId),
+}));
+
+export const insertNotebookHomeworkItemSchema = createInsertSchema(notebookHomeworkItems).omit({
+  id: true,
+  completedAt: true,
+  completedByUserId: true,
+  createdAt: true,
+}).extend({
+  label: z.string().trim().min(1, '숙제 내용을 입력해 주세요').max(200, '최대 200자까지 입력할 수 있습니다'),
+  dueDate: z.union([z.string(), z.date(), z.null()]).optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+export type NotebookHomeworkItem = typeof notebookHomeworkItems.$inferSelect;
+export type InsertNotebookHomeworkItem = z.infer<typeof insertNotebookHomeworkItemSchema>;
+
+// Bulk 입력(작성 시 한꺼번에 저장)
+export const notebookHomeworkBulkSchema = z.object({
+  items: z.array(z.object({
+    label: z.string().trim().min(1).max(200),
+    dueDate: z.union([z.string(), z.null()]).optional(),
+  })).max(50, '한 알림장에 최대 50개까지 추가할 수 있습니다'),
+});
+
 export const insertJournalCommentSchema = createInsertSchema(journalComments).omit({
   id: true,
   authorId: true,
