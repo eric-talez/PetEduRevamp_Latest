@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, Trash2, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, Trash2, Loader2, Pencil, Flag, X, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { secureRequest } from '@/lib/csrf';
 import { format } from 'date-fns';
@@ -22,7 +22,10 @@ interface JournalComment {
   content: string;
   parentCommentId: number | null;
   createdAt: string;
+  updatedAt?: string | null;
   canDelete: boolean;
+  canEdit: boolean;
+  canReport: boolean;
 }
 
 interface ReactionMap {
@@ -45,6 +48,8 @@ export function JournalCommentSection({ journalId, canComment = true }: Props) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [draft, setDraft] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState('');
 
   const queryKey = ['/api/notebook/entries', journalId, 'comments'];
 
@@ -60,13 +65,23 @@ export function JournalCommentSection({ journalId, canComment = true }: Props) {
     enabled: Number.isFinite(journalId),
   });
 
+  // 모달이 열렸을 때 읽음 처리 (목록 "새 댓글 N" 뱃지 초기화)
+  useEffect(() => {
+    if (!Number.isFinite(journalId)) return;
+    secureRequest(`/api/notebook/entries/${journalId}/mark-read`, { method: 'POST' })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/notebook/comments/counts'] });
+      })
+      .catch(() => {});
+  }, [journalId, queryClient]);
+
   const applyResponse = (json: any) => {
-    if (json && json.success) {
+    if (json && json.success && json.comments) {
       queryClient.setQueryData<CommentsResponse>(queryKey, {
         success: true,
-        comments: json.comments || [],
+        comments: json.comments,
         reactions: json.reactions || {},
-        total: json.total ?? (json.comments?.length || 0),
+        total: json.total ?? json.comments.length,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/notebook/comments/counts'] });
     }
@@ -80,27 +95,42 @@ export function JournalCommentSection({ journalId, canComment = true }: Props) {
         body: JSON.stringify({ content }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok || json?.success === false) {
-        throw new Error(json?.error || '댓글 작성 실패');
-      }
+      if (!res.ok || json?.success === false) throw new Error(json?.error || '댓글 작성 실패');
       return json;
     },
-    onSuccess: (json) => {
-      setDraft('');
-      applyResponse(json);
-    },
+    onSuccess: (json) => { setDraft(''); applyResponse(json); },
     onError: (err: any) => {
       toast({ title: '댓글 작성 실패', description: err?.message || '오류가 발생했습니다.', variant: 'destructive' });
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ commentId, content }: { commentId: number; content: string }) => {
+      const res = await secureRequest(`/api/notebook/entries/${journalId}/comments/${commentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.success === false) throw new Error(json?.error || '댓글 수정 실패');
+      return json;
+    },
+    onSuccess: (json) => {
+      setEditingId(null);
+      setEditDraft('');
+      applyResponse(json);
+      toast({ title: '댓글이 수정되었습니다.' });
+    },
+    onError: (err: any) => {
+      toast({ title: '댓글 수정 실패', description: err?.message || '오류가 발생했습니다.', variant: 'destructive' });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (commentId: number) => {
-      const res = await secureRequest(`/api/notebook/comments/${commentId}`, { method: 'DELETE' });
+      const res = await secureRequest(`/api/notebook/entries/${journalId}/comments/${commentId}`, { method: 'DELETE' });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok || json?.success === false) {
-        throw new Error(json?.error || '댓글 삭제 실패');
-      }
+      if (!res.ok || json?.success === false) throw new Error(json?.error || '댓글 삭제 실패');
       return json;
     },
     onSuccess: (json) => applyResponse(json),
@@ -109,17 +139,34 @@ export function JournalCommentSection({ journalId, canComment = true }: Props) {
     },
   });
 
-  const reactionMutation = useMutation({
-    mutationFn: async (emoji: string) => {
-      const res = await secureRequest(`/api/notebook/entries/${journalId}/reactions`, {
+  const reportMutation = useMutation({
+    mutationFn: async ({ commentId, reason }: { commentId: number; reason?: string }) => {
+      const res = await secureRequest(`/api/notebook/entries/${journalId}/comments/${commentId}/report`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.success === false) throw new Error(json?.error || '신고 실패');
+      return json;
+    },
+    onSuccess: () => {
+      toast({ title: '신고가 접수되었습니다.', description: '관리자가 검토 후 조치합니다.' });
+    },
+    onError: (err: any) => {
+      toast({ title: '신고 실패', description: err?.message || '오류가 발생했습니다.', variant: 'destructive' });
+    },
+  });
+
+  const reactionMutation = useMutation({
+    mutationFn: async ({ emoji, mine }: { emoji: string; mine: boolean }) => {
+      const res = await secureRequest(`/api/notebook/entries/${journalId}/reactions`, {
+        method: mine ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emoji }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok || json?.success === false) {
-        throw new Error(json?.error || '반응 처리 실패');
-      }
+      if (!res.ok || json?.success === false) throw new Error(json?.error || '반응 처리 실패');
       return json;
     },
     onSuccess: (json) => applyResponse(json),
@@ -134,15 +181,27 @@ export function JournalCommentSection({ journalId, canComment = true }: Props) {
     createMutation.mutate(trimmed);
   };
 
+  const handleStartEdit = (c: JournalComment) => {
+    setEditingId(c.id);
+    setEditDraft(c.content);
+  };
+
+  const handleSaveEdit = () => {
+    const trimmed = editDraft.trim();
+    if (!trimmed || !editingId) return;
+    updateMutation.mutate({ commentId: editingId, content: trimmed });
+  };
+
+  const handleReport = (c: JournalComment) => {
+    const reason = window.prompt('신고 사유를 입력하세요(선택, 최대 500자):', '') ?? undefined;
+    reportMutation.mutate({ commentId: c.id, reason });
+  };
+
   const reactions = data?.reactions || {};
   const comments = data?.comments || [];
 
   const formatTime = (iso: string) => {
-    try {
-      return format(new Date(iso), 'M월 d일 HH:mm', { locale: ko });
-    } catch {
-      return iso;
-    }
+    try { return format(new Date(iso), 'M월 d일 HH:mm', { locale: ko }); } catch { return iso; }
   };
 
   return (
@@ -159,9 +218,10 @@ export function JournalCommentSection({ journalId, canComment = true }: Props) {
               <button
                 key={emoji}
                 type="button"
-                onClick={() => reactionMutation.mutate(emoji)}
-                disabled={reactionMutation.isPending}
+                onClick={() => reactionMutation.mutate({ emoji, mine: r.mine })}
+                disabled={reactionMutation.isPending || !canComment}
                 data-testid={`reaction-${emoji}`}
+                title={r.mine ? '내 반응 취소' : '반응 남기기'}
                 className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm transition ${
                   r.mine
                     ? 'bg-primary/10 border-primary/40 text-primary'
@@ -214,27 +274,76 @@ export function JournalCommentSection({ journalId, canComment = true }: Props) {
                     {c.authorRole === 'pet-owner' && (
                       <Badge variant="outline" className="text-[10px] py-0">보호자</Badge>
                     )}
-                    <span className="text-xs text-gray-400">{formatTime(c.createdAt)}</span>
-                    {c.canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-1 ml-auto text-gray-400 hover:text-destructive"
-                        onClick={() => {
-                          if (window.confirm('이 댓글을 삭제하시겠습니까?')) {
-                            deleteMutation.mutate(c.id);
-                          }
-                        }}
-                        disabled={deleteMutation.isPending}
-                        data-testid={`comment-delete-${c.id}`}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
+                    <span className="text-xs text-gray-400">
+                      {formatTime(c.createdAt)}
+                      {c.updatedAt ? ' (수정됨)' : ''}
+                    </span>
+                    <div className="ml-auto flex items-center gap-1">
+                      {c.canEdit && editingId !== c.id && (
+                        <Button
+                          variant="ghost" size="sm"
+                          className="h-6 px-1 text-gray-400 hover:text-primary"
+                          onClick={() => handleStartEdit(c)}
+                          data-testid={`comment-edit-${c.id}`}
+                        ><Pencil className="h-3 w-3" /></Button>
+                      )}
+                      {c.canDelete && (
+                        <Button
+                          variant="ghost" size="sm"
+                          className="h-6 px-1 text-gray-400 hover:text-destructive"
+                          onClick={() => {
+                            if (window.confirm('이 댓글을 삭제하시겠습니까?')) deleteMutation.mutate(c.id);
+                          }}
+                          disabled={deleteMutation.isPending}
+                          data-testid={`comment-delete-${c.id}`}
+                        ><Trash2 className="h-3 w-3" /></Button>
+                      )}
+                      {c.canReport && (
+                        <Button
+                          variant="ghost" size="sm"
+                          className="h-6 px-1 text-gray-400 hover:text-amber-600"
+                          onClick={() => handleReport(c)}
+                          disabled={reportMutation.isPending}
+                          data-testid={`comment-report-${c.id}`}
+                          title="신고하기"
+                        ><Flag className="h-3 w-3" /></Button>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-700 dark:text-gray-200 mt-1 whitespace-pre-wrap break-words">
-                    {c.content}
-                  </p>
+
+                  {editingId === c.id ? (
+                    <div className="mt-2 space-y-2">
+                      <Textarea
+                        value={editDraft}
+                        onChange={(e) => setEditDraft(e.target.value)}
+                        rows={2}
+                        maxLength={2000}
+                        data-testid={`comment-edit-input-${c.id}`}
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline" size="sm"
+                          onClick={() => { setEditingId(null); setEditDraft(''); }}
+                          data-testid={`comment-edit-cancel-${c.id}`}
+                        ><X className="h-3 w-3 mr-1" />취소</Button>
+                        <Button
+                          size="sm"
+                          onClick={handleSaveEdit}
+                          disabled={!editDraft.trim() || updateMutation.isPending}
+                          data-testid={`comment-edit-save-${c.id}`}
+                        >
+                          {updateMutation.isPending
+                            ? <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            : <Check className="h-3 w-3 mr-1" />}
+                          저장
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-700 dark:text-gray-200 mt-1 whitespace-pre-wrap break-words">
+                      {c.content}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -270,11 +379,9 @@ export function JournalCommentSection({ journalId, canComment = true }: Props) {
               disabled={!draft.trim() || createMutation.isPending}
               data-testid="comment-submit"
             >
-              {createMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <Send className="h-4 w-4 mr-1" />
-              )}
+              {createMutation.isPending
+                ? <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                : <Send className="h-4 w-4 mr-1" />}
               댓글 등록
             </Button>
           </div>

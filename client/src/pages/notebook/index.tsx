@@ -150,7 +150,29 @@ export default function NotebookPage() {
   const [dateFilterMode, setDateFilterMode] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
   const [activeTab, setActiveTab] = useState<'basic' | 'activities' | 'media' | 'ai'>('basic');
   const [selectedAIPetId, setSelectedAIPetId] = useState<string>('');
-  
+
+  // 댓글 카운트(목록 뱃지) — 보호자 알림장 목록
+  const ownerCommentIdsKey = useMemo(
+    () => filteredEntries
+      .map(e => parseInt(e.id, 10))
+      .filter(n => Number.isFinite(n))
+      .sort((a, b) => a - b)
+      .join(','),
+    [filteredEntries],
+  );
+  const { data: ownerCommentCountsData } = useQuery<{ success: boolean; counts: Record<number, { total: number; new: number }> }>({
+    queryKey: ['/api/notebook/comments/counts', 'owner', ownerCommentIdsKey],
+    queryFn: async () => {
+      if (!ownerCommentIdsKey) return { success: true, counts: {} };
+      const res = await fetch(`/api/notebook/comments/counts?journalIds=${ownerCommentIdsKey}`, { credentials: 'include' });
+      if (!res.ok) return { success: true, counts: {} };
+      return res.json();
+    },
+    enabled: !!ownerCommentIdsKey,
+    refetchInterval: 30000,
+  });
+  const ownerCommentCounts = ownerCommentCountsData?.counts || {};
+
   // 반려동물 목록 조회
   const petsQuery = useQuery({
     queryKey: ['/api/pets'],
@@ -2139,6 +2161,26 @@ export default function NotebookPage() {
                         새로움
                       </Badge>
                     )}
+                    {(() => {
+                      const cnt = ownerCommentCounts[parseInt(entry.id, 10)];
+                      if (cnt && cnt.new > 0) {
+                        return (
+                          <Badge variant="destructive" data-testid={`badge-new-comments-${entry.id}`}>
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            새 댓글 {cnt.new}
+                          </Badge>
+                        );
+                      }
+                      if (cnt && cnt.total > 0) {
+                        return (
+                          <Badge variant="secondary">
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            {cnt.total}
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               </CardHeader>

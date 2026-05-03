@@ -2729,6 +2729,9 @@ class Storage {
   }
 
   // ====== 알림장 댓글 ======
+  journalCommentReports: any[] = [];
+  journalCommentReadAt: Map<string, string> = new Map();
+
   getJournalComments(journalId: number): any[] {
     return (this.journalComments || [])
       .filter(c => c.journalId === journalId)
@@ -2739,13 +2742,27 @@ class Storage {
     return (this.journalComments || []).find(c => c.id === commentId) || null;
   }
 
-  getJournalCommentCounts(journalIds: number[]): Record<number, number> {
-    const counts: Record<number, number> = {};
-    journalIds.forEach(id => { counts[id] = 0; });
+  getJournalCommentCounts(
+    journalIds: number[],
+    currentUserId?: number,
+  ): Record<number, { total: number; new: number }> {
+    const counts: Record<number, { total: number; new: number }> = {};
+    journalIds.forEach(id => { counts[id] = { total: 0, new: 0 }; });
     (this.journalComments || []).forEach(c => {
-      if (counts[c.journalId] !== undefined) counts[c.journalId]++;
+      if (!counts[c.journalId]) return;
+      counts[c.journalId].total++;
+      if (currentUserId && c.authorId !== currentUserId) {
+        const lastRead = this.journalCommentReadAt.get(`${currentUserId}:${c.journalId}`);
+        if (!lastRead || new Date(c.createdAt) > new Date(lastRead)) {
+          counts[c.journalId].new++;
+        }
+      }
     });
     return counts;
+  }
+
+  markJournalCommentsRead(userId: number, journalId: number): void {
+    this.journalCommentReadAt.set(`${userId}:${journalId}`, new Date().toISOString());
   }
 
   createJournalComment(data: { journalId: number; authorId: number; content: string; parentCommentId?: number | null }): any {
@@ -2758,16 +2775,46 @@ class Storage {
       content: data.content,
       parentCommentId: data.parentCommentId ?? null,
       createdAt: new Date().toISOString(),
+      updatedAt: null as string | null,
     };
     this.journalComments.push(comment);
     return comment;
+  }
+
+  updateJournalComment(commentId: number, content: string): any | null {
+    const c = (this.journalComments || []).find(x => x.id === commentId);
+    if (!c) return null;
+    c.content = content;
+    c.updatedAt = new Date().toISOString();
+    return c;
   }
 
   deleteJournalComment(commentId: number): boolean {
     const idx = (this.journalComments || []).findIndex(c => c.id === commentId);
     if (idx === -1) return false;
     this.journalComments.splice(idx, 1);
+    // 관련 신고도 정리
+    this.journalCommentReports = (this.journalCommentReports || []).filter(r => r.commentId !== commentId);
     return true;
+  }
+
+  reportJournalComment(data: { commentId: number; reporterId: number; reason?: string }): any | null {
+    if (!this.journalCommentReports) this.journalCommentReports = [];
+    // 동일 사용자가 동일 댓글 재신고 방지
+    const existing = this.journalCommentReports.find(
+      r => r.commentId === data.commentId && r.reporterId === data.reporterId,
+    );
+    if (existing) return existing;
+    const id = (this.journalCommentReports.reduce((m, r) => Math.max(m, r.id || 0), 0) || 0) + 1;
+    const report = {
+      id,
+      commentId: data.commentId,
+      reporterId: data.reporterId,
+      reason: data.reason || null,
+      createdAt: new Date().toISOString(),
+    };
+    this.journalCommentReports.push(report);
+    return report;
   }
 
   // ====== 알림장 이모지 반응 ======
@@ -2775,24 +2822,27 @@ class Storage {
     return (this.journalReactions || []).filter(r => r.journalId === journalId);
   }
 
-  toggleJournalReaction(journalId: number, userId: number, emoji: string): { added: boolean } {
+  addJournalReaction(journalId: number, userId: number, emoji: string): { added: boolean } {
+    if (!this.journalReactions) this.journalReactions = [];
+    const existing = this.journalReactions.find(
+      r => r.journalId === journalId && r.userId === userId && r.emoji === emoji,
+    );
+    if (existing) return { added: false };
+    const id = (this.journalReactions.reduce((m, r) => Math.max(m, r.id || 0), 0) || 0) + 1;
+    this.journalReactions.push({
+      id, journalId, userId, emoji, createdAt: new Date().toISOString(),
+    });
+    return { added: true };
+  }
+
+  removeJournalReaction(journalId: number, userId: number, emoji: string): { removed: boolean } {
     if (!this.journalReactions) this.journalReactions = [];
     const idx = this.journalReactions.findIndex(
       r => r.journalId === journalId && r.userId === userId && r.emoji === emoji,
     );
-    if (idx !== -1) {
-      this.journalReactions.splice(idx, 1);
-      return { added: false };
-    }
-    const id = (this.journalReactions.reduce((m, r) => Math.max(m, r.id || 0), 0) || 0) + 1;
-    this.journalReactions.push({
-      id,
-      journalId,
-      userId,
-      emoji,
-      createdAt: new Date().toISOString(),
-    });
-    return { added: true };
+    if (idx === -1) return { removed: false };
+    this.journalReactions.splice(idx, 1);
+    return { removed: true };
   }
 
   // 페이지네이션과 필터링을 지원하는 훈련 일지 조회

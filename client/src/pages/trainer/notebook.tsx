@@ -486,6 +486,24 @@ export default function TrainerNotebookPage() {
     setIsJournalDetailOpen(true);
   };
 
+  // 댓글 카운트 (목록 뱃지)
+  const journalIdsKey = useMemo(
+    () => (filteredJournals || []).map(j => j.id).sort((a, b) => a - b).join(','),
+    [filteredJournals],
+  );
+  const { data: commentCountsData } = useQuery<{ success: boolean; counts: Record<number, { total: number; new: number }> }>({
+    queryKey: ['/api/notebook/comments/counts', 'trainer', journalIdsKey],
+    queryFn: async () => {
+      if (!journalIdsKey) return { success: true, counts: {} };
+      const res = await fetch(`/api/notebook/comments/counts?journalIds=${journalIdsKey}`, { credentials: 'include' });
+      if (!res.ok) return { success: true, counts: {} };
+      return res.json();
+    },
+    enabled: !!journalIdsKey,
+    refetchInterval: 30000,
+  });
+  const commentCounts = commentCountsData?.counts || {};
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-start">
@@ -1160,6 +1178,22 @@ export default function TrainerNotebookPage() {
                           <FileText className="h-5 w-5 text-success" />
                           <h3 className="text-lg font-semibold">{journal.title}</h3>
                           {getStatusBadge(journal.status)}
+                          {commentCounts[journal.id]?.new > 0 && (
+                            <Badge
+                              variant="destructive"
+                              className="ml-1"
+                              data-testid={`badge-new-comments-${journal.id}`}
+                            >
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              새 댓글 {commentCounts[journal.id].new}
+                            </Badge>
+                          )}
+                          {commentCounts[journal.id]?.new === 0 && commentCounts[journal.id]?.total > 0 && (
+                            <Badge variant="secondary" className="ml-1">
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              {commentCounts[journal.id].total}
+                            </Badge>
+                          )}
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">

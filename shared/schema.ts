@@ -1097,7 +1097,30 @@ export const journalReactions = pgTable("journal_reactions", {
   userId: integer("user_id").references(() => users.id).notNull(),
   emoji: varchar("emoji", { length: 16 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueReaction: uniqueIndex("journal_reactions_journal_user_emoji_uq").on(
+    table.journalId, table.userId, table.emoji,
+  ),
+}));
+
+// 알림장 댓글 신고 - 타인 댓글 신고
+export const journalCommentReports = pgTable("journal_comment_reports", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").references(() => journalComments.id).notNull(),
+  reporterId: integer("reporter_id").references(() => users.id).notNull(),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const insertJournalCommentReportSchema = createInsertSchema(journalCommentReports).omit({
+  id: true,
+  reporterId: true,
+  createdAt: true,
+}).extend({
+  reason: z.string().trim().max(500, '신고 사유는 최대 500자까지 입력할 수 있습니다').optional(),
+});
+
+export type JournalCommentReport = typeof journalCommentReports.$inferSelect;
 
 export const insertJournalCommentSchema = createInsertSchema(journalComments).omit({
   id: true,
