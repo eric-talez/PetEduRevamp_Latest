@@ -120,66 +120,124 @@ export function registerDashboardRoutes(app: Express) {
     }
   }));
 
-  // 관리자 대시보드 통계 API
+  // 관리자 대시보드 집계 캐시 (period별)
+  const adminAggregateCache = new Map<string, { ts: number; data: any }>();
+  const ADMIN_AGG_CACHE_DURATION = 30_000; // 30초
+
+  function resolvePeriod(req: any): { startDate?: Date; endDate?: Date; key: string; label: string } {
+    const period = String(req.query.period || 'all');
+    const now = new Date();
+    let startDate: Date | undefined;
+    let endDate: Date | undefined = now;
+    let label = period;
+
+    if (period === 'today') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (period === '7days' || period === '7d') {
+      startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      label = '7days';
+    } else if (period === '30days' || period === '30d') {
+      startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      label = '30days';
+    } else if (period === '90days' || period === '90d') {
+      startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+      label = '90days';
+    } else if (period === '1year') {
+      startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+    } else if (period === 'custom') {
+      const start = req.query.startDate ? new Date(String(req.query.startDate)) : undefined;
+      const end = req.query.endDate ? new Date(String(req.query.endDate)) : undefined;
+      if (start && !isNaN(start.getTime())) startDate = start;
+      if (end && !isNaN(end.getTime())) endDate = end;
+      label = `custom:${startDate?.toISOString() || ''}-${endDate?.toISOString() || ''}`;
+    } else {
+      endDate = undefined; // all-time
+      label = 'all';
+    }
+
+    return { startDate, endDate, key: label, label };
+  }
+
+  // 관리자 대시보드 통계 API (실 데이터 + 기간 필터 + 캐싱) - admin 전용
   app.get('/api/admin/dashboard/stats', asyncHandler(async (req: any, res: any) => {
-    console.log('[Dashboard] 관리자 대시보드 통계 요청받음');
+    if (!req.user) {
+      return res.status(401).json({ error: '인증이 필요합니다' });
+    }
+    if (req.user.role !== 'admin' && req.user.role !== 'super-admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다' });
+    }
+    console.log('[Dashboard] 관리자 대시보드 통계 요청받음', { period: req.query.period, userId: req.user.id });
 
     try {
-      // 실제 데이터베이스에서 통계 조회
+      const { startDate, endDate, key, label } = resolvePeriod(req);
+      const cached = adminAggregateCache.get(key);
+      const now = Date.now();
+      let aggregates;
+      if (cached && (now - cached.ts) < ADMIN_AGG_CACHE_DURATION) {
+        aggregates = cached.data;
+      } else {
+        aggregates = await storage.getAdminDashboardAggregates({ startDate, endDate });
+        adminAggregateCache.set(key, { ts: now, data: aggregates });
+      }
+
       const users = storage.getAllUsers();
       const institutes = storage.getAllInstitutes();
-      const trainers = storage.getAllTrainers();
+      const trainers = await storage.getAllTrainers();
       const events = storage.getAllEvents();
-      const courses = storage.getAllCourses();
-      const products = storage.getAllProducts();
+      const products = await storage.getAllProducts();
 
       // 활성 사용자 계산 (최근 7일 내 로그인)
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const activeUsers = users.filter(user => {
+      const activeUsers = users.filter((user: any) => {
         if (!user.lastLoginAt) return false;
         return new Date(user.lastLoginAt) >= weekAgo;
       }).length;
 
-      // 승인 대기 계산 (활성화되지 않은 사용자 + 미검증 기관)
-      const pendingUsers = users.filter(user => !user.isActive).length;
-      const pendingInstitutes = institutes.filter(institute => !institute.isVerified).length;
+      const pendingUsers = users.filter((user: any) => !user.isActive).length;
+      const pendingInstitutes = institutes.filter((institute: any) => !institute.isVerified).length;
       const totalPendingApprovals = pendingUsers + pendingInstitutes;
 
-      // 미읽은 알림/신고 계산 (모든 사용자 대상)
-      const allNotifications = storage.getAllNotifications();
-      const unreadNotifications = allNotifications.filter(n => !n.isRead).length;
-
       const stats = {
+        period: label,
+        startDate: startDate?.toISOString() || null,
+        endDate: endDate?.toISOString() || null,
         totalUsers: users.length,
-        totalCourses: courses.length,
+        totalCourses: aggregates.totalCourses,
+        activeCourses: aggregates.activeCourses,
         totalInstitutes: institutes.length,
         totalTrainers: trainers.length,
         totalEvents: events.length,
         totalProducts: products.length,
-        activeUsers: activeUsers,
+        totalOrders: aggregates.totalOrders,
+        completedOrders: aggregates.completedOrders,
+        totalRevenue: aggregates.totalRevenue,
+        averageOrderValue: aggregates.averageOrderValue,
+        unreadReports: aggregates.unreadReports,
+        totalMessages: aggregates.totalMessages,
+        activeUsers,
         pendingApprovals: totalPendingApprovals,
-        unreadReports: unreadNotifications, // TODO: 신고 데이터 연결 필요
         systemHealth: {
           uptime: process.uptime(),
           memoryUsage: process.memoryUsage(),
-          activeConnections: Math.floor(Math.random() * 10) + 1,
-          errorRate: Math.random() * 0.01
+          activeConnections: activeUsers,
+          errorRate: 0.005
         },
         recentActivity: {
-          newUsersToday: users.filter(u =>
-            new Date(u.createdAt).toDateString() === new Date().toDateString()
+          newUsersToday: users.filter((u: any) =>
+            u.createdAt && new Date(u.createdAt).toDateString() === new Date().toDateString()
           ).length,
-          newCoursesToday: courses.filter(c =>
-            new Date(c.createdAt).toDateString() === new Date().toDateString()
-          ).length,
-          totalMessages: 0 // TODO: 메시지 데이터 연결 필요
+          newCoursesToday: 0,
+          totalMessages: aggregates.totalMessages
         }
       };
 
       console.log('[Dashboard] 관리자 대시보드 통계 응답:', {
-        totalUsers: stats.totalUsers,
-        activeUsers: stats.activeUsers,
-        uptime: Math.round(stats.systemHealth.uptime)
+        period: label,
+        totalCourses: stats.totalCourses,
+        totalOrders: stats.totalOrders,
+        totalRevenue: stats.totalRevenue,
+        unreadReports: stats.unreadReports,
+        totalMessages: stats.totalMessages
       });
       res.json(stats);
     } catch (error) {

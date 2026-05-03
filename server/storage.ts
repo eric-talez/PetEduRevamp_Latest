@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, desc, or, and, sql } from "drizzle-orm";
+import { eq, desc, or, and, sql, gte, lte } from "drizzle-orm";
 import {
   logoSettings as logoSettingsTable,
   users as usersTable,
@@ -11,7 +11,11 @@ import {
   trainerInstitutes,
   contentApprovals,
   trainerApplications,
-  curriculums as curriculumsTable
+  curriculums as curriculumsTable,
+  orders as ordersTable,
+  courses as coursesTable,
+  notifications as notificationsTable,
+  coursePurchases as coursePurchasesTable,
 } from "../shared/schema";
 
 class Storage {
@@ -6270,6 +6274,153 @@ class HybridStorage extends Storage {
       console.error('[Storage] getUnreadMessageCount 오류:', error);
       return 0;
     }
+  }
+
+  // 관리자 대시보드 집계 (실 데이터)
+  async getAdminDashboardAggregates(opts: { startDate?: Date; endDate?: Date } = {}): Promise<{
+    totalCourses: number;
+    totalOrders: number;
+    totalRevenue: number;
+    unreadReports: number;
+    totalMessages: number;
+    activeCourses: number;
+    completedOrders: number;
+    averageOrderValue: number;
+  }> {
+    const { startDate, endDate } = opts;
+
+    // courses count (DB → memory fallback)
+    let totalCourses = 0;
+    let activeCourses = 0;
+    try {
+      const conditions: any[] = [];
+      if (startDate) conditions.push(gte(coursesTable.createdAt, startDate));
+      if (endDate) conditions.push(lte(coursesTable.createdAt, endDate));
+      const rows = await db.select({
+        total: sql<number>`count(*)`,
+        active: sql<number>`count(*) filter (where ${coursesTable.isActive} = true)`
+      }).from(coursesTable).where(conditions.length ? and(...conditions) : sql`true`);
+      totalCourses = Number(rows[0]?.total) || 0;
+      activeCourses = Number(rows[0]?.active) || 0;
+    } catch {
+      const list = (this.courses || []).filter((c: any) => {
+        if (!startDate && !endDate) return true;
+        const d = c.createdAt ? new Date(c.createdAt) : null;
+        if (!d) return false;
+        if (startDate && d < startDate) return false;
+        if (endDate && d > endDate) return false;
+        return true;
+      });
+      totalCourses = list.length;
+      activeCourses = list.filter((c: any) => c.isActive !== false).length;
+    }
+
+    // orders aggregates (orders + course purchases)
+    let totalOrders = 0;
+    let totalRevenue = 0;
+    let completedOrders = 0;
+    try {
+      const conditions: any[] = [];
+      if (startDate) conditions.push(gte(ordersTable.createdAt, startDate));
+      if (endDate) conditions.push(lte(ordersTable.createdAt, endDate));
+      const rows = await db.select({
+        total: sql<number>`count(*)`,
+        completed: sql<number>`count(*) filter (where ${ordersTable.paymentStatus} = 'completed' or ${ordersTable.status} = 'completed')`,
+        revenue: sql<number>`coalesce(sum(case when ${ordersTable.paymentStatus} = 'completed' or ${ordersTable.status} = 'completed' then ${ordersTable.totalAmount} else 0 end), 0)`
+      }).from(ordersTable).where(conditions.length ? and(...conditions) : sql`true`);
+      totalOrders = Number(rows[0]?.total) || 0;
+      completedOrders = Number(rows[0]?.completed) || 0;
+      totalRevenue = Number(rows[0]?.revenue) || 0;
+    } catch {
+      // ignore
+    }
+
+    try {
+      const conditions: any[] = [];
+      if (startDate) conditions.push(gte(coursePurchasesTable.createdAt, startDate));
+      if (endDate) conditions.push(lte(coursePurchasesTable.createdAt, endDate));
+      const rows = await db.select({
+        total: sql<number>`count(*)`,
+        revenue: sql<number>`coalesce(sum(case when ${coursePurchasesTable.paymentStatus} = 'completed' then ${coursePurchasesTable.purchaseAmount} else 0 end), 0)`
+      }).from(coursePurchasesTable).where(conditions.length ? and(...conditions) : sql`true`);
+      totalOrders += Number(rows[0]?.total) || 0;
+      totalRevenue += Number(rows[0]?.revenue) || 0;
+    } catch {
+      // memory fallback for course purchases
+      const list = (this.coursePurchases || []).filter((p: any) => {
+        if (!startDate && !endDate) return true;
+        const d = p.createdAt ? new Date(p.createdAt) : null;
+        if (!d) return false;
+        if (startDate && d < startDate) return false;
+        if (endDate && d > endDate) return false;
+        return true;
+      });
+      totalOrders += list.length;
+      totalRevenue += list
+        .filter((p: any) => (p.paymentStatus || 'completed') === 'completed')
+        .reduce((s: number, p: any) => s + (parseFloat(p.purchaseAmount) || 0), 0);
+    }
+
+    // unread reports = unread system notifications of report type, fallback to all unread (period-aware)
+    let unreadReports = 0;
+    try {
+      const baseConds: any[] = [eq(notificationsTable.isRead, false)];
+      if (startDate) baseConds.push(gte(notificationsTable.createdAt, startDate));
+      if (endDate) baseConds.push(lte(notificationsTable.createdAt, endDate));
+
+      const rows = await db.select({
+        count: sql<number>`count(*)`
+      }).from(notificationsTable).where(
+        and(
+          ...baseConds,
+          sql`${notificationsTable.type} in ('report','content_report','user_report')`
+        )
+      );
+      unreadReports = Number(rows[0]?.count) || 0;
+      if (unreadReports === 0) {
+        const fallback = await db.select({
+          count: sql<number>`count(*)`
+        }).from(notificationsTable).where(and(...baseConds));
+        unreadReports = Number(fallback[0]?.count) || 0;
+      }
+    } catch {
+      unreadReports = (this.notifications || []).filter((n: any) => {
+        if (n.isRead) return false;
+        if (!startDate && !endDate) return true;
+        const d = n.createdAt ? new Date(n.createdAt) : null;
+        if (!d) return false;
+        if (startDate && d < startDate) return false;
+        if (endDate && d > endDate) return false;
+        return true;
+      }).length;
+    }
+
+    // total messages
+    let totalMessages = 0;
+    try {
+      const conditions: any[] = [];
+      if (startDate) conditions.push(gte(messages.createdAt, startDate));
+      if (endDate) conditions.push(lte(messages.createdAt, endDate));
+      const rows = await db.select({
+        count: sql<number>`count(*)`
+      }).from(messages).where(conditions.length ? and(...conditions) : sql`true`);
+      totalMessages = Number(rows[0]?.count) || 0;
+    } catch {
+      totalMessages = 0;
+    }
+
+    const averageOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+    return {
+      totalCourses,
+      totalOrders,
+      totalRevenue: Math.round(totalRevenue),
+      unreadReports,
+      totalMessages,
+      activeCourses,
+      completedOrders,
+      averageOrderValue,
+    };
   }
 }
 

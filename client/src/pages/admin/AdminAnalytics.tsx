@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 import {
   TrendingUp,
   TrendingDown,
@@ -17,18 +21,76 @@ import {
   RefreshCw,
   BarChart3,
   PieChart,
-  Activity
+  Activity,
+  AlertTriangle,
+  MessageSquare,
+  AlertCircle
 } from 'lucide-react';
+
+interface AdminDashboardStats {
+  period: string;
+  startDate: string | null;
+  endDate: string | null;
+  totalUsers: number;
+  totalCourses: number;
+  activeCourses: number;
+  totalInstitutes: number;
+  totalTrainers: number;
+  totalEvents: number;
+  totalProducts: number;
+  totalOrders: number;
+  completedOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  unreadReports: number;
+  totalMessages: number;
+  activeUsers: number;
+  pendingApprovals: number;
+}
 
 export default function AdminAnalytics() {
   const [timeRange, setTimeRange] = useState('30days');
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const { toast } = useToast();
+
+  const isCustom = timeRange === 'custom';
+  const customDatesValid = !isCustom || (
+    !!customStart && !!customEnd &&
+    !isNaN(new Date(customStart).getTime()) &&
+    !isNaN(new Date(customEnd).getTime()) &&
+    new Date(customStart) <= new Date(customEnd)
+  );
+
+  const { data: stats, isLoading, isError, error, refetch, isRefetching } = useQuery<AdminDashboardStats>({
+    queryKey: ['/api/admin/dashboard/stats', timeRange, isCustom ? customStart : '', isCustom ? customEnd : ''],
+    queryFn: async () => {
+      const params = new URLSearchParams({ period: timeRange });
+      if (isCustom) {
+        params.set('startDate', new Date(customStart).toISOString());
+        params.set('endDate', new Date(customEnd + 'T23:59:59').toISOString());
+      }
+      const res = await fetch(`/api/admin/dashboard/stats?${params.toString()}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`통계 조회 실패 (${res.status}): ${text || res.statusText}`);
+      }
+      return res.json();
+    },
+    enabled: !isCustom || customDatesValid,
+    staleTime: 30_000,
+  });
+
   const handleRefresh = async () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['/api/admin/dashboard/stats'] });
+      await refetch();
+      toast({ title: '새로고침 완료', description: '최신 통계로 갱신되었습니다.' });
+    } catch (e: any) {
+      toast({ title: '새로고침 실패', description: e?.message || '오류가 발생했습니다.', variant: 'destructive' });
+    }
   };
 
   const StatCard = ({ title, value, change, icon: Icon, trend }: any) => (
@@ -71,14 +133,37 @@ export default function AdminAnalytics() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="today">오늘</SelectItem>
               <SelectItem value="7days">최근 7일</SelectItem>
               <SelectItem value="30days">최근 30일</SelectItem>
               <SelectItem value="90days">최근 3개월</SelectItem>
               <SelectItem value="1year">최근 1년</SelectItem>
+              <SelectItem value="custom">사용자 지정</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleRefresh} disabled={isLoading} variant="outline">
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          {isCustom && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="border rounded-md px-2 py-1 text-sm"
+                aria-label="시작일"
+                data-testid="input-custom-start"
+              />
+              <span className="text-sm text-muted-foreground">~</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="border rounded-md px-2 py-1 text-sm"
+                aria-label="종료일"
+                data-testid="input-custom-end"
+              />
+            </div>
+          )}
+          <Button onClick={handleRefresh} disabled={isLoading || isRefetching} variant="outline">
+            <RefreshCw className={`h-4 w-4 mr-2 ${(isLoading || isRefetching) ? 'animate-spin' : ''}`} />
             새로고침
           </Button>
           <Button variant="outline">
@@ -88,51 +173,60 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      {/* 개요 통계 */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          title="총 사용자"
-          value="156"
-          change="+12.5% 전월 대비"
-          icon={Users}
-          trend="up"
-        />
-        <StatCard
-          title="활성 사용자"
-          value="89"
-          change="+8.3% 전월 대비"
-          icon={Users}
-          trend="up"
-        />
-        <StatCard
-          title="총 수익"
-          value={formatCurrency(15450000)}
-          change="+23.1% 전월 대비"
-          icon={DollarSign}
-          trend="up"
-        />
-        <StatCard
-          title="총 주문"
-          value="234"
-          change="+15.2% 전월 대비"
-          icon={ShoppingCart}
-          trend="up"
-        />
-        <StatCard
-          title="완료된 훈련"
-          value="67"
-          change="+18.7% 전월 대비"
-          icon={BookOpen}
-          trend="up"
-        />
-        <StatCard
-          title="진행 중인 훈련"
-          value="23"
-          change="-5.2% 전월 대비"
-          icon={Calendar}
-          trend="down"
-        />
-      </div>
+      {/* 개요 통계 - 실 데이터 */}
+      {isCustom && !customDatesValid ? (
+        <Card className="border-amber-300">
+          <CardContent className="flex items-center gap-3 py-6">
+            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <div className="flex-1">
+              <p className="font-medium">사용자 지정 기간을 선택해주세요</p>
+              <p className="text-sm text-muted-foreground">
+                시작일과 종료일을 모두 입력하고 시작일이 종료일보다 같거나 빠른지 확인해주세요.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : isError ? (
+        <Card className="border-destructive">
+          <CardContent className="flex items-center gap-3 py-6">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <div className="flex-1">
+              <p className="font-medium">통계를 불러올 수 없습니다</p>
+              <p className="text-sm text-muted-foreground">{(error as Error)?.message || '잠시 후 다시 시도해주세요.'}</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={handleRefresh}>다시 시도</Button>
+          </CardContent>
+        </Card>
+      ) : isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader>
+              <CardContent><Skeleton className="h-8 w-32" /></CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : !stats || (
+        stats.totalCourses === 0 && stats.totalOrders === 0 && stats.totalRevenue === 0 &&
+        stats.unreadReports === 0 && stats.totalMessages === 0
+      ) ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" />
+            <p className="font-medium">선택하신 기간에 표시할 데이터가 없습니다</p>
+            <p className="text-sm">다른 기간을 선택하거나 잠시 후 다시 확인해주세요.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <StatCard title="총 강좌" value={stats.totalCourses.toLocaleString()} icon={BookOpen} />
+          <StatCard title="총 주문" value={stats.totalOrders.toLocaleString()} icon={ShoppingCart} />
+          <StatCard title="총 매출" value={formatCurrency(stats.totalRevenue)} icon={DollarSign} />
+          <StatCard title="미열람 신고" value={stats.unreadReports.toLocaleString()} icon={AlertTriangle} />
+          <StatCard title="총 메시지" value={stats.totalMessages.toLocaleString()} icon={MessageSquare} />
+          <StatCard title="활성 사용자" value={stats.activeUsers.toLocaleString()} icon={Users} />
+        </div>
+      )}
 
       {/* 상세 분석 탭 */}
       <Tabs defaultValue="overview" className="space-y-4">
