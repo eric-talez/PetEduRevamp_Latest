@@ -26,6 +26,7 @@ import { setupAuth } from "./auth";
 import { activitySessionMiddleware, ensureUserSessionsSchema, startUserSessionCleanupScheduler } from "./auth/session-manager";
 import { extendResponse } from "./middleware/api-standards";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
+import { requestContextMiddleware } from "./middleware/audit-logger";
 import { closeDatabasePool } from "./db";
 import path from 'path'; // path 모듈 추가
 import locationRoutes from './location/routes';
@@ -379,6 +380,9 @@ app.use((req: any, res: any, next: any) => {
 
 // API 표준화 미들웨어 적용 - Response 객체에 표준 메서드 추가
 app.use(extendResponse);
+
+// 요청 컨텍스트(요청 ID) 미들웨어 - 모든 로그/감사 기록에 요청 ID 포함
+app.use(requestContextMiddleware);
 
 // 세션 활동 추적 / 자동 로그아웃 미들웨어
 // (express-session + passport.session 이후, 모든 /api 라우트(인증 포함)에 적용)

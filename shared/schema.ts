@@ -3537,3 +3537,35 @@ export const insertContentReportSchema = createInsertSchema(contentReports, {
 
 export type ContentReport = typeof contentReports.$inferSelect;
 export type InsertContentReport = z.infer<typeof insertContentReportSchema>;
+
+// =============================================================================
+// 관리자 감사 로그 (Audit Logs) - Task #11
+// =============================================================================
+
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  actorId: integer("actor_id").references(() => users.id),
+  actorRole: varchar("actor_role", { length: 50 }),
+  actorName: varchar("actor_name", { length: 100 }),
+  action: varchar("action", { length: 100 }).notNull(),
+  targetType: varchar("target_type", { length: 50 }),
+  targetId: varchar("target_id", { length: 100 }),
+  targetName: varchar("target_name", { length: 200 }),
+  payload: jsonb("payload"),
+  ip: varchar("ip", { length: 64 }),
+  userAgent: text("user_agent"),
+  requestId: varchar("request_id", { length: 64 }),
+  route: varchar("route", { length: 200 }),
+  status: varchar("status", { length: 20 }).default("success"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => ({
+  byActor: index("idx_audit_logs_actor").on(t.actorId),
+  byAction: index("idx_audit_logs_action").on(t.action),
+  byCreatedAt: index("idx_audit_logs_created_at").on(t.createdAt),
+  byTarget: index("idx_audit_logs_target").on(t.targetType, t.targetId),
+}));
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;

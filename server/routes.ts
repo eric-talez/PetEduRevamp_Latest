@@ -10,6 +10,7 @@ import { registerMessagingRoutes } from "./routes/messaging";
 import { registerDashboardRoutes } from "./routes/dashboard";
 import { setupStreamingSocket } from "./streaming/socket-server";
 import { registerAdminRoutes } from "./routes/admin";
+import { registerAuditLogRoutes } from "./routes/audit-logs";
 // import { errorHandler } from "./middleware/error-handler";
 import { registerShoppingRoutes } from "./routes/shopping";
 import { registerSubscriptionRoutes } from "./routes/subscriptions";
@@ -268,7 +269,7 @@ async function performAiAnalysis(prompt: string, model: string = "gpt-4o"): Prom
     };
 
   } catch (error) {
-    console.error(`AI API 오류 (${model}):`, error);
+    logServerError(`AI API 오류 (${model}):`, error);
     
     // 폴백 분석 결과
     return {
@@ -420,6 +421,7 @@ import {
   validateBody, 
   validateQuery 
 } from './middleware/api-standards';
+import { recordAuditLog, logServerError } from './middleware/audit-logger';
 
 // 유료/무료 정보를 포함한 엑셀 파일에서 커리큘럼 정보 추출 함수
 function parseExcelCurriculumWithPricing(data: any[], filename: string) {
@@ -627,7 +629,7 @@ function parseExcelCurriculumWithPricing(data: any[], filename: string) {
       modules
     };
   } catch (error) {
-    console.error('[엑셀 파싱] 오류:', error);
+    logServerError('[엑셀 파싱] 오류:', error);
     return null;
   }
 }
@@ -724,7 +726,7 @@ function parseExcelCurriculum(data: any[], filename: string) {
       modules
     };
   } catch (error) {
-    console.error('[엑셀 파싱] 오류:', error);
+    logServerError('[엑셀 파싱] 오류:', error);
     return null;
   }
 }
@@ -781,7 +783,7 @@ if (stripeSecretKey) {
     });
     console.log('✅ Stripe 초기화 성공');
   } catch (error) {
-    console.error('❌ Stripe 초기화 실패:', error);
+    logServerError('❌ Stripe 초기화 실패:', error);
   }
 } else {
   console.warn('⚠️ STRIPE_SECRET_KEY가 설정되지 않음 - 결제 기능 비활성화');
@@ -813,6 +815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 관리자 라우트 등록
   registerAdminRoutes(app);
+  registerAuditLogRoutes(app);
 
   // 이메일 알림 (SendGrid) 라우트 등록 - Task #24
   registerEmailNotificationRoutes(app);
@@ -873,7 +876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: { inviteCode }
       });
     } catch (error) {
-      console.error('[친구 초대] 초대 코드 조회 오류:', error);
+      logServerError('[친구 초대] 초대 코드 조회 오류:', error, req);
       res.status(500).json({ success: false, message: '초대 코드 조회에 실패했습니다.' });
     }
   });
@@ -919,7 +922,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('[친구 초대] 크레딧 조회 오류:', error);
+      logServerError('[친구 초대] 크레딧 조회 오류:', error, req);
       res.status(500).json({ success: false, message: '크레딧 조회에 실패했습니다.' });
     }
   });
@@ -972,7 +975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('[친구 초대] 초대 내역 조회 오류:', error);
+      logServerError('[친구 초대] 초대 내역 조회 오류:', error, req);
       res.status(500).json({ success: false, message: '초대 내역 조회에 실패했습니다.' });
     }
   });
@@ -1049,7 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('[친구 초대] 초대 수락 오류:', error);
+      logServerError('[친구 초대] 초대 수락 오류:', error, req);
       res.status(500).json({ success: false, message: '초대 처리에 실패했습니다.' });
     }
   });
@@ -1155,7 +1158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('[AI 커리큘럼] 분석 실패:', error);
+      logServerError('[AI 커리큘럼] 분석 실패:', error, req);
       
       // 임시 파일 정리 (에러 시)
       if (req.file) {
@@ -1218,7 +1221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('[AI 커리큘럼] 임시저장 실패:', error);
+      logServerError('[AI 커리큘럼] 임시저장 실패:', error, req);
       res.status(500).json({
         success: false,
         message: `커리큘럼 임시저장에 실패했습니다: ${error.message}`
@@ -1249,7 +1252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       res.success(safeMappedUsers, '사용자 목록을 조회했습니다.');
     } catch (error) {
-      console.error('Users API error:', error);
+      logServerError('Users API error:', error, req);
       res.error('INTERNAL_SERVER_ERROR', '사용자 목록 조회 중 오류가 발생했습니다.');
     }
   });
@@ -1270,7 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       res.success(adminMappedUsers, '관리자용 사용자 목록을 조회했습니다.');
     } catch (error) {
-      console.error('Admin Users API error:', error);
+      logServerError('Admin Users API error:', error, req);
       res.error('INTERNAL_SERVER_ERROR', '관리자용 사용자 목록 조회 중 오류가 발생했습니다.');
     }
   });
@@ -1334,7 +1337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('Admin User Creation error:', error);
+      logServerError('Admin User Creation error:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '사용자 추가 중 오류가 발생했습니다.' 
@@ -1406,7 +1409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('Admin User Update error:', error);
+      logServerError('Admin User Update error:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '사용자 정보 수정 중 오류가 발생했습니다.' 
@@ -1452,7 +1455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error) {
-      console.error('Admin User Delete error:', error);
+      logServerError('Admin User Delete error:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '사용자 삭제 중 오류가 발생했습니다.' 
@@ -1479,7 +1482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }))
       });
     } catch (error) {
-      console.error('Pending users fetch error:', error);
+      logServerError('Pending users fetch error:', error, req);
       res.status(500).json({ success: false, message: '승인 대기 사용자 조회에 실패했습니다.' });
     }
   });
@@ -1506,9 +1509,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).where(eq(users.id, userId));
 
       console.log('[Admin] 사용자 승인됨:', { userId, approvedBy: adminId });
+      await recordAuditLog(req, {
+        action: 'admin.user.approve',
+        targetType: 'user',
+        targetId: userId,
+        targetName: (existingUser as any).name || (existingUser as any).email,
+        payload: { previousStatus: 'pending' },
+      });
       res.json({ success: true, message: '사용자가 승인되었습니다.' });
     } catch (error) {
-      console.error('User approval error:', error);
+      logServerError('User approval error', error, req);
       res.status(500).json({ success: false, message: '사용자 승인에 실패했습니다.' });
     }
   });
@@ -1537,9 +1547,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).where(eq(users.id, userId));
 
       console.log('[Admin] 사용자 거부됨:', { userId, reason, approvedBy: adminId });
+      await recordAuditLog(req, {
+        action: 'admin.user.reject',
+        targetType: 'user',
+        targetId: userId,
+        targetName: (existingUser as any).name || (existingUser as any).email,
+        payload: { reason: reason || '사유 미기재' },
+      });
       res.json({ success: true, message: '사용자가 거부되었습니다.' });
     } catch (error) {
-      console.error('User rejection error:', error);
+      logServerError('User rejection error', error, req);
       res.status(500).json({ success: false, message: '사용자 거부에 실패했습니다.' });
     }
   });
@@ -1578,7 +1595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Matching] 훈련사-기관 연결 신청:', { trainerId, instituteId });
       res.json({ success: true, data: application, message: '기관 연결 신청이 완료되었습니다.' });
     } catch (error) {
-      console.error('Trainer institute application error:', error);
+      logServerError('Trainer institute application error:', error, req);
       res.status(500).json({ success: false, message: '기관 연결 신청에 실패했습니다.' });
     }
   });
@@ -1611,7 +1628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Matching] 기관 훈련사 신청 목록:', applications.length);
       res.json({ success: true, data: applications });
     } catch (error) {
-      console.error('Get trainer applications error:', error);
+      logServerError('Get trainer applications error:', error, req);
       res.status(500).json({ success: false, message: '신청 목록 조회에 실패했습니다.' });
     }
   });
@@ -1655,9 +1672,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).where(eq(users.id, application.trainerId));
       
       console.log('[Matching] 훈련사-기관 연결 승인:', { applicationId, trainerId: application.trainerId });
+      await recordAuditLog(req, {
+        action: 'institute.trainer_application.approve',
+        targetType: 'trainer_institute_application',
+        targetId: applicationId,
+        payload: { trainerId: application.trainerId, instituteId: application.instituteId },
+      });
       res.json({ success: true, message: '훈련사 연결이 승인되었습니다.' });
     } catch (error) {
-      console.error('Approve trainer application error:', error);
+      logServerError('Approve trainer application error', error, req);
       res.status(500).json({ success: false, message: '승인 처리에 실패했습니다.' });
     }
   });
@@ -1689,9 +1712,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).where(eq(trainerInstituteApplications.id, applicationId));
       
       console.log('[Matching] 훈련사-기관 연결 거부:', { applicationId, reason });
+      await recordAuditLog(req, {
+        action: 'institute.trainer_application.reject',
+        targetType: 'trainer_institute_application',
+        targetId: applicationId,
+        payload: { reason: reason || '사유 미기재', trainerId: application.trainerId },
+      });
       res.json({ success: true, message: '훈련사 연결이 거부되었습니다.' });
     } catch (error) {
-      console.error('Reject trainer application error:', error);
+      logServerError('Reject trainer application error', error, req);
       res.status(500).json({ success: false, message: '거부 처리에 실패했습니다.' });
     }
   });
@@ -1725,7 +1754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Matching] 훈련사-사용자 매칭 생성:', { trainerId: actualTrainerId, clientId });
       res.json({ success: true, data: assignment, message: '매칭이 생성되었습니다.' });
     } catch (error) {
-      console.error('Create client assignment error:', error);
+      logServerError('Create client assignment error:', error, req);
       res.status(500).json({ success: false, message: '매칭 생성에 실패했습니다.' });
     }
   });
@@ -1765,7 +1794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Matching] 훈련사-사용자 매칭 목록:', assignments.length);
       res.json({ success: true, data: assignments });
     } catch (error) {
-      console.error('Get client assignments error:', error);
+      logServerError('Get client assignments error:', error, req);
       res.status(500).json({ success: false, message: '매칭 목록 조회에 실패했습니다.' });
     }
   });
@@ -1801,7 +1830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Matching] 매칭 상태 업데이트:', { assignmentId, status });
       res.json({ success: true, message: '매칭이 업데이트되었습니다.' });
     } catch (error) {
-      console.error('Update client assignment error:', error);
+      logServerError('Update client assignment error:', error, req);
       res.status(500).json({ success: false, message: '매칭 업데이트에 실패했습니다.' });
     }
   });
@@ -1854,7 +1883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } 
       });
     } catch (error) {
-      console.error('Get matching overview error:', error);
+      logServerError('Get matching overview error:', error, req);
       res.status(500).json({ success: false, message: '매칭 현황 조회에 실패했습니다.' });
     }
   });
@@ -1884,7 +1913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Matching] 사용자의 담당 훈련사 조회:', assignments.length);
       res.json({ success: true, data: assignments });
     } catch (error) {
-      console.error('Get my trainer error:', error);
+      logServerError('Get my trainer error:', error, req);
       res.status(500).json({ success: false, message: '담당 훈련사 조회에 실패했습니다.' });
     }
   });
@@ -1969,7 +1998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('기관 등록 오류:', error);
+      logServerError('기관 등록 오류:', error, req);
       res.status(500).json({ 
         error: '기관 등록 중 오류가 발생했습니다.' 
       });
@@ -2098,7 +2127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(response);
 
     } catch (error: any) {
-      console.error('[Admin] 기관 목록 조회 중 오류:', error);
+      logServerError('[Admin] 기관 목록 조회 중 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '기관 목록 조회 중 오류가 발생했습니다.',
@@ -2145,7 +2174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('구독 플랜 변경 오류:', error);
+      logServerError('구독 플랜 변경 오류:', error, req);
       res.status(500).json({ 
         error: '구독 플랜 변경 중 오류가 발생했습니다.' 
       });
@@ -2178,7 +2207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('[Admin] 기관 정보 수정 오류:', error);
+      logServerError('[Admin] 기관 정보 수정 오류:', error, req);
       res.status(500).json({ 
         error: '기관 정보 수정 중 오류가 발생했습니다.' 
       });
@@ -2226,7 +2255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('결제 처리 오류:', error);
+      logServerError('결제 처리 오류:', error, req);
       res.status(500).json({ 
         error: '결제 처리 중 오류가 발생했습니다.' 
       });
@@ -2250,7 +2279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: '기관이 성공적으로 삭제되었습니다.'
       });
     } catch (error) {
-      console.error('[Admin] 기관 삭제 오류:', error);
+      logServerError('[Admin] 기관 삭제 오류:', error, req);
       res.status(500).json({ 
         error: '기관 삭제 중 오류가 발생했습니다.' 
       });
@@ -2315,7 +2344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('[Admin] 관리자 결제 처리 오류:', error);
+      logServerError('[Admin] 관리자 결제 처리 오류:', error, req);
       res.status(500).json({ 
         error: '관리자 결제 처리 중 오류가 발생했습니다.' 
       });
@@ -2373,7 +2402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('[Admin] 결제 요청 처리 오류:', error);
+      logServerError('[Admin] 결제 요청 처리 오류:', error, req);
       res.status(500).json({ 
         error: '결제 요청 처리 중 오류가 발생했습니다.' 
       });
@@ -2469,7 +2498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('기능 접근 권한 확인 오류:', error);
+      logServerError('기능 접근 권한 확인 오류:', error, req);
       res.status(500).json({ 
         error: '기능 접근 권한 확인 중 오류가 발생했습니다.' 
       });
@@ -2493,7 +2522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      console.error('[Admin] 커리큘럼 등록 오류:', error);
+      logServerError('[Admin] 커리큘럼 등록 오류:', error, req);
       res.status(500).json({ 
         error: '커리큘럼 등록 중 오류가 발생했습니다.' 
       });
@@ -2506,7 +2535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const curricula = await storage.getAllCurricula();
       res.json(curricula);
     } catch (error) {
-      console.error('[Admin] 커리큘럼 목록 조회 오류:', error);
+      logServerError('[Admin] 커리큘럼 목록 조회 오류:', error, req);
       res.status(500).json({ 
         error: '커리큘럼 목록 조회 중 오류가 발생했습니다.' 
       });
@@ -2533,7 +2562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedCurriculum); // 직접 커리큘럼 객체 반환
     } catch (error) {
-      console.error('[Admin] 커리큘럼 수정 오류:', error);
+      logServerError('[Admin] 커리큘럼 수정 오류:', error, req);
       res.status(500).json({ 
         error: '커리큘럼 수정 중 오류가 발생했습니다.',
         details: error.message 
@@ -2559,7 +2588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: '커리큘럼이 성공적으로 삭제되었습니다.'
       });
     } catch (error) {
-      console.error('[Admin] 커리큘럼 삭제 오류:', error);
+      logServerError('[Admin] 커리큘럼 삭제 오류:', error, req);
       res.status(500).json({ 
         error: '커리큘럼 삭제 중 오류가 발생했습니다.' 
       });
@@ -2593,7 +2622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         curriculum: updatedCurriculum
       });
     } catch (error) {
-      console.error('[Admin] 커리큘럼 상태 변경 오류:', error);
+      logServerError('[Admin] 커리큘럼 상태 변경 오류:', error, req);
       res.status(500).json({ 
         error: '커리큘럼 상태 변경 중 오류가 발생했습니다.' 
       });
@@ -2622,7 +2651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         curriculum: updatedCurriculum
       });
     } catch (error) {
-      console.error('[Admin] 커리큘럼 초기화 오류:', error);
+      logServerError('[Admin] 커리큘럼 초기화 오류:', error, req);
       res.status(500).json({ 
         error: '커리큘럼 초기화 중 오류가 발생했습니다.' 
       });
@@ -2690,7 +2719,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(popularStats);
     } catch (error) {
-      console.error('인기 통계 조회 오류:', error);
+      logServerError('인기 통계 조회 오류:', error, req);
       res.status(500).json({ error: "통계 데이터를 불러올 수 없습니다" });
     }
   });
@@ -2765,7 +2794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         labels
       });
     } catch (error) {
-      console.error('[WeeklyStats] 주간 통계 조회 실패:', error);
+      logServerError('[WeeklyStats] 주간 통계 조회 실패:', error, req);
       res.status(500).json({ error: '주간 통계를 불러오는데 실패했습니다' });
     }
   });
@@ -2799,7 +2828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, status: systemStatus });
     } catch (error) {
-      console.error('[AdminSystemStatus] 시스템 상태 조회 실패:', error);
+      logServerError('[AdminSystemStatus] 시스템 상태 조회 실패:', error, req);
       res.status(500).json({ error: '시스템 상태를 불러오는데 실패했습니다' });
     }
   });
@@ -2861,7 +2890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, stats: platformStats });
     } catch (error) {
-      console.error('[AdminPlatformStats] 플랫폼 통계 조회 실패:', error);
+      logServerError('[AdminPlatformStats] 플랫폼 통계 조회 실패:', error, req);
       res.status(500).json({ error: '플랫폼 통계를 불러오는데 실패했습니다' });
     }
   });
@@ -2886,7 +2915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({ success: true, data: settings });
       }
     } catch (error) {
-      console.error('[Settings] 설정 조회 실패:', error);
+      logServerError('[Settings] 설정 조회 실패:', error, req);
       res.status(500).json({ error: '설정을 불러오는데 실패했습니다' });
     }
   });
@@ -2928,7 +2957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({ success: true, data: updated[0] });
       }
     } catch (error) {
-      console.error('[AdminSettings] 설정 업데이트 실패:', error);
+      logServerError('[AdminSettings] 설정 업데이트 실패:', error, req);
       res.status(500).json({ error: '설정 업데이트에 실패했습니다' });
     }
   });
@@ -2960,7 +2989,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(defaultSettings);
     } catch (error) {
-      console.error('[MessagingSettings] 설정 조회 실패:', error);
+      logServerError('[MessagingSettings] 설정 조회 실패:', error, req);
       res.status(500).json({ error: '메시징 설정을 불러오는데 실패했습니다' });
     }
   });
@@ -2993,7 +3022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, message: '설정이 저장되어 즉시 반영되었습니다' });
     } catch (error) {
-      console.error('[MessagingSettings] 설정 저장 실패:', error);
+      logServerError('[MessagingSettings] 설정 저장 실패:', error, req);
       res.status(500).json({ error: '메시징 설정을 저장하는데 실패했습니다' });
     }
   });
@@ -3037,7 +3066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `${to}로 테스트 이메일을 발송했습니다` 
       });
     } catch (error) {
-      console.error('[EmailTest] 이메일 테스트 발송 실패:', error);
+      logServerError('[EmailTest] 이메일 테스트 발송 실패:', error, req);
       res.status(500).json({ error: '테스트 이메일 발송에 실패했습니다' });
     }
   });
@@ -3082,7 +3111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `${phone}로 테스트 SMS를 발송했습니다` 
       });
     } catch (error) {
-      console.error('[SmsTest] SMS 테스트 발송 실패:', error);
+      logServerError('[SmsTest] SMS 테스트 발송 실패:', error, req);
       res.status(500).json({ error: '테스트 SMS 발송에 실패했습니다' });
     }
   });
@@ -3120,7 +3149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.paginated(result.data, query.page, query.limit, result.meta.total, '배너 목록을 조회했습니다.');
     } catch (error: any) {
-      console.error('배너 조회 오류:', error);
+      logServerError('배너 조회 오류:', error, req);
       if (error.name === 'ZodError') {
         res.error(ApiErrorCode.VALIDATION_ERROR, '잘못된 요청 파라미터입니다.', error.issues);
       } else {
@@ -3136,7 +3165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.success(activeBanners, `총 ${activeBanners.length}개의 활성 배너를 조회했습니다.`);
     } catch (error: any) {
-      console.error('활성 배너 조회 오류:', error);
+      logServerError('활성 배너 조회 오류:', error, req);
       res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, error.message || '활성 배너 데이터를 불러올 수 없습니다.', error);
     }
   });
@@ -3164,7 +3193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.success(banner, '배너를 조회했습니다.');
     } catch (error: any) {
-      console.error('배너 조회 오류:', error);
+      logServerError('배너 조회 오류:', error, req);
       res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, error.message || '배너 조회에 실패했습니다.', error);
     }
   });
@@ -3187,7 +3216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.success(null, '클릭이 기록되었습니다.');
     } catch (error: any) {
-      console.error('배너 클릭 추적 오류:', error);
+      logServerError('배너 클릭 추적 오류:', error, req);
       res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, error.message || '클릭 추적에 실패했습니다.', error);
     }
   });
@@ -3204,7 +3233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "상담 신청이 성공적으로 완료되었습니다." 
       });
     } catch (error) {
-      console.error('상담 신청 오류:', error);
+      logServerError('상담 신청 오류:', error, req);
       res.status(500).json({ error: "상담 신청 중 오류가 발생했습니다" });
     }
   });
@@ -3221,7 +3250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "메시지가 성공적으로 전송되었습니다." 
       });
     } catch (error) {
-      console.error('메시지 전송 오류:', error);
+      logServerError('메시지 전송 오류:', error, req);
       res.status(500).json({ error: "메시지 전송 중 오류가 발생했습니다" });
     }
   });
@@ -3245,7 +3274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('댓글 작성 오류:', error);
+      logServerError('댓글 작성 오류:', error, req);
       res.status(500).json({ error: "댓글 작성 중 오류가 발생했습니다" });
     }
   });
@@ -3384,7 +3413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('이벤트 목록 조회 오류:', error);
+      logServerError('이벤트 목록 조회 오류:', error, req);
       // 오류 발생 시에도 빈 배열 반환
       res.json({
         items: [],
@@ -3514,7 +3543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(eventData);
     } catch (error) {
-      console.error('이벤트 상세 조회 오류:', error);
+      logServerError('이벤트 상세 조회 오류:', error, req);
       res.status(500).json({ error: '이벤트 조회 중 오류가 발생했습니다.' });
     }
   });
@@ -3531,7 +3560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "이벤트 참가 신청이 완료되었습니다." 
       });
     } catch (error) {
-      console.error('이벤트 참가 신청 오류:', error);
+      logServerError('이벤트 참가 신청 오류:', error, req);
       res.status(500).json({ error: "이벤트 참가 신청 중 오류가 발생했습니다" });
     }
   });
@@ -3603,7 +3632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(places);
       
     } catch (error) {
-      console.error('장소 검색 오류:', error);
+      logServerError('장소 검색 오류:', error, req);
       res.status(500).json({ 
         error: '장소 검색에 실패했습니다.',
         details: error instanceof Error ? error.message : String(error)
@@ -3718,7 +3747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return [];
     } catch (error) {
-      console.error(`TALEZ ${type} 검색 오류:`, error);
+      logServerError(`TALEZ ${type} 검색 오류:`, error, req);
       return [];
     }
   }
@@ -3824,7 +3853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(places);
       
     } catch (error) {
-      console.error('주변 장소 검색 오류:', error);
+      logServerError('주변 장소 검색 오류:', error, req);
       res.status(500).json({ 
         error: '주변 장소를 검색하는데 실패했습니다.',
         details: error instanceof Error ? error.message : String(error)
@@ -4029,7 +4058,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(combinedResults);
       
     } catch (error) {
-      console.error('[Places Search API] 치명적 오류:', error);
+      logServerError('[Places Search API] 치명적 오류:', error, req);
       // 응답이 이미 전송되지 않았다면 빈 배열 반환
       if (!res.headersSent) {
         res.status(200).json([]);
@@ -4120,7 +4149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(placeDetails);
       
     } catch (error) {
-      console.error('장소 상세 정보 조회 오류:', error);
+      logServerError('장소 상세 정보 조회 오류:', error, req);
       res.status(500).json({ 
         error: '장소 상세 정보를 불러오는데 실패했습니다.',
         details: error instanceof Error ? error.message : String(error)
@@ -4141,7 +4170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "문의가 성공적으로 전송되었습니다." 
       });
     } catch (error) {
-      console.error('이벤트 문의 오류:', error);
+      logServerError('이벤트 문의 오류:', error, req);
       res.status(500).json({ error: "문의 전송 중 오류가 발생했습니다" });
     }
   });
@@ -4159,7 +4188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         likes: Math.floor(Math.random() * 100) + 50
       });
     } catch (error) {
-      console.error('좋아요 오류:', error);
+      logServerError('좋아요 오류:', error, req);
       res.status(500).json({ error: "좋아요 처리 중 오류가 발생했습니다" });
     }
   });
@@ -4179,7 +4208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shareUrl
       });
     } catch (error) {
-      console.error('공유 링크 생성 오류:', error);
+      logServerError('공유 링크 생성 오류:', error, req);
       res.status(500).json({ error: "공유 링크 생성 중 오류가 발생했습니다" });
     }
   });
@@ -4225,7 +4254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pet: petWithTrainingInfo
       });
     } catch (error) {
-      console.error('Error fetching pet:', error);
+      logServerError('Error fetching pet:', error, req);
       res.status(500).json({ error: '반려동물 정보 조회 중 오류가 발생했습니다' });
     }
   });
@@ -4306,7 +4335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pet: updatedPet
       });
     } catch (error) {
-      console.error('Error updating pet:', error);
+      logServerError('Error updating pet:', error, req);
       res.status(500).json({ 
         success: false,
         error: '반려동물 정보 업데이트 중 오류가 발생했습니다',
@@ -4392,7 +4421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         petId: petId
       });
     } catch (error) {
-      console.error('Error deleting pet:', error);
+      logServerError('Error deleting pet:', error, req);
       res.status(500).json({ 
         success: false,
         error: '반려동물 삭제 중 오류가 발생했습니다',
@@ -4408,7 +4437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const healthRecords = await storage.getPetHealthRecords(petId);
       res.json(healthRecords);
     } catch (error) {
-      console.error('Error fetching health records:', error);
+      logServerError('Error fetching health records:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -4419,7 +4448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const healthRecord = await storage.createHealthRecord(petId, req.body);
       res.status(201).json(healthRecord);
     } catch (error) {
-      console.error('Error creating health record:', error);
+      logServerError('Error creating health record:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -4430,7 +4459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vaccinations = await storage.getPetVaccinations(petId);
       res.json(vaccinations);
     } catch (error) {
-      console.error('Error fetching vaccinations:', error);
+      logServerError('Error fetching vaccinations:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -4441,7 +4470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const medications = await storage.getPetMedications(petId);
       res.json(medications);
     } catch (error) {
-      console.error('Error fetching medications:', error);
+      logServerError('Error fetching medications:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -4453,7 +4482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessions = await storage.getPetTrainingSessions(petId);
       res.json(sessions);
     } catch (error) {
-      console.error('Error fetching training sessions:', error);
+      logServerError('Error fetching training sessions:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -4464,7 +4493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const progress = await storage.getPetProgress(petId);
       res.json(progress);
     } catch (error) {
-      console.error('Error fetching pet progress:', error);
+      logServerError('Error fetching pet progress:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -4475,7 +4504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const achievements = await storage.getPetAchievements(petId);
       res.json(achievements);
     } catch (error) {
-      console.error('Error fetching achievements:', error);
+      logServerError('Error fetching achievements:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -4521,7 +4550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: generatedContent
       });
     } catch (error: any) {
-      console.error('AI 알림장 생성 오류:', error);
+      logServerError('AI 알림장 생성 오류:', error, req);
       res.status(500).json({
         success: false,
         error: 'AI 알림장 생성에 실패했습니다.'
@@ -4569,7 +4598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('훈련 일지 생성 오류:', error);
+      logServerError('훈련 일지 생성 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({
           error: '입력 데이터가 올바르지 않습니다.',
@@ -4613,7 +4642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('훈련 일지 목록 조회 오류:', error);
+      logServerError('훈련 일지 목록 조회 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({
           error: '쿼리 매개변수가 올바르지 않습니다.',
@@ -4675,7 +4704,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('훈련 일지 조회 오류:', error);
+      logServerError('훈련 일지 조회 오류:', error, req);
       res.status(500).json({
         error: '훈련 일지 조회 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -4726,7 +4755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('훈련 일지 수정 오류:', error);
+      logServerError('훈련 일지 수정 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({
           error: '입력 데이터가 올바르지 않습니다.',
@@ -4787,7 +4816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error) {
-      console.error('훈련 일지 삭제 오류:', error);
+      logServerError('훈련 일지 삭제 오류:', error, req);
       res.status(500).json({
         error: '훈련 일지 삭제 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -4846,7 +4875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('펫별 훈련 일지 조회 오류:', error);
+      logServerError('펫별 훈련 일지 조회 오류:', error, req);
       res.status(500).json({
         error: '훈련 일지 조회 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -4870,7 +4899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('훈련사별 일지 조회 오류:', error);
+      logServerError('훈련사별 일지 조회 오류:', error, req);
       res.status(500).json({
         error: '훈련사별 일지 조회 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -4921,7 +4950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
       } catch (error) {
-        console.error('파일 처리 오류:', error);
+        logServerError('파일 처리 오류:', error, req);
         res.status(500).json({
           error: '파일 처리 중 오류가 발생했습니다.',
           code: 'FILE_PROCESSING_ERROR'
@@ -4993,7 +5022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error: any) {
-      console.error('미디어 첨부 오류:', error);
+      logServerError('미디어 첨부 오류:', error, req);
       res.status(500).json({
         error: '미디어 첨부 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -5063,7 +5092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error) {
-      console.error('미디어 삭제 오류:', error);
+      logServerError('미디어 삭제 오류:', error, req);
       res.status(500).json({
         error: '미디어 삭제 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -5110,7 +5139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('대량 업데이트 오류:', error);
+      logServerError('대량 업데이트 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({
           error: '입력 데이터가 올바르지 않습니다.',
@@ -5166,7 +5195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('훈련 일지 생성 오류:', error);
+      logServerError('훈련 일지 생성 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({
           error: '입력 데이터가 올바르지 않습니다.',
@@ -5208,7 +5237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('훈련 일지 목록 조회 오류:', error);
+      logServerError('훈련 일지 목록 조회 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({
           error: '쿼리 매개변수가 올바르지 않습니다.',
@@ -5270,7 +5299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('훈련 일지 조회 오류:', error);
+      logServerError('훈련 일지 조회 오류:', error, req);
       res.status(500).json({
         error: '훈련 일지 조회 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -5321,7 +5350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('훈련 일지 수정 오류:', error);
+      logServerError('훈련 일지 수정 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({
           error: '입력 데이터가 올바르지 않습니다.',
@@ -5382,7 +5411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error) {
-      console.error('훈련 일지 삭제 오류:', error);
+      logServerError('훈련 일지 삭제 오류:', error, req);
       res.status(500).json({
         error: '훈련 일지 삭제 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -5441,7 +5470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('펫별 훈련 일지 조회 오류:', error);
+      logServerError('펫별 훈련 일지 조회 오류:', error, req);
       res.status(500).json({
         error: '훈련 일지 조회 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -5465,7 +5494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error('훈련사별 일지 조회 오류:', error);
+      logServerError('훈련사별 일지 조회 오류:', error, req);
       res.status(500).json({
         error: '훈련사별 일지 조회 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -5535,7 +5564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
       } catch (error) {
-        console.error('파일 처리 오류:', error);
+        logServerError('파일 처리 오류:', error, req);
         res.status(500).json({
           error: '파일 처리 중 오류가 발생했습니다.',
           code: 'FILE_PROCESSING_ERROR'
@@ -5607,7 +5636,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error: any) {
-      console.error('미디어 첨부 오류:', error);
+      logServerError('미디어 첨부 오류:', error, req);
       res.status(500).json({
         error: '미디어 첨부 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -5677,7 +5706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error) {
-      console.error('미디어 삭제 오류:', error);
+      logServerError('미디어 삭제 오류:', error, req);
       res.status(500).json({
         error: '미디어 삭제 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
@@ -5724,7 +5753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error('대량 업데이트 오류:', error);
+      logServerError('대량 업데이트 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({
           error: '입력 데이터가 올바르지 않습니다.',
@@ -5775,7 +5804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, consultations });
     } catch (error) {
-      console.error('상담 목록 조회 오류:', error);
+      logServerError('상담 목록 조회 오류:', error, req);
       res.status(500).json({ error: "상담 목록을 불러올 수 없습니다" });
     }
   });
@@ -5791,7 +5820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "상담이 성공적으로 취소되었습니다." 
       });
     } catch (error) {
-      console.error('상담 취소 오류:', error);
+      logServerError('상담 취소 오류:', error, req);
       res.status(500).json({ error: "상담 취소 중 오류가 발생했습니다" });
     }
   });
@@ -5821,7 +5850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, consultation });
     } catch (error) {
-      console.error('상담 상세 조회 오류:', error);
+      logServerError('상담 상세 조회 오류:', error, req);
       res.status(500).json({ error: "상담 정보를 불러올 수 없습니다" });
     }
   });
@@ -5849,7 +5878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: messageData
       });
     } catch (error) {
-      console.error('메시지 전송 오류:', error);
+      logServerError('메시지 전송 오류:', error, req);
       res.status(500).json({ error: "메시지 전송 중 오류가 발생했습니다" });
     }
   });
@@ -5879,7 +5908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: reservationData
       });
     } catch (error) {
-      console.error('예약 생성 오류:', error);
+      logServerError('예약 생성 오류:', error, req);
       res.status(500).json({ error: "예약 생성 중 오류가 발생했습니다" });
     }
   });
@@ -5923,7 +5952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: savedTrainer
       });
     } catch (error) {
-      console.error('훈련사 등록 오류:', error);
+      logServerError('훈련사 등록 오류:', error, req);
       res.status(500).json({ error: "훈련사 등록 중 오류가 발생했습니다" });
     }
   });
@@ -6092,7 +6121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pets: petsWithTrainingInfo
       });
     } catch (error) {
-      console.error('반려동물 목록 조회 오류:', error);
+      logServerError('반려동물 목록 조회 오류:', error, req);
       res.status(500).json({ error: "반려동물 목록 조회 중 오류가 발생했습니다" });
     }
   });
@@ -6155,7 +6184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pet: createdPet
       });
     } catch (error) {
-      console.error('반려동물 등록 오류:', error);
+      logServerError('반려동물 등록 오류:', error, req);
       res.status(500).json({ 
         success: false,
         error: "반려동물 등록 중 오류가 발생했습니다",
@@ -6210,7 +6239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "이미지가 성공적으로 업로드되었습니다."
       });
     } catch (error) {
-      console.error('이미지 업로드 오류:', error);
+      logServerError('이미지 업로드 오류:', error, req);
       res.status(500).json({ error: "이미지 업로드 중 오류가 발생했습니다" });
     }
   });
@@ -6238,7 +6267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "이미지가 성공적으로 업로드되었습니다."
       });
     } catch (error) {
-      console.error('단일 파일 업로드 오류:', error);
+      logServerError('단일 파일 업로드 오류:', error, req);
       res.status(500).json({ 
         success: false,
         message: "이미지 업로드 중 오류가 발생했습니다"
@@ -6305,7 +6334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error) {
-      console.error('로고 설정 API 오류:', error);
+      logServerError('로고 설정 API 오류:', error, req);
       res.status(500).json({ 
         success: false, 
         message: "로고 설정 중 오류가 발생했습니다."
@@ -6319,7 +6348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logoSettings = await storage.getLogoSettings();
       res.json(logoSettings);
     } catch (error) {
-      console.error('로고 설정 조회 실패:', error);
+      logServerError('로고 설정 조회 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: "로고 설정을 가져오는 중 오류가 발생했습니다."
@@ -6573,7 +6602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error) {
-      console.error('로고 업로드 오류:', error);
+      logServerError('로고 업로드 오류:', error, req);
       res.status(500).json({ error: "로고 업로드 중 오류가 발생했습니다" });
     }
   });
@@ -6587,7 +6616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logos: logoSettings
       });
     } catch (error) {
-      console.error('로고 설정 조회 오류:', error);
+      logServerError('로고 설정 조회 오류:', error, req);
       res.status(500).json({ error: "로고 설정을 불러오는 중 오류가 발생했습니다" });
     }
   });
@@ -6604,7 +6633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logoSymbolDark: logoSettings.logoSymbolDark || "/logo-compact-dark.svg"
       });
     } catch (error) {
-      console.error('로고 조회 오류:', error);
+      logServerError('로고 조회 오류:', error, req);
       res.status(500).json({ error: "로고를 불러오는 중 오류가 발생했습니다" });
     }
   });
@@ -6646,7 +6675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         consultation: consultationInfo
       });
     } catch (error) {
-      console.error('Zoom 링크 조회 오류:', error);
+      logServerError('Zoom 링크 조회 오류:', error, req);
       res.status(500).json({ error: "Zoom 링크 조회 중 오류가 발생했습니다" });
     }
   });
@@ -6689,7 +6718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profile: updatedProfile
       });
     } catch (error) {
-      console.error('프로필 업데이트 오류:', error);
+      logServerError('프로필 업데이트 오류:', error, req);
       res.status(500).json({
         success: false,
         error: "프로필 업데이트 중 오류가 발생했습니다."
@@ -6768,7 +6797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         upcomingSchedules
       });
     } catch (error) {
-      console.error('훈련사 대시보드 조회 오류:', error);
+      logServerError('훈련사 대시보드 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         error: '대시보드 데이터를 불러오는 중 오류가 발생했습니다.'
@@ -6802,7 +6831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profile: trainerProfile
       });
     } catch (error) {
-      console.error('프로필 조회 오류:', error);
+      logServerError('프로필 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         error: "프로필 조회 중 오류가 발생했습니다."
@@ -6835,7 +6864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         values: apiValues
       });
     } catch (error) {
-      console.error('API 설정 조회 오류:', error);
+      logServerError('API 설정 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         error: "API 설정을 불러오는 중 오류가 발생했습니다."
@@ -6863,7 +6892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(result);
     } catch (error) {
-      console.error('API 설정 저장 오류:', error);
+      logServerError('API 설정 저장 오류:', error, req);
       res.status(500).json({
         success: false,
         error: "API 설정 저장 중 오류가 발생했습니다."
@@ -6899,7 +6928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(testResult);
     } catch (error) {
-      console.error('API 테스트 오류:', error);
+      logServerError('API 테스트 오류:', error, req);
       res.status(500).json({
         success: false,
         error: "API 테스트 중 오류가 발생했습니다."
@@ -6941,7 +6970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         review: reviewData
       });
     } catch (error) {
-      console.error('리뷰 작성 오류:', error);
+      logServerError('리뷰 작성 오류:', error, req);
       res.status(500).json({ error: "리뷰 작성 중 오류가 발생했습니다" });
     }
   });
@@ -6989,7 +7018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total: filteredReviews.length
       });
     } catch (error) {
-      console.error('리뷰 목록 조회 오류:', error);
+      logServerError('리뷰 목록 조회 오류:', error, req);
       res.status(500).json({ error: "리뷰 목록 조회 중 오류가 발생했습니다" });
     }
   });
@@ -7027,7 +7056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         comment: commentData
       });
     } catch (error) {
-      console.error('댓글 작성 오류:', error);
+      logServerError('댓글 작성 오류:', error, req);
       res.status(500).json({ error: "댓글 작성 중 오류가 발생했습니다" });
     }
   });
@@ -7063,7 +7092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         comments: commentsWithReplies
       });
     } catch (error) {
-      console.error('댓글 목록 조회 오류:', error);
+      logServerError('댓글 목록 조회 오류:', error, req);
       res.status(500).json({ error: "댓글 목록 조회 중 오류가 발생했습니다" });
     }
   });
@@ -7160,7 +7189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error) {
-      console.error('화상 상담 참여 오류:', error);
+      logServerError('화상 상담 참여 오류:', error, req);
       res.status(500).json({ error: "화상 상담 참여 중 오류가 발생했습니다" });
     }
   });
@@ -7461,7 +7490,7 @@ app.get('/api/search', async (req, res) => {
     const endTime = Date.now();
     const responseTime = endTime - startTime;
 
-    console.error('[검색] 치명적 오류:', error);
+    logServerError('[검색] 치명적 오류:', error, req);
 
     res.status(500).json({ 
       error: '검색 서비스가 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.',
@@ -7576,7 +7605,7 @@ app.get('/api/search', async (req, res) => {
         }
       });
     } catch (error) {
-      console.error('[색상 설정] 오류:', error);
+      logServerError('[색상 설정] 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "색상 설정 저장 중 오류가 발생했습니다."
@@ -7599,7 +7628,7 @@ app.get('/api/search', async (req, res) => {
         settings: currentSettings
       });
     } catch (error) {
-      console.error('[색상 설정] 조회 오류:', error);
+      logServerError('[색상 설정] 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "색상 설정 조회 중 오류가 발생했습니다."
@@ -7653,7 +7682,7 @@ app.get('/api/search', async (req, res) => {
       }));
       res.json(transformedPosts);
     } catch (error) {
-      console.error('대체 훈련사 게시판 조회 오류:', error);
+      logServerError('대체 훈련사 게시판 조회 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 게시판 조회 중 오류가 발생했습니다" });
     }
   });
@@ -7664,7 +7693,7 @@ app.get('/api/search', async (req, res) => {
       const newPost = await storage.createSubstitutePost(postData);
       res.json(newPost);
     } catch (error) {
-      console.error('대체 훈련사 게시글 생성 오류:', error);
+      logServerError('대체 훈련사 게시글 생성 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 게시글 생성 중 오류가 발생했습니다" });
     }
   });
@@ -7689,7 +7718,7 @@ app.get('/api/search', async (req, res) => {
       const updatedPost = await storage.updateSubstitutePost(id, updateData);
       res.json(updatedPost);
     } catch (error) {
-      console.error('대체 훈련사 게시글 수정 오류:', error);
+      logServerError('대체 훈련사 게시글 수정 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 게시글 수정 중 오류가 발생했습니다" });
     }
   });
@@ -7713,7 +7742,7 @@ app.get('/api/search', async (req, res) => {
       await storage.deleteSubstitutePost(id);
       res.json({ success: true });
     } catch (error) {
-      console.error('대체 훈련사 게시글 삭제 오류:', error);
+      logServerError('대체 훈련사 게시글 삭제 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 게시글 삭제 중 오류가 발생했습니다" });
     }
   });
@@ -7726,7 +7755,7 @@ app.get('/api/search', async (req, res) => {
       const result = await storage.applyForSubstitutePost(id, applicationData);
       res.json(result);
     } catch (error) {
-      console.error('대체 훈련사 지원 오류:', error);
+      logServerError('대체 훈련사 지원 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 지원 중 오류가 발생했습니다" });
     }
   });
@@ -7737,7 +7766,7 @@ app.get('/api/search', async (req, res) => {
       const overview = await storage.getSubstituteOverview();
       res.json(overview);
     } catch (error) {
-      console.error('대체 훈련사 현황 조회 오류:', error);
+      logServerError('대체 훈련사 현황 조회 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 현황 조회 중 오류가 발생했습니다" });
     }
   });
@@ -7747,7 +7776,7 @@ app.get('/api/search', async (req, res) => {
       const institutes = await storage.getSubstituteInstitutes();
       res.json(institutes);
     } catch (error) {
-      console.error('대체 훈련사 기관 현황 조회 오류:', error);
+      logServerError('대체 훈련사 기관 현황 조회 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 기관 현황 조회 중 오류가 발생했습니다" });
     }
   });
@@ -7757,7 +7786,7 @@ app.get('/api/search', async (req, res) => {
       const alerts = await storage.getSubstituteAlerts();
       res.json(alerts);
     } catch (error) {
-      console.error('대체 훈련사 시스템 알림 조회 오류:', error);
+      logServerError('대체 훈련사 시스템 알림 조회 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 시스템 알림 조회 중 오류가 발생했습니다" });
     }
   });
@@ -7767,7 +7796,7 @@ app.get('/api/search', async (req, res) => {
       const trainers = await storage.getSubstituteTrainers();
       res.json(trainers);
     } catch (error) {
-      console.error('대체 훈련사 성과 조회 오류:', error);
+      logServerError('대체 훈련사 성과 조회 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 성과 조회 중 오류가 발생했습니다" });
     }
   });
@@ -7778,7 +7807,7 @@ app.get('/api/search', async (req, res) => {
       const result = await storage.resolveSubstituteAlert(id);
       res.json(result);
     } catch (error) {
-      console.error('대체 훈련사 알림 해결 오류:', error);
+      logServerError('대체 훈련사 알림 해결 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 알림 해결 중 오류가 발생했습니다" });
     }
   });
@@ -7816,7 +7845,7 @@ app.get('/api/search', async (req, res) => {
       ];
       res.json(mockApplications);
     } catch (error) {
-      console.error('대체 훈련사 지원 신청 조회 오류:', error);
+      logServerError('대체 훈련사 지원 신청 조회 오류:', error, req);
       res.status(500).json({ error: "대체 훈련사 지원 신청 조회 중 오류가 발생했습니다" });
     }
   });
@@ -7849,7 +7878,7 @@ app.get('/api/search', async (req, res) => {
       });
       
     } catch (error) {
-      console.error('[신청 상태 변경] 오류:', error);
+      logServerError('[신청 상태 변경] 오류:', error, req);
       res.status(500).json({ error: '신청 상태 변경 중 오류가 발생했습니다' });
     }
   });
@@ -7907,7 +7936,7 @@ app.get('/api/search', async (req, res) => {
         journal: newJournal
       });
     } catch (error) {
-      console.error('알림장 생성 오류:', error);
+      logServerError('알림장 생성 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "알림장 생성 중 오류가 발생했습니다."
@@ -7926,7 +7955,7 @@ app.get('/api/search', async (req, res) => {
         journals: journals
       });
     } catch (error) {
-      console.error('훈련사 알림장 조회 오류:', error);
+      logServerError('훈련사 알림장 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "알림장 조회 중 오류가 발생했습니다."
@@ -7948,7 +7977,7 @@ app.get('/api/search', async (req, res) => {
         journals: journals || []
       });
     } catch (error) {
-      console.error('견주 알림장 조회 오류:', error);
+      logServerError('견주 알림장 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "알림장 조회 중 오류가 발생했습니다."
@@ -7985,7 +8014,7 @@ app.get('/api/search', async (req, res) => {
         journals: journals || []
       });
     } catch (error) {
-      console.error('훈련 알림장 조회 오류:', error);
+      logServerError('훈련 알림장 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "훈련 알림장 조회 중 오류가 발생했습니다."
@@ -8024,7 +8053,7 @@ app.get('/api/search', async (req, res) => {
         journals: journals
       });
     } catch (error) {
-      console.error('Error fetching training journals:', error);
+      logServerError('Error fetching training journals:', error, req);
       res.status(500).json({ error: '훈련 알림장 조회 중 오류가 발생했습니다' });
     }
   });
@@ -8040,7 +8069,7 @@ app.get('/api/search', async (req, res) => {
         journals
       });
     } catch (error) {
-      console.error('알림장 목록 조회 오류:', error);
+      logServerError('알림장 목록 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "알림장 목록 조회 중 오류가 발생했습니다."
@@ -8059,7 +8088,7 @@ app.get('/api/search', async (req, res) => {
         journals
       });
     } catch (error) {
-      console.error('훈련사 알림장 목록 조회 오류:', error);
+      logServerError('훈련사 알림장 목록 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "알림장 목록 조회 중 오류가 발생했습니다."
@@ -8110,7 +8139,7 @@ app.get('/api/search', async (req, res) => {
         pet: updatedPet
       });
     } catch (error) {
-      console.error('훈련사 할당 오류:', error);
+      logServerError('훈련사 할당 오류:', error, req);
       res.status(500).json({ error: '훈련사 할당 중 오류가 발생했습니다' });
     }
   });
@@ -8151,7 +8180,7 @@ app.get('/api/search', async (req, res) => {
         pet: updatedPet
       });
     } catch (error) {
-      console.error('훈련사 해제 오류:', error);
+      logServerError('훈련사 해제 오류:', error, req);
       res.status(500).json({ error: '훈련사 해제 중 오류가 발생했습니다' });
     }
   });
@@ -8210,7 +8239,7 @@ app.get('/api/search', async (req, res) => {
         totalJournals: filteredJournals.length
       });
     } catch (error) {
-      console.error('알림장 현황 조회 오류:', error);
+      logServerError('알림장 현황 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "알림장 현황 조회 중 오류가 발생했습니다."
@@ -8283,7 +8312,7 @@ app.get('/api/search', async (req, res) => {
         totalJournals: instituteJournals.length
       });
     } catch (error) {
-      console.error('기관 알림장 현황 조회 오류:', error);
+      logServerError('기관 알림장 현황 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "기관 알림장 현황 조회 중 오류가 발생했습니다."
@@ -8443,7 +8472,7 @@ app.get('/api/search', async (req, res) => {
         notification
       });
     } catch (error: any) {
-      console.error('알림 생성 오류:', error);
+      logServerError('알림 생성 오류:', error, req);
       
       if (error.name === 'ZodError') {
         return res.status(400).json({
@@ -8480,7 +8509,7 @@ app.get('/api/search', async (req, res) => {
         ...result
       });
     } catch (error: any) {
-      console.error('알림 목록 조회 오류:', error);
+      logServerError('알림 목록 조회 오류:', error, req);
       
       if (error.name === 'ZodError') {
         return res.status(400).json({
@@ -8516,7 +8545,7 @@ app.get('/api/search', async (req, res) => {
         unreadCount
       });
     } catch (error: any) {
-      console.error('읽지 않은 알림 개수 조회 오류:', error);
+      logServerError('읽지 않은 알림 개수 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         error: "읽지 않은 알림 개수 조회 중 오류가 발생했습니다."
@@ -8662,7 +8691,7 @@ app.get('/api/search', async (req, res) => {
         notification
       });
     } catch (error: any) {
-      console.error('알림 조회 오류:', error);
+      logServerError('알림 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         error: "알림 조회 중 오류가 발생했습니다."
@@ -8723,7 +8752,7 @@ app.get('/api/search', async (req, res) => {
         notification: updatedNotification
       });
     } catch (error: any) {
-      console.error('알림 수정 오류:', error);
+      logServerError('알림 수정 오류:', error, req);
       
       if (error.name === 'ZodError') {
         return res.status(400).json({
@@ -8791,10 +8820,90 @@ app.get('/api/search', async (req, res) => {
         message: "알림이 삭제되었습니다."
       });
     } catch (error: any) {
-      console.error('알림 삭제 오류:', error);
+      logServerError('알림 삭제 오류:', error, req);
       return res.status(500).json({
         success: false,
         error: "알림 삭제 중 오류가 발생했습니다."
+      });
+    }
+  });
+
+  // PATCH /api/notifications/mark-read - 다중 알림 읽음 처리
+  app.patch("/api/notifications/mark-read", csrfProtection, async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: "로그인이 필요합니다."
+        });
+      }
+
+      const validatedData = bulkNotificationUpdateSchema.parse(req.body);
+      
+      // 모든 알림이 현재 사용자의 것인지 확인
+      const notificationIds = validatedData.notificationIds;
+      for (const id of notificationIds) {
+        const notification = storage.getNotificationById(id);
+        if (!notification || notification.userId !== userId) {
+          return res.status(403).json({
+            success: false,
+            error: "일부 알림에 접근할 권한이 없습니다."
+          });
+        }
+      }
+
+      const updates = { ...validatedData.updates, isRead: true };
+      const updatedNotifications = storage.bulkUpdateNotifications(notificationIds, updates);
+
+      return res.json({
+        success: true,
+        message: `${updatedNotifications.length}개의 알림이 읽음 처리되었습니다.`,
+        updatedCount: updatedNotifications.length
+      });
+    } catch (error: any) {
+      logServerError('다중 알림 읽음 처리 오류:', error, req);
+      
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "요청 데이터가 올바르지 않습니다.",
+          details: error.errors
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        error: "알림 읽음 처리 중 오류가 발생했습니다."
+      });
+    }
+  });
+
+  // PATCH /api/notifications/mark-all-read - 모든 알림 읽음 처리
+  app.patch("/api/notifications/mark-all-read", csrfProtection, async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: "로그인이 필요합니다."
+        });
+      }
+
+      const markedCount = storage.markAllNotificationsAsRead(userId);
+
+      return res.json({
+        success: true,
+        message: `${markedCount}개의 알림이 모두 읽음 처리되었습니다.`,
+        markedCount
+      });
+    } catch (error: any) {
+      logServerError('모든 알림 읽음 처리 오류:', error, req);
+      return res.status(500).json({
+        success: false,
+        error: "모든 알림 읽음 처리 중 오류가 발생했습니다."
       });
     }
   });
@@ -8889,7 +8998,7 @@ app.get('/api/search', async (req, res) => {
       res.json(response);
       
     } catch (error) {
-      console.error('알림장 현황 조회 오류:', error);
+      logServerError('알림장 현황 조회 오류:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '알림장 현황을 불러오는 중 오류가 발생했습니다.' 
@@ -9045,7 +9154,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('사용자 검색 오류:', error);
+      logServerError('사용자 검색 오류:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '사용자 검색 중 오류가 발생했습니다.' 
@@ -9145,7 +9254,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('회원 상태 조회 오류:', error);
+      logServerError('회원 상태 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '회원 상태 정보를 가져오는데 실패했습니다.'
@@ -9202,7 +9311,7 @@ app.get('/api/search', async (req, res) => {
             post = await contentCrawler.postToCommunity(firstArticleContent, storage);
             console.log(`[콘텐츠 크롤링] 커뮤니티 게시글 자동 등록 완료: ${post.id}`);
           } catch (error) {
-            console.error(`[콘텐츠 크롤링] 커뮤니티 등록 실패:`, error);
+            logServerError(`[콘텐츠 크롤링] 커뮤니티 등록 실패:`, error, req);
           }
         }
 
@@ -9253,7 +9362,7 @@ app.get('/api/search', async (req, res) => {
               }
             });
           } catch (error) {
-            console.error(`[콘텐츠 크롤링] 커뮤니티 등록 실패:`, error);
+            logServerError(`[콘텐츠 크롤링] 커뮤니티 등록 실패:`, error, req);
             return res.json({
               success: true,
               message: "크롤링은 완료되었지만 커뮤니티 등록에 실패했습니다.",
@@ -9274,7 +9383,7 @@ app.get('/api/search', async (req, res) => {
       }
 
     } catch (error) {
-      console.error('콘텐츠 크롤링 오류:', error);
+      logServerError('콘텐츠 크롤링 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "크롤링 중 오류가 발생했습니다."
@@ -9308,7 +9417,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('수동 등록 오류:', error);
+      logServerError('수동 등록 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "커뮤니티 등록 중 오류가 발생했습니다."
@@ -9370,7 +9479,7 @@ app.get('/api/search', async (req, res) => {
               success: true
             });
           } catch (error) {
-            console.error(`게시글 등록 실패: ${content.title}`, error);
+            logServerError(`게시글 등록 실패: ${content.title}`, error, req);
             results.push({
               crawledContent: content,
               success: false,
@@ -9397,7 +9506,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('다중 콘텐츠 크롤링 오류:', error);
+      logServerError('다중 콘텐츠 크롤링 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "크롤링 중 오류가 발생했습니다."
@@ -9445,7 +9554,7 @@ app.get('/api/search', async (req, res) => {
       console.log(`[Commission] ${formattedProducts.length}개 상품 조회 완료`);
       res.json({ success: true, products: formattedProducts });
     } catch (error) {
-      console.error('[Commission] 상품 조회 오류:', error);
+      logServerError('[Commission] 상품 조회 오류:', error, req);
       res.status(500).json({ success: false, error: '상품 조회 중 오류가 발생했습니다.' });
     }
   });
@@ -9482,7 +9591,7 @@ app.get('/api/search', async (req, res) => {
       console.log(`[Commission] 수수료율 수정 완료`);
       res.json({ success: true, message: '수수료율이 수정되었습니다.' });
     } catch (error) {
-      console.error('[Commission] 수수료율 수정 오류:', error);
+      logServerError('[Commission] 수수료율 수정 오류:', error, req);
       res.status(500).json({ success: false, error: '수수료율 수정 중 오류가 발생했습니다.' });
     }
   });
@@ -9516,7 +9625,7 @@ app.get('/api/search', async (req, res) => {
       console.log(`[Commission] ${formattedReferrers.length}명 추천인 조회 완료`);
       res.json({ success: true, referrers: formattedReferrers });
     } catch (error) {
-      console.error('[Commission] 추천인 조회 오류:', error);
+      logServerError('[Commission] 추천인 조회 오류:', error, req);
       res.status(500).json({ success: false, error: '추천인 조회 중 오류가 발생했습니다.' });
     }
   });
@@ -9560,7 +9669,7 @@ app.get('/api/search', async (req, res) => {
       console.log(`[Commission] 정산 승인 완료: ${newSettlement[0].id}`);
       res.json({ success: true, message: '정산이 승인되었습니다.', settlement: newSettlement[0] });
     } catch (error) {
-      console.error('[Commission] 정산 승인 오류:', error);
+      logServerError('[Commission] 정산 승인 오류:', error, req);
       res.status(500).json({ success: false, error: '정산 승인 중 오류가 발생했습니다.' });
     }
   });
@@ -9643,7 +9752,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(inspection);
     } catch (error) {
-      console.error('서비스 검수 오류:', error);
+      logServerError('서비스 검수 오류:', error, req);
       res.status(500).json({ error: '서비스 검수 중 오류가 발생했습니다' });
     }
   });
@@ -9676,7 +9785,7 @@ app.get('/api/search', async (req, res) => {
       res.json(mockLinkInfo);
       
     } catch (error) {
-      console.error('링크 정보 추출 오류:', error);
+      logServerError('링크 정보 추출 오류:', error, req);
       res.status(500).json({ error: '링크 정보 추출 중 오류가 발생했습니다.' });
     }
   });
@@ -9709,7 +9818,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(features);
     } catch (error) {
-      console.error('기능 상태 조회 오류:', error);
+      logServerError('기능 상태 조회 오류:', error, req);
       res.status(500).json({ error: '기능 상태 조회 중 오류가 발생했습니다' });
     }
   });
@@ -9782,7 +9891,7 @@ app.get('/api/search', async (req, res) => {
         totalCount: videoClasses.length
       });
     } catch (error) {
-      console.error('Error fetching video classes:', error);
+      logServerError('Error fetching video classes:', error, req);
       res.status(500).json({ 
         success: false, 
         error: '화상수업 목록을 가져오는 중 오류가 발생했습니다.' 
@@ -9822,7 +9931,7 @@ app.get('/api/search', async (req, res) => {
         message: 'Google Meet 미팅이 성공적으로 생성되었습니다.'
       });
     } catch (error) {
-      console.error('Error creating meeting:', error);
+      logServerError('Error creating meeting:', error, req);
       res.status(500).json({
         success: false,
         error: '미팅 생성 중 오류가 발생했습니다.'
@@ -9849,7 +9958,7 @@ app.get('/api/search', async (req, res) => {
         meetings
       });
     } catch (error) {
-      console.error('Error fetching user meetings:', error);
+      logServerError('Error fetching user meetings:', error, req);
       res.status(500).json({
         success: false,
         error: '미팅 목록을 가져오는 중 오류가 발생했습니다.'
@@ -9884,7 +9993,7 @@ app.get('/api/search', async (req, res) => {
         ...result
       });
     } catch (error) {
-      console.error('Error fetching care logs:', error);
+      logServerError('Error fetching care logs:', error, req);
       res.status(500).json({
         success: false,
         error: '알림장 데이터를 가져오는 중 오류가 발생했습니다.'
@@ -9951,7 +10060,7 @@ app.get('/api/search', async (req, res) => {
         message: 'AI 분석이 완료되었습니다.'
       });
     } catch (error) {
-      console.error('Error performing AI analysis:', error);
+      logServerError('Error performing AI analysis:', error, req);
       res.status(500).json({
         success: false,
         error: 'AI 분석 중 오류가 발생했습니다.'
@@ -10011,7 +10120,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json({ success: true, logs });
     } catch (error) {
-      console.error('[다이어리] 조회 오류:', error);
+      logServerError('[다이어리] 조회 오류:', error, req);
       res.status(500).json({ success: false, error: '다이어리 조회 중 오류' });
     }
   });
@@ -10036,7 +10145,7 @@ app.get('/api/search', async (req, res) => {
       const created = await storage.createCareLog(payload);
       res.status(201).json({ success: true, log: created });
     } catch (error) {
-      console.error('[다이어리] 생성 오류:', error);
+      logServerError('[다이어리] 생성 오류:', error, req);
       res.status(500).json({ success: false, error: '다이어리 생성 중 오류' });
     }
   });
@@ -10060,7 +10169,7 @@ app.get('/api/search', async (req, res) => {
       const updated = await storage.updateCareLog(id, updates);
       res.json({ success: true, log: updated });
     } catch (error) {
-      console.error('[다이어리] 수정 오류:', error);
+      logServerError('[다이어리] 수정 오류:', error, req);
       res.status(500).json({ success: false, error: '다이어리 수정 중 오류' });
     }
   });
@@ -10081,7 +10190,7 @@ app.get('/api/search', async (req, res) => {
       const ok = await storage.deleteCareLog(id);
       res.json({ success: ok });
     } catch (error) {
-      console.error('[다이어리] 삭제 오류:', error);
+      logServerError('[다이어리] 삭제 오류:', error, req);
       res.status(500).json({ success: false, error: '다이어리 삭제 중 오류' });
     }
   });
@@ -10101,7 +10210,7 @@ app.get('/api/search', async (req, res) => {
       const updated = await storage.updatePet(petId, { diaryShareWithTrainer: enabled });
       res.json({ success: true, pet: updated });
     } catch (error) {
-      console.error('[다이어리] 공유 토글 오류:', error);
+      logServerError('[다이어리] 공유 토글 오류:', error, req);
       res.status(500).json({ success: false, error: '공유 설정 변경 중 오류' });
     }
   });
@@ -10149,7 +10258,7 @@ app.get('/api/search', async (req, res) => {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send('\uFEFF' + lines.join('\n'));
     } catch (error) {
-      console.error('[다이어리] CSV 오류:', error);
+      logServerError('[다이어리] CSV 오류:', error, req);
       res.status(500).json({ success: false, error: 'CSV 내보내기 중 오류' });
     }
   });
@@ -10164,7 +10273,7 @@ app.get('/api/search', async (req, res) => {
       const items = await storage.getMedicationsByPetId(petId);
       res.json({ success: true, medications: items });
     } catch (error) {
-      console.error('[약복용] 조회 오류:', error);
+      logServerError('[약복용] 조회 오류:', error, req);
       res.status(500).json({ success: false, error: '조회 중 오류' });
     }
   });
@@ -10199,7 +10308,7 @@ app.get('/api/search', async (req, res) => {
 
       res.status(201).json({ success: true, medication: created });
     } catch (error) {
-      console.error('[약복용] 생성 오류:', error);
+      logServerError('[약복용] 생성 오류:', error, req);
       res.status(500).json({ success: false, error: '생성 중 오류' });
     }
   });
@@ -10220,7 +10329,7 @@ app.get('/api/search', async (req, res) => {
       const updated = await storage.updateMedication(id, updates);
       res.json({ success: true, medication: updated });
     } catch (error) {
-      console.error('[약복용] 수정 오류:', error);
+      logServerError('[약복용] 수정 오류:', error, req);
       res.status(500).json({ success: false, error: '수정 중 오류' });
     }
   });
@@ -10238,7 +10347,7 @@ app.get('/api/search', async (req, res) => {
       const ok = await storage.deleteMedication(id);
       res.json({ success: ok });
     } catch (error) {
-      console.error('[약복용] 삭제 오류:', error);
+      logServerError('[약복용] 삭제 오류:', error, req);
       res.status(500).json({ success: false, error: '삭제 중 오류' });
     }
   });
@@ -10255,7 +10364,7 @@ app.get('/api/search', async (req, res) => {
       ]);
       res.json({ success: true, vaccinations: vacs, medications: meds });
     } catch (error) {
-      console.error('[다이어리] 다가오는 일정 오류:', error);
+      logServerError('[다이어리] 다가오는 일정 오류:', error, req);
       res.status(500).json({ success: false, error: '조회 중 오류' });
     }
   });
@@ -10279,7 +10388,7 @@ app.get('/api/search', async (req, res) => {
         analyses
       });
     } catch (error) {
-      console.error('Error fetching AI analysis history:', error);
+      logServerError('Error fetching AI analysis history:', error, req);
       res.status(500).json({
         success: false,
         error: 'AI 분석 기록을 가져오는 중 오류가 발생했습니다.'
@@ -10487,7 +10596,7 @@ app.get('/api/search', async (req, res) => {
         isEmpty: series.length === 0,
       });
     } catch (error) {
-      console.error('Error fetching AI analysis trends:', error);
+      logServerError('Error fetching AI analysis trends:', error, req);
       res.status(500).json({ success: false, error: '추이 데이터를 가져오는 중 오류가 발생했습니다.' });
     }
   });
@@ -10566,7 +10675,7 @@ app.get('/api/search', async (req, res) => {
         highlights,
       });
     } catch (error) {
-      console.error('Error comparing AI analyses:', error);
+      logServerError('Error comparing AI analyses:', error, req);
       res.status(500).json({ success: false, error: '분석 비교 중 오류가 발생했습니다.' });
     }
   });
@@ -10653,7 +10762,7 @@ app.get('/api/search', async (req, res) => {
       res.setHeader('Cache-Control', 'private, no-store');
       return res.end(result.buffer);
     } catch (error) {
-      console.error('[AI 분석 PDF] 생성 실패:', error);
+      logServerError('[AI 분석 PDF] 생성 실패:', error, req);
       res.status(500).json({ success: false, error: 'PDF 생성 중 오류가 발생했습니다.' });
     }
   });
@@ -10702,7 +10811,7 @@ app.get('/api/search', async (req, res) => {
         shareUrl,
       });
     } catch (error) {
-      console.error('[AI 분석 공유] 토큰 발급 실패:', error);
+      logServerError('[AI 분석 공유] 토큰 발급 실패:', error, req);
       res.status(500).json({ success: false, error: '공유 링크 생성 중 오류가 발생했습니다.' });
     }
   });
@@ -10720,7 +10829,7 @@ app.get('/api/search', async (req, res) => {
       res.setHeader('Cache-Control', 'private, no-store');
       return res.end(result.buffer);
     } catch (error) {
-      console.error('[AI 분석 공유] PDF 다운로드 실패:', error);
+      logServerError('[AI 분석 공유] PDF 다운로드 실패:', error, req);
       res.status(500).json({ success: false, error: 'PDF 생성 중 오류가 발생했습니다.' });
     }
   });
@@ -10751,7 +10860,7 @@ app.get('/api/search', async (req, res) => {
         trainers: trainersWithVideoInfo 
       });
     } catch (error) {
-      console.error('Error fetching trainers with video info:', error);
+      logServerError('Error fetching trainers with video info:', error, req);
       res.status(500).json({ 
         success: false, 
         error: '훈련사 화상수업 정보를 가져오는 중 오류가 발생했습니다.' 
@@ -11359,7 +11468,7 @@ app.get('/api/search', async (req, res) => {
         data: requests
       });
     } catch (error: any) {
-      console.error('[Admin] 정보 수정 요청 목록 조회 실패:', error);
+      logServerError('[Admin] 정보 수정 요청 목록 조회 실패:', error, req);
       res.status(500).json({
         success: false,
         message: error.message || '요청 목록 조회에 실패했습니다.'
@@ -11383,7 +11492,7 @@ app.get('/api/search', async (req, res) => {
         request: result
       });
     } catch (error: any) {
-      console.error('[Admin] 정보 수정 요청 처리 실패:', error);
+      logServerError('[Admin] 정보 수정 요청 처리 실패:', error, req);
       res.status(500).json({
         success: false,
         message: error.message || '요청 처리에 실패했습니다.'
@@ -11414,7 +11523,7 @@ app.get('/api/search', async (req, res) => {
         '배너 목록을 조회했습니다'
       );
     } catch (error: any) {
-      console.error('관리자 배너 조회 오류:', error);
+      logServerError('관리자 배너 조회 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         error.message || '배너 조회에 실패했습니다'
@@ -11436,7 +11545,7 @@ app.get('/api/search', async (req, res) => {
         201
       );
     } catch (error: any) {
-      console.error('[Admin Banner API] 배너 생성 오류:', error);
+      logServerError('[Admin Banner API] 배너 생성 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         error.message || '배너 생성에 실패했습니다'
@@ -11474,7 +11583,7 @@ app.get('/api/search', async (req, res) => {
         '배너가 성공적으로 수정되었습니다'
       );
     } catch (error: any) {
-      console.error('[Admin Banner API] 배너 수정 오류:', error);
+      logServerError('[Admin Banner API] 배너 수정 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         error.message || '배너 수정에 실패했습니다'
@@ -11512,7 +11621,7 @@ app.get('/api/search', async (req, res) => {
         '배너가 성공적으로 삭제되었습니다'
       );
     } catch (error: any) {
-      console.error('[Admin Banner API] 배너 삭제 오류:', error);
+      logServerError('[Admin Banner API] 배너 삭제 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         error.message || '배너 삭제에 실패했습니다'
@@ -11545,7 +11654,7 @@ app.get('/api/search', async (req, res) => {
         `배너가 ${updatedBanner.isActive ? '활성화' : '비활성화'}되었습니다`
       );
     } catch (error: any) {
-      console.error('[Admin Banner API] 배너 토글 오류:', error);
+      logServerError('[Admin Banner API] 배너 토글 오류:', error, req);
       const isNotFound = error.message?.includes('찾을 수 없습니다');
       return res.error(
         isNotFound ? ApiErrorCode.RESOURCE_NOT_FOUND : ApiErrorCode.INTERNAL_SERVER_ERROR,
@@ -11572,7 +11681,7 @@ app.get('/api/search', async (req, res) => {
         '배너 순서가 성공적으로 변경되었습니다'
       );
     } catch (error: any) {
-      console.error('[Admin Banner API] 배너 순서 변경 오류:', error);
+      logServerError('[Admin Banner API] 배너 순서 변경 오류:', error, req);
       const isNotFound = error.message?.includes('찾을 수 없습니다');
       return res.error(
         isNotFound ? ApiErrorCode.RESOURCE_NOT_FOUND : ApiErrorCode.INTERNAL_SERVER_ERROR,
@@ -11619,7 +11728,7 @@ app.get('/api/search', async (req, res) => {
       
       return res.success(data, message, errors.length === 0 ? 200 : 207);
     } catch (error: any) {
-      console.error('[Admin Banner API] 배너 대량 업데이트 오류:', error);
+      logServerError('[Admin Banner API] 배너 대량 업데이트 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         error.message || '배너 대량 업데이트에 실패했습니다'
@@ -11715,7 +11824,7 @@ app.get('/api/search', async (req, res) => {
       
       return res.success(data, '배너 분석 데이터를 조회했습니다');
     } catch (error: any) {
-      console.error('[Admin Banner API] 배너 분석 오류:', error);
+      logServerError('[Admin Banner API] 배너 분석 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         error.message || '배너 분석에 실패했습니다'
@@ -11779,7 +11888,7 @@ app.get('/api/search', async (req, res) => {
 
       return res.success(data, '배너 상세 정보를 조회했습니다');
     } catch (error: any) {
-      console.error('[Admin Banner API] 관리자 배너 조회 오류:', error);
+      logServerError('[Admin Banner API] 관리자 배너 조회 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         error.message || '배너 조회에 실패했습니다'
@@ -11851,7 +11960,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('업체 등록 오류:', error);
+      logServerError('업체 등록 오류:', error, req);
       res.status(500).json({ 
         error: '업체 등록 중 오류가 발생했습니다.' 
       });
@@ -11871,7 +11980,7 @@ app.get('/api/search', async (req, res) => {
         locations: global.adminLocations
       });
     } catch (error) {
-      console.error('업체 목록 조회 오류:', error);
+      logServerError('업체 목록 조회 오류:', error, req);
       res.status(500).json({ 
         error: '업체 목록 조회에 실패했습니다.' 
       });
@@ -11902,7 +12011,7 @@ app.get('/api/search', async (req, res) => {
 
       console.log('업체 삭제:', locationId);
     } catch (error) {
-      console.error('업체 삭제 오류:', error);
+      logServerError('업체 삭제 오류:', error, req);
       res.status(500).json({ 
         error: '업체 삭제에 실패했습니다.' 
       });
@@ -11935,7 +12044,7 @@ app.get('/api/search', async (req, res) => {
           location: global.adminLocations[locationIndex]
         });
       } catch (error) {
-        console.error('업체 정보 수정 오류:', error);
+        logServerError('업체 정보 수정 오류:', error, req);
         res.status(500).json({ error: '업체 정보 수정 중 오류가 발생했습니다.' });
       }
     });
@@ -11961,7 +12070,7 @@ app.get('/api/search', async (req, res) => {
           location: global.adminLocations[locationIndex]
         });
       } catch (error) {
-        console.error('업체 상태 변경 오류:', error);
+        logServerError('업체 상태 변경 오류:', error, req);
         res.status(500).json({ error: '업체 상태 변경 중 오류가 발생했습니다.' });
       }
     });
@@ -11979,7 +12088,7 @@ app.get('/api/search', async (req, res) => {
         configs
       });
     } catch (error) {
-      console.error('포인트 설정 조회 오류:', error);
+      logServerError('포인트 설정 조회 오류:', error, req);
       res.status(500).json({ 
         error: '포인트 설정 조회 중 오류가 발생했습니다.' 
       });
@@ -12009,7 +12118,7 @@ app.get('/api/search', async (req, res) => {
         config: updatedConfig
       });
     } catch (error) {
-      console.error('포인트 설정 업데이트 오류:', error);
+      logServerError('포인트 설정 업데이트 오류:', error, req);
       res.status(500).json({ 
         error: '포인트 설정 업데이트 중 오류가 발생했습니다.' 
       });
@@ -12033,7 +12142,7 @@ app.get('/api/search', async (req, res) => {
         logs
       });
     } catch (error) {
-      console.error('훈련사 활동 로그 조회 오류:', error);
+      logServerError('훈련사 활동 로그 조회 오류:', error, req);
       res.status(500).json({ 
         error: '훈련사 활동 로그 조회 중 오류가 발생했습니다.' 
       });
@@ -12078,7 +12187,7 @@ app.get('/api/search', async (req, res) => {
         log: newLog
       });
     } catch (error) {
-      console.error('훈련사 활동 로그 추가 오류:', error);
+      logServerError('훈련사 활동 로그 추가 오류:', error, req);
       res.status(500).json({ 
         error: '훈련사 활동 로그 추가 중 오류가 발생했습니다.' 
       });
@@ -12102,7 +12211,7 @@ app.get('/api/search', async (req, res) => {
         points
       });
     } catch (error) {
-      console.error('훈련사 포인트 조회 오류:', error);
+      logServerError('훈련사 포인트 조회 오류:', error, req);
       res.status(500).json({ 
         error: '훈련사 포인트 조회 중 오류가 발생했습니다.' 
       });
@@ -12117,7 +12226,7 @@ app.get('/api/search', async (req, res) => {
       const settings = await storage.getLogoSettings();
       res.json(settings);
     } catch (error) {
-      console.error('로고 설정 조회 오류:', error);
+      logServerError('로고 설정 조회 오류:', error, req);
       res.status(500).json({ error: '로고 설정 조회에 실패했습니다.' });
     }
   });
@@ -12133,7 +12242,7 @@ app.get('/api/search', async (req, res) => {
       };
       res.json(logoData);
     } catch (error) {
-      console.error('로고 설정 조회 오류:', error);
+      logServerError('로고 설정 조회 오류:', error, req);
       res.status(500).json({ error: '로고 설정 조회에 실패했습니다.' });
     }
   });
@@ -12144,7 +12253,7 @@ app.get('/api/search', async (req, res) => {
       const settings = await storage.getLogoSettings();
       res.json(settings);
     } catch (error) {
-      console.error('로고 설정 조회 오류:', error);
+      logServerError('로고 설정 조회 오류:', error, req);
       res.status(500).json({ error: '로고 설정 조회에 실패했습니다.' });
     }
   });
@@ -12173,7 +12282,7 @@ app.get('/api/search', async (req, res) => {
         settings
       });
     } catch (error) {
-      console.error('로고 설정 업데이트 오류:', error);
+      logServerError('로고 설정 업데이트 오류:', error, req);
       res.status(500).json({ error: '로고 설정 업데이트에 실패했습니다.' });
     }
   });
@@ -12188,7 +12297,7 @@ app.get('/api/search', async (req, res) => {
         settings
       });
     } catch (error) {
-      console.error('로고 설정 초기화 오류:', error);
+      logServerError('로고 설정 초기화 오류:', error, req);
       res.status(500).json({ error: '로고 설정 초기화에 실패했습니다.' });
     }
   });
@@ -12233,7 +12342,7 @@ app.get('/api/search', async (req, res) => {
         settings
       });
     } catch (error) {
-      console.error('로고 설정 오류:', error);
+      logServerError('로고 설정 오류:', error, req);
       res.status(500).json({ error: '로고 설정에 실패했습니다.' });
     }
   });
@@ -12252,7 +12361,7 @@ app.get('/api/search', async (req, res) => {
         message: '로고가 성공적으로 삭제되었습니다.' 
       });
     } catch (error) {
-      console.error('로고 삭제 오류:', error);
+      logServerError('로고 삭제 오류:', error, req);
       res.status(500).json({ error: '로고 삭제에 실패했습니다.' });
     }
   });
@@ -12343,7 +12452,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(nearbyPlaces);
     } catch (error) {
-      console.error('위치 기반 장소 조회 오류:', error);
+      logServerError('위치 기반 장소 조회 오류:', error, req);
       res.status(500).json({ error: '위치 기반 장소 조회에 실패했습니다.' });
     }
   });
@@ -12404,7 +12513,7 @@ app.get('/api/search', async (req, res) => {
           apiVersion: '2023-10-16',
         });
       } catch (error) {
-        console.error('Stripe 인스턴스 생성 실패:', error);
+        logServerError('Stripe 인스턴스 생성 실패:', error, req);
         return res.status(500).json({ error: '결제 시스템 초기화에 실패했습니다.' });
       }
 
@@ -12420,7 +12529,7 @@ app.get('/api/search', async (req, res) => {
         paymentIntentId: paymentIntent.id
       });
     } catch (error) {
-      console.error('Payment intent 생성 오류:', error);
+      logServerError('Payment intent 생성 오류:', error, req);
       res.status(500).json({ error: '결제 준비 중 오류가 발생했습니다.' });
     }
   });
@@ -12657,7 +12766,7 @@ app.get('/api/search', async (req, res) => {
         res.status(400).json({ error: '결제가 완료되지 않았습니다.', status: paymentIntent.status });
       }
     } catch (error) {
-      console.error('결제 확인 오류:', error);
+      logServerError('결제 확인 오류:', error, req);
       res.status(500).json({ error: '결제 확인 중 오류가 발생했습니다.' });
     }
   });
@@ -12809,7 +12918,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error: any) {
-      console.error('환불 처리 오류:', error);
+      logServerError('환불 처리 오류:', error, req);
       res.status(500).json({ 
         error: '환불 처리 중 오류가 발생했습니다.',
         details: error.message 
@@ -12844,7 +12953,7 @@ app.get('/api/search', async (req, res) => {
         payments: paymentHistory
       });
     } catch (error) {
-      console.error('결제 이력 조회 오류:', error);
+      logServerError('결제 이력 조회 오류:', error, req);
       res.status(500).json({ error: '결제 이력 조회 중 오류가 발생했습니다.' });
     }
   });
@@ -12880,7 +12989,7 @@ app.get('/api/search', async (req, res) => {
         programs
       });
     } catch (error) {
-      console.error('훈련사 양성 과정 목록 조회 오류:', error);
+      logServerError('훈련사 양성 과정 목록 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '훈련사 양성 과정 목록을 불러오는 중 오류가 발생했습니다.'
@@ -12916,7 +13025,7 @@ app.get('/api/search', async (req, res) => {
         applications
       });
     } catch (error) {
-      console.error('[DB] 훈련사 신청 목록 조회 오류:', error);
+      logServerError('[DB] 훈련사 신청 목록 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '훈련사 신청 목록을 불러오는 중 오류가 발생했습니다.'
@@ -12953,7 +13062,7 @@ app.get('/api/search', async (req, res) => {
         certifications
       });
     } catch (error) {
-      console.error('훈련사 인증 기록 조회 오류:', error);
+      logServerError('훈련사 인증 기록 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '훈련사 인증 기록을 불러오는 중 오류가 발생했습니다.'
@@ -13131,7 +13240,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('테스트 데이터 생성 실패:', error);
+      logServerError('테스트 데이터 생성 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '테스트 데이터 생성 중 오류가 발생했습니다.'
@@ -13161,7 +13270,7 @@ app.get('/api/search', async (req, res) => {
         }
       });
     } catch (error) {
-      console.error('등록 상태 확인 실패:', error);
+      logServerError('등록 상태 확인 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '등록 상태 확인 중 오류가 발생했습니다.'
@@ -13179,7 +13288,7 @@ app.get('/api/search', async (req, res) => {
       const institutes = await storage.getInstitutes();
       res.json(institutes);
     } catch (error) {
-      console.error('기관 목록 조회 실패:', error);
+      logServerError('기관 목록 조회 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '기관 목록을 불러오는 중 오류가 발생했습니다.'
@@ -13199,7 +13308,7 @@ app.get('/api/search', async (req, res) => {
       }
       res.json(institute);
     } catch (error) {
-      console.error('기관 상세 조회 실패:', error);
+      logServerError('기관 상세 조회 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '기관 정보를 불러오는 중 오류가 발생했습니다.'
@@ -13246,7 +13355,7 @@ app.get('/api/search', async (req, res) => {
         message: '기관 코드가 확인되었습니다.'
       });
     } catch (error) {
-      console.error('기관 코드 검증 실패:', error);
+      logServerError('기관 코드 검증 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '기관 코드 검증 중 오류가 발생했습니다.'
@@ -13301,7 +13410,7 @@ app.get('/api/search', async (req, res) => {
         message: `${institute.name} 기관에 성공적으로 연결되었습니다.`
       });
     } catch (error) {
-      console.error('훈련사-기관 연결 실패:', error);
+      logServerError('훈련사-기관 연결 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '기관 연결 중 오류가 발생했습니다.'
@@ -13329,7 +13438,7 @@ app.get('/api/search', async (req, res) => {
         message: '소속 기관 목록을 조회했습니다.'
       });
     } catch (error) {
-      console.error('훈련사 기관 조회 실패:', error);
+      logServerError('훈련사 기관 조회 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '소속 기관 조회 중 오류가 발생했습니다.'
@@ -13343,7 +13452,7 @@ app.get('/api/search', async (req, res) => {
       const institute = await storage.createInstitute(req.body);
       res.status(201).json(institute);
     } catch (error) {
-      console.error('기관 등록 실패:', error);
+      logServerError('기관 등록 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '기관 등록 중 오류가 발생했습니다.'
@@ -13386,7 +13495,7 @@ app.get('/api/search', async (req, res) => {
         message: '기관 정보가 성공적으로 업데이트되었습니다'
       });
     } catch (error) {
-      console.error('기관 수정 실패:', error);
+      logServerError('기관 수정 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '기관 수정 중 오류가 발생했습니다.'
@@ -13403,7 +13512,7 @@ app.get('/api/search', async (req, res) => {
         message: '기관이 삭제되었습니다.'
       });
     } catch (error) {
-      console.error('기관 삭제 실패:', error);
+      logServerError('기관 삭제 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '기관 삭제 중 오류가 발생했습니다.'
@@ -13471,7 +13580,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(studentsWithPets);
     } catch (error) {
-      console.error('기관 수강생 목록 조회 실패:', error);
+      logServerError('기관 수강생 목록 조회 실패:', error, req);
       res.json([]);
     }
   });
@@ -13525,7 +13634,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(trainersData);
     } catch (error) {
-      console.error('기관 훈련사 목록 조회 실패:', error);
+      logServerError('기관 훈련사 목록 조회 실패:', error, req);
       res.json([]);
     }
   });
@@ -13577,7 +13686,7 @@ app.get('/api/search', async (req, res) => {
         res.json(result);
       }
     } catch (error) {
-      console.error('기관 코스 진행 상태 조회 실패:', error);
+      logServerError('기관 코스 진행 상태 조회 실패:', error, req);
       res.json([]);
     }
   });
@@ -13619,7 +13728,7 @@ app.get('/api/search', async (req, res) => {
       const result = Object.values(revenueByCategory);
       res.json(result);
     } catch (error) {
-      console.error('기관 매출 데이터 조회 실패:', error);
+      logServerError('기관 매출 데이터 조회 실패:', error, req);
       res.json([]);
     }
   });
@@ -13652,7 +13761,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(result);
     } catch (error) {
-      console.error('기관 알림 조회 실패:', error);
+      logServerError('기관 알림 조회 실패:', error, req);
       res.json([]);
     }
   });
@@ -13691,7 +13800,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(result);
     } catch (error) {
-      console.error('기관 대기 승인 조회 실패:', error);
+      logServerError('기관 대기 승인 조회 실패:', error, req);
       res.json([]);
     }
   });
@@ -13752,7 +13861,7 @@ app.get('/api/search', async (req, res) => {
         activeCoursesChange: '+0%'
       });
     } catch (error) {
-      console.error('기관 주요 지표 조회 실패:', error);
+      logServerError('기관 주요 지표 조회 실패:', error, req);
       res.json({
         newRegistrations: 0,
         completedCourses: 0,
@@ -13810,7 +13919,7 @@ app.get('/api/search', async (req, res) => {
         logoUrl: institute.logo || ''
       });
     } catch (error) {
-      console.error('기관 설정 정보 조회 실패:', error);
+      logServerError('기관 설정 정보 조회 실패:', error, req);
       res.json({
         name: '',
         description: '',
@@ -13885,7 +13994,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(assignments);
     } catch (error) {
-      console.error('반려견 배정 목록 조회 실패:', error);
+      logServerError('반려견 배정 목록 조회 실패:', error, req);
       res.json([]);
     }
   });
@@ -13984,7 +14093,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('훈련사 등록 실패:', error);
+      logServerError('훈련사 등록 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '등록 신청 처리 중 오류가 발생했습니다.'
@@ -14046,7 +14155,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('기관 등록 실패:', error);
+      logServerError('기관 등록 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '등록 신청 처리 중 오류가 발생했습니다.'
@@ -14136,7 +14245,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('등록 신청 목록 조회 실패:', error);
+      logServerError('등록 신청 목록 조회 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '등록 신청 목록 조회 중 오류가 발생했습니다.'
@@ -14373,7 +14482,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('[등록 신청 처리] 실패:', error);
+      logServerError('[등록 신청 처리] 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '등록 신청 처리 중 오류가 발생했습니다.'
@@ -14393,7 +14502,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('처리 완료된 신청 초기화 실패:', error);
+      logServerError('처리 완료된 신청 초기화 실패:', error, req);
       res.status(500).json({
         success: false,
         message: '처리 완료된 신청 초기화 중 오류가 발생했습니다.'
@@ -14407,7 +14516,7 @@ app.get('/api/search', async (req, res) => {
       const courses = await storage.getAllCourses();
       res.json({ courses });
     } catch (error) {
-      console.error('[커리큘럼] 강의 목록 조회 실패:', error);
+      logServerError('[커리큘럼] 강의 목록 조회 실패:', error, req);
       res.status(500).json({ message: '강의 목록을 불러올 수 없습니다.' });
     }
   });
@@ -14435,7 +14544,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(course);
     } catch (error) {
-      console.error('[커리큘럼] 강의 생성 실패:', error);
+      logServerError('[커리큘럼] 강의 생성 실패:', error, req);
       res.status(500).json({ message: '강의 생성에 실패했습니다.' });
     }
   });
@@ -14628,7 +14737,7 @@ app.get('/api/search', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('[커리큘럼 업로드] 처리 오류:', error);
+      logServerError('[커리큘럼 업로드] 처리 오류:', error, req);
       
       // 파일 정리
       if (req.file && req.file.path) {
@@ -14666,7 +14775,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(module);
     } catch (error) {
-      console.error('[커리큘럼] 모듈 생성 실패:', error);
+      logServerError('[커리큘럼] 모듈 생성 실패:', error, req);
       res.status(500).json({ message: '모듈 생성에 실패했습니다.' });
     }
   });
@@ -14688,7 +14797,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(video);
     } catch (error) {
-      console.error('[커리큘럼] 비디오 업로드 실패:', error);
+      logServerError('[커리큘럼] 비디오 업로드 실패:', error, req);
       res.status(500).json({ message: '비디오 업로드에 실패했습니다.' });
     }
   });
@@ -14701,7 +14810,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ curriculums });
     } catch (error) {
-      console.error('[관리자 커리큘럼] 조회 실패:', error);
+      logServerError('[관리자 커리큘럼] 조회 실패:', error, req);
       res.status(500).json({ message: '커리큘럼 조회에 실패했습니다.' });
     }
   });
@@ -14719,7 +14828,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(curriculum);
     } catch (error) {
-      console.error('[커리큘럼 미리보기] 조회 실패:', error);
+      logServerError('[커리큘럼 미리보기] 조회 실패:', error, req);
       res.status(500).json({ message: '커리큘럼 조회에 실패했습니다.' });
     }
   });
@@ -14748,7 +14857,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(newCurriculum);
     } catch (error) {
-      console.error('[관리자 커리큘럼] 생성 실패:', error);
+      logServerError('[관리자 커리큘럼] 생성 실패:', error, req);
       res.status(500).json({ message: '커리큘럼 생성에 실패했습니다.' });
     }
   });
@@ -14768,7 +14877,7 @@ app.get('/api/search', async (req, res) => {
         message: '커리큘럼이 성공적으로 삭제되었습니다.' 
       });
     } catch (error) {
-      console.error('[관리자 커리큘럼] 삭제 실패:', error);
+      logServerError('[관리자 커리큘럼] 삭제 실패:', error, req);
       res.status(500).json({ message: '커리큘럼 삭제에 실패했습니다.' });
     }
   });
@@ -14834,7 +14943,7 @@ app.get('/api/search', async (req, res) => {
         message: '커리큘럼이 즉시 코스로 발행되었습니다.' 
       });
     } catch (error) {
-      console.error('[커리큘럼 발행] 신청 실패:', error);
+      logServerError('[커리큘럼 발행] 신청 실패:', error, req);
       res.status(500).json({ message: '커리큘럼 발행 신청에 실패했습니다.' });
     }
   });
@@ -14871,7 +14980,7 @@ app.get('/api/search', async (req, res) => {
         email: email
       });
     } catch (error) {
-      console.error('회원 확인 실패:', error);
+      logServerError('회원 확인 실패:', error, req);
       res.status(500).json({ 
         isRegistered: false,
         message: '회원 확인 중 오류가 발생했습니다.' 
@@ -15216,7 +15325,7 @@ app.get('/api/search', async (req, res) => {
           registrantInfo: extractedData.registrantInfo || {}
         });
       } catch (error) {
-        console.error('[커리큘럼 파일 처리] 오류:', error);
+        logServerError('[커리큘럼 파일 처리] 오류:', error, req);
         res.status(500).json({ 
           error: '파일 처리 중 오류가 발생했습니다.' 
         });
@@ -15247,7 +15356,7 @@ app.get('/api/search', async (req, res) => {
         });
       }
     } catch (error) {
-      console.error('[관리자 커리큘럼] 수정 실패:', error);
+      logServerError('[관리자 커리큘럼] 수정 실패:', error, req);
       res.status(500).json({ message: '커리큘럼 수정에 실패했습니다.' });
     }
   });
@@ -15276,7 +15385,7 @@ app.get('/api/search', async (req, res) => {
         });
       }
     } catch (error) {
-      console.error('[관리자 커리큘럼] 모듈 수정 실패:', error);
+      logServerError('[관리자 커리큘럼] 모듈 수정 실패:', error, req);
       res.status(500).json({ message: '모듈 수정에 실패했습니다.' });
     }
   });
@@ -15293,7 +15402,7 @@ app.get('/api/search', async (req, res) => {
         message: '커리큘럼이 성공적으로 삭제되었습니다.' 
       });
     } catch (error) {
-      console.error('[관리자 커리큘럼] 삭제 실패:', error);
+      logServerError('[관리자 커리큘럼] 삭제 실패:', error, req);
       res.status(500).json({ message: '커리큘럼 삭제에 실패했습니다.' });
     }
   });
@@ -15374,7 +15483,7 @@ app.get('/api/search', async (req, res) => {
         message: '영상이 성공적으로 업로드되고 모듈에 추가되었습니다.'
       });
     } catch (error) {
-      console.error('[영상 업로드] 실패:', error);
+      logServerError('[영상 업로드] 실패:', error, req);
       res.status(500).json({ message: '영상 업로드에 실패했습니다.' });
     }
   });
@@ -15391,7 +15500,7 @@ app.get('/api/search', async (req, res) => {
         message: '영상이 성공적으로 삭제되었습니다.' 
       });
     } catch (error) {
-      console.error('[영상 삭제] 실패:', error);
+      logServerError('[영상 삭제] 실패:', error, req);
       res.status(500).json({ message: '영상 삭제에 실패했습니다.' });
     }
   });
@@ -15444,7 +15553,7 @@ app.get('/api/search', async (req, res) => {
       res.setHeader('Content-Disposition', 'attachment; filename*=UTF-8\'\'TALEZ_%EC%BB%A4%EB%A6%AC%ED%81%98%EB%9F%BC_%EC%9E%91%EC%84%B1%EC%96%91%EC%8B%9D.xlsx');
       res.send(buffer);
     } catch (error) {
-      console.error('[양식 다운로드] 오류:', error);
+      logServerError('[양식 다운로드] 오류:', error, req);
       res.status(500).json({ error: '양식 생성 중 오류가 발생했습니다.' });
     }
   });
@@ -15695,7 +15804,7 @@ app.get('/api/search', async (req, res) => {
         });
 
       } catch (error) {
-        console.error('자동 커리큘럼 등록 오류:', error);
+        logServerError('자동 커리큘럼 등록 오류:', error, req);
         res.status(500).json({
           success: false,
           message: '커리큘럼 자동 등록 중 오류가 발생했습니다.'
@@ -15741,7 +15850,7 @@ app.get('/api/search', async (req, res) => {
         courseData: courseData
       });
     } catch (error) {
-      console.error('[커리큘럼 발행] 실패:', error);
+      logServerError('[커리큘럼 발행] 실패:', error, req);
       res.status(500).json({ message: '커리큘럼 발행에 실패했습니다.' });
     }
   });
@@ -15773,7 +15882,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ courses });
     } catch (error) {
-      console.error('[강의 목록] 조회 실패:', error);
+      logServerError('[강의 목록] 조회 실패:', error, req);
       res.status(500).json({ message: '강의 목록 조회에 실패했습니다.' });
     }
   });
@@ -15829,7 +15938,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(course);
     } catch (error) {
-      console.error('[강의 상세] 조회 실패:', error);
+      logServerError('[강의 상세] 조회 실패:', error, req);
       res.status(500).json({ message: '강의 상세 조회에 실패했습니다.' });
     }
   });
@@ -15970,7 +16079,7 @@ app.get('/api/search', async (req, res) => {
       }
       
     } catch (error) {
-      console.error('[강의 구매] 실패:', error);
+      logServerError('[강의 구매] 실패:', error, req);
       res.status(500).json({ message: '강의 구매에 실패했습니다.' });
     }
   });
@@ -16022,7 +16131,7 @@ app.get('/api/search', async (req, res) => {
         trainer: kangTrainer
       });
     } catch (error) {
-      console.error('[데이터 초기화] 실패:', error);
+      logServerError('[데이터 초기화] 실패:', error, req);
       res.status(500).json({ message: '데이터 초기화에 실패했습니다.' });
     }
   });
@@ -16060,7 +16169,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(trainers);
     } catch (error) {
-      console.error('훈련사 목록 조회 오류:', error);
+      logServerError('훈련사 목록 조회 오류:', error, req);
       res.status(500).json({ error: "훈련사 목록을 불러올 수 없습니다" });
     }
   });
@@ -16113,7 +16222,7 @@ app.get('/api/search', async (req, res) => {
       console.log(`[API] 훈련사 정보 반환:`, trainer.name);
       res.json(trainer);
     } catch (error) {
-      console.error('훈련사 상세 정보 조회 오류:', error);
+      logServerError('훈련사 상세 정보 조회 오류:', error, req);
       res.status(500).json({ error: "훈련사 정보를 불러올 수 없습니다" });
     }
   });
@@ -16157,7 +16266,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json({ success: true, pets });
     } catch (error) {
-      console.error('훈련사 담당 반려동물 조회 오류:', error);
+      logServerError('훈련사 담당 반려동물 조회 오류:', error, req);
       res.status(500).json({ error: "담당 반려동물 정보를 불러올 수 없습니다" });
     }
   });
@@ -16196,7 +16305,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ success: true, messages });
     } catch (error) {
-      console.error('메시지 조회 오류:', error);
+      logServerError('메시지 조회 오류:', error, req);
       res.status(500).json({ error: "메시지를 불러올 수 없습니다" });
     }
   });
@@ -16245,7 +16354,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ success: true, consultations });
     } catch (error) {
-      console.error('예약 조회 오류:', error);
+      logServerError('예약 조회 오류:', error, req);
       res.status(500).json({ error: "예약 정보를 불러올 수 없습니다" });
     }
   });
@@ -16379,7 +16488,7 @@ app.get('/api/search', async (req, res) => {
 
       res.json(ordersWithItems);
     } catch (error) {
-      console.error('[Orders API] 주문 내역 조회 오류:', error);
+      logServerError('[Orders API] 주문 내역 조회 오류:', error, req);
       res.status(500).json({ success: false, message: '주문 내역 조회 중 오류가 발생했습니다.' });
     }
   });
@@ -16402,7 +16511,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ analysis });
     } catch (error) {
-      console.error('행동 분석 오류:', error);
+      logServerError('행동 분석 오류:', error, req);
       res.status(500).json({ error: "행동 분석 중 오류가 발생했습니다." });
     }
   });
@@ -16422,7 +16531,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ trainingPlan });
     } catch (error) {
-      console.error('훈련 계획 생성 오류:', error);
+      logServerError('훈련 계획 생성 오류:', error, req);
       res.status(500).json({ error: "훈련 계획 생성 중 오류가 발생했습니다." });
     }
   });
@@ -16440,7 +16549,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ analysis: healthAnalysis });
     } catch (error) {
-      console.error('건강 분석 오류:', error);
+      logServerError('건강 분석 오류:', error, req);
       res.status(500).json({ error: "건강 분석 중 오류가 발생했습니다." });
     }
   });
@@ -16458,7 +16567,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ summary });
     } catch (error) {
-      console.error('텍스트 요약 오류:', error);
+      logServerError('텍스트 요약 오류:', error, req);
       res.status(500).json({ error: "텍스트 요약 중 오류가 발생했습니다." });
     }
   });
@@ -16476,7 +16585,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(sentiment);
     } catch (error) {
-      console.error('감정 분석 오류:', error);
+      logServerError('감정 분석 오류:', error, req);
       res.status(500).json({ error: "감정 분석 중 오류가 발생했습니다." });
     }
   });
@@ -16496,7 +16605,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json({ imagePath: `/${imagePath}` });
     } catch (error) {
-      console.error('이미지 생성 오류:', error);
+      logServerError('이미지 생성 오류:', error, req);
       res.status(500).json({ error: "이미지 생성 중 오류가 발생했습니다." });
     }
   });
@@ -16515,7 +16624,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(analysis);
     } catch (error) {
-      console.error('멀티모델 행동 분석 오류:', error);
+      logServerError('멀티모델 행동 분석 오류:', error, req);
       res.status(500).json({ error: "멀티모델 행동 분석 중 오류가 발생했습니다." });
     }
   });
@@ -16535,7 +16644,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(trainingPlan);
     } catch (error) {
-      console.error('멀티모델 훈련 계획 생성 오류:', error);
+      logServerError('멀티모델 훈련 계획 생성 오류:', error, req);
       res.status(500).json({ error: "멀티모델 훈련 계획 생성 중 오류가 발생했습니다." });
     }
   });
@@ -16553,7 +16662,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(healthAnalysis);
     } catch (error) {
-      console.error('멀티모델 건강 분석 오류:', error);
+      logServerError('멀티모델 건강 분석 오류:', error, req);
       res.status(500).json({ error: "멀티모델 건강 분석 중 오류가 발생했습니다." });
     }
   });
@@ -16571,7 +16680,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(sentiment);
     } catch (error) {
-      console.error('멀티모델 감정 분석 오류:', error);
+      logServerError('멀티모델 감정 분석 오류:', error, req);
       res.status(500).json({ error: "멀티모델 감정 분석 중 오류가 발생했습니다." });
     }
   });
@@ -16589,7 +16698,7 @@ app.get('/api/search', async (req, res) => {
       
       res.json(comparison);
     } catch (error) {
-      console.error('모델 성능 비교 오류:', error);
+      logServerError('모델 성능 비교 오류:', error, req);
       res.status(500).json({ error: "모델 성능 비교 중 오류가 발생했습니다." });
     }
   });
@@ -16769,7 +16878,7 @@ JSON 형식으로 응답해주세요:
       res.json(comprehensiveAnalysis);
 
     } catch (error) {
-      console.error('[AI 비디오 분석] 오류:', error);
+      logServerError('[AI 비디오 분석] 오류:', error, req);
       res.status(500).json({ 
         error: "AI 비디오 분석 중 오류가 발생했습니다.",
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -16883,7 +16992,7 @@ JSON 형식으로 다음과 같이 응답해주세요:
       });
 
     } catch (error) {
-      console.error('[AI 매칭] 오류:', error);
+      logServerError('[AI 매칭] 오류:', error, req);
       res.status(500).json({ 
         error: "AI 매칭 중 오류가 발생했습니다.",
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -16930,7 +17039,7 @@ JSON 형식으로 다음과 같이 응답해주세요:
         res.status(400).json({ error: "유효하지 않은 액션입니다" });
       }
     } catch (error) {
-      console.error('처리 오류:', error);
+      logServerError('처리 오류:', error, req);
       res.status(500).json({ error: "처리 중 오류가 발생했습니다" });
     }
   });
@@ -17055,7 +17164,7 @@ JSON 형식으로 다음과 같이 응답해주세요:
       }
       
     } catch (error) {
-      console.error('[훈련사 추천 상품 구매] 실패:', error);
+      logServerError('[훈련사 추천 상품 구매] 실패:', error, req);
       res.status(500).json({ message: '상품 구매에 실패했습니다.' });
     }
   });
@@ -17391,7 +17500,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         application: newApplication
       });
     } catch (error) {
-      console.error('훈련사 인증 신청 오류:', error);
+      logServerError('훈련사 인증 신청 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "신청 처리 중 오류가 발생했습니다."
@@ -17419,7 +17528,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         application: application
       });
     } catch (error) {
-      console.error('훈련사 신청 조회 오류:', error);
+      logServerError('훈련사 신청 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "신청 정보를 불러오는 중 오류가 발생했습니다."
@@ -17429,9 +17538,9 @@ export function registerTrainerCertificationRoutes(app: Express) {
 
   // 훈련사 인증 신청 상태 업데이트 (관리자용)
   app.patch("/api/trainer-applications/:id/status", async (req, res) => {
+    const applicationId = parseInt(req.params.id);
+    const { status, reviewNotes } = req.body || {};
     try {
-      const applicationId = parseInt(req.params.id);
-      const { status, reviewNotes } = req.body;
       const reviewerId = req.session?.user?.id || 1; // 현재 로그인한 관리자 ID
 
       // 거부 케이스는 단순 상태 갱신만 수행
@@ -17559,13 +17668,30 @@ export function registerTrainerCertificationRoutes(app: Express) {
         }
       }
 
+      await recordAuditLog(req, {
+        action: status === 'approved' ? 'admin.trainer_application.approve' : 'admin.trainer_application.reject',
+        targetType: 'trainer_application',
+        targetId: applicationId,
+        targetName: (updatedApplication as any)?.applicantName || (updatedApplication as any)?.name || null,
+        payload: { status, reviewNotes },
+        status: 'success',
+      });
+
       res.json({
         success: true,
         message: `신청이 ${status === 'approved' ? '승인' : '거부'}되었습니다.`,
         application: updatedApplication
       });
-    } catch (error) {
-      console.error('훈련사 신청 상태 업데이트 오류:', error);
+    } catch (error: any) {
+      logServerError('훈련사 신청 상태 업데이트 오류', error, req);
+      await recordAuditLog(req, {
+        action: status === 'approved' ? 'admin.trainer_application.approve' : 'admin.trainer_application.reject',
+        targetType: 'trainer_application',
+        targetId: applicationId,
+        payload: { status, reviewNotes },
+        status: 'failure',
+        errorMessage: error?.message || String(error),
+      });
       res.status(500).json({
         success: false,
         message: "상태 업데이트 중 오류가 발생했습니다."
@@ -17585,7 +17711,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         programs: programs
       });
     } catch (error) {
-      console.error('훈련사 양성 과정 목록 조회 오류:', error);
+      logServerError('훈련사 양성 과정 목록 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "과정 목록을 불러오는 중 오류가 발생했습니다."
@@ -17604,7 +17730,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         program: newProgram
       });
     } catch (error) {
-      console.error('훈련사 양성 과정 추가 오류:', error);
+      logServerError('훈련사 양성 과정 추가 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "과정 추가 중 오류가 발생했습니다."
@@ -17630,7 +17756,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         program: program
       });
     } catch (error) {
-      console.error('훈련사 양성 과정 조회 오류:', error);
+      logServerError('훈련사 양성 과정 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "과정 정보를 불러오는 중 오류가 발생했습니다."
@@ -17678,7 +17804,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         enrollment: enrollment
       });
     } catch (error) {
-      console.error('훈련사 양성 과정 등록 오류:', error);
+      logServerError('훈련사 양성 과정 등록 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "과정 등록 중 오류가 발생했습니다."
@@ -17708,7 +17834,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         enrollments: enrollmentsWithPrograms
       });
     } catch (error) {
-      console.error('사용자 훈련사 과정 등록 현황 조회 오류:', error);
+      logServerError('사용자 훈련사 과정 등록 현황 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "등록 현황을 불러오는 중 오류가 발생했습니다."
@@ -17728,7 +17854,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         certifications: certifications
       });
     } catch (error) {
-      console.error('훈련사 인증 기록 조회 오류:', error);
+      logServerError('훈련사 인증 기록 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "인증 기록을 불러오는 중 오류가 발생했습니다."
@@ -17754,7 +17880,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         certification: certification
       });
     } catch (error) {
-      console.error('훈련사 인증 기록 조회 오류:', error);
+      logServerError('훈련사 인증 기록 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "인증 기록을 불러오는 중 오류가 발생했습니다."
@@ -17838,7 +17964,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
 
       res.json(pointsData);
     } catch (error) {
-      console.error('훈련사 포인트 조회 오류:', error);
+      logServerError('훈련사 포인트 조회 오류:', error, req);
       res.status(500).json({ error: "포인트 정보를 불러오는 중 오류가 발생했습니다" });
     }
   });
@@ -17938,7 +18064,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
 
       res.json(pointsData);
     } catch (error) {
-      console.error('기관 관리자 포인트 조회 오류:', error);
+      logServerError('기관 관리자 포인트 조회 오류:', error, req);
       res.status(500).json({ error: "포인트 정보를 불러오는 중 오류가 발생했습니다" });
     }
   });
@@ -17965,7 +18091,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         totalPages: Math.ceil(posts.length / parseInt(limit as string))
       });
     } catch (error) {
-      console.error('대체 훈련사 게시글 조회 오류:', error);
+      logServerError('대체 훈련사 게시글 조회 오류:', error, req);
       res.status(500).json({ error: '게시글 조회 중 오류가 발생했습니다' });
     }
   });
@@ -18016,7 +18142,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         post: newPost
       });
     } catch (error) {
-      console.error('대체 훈련사 게시글 작성 오류:', error);
+      logServerError('대체 훈련사 게시글 작성 오류:', error, req);
       res.status(500).json({ error: '게시글 작성 중 오류가 발생했습니다' });
     }
   });
@@ -18039,7 +18165,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         post
       });
     } catch (error) {
-      console.error('대체 훈련사 게시글 상세 조회 오류:', error);
+      logServerError('대체 훈련사 게시글 상세 조회 오류:', error, req);
       res.status(500).json({ error: '게시글 조회 중 오류가 발생했습니다' });
     }
   });
@@ -18066,7 +18192,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         application
       });
     } catch (error) {
-      console.error('대체 훈련사 지원 신청 오류:', error);
+      logServerError('대체 훈련사 지원 신청 오류:', error, req);
       res.status(500).json({ error: '지원 신청 중 오류가 발생했습니다' });
     }
   });
@@ -18104,7 +18230,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         application: updatedApplication
       });
     } catch (error) {
-      console.error('대체 훈련사 지원 상태 업데이트 오류:', error);
+      logServerError('대체 훈련사 지원 상태 업데이트 오류:', error, req);
       res.status(500).json({ error: '상태 업데이트 중 오류가 발생했습니다' });
     }
   });
@@ -18132,7 +18258,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         recentApplications: applications.slice(0, 5)
       });
     } catch (error) {
-      console.error('기관 대체 훈련사 현황 조회 오류:', error);
+      logServerError('기관 대체 훈련사 현황 조회 오류:', error, req);
       res.status(500).json({ error: '현황 조회 중 오류가 발생했습니다' });
     }
   });
@@ -18161,7 +18287,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         applications
       });
     } catch (error) {
-      console.error('관리자 대체 훈련사 현황 조회 오류:', error);
+      logServerError('관리자 대체 훈련사 현황 조회 오류:', error, req);
       res.status(500).json({ error: '현황 조회 중 오류가 발생했습니다' });
     }
   });
@@ -18193,7 +18319,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         session
       });
     } catch (error) {
-      console.error('대체 훈련사 세션 완료 처리 오류:', error);
+      logServerError('대체 훈련사 세션 완료 처리 오류:', error, req);
       res.status(500).json({ error: '세션 완료 처리 중 오류가 발생했습니다' });
     }
   });
@@ -18207,7 +18333,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
     app.use('/api/institute-recommendations', instituteRecommendationModule.default);
     console.log('[Integration Routes] 커리큘럼-상품 매핑 및 기관별 추천 상품 라우트가 등록되었습니다.');
   }).catch(error => {
-    console.error('[Integration Routes] 라우트 등록 실패:', error);
+    logServerError('[Integration Routes] 라우트 등록 실패:', error);
   });
 
   // 콘텐츠 검열 라우트 추가
@@ -18266,13 +18392,13 @@ export function registerTrainerCertificationRoutes(app: Express) {
         });
         
       } catch (error) {
-        console.error('[Post Create] 게시글 작성 오류:', error);
+        logServerError('[Post Create] 게시글 작성 오류:', error, req);
         res.status(500).json({ error: '게시글 작성에 실패했습니다.' });
       }
     });
     
   }).catch(error => {
-    console.error('[Content Moderation] 라우트 등록 실패:', error);
+    logServerError('[Content Moderation] 라우트 등록 실패:', error);
   });
 
   // Menu visibility control routes
@@ -18280,7 +18406,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
     app.use('/api/admin', adminMenuVisibilityRoutes);
     console.log('[Menu Visibility] 메뉴 표시 제어 라우트가 등록되었습니다.');
   }).catch(error => {
-    console.error('[Menu Visibility] 라우트 등록 실패:', error);
+    logServerError('[Menu Visibility] 라우트 등록 실패:', error);
   });
 
   // =============================================================================
@@ -18337,7 +18463,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
 
       } catch (error) {
-        console.error('[Logo API] 로고 설정 업데이트 오류:', error);
+        logServerError('[Logo API] 로고 설정 업데이트 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '로고 설정 업데이트 중 오류가 발생했습니다.',
@@ -18395,7 +18521,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
 
       } catch (error) {
-        console.error('[Logo API] 로고 설정 조회 오류:', error);
+        logServerError('[Logo API] 로고 설정 조회 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '로고 설정 조회 중 오류가 발생했습니다.',
@@ -18439,7 +18565,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       });
       
     } catch (error: any) {
-      console.error('[Public Curriculum API] 커리큘럼 목록 조회 오류:', error);
+      logServerError('[Public Curriculum API] 커리큘럼 목록 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         error: '커리큘럼 목록 조회 중 오류가 발생했습니다.'
@@ -18486,7 +18612,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
         
       } catch (error) {
-        console.error('[Curriculum API] 커리큘럼 생성 오류:', error);
+        logServerError('[Curriculum API] 커리큘럼 생성 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '커리큘럼 생성 중 오류가 발생했습니다.',
@@ -18538,7 +18664,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
         
       } catch (error) {
-        console.error('[Curriculum API] 커리큘럼 수정 오류:', error);
+        logServerError('[Curriculum API] 커리큘럼 수정 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '커리큘럼 수정 중 오류가 발생했습니다.',
@@ -18585,7 +18711,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
         
       } catch (error) {
-        console.error('[Curriculum API] 커리큘럼 삭제 오류:', error);
+        logServerError('[Curriculum API] 커리큘럼 삭제 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '커리큘럼 삭제 중 오류가 발생했습니다.',
@@ -18645,7 +18771,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
         
       } catch (error) {
-        console.error('[Curriculum API] 커리큘럼 게시 오류:', error);
+        logServerError('[Curriculum API] 커리큘럼 게시 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '커리큘럼 게시 상태 변경 중 오류가 발생했습니다.',
@@ -18690,7 +18816,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
         
       } catch (error) {
-        console.error('[Course API] 강의 생성 오류:', error);
+        logServerError('[Course API] 강의 생성 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '강의 생성 중 오류가 발생했습니다.',
@@ -18742,7 +18868,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
         
       } catch (error) {
-        console.error('[Course API] 강의 수정 오류:', error);
+        logServerError('[Course API] 강의 수정 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '강의 수정 중 오류가 발생했습니다.',
@@ -18789,7 +18915,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
         
       } catch (error) {
-        console.error('[Course API] 강의 삭제 오류:', error);
+        logServerError('[Course API] 강의 삭제 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '강의 삭제 중 오류가 발생했습니다.',
@@ -18849,7 +18975,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         );
         
       } catch (error) {
-        console.error('[Course API] 강의 게시 오류:', error);
+        logServerError('[Course API] 강의 게시 오류:', error, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '강의 게시 상태 변경 중 오류가 발생했습니다.',
@@ -19059,7 +19185,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         count: facilities.length
       });
     } catch (error: any) {
-      console.error('[Pet Facilities] 조회 오류:', error);
+      logServerError('[Pet Facilities] 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '시설 정보를 조회할 수 없습니다.',
@@ -19090,7 +19216,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const vaccinations = await storage.getVaccinationsByUserId(userId);
       res.json({ success: true, vaccinations });
     } catch (error: any) {
-      console.error('[Vaccinations] 사용자 예방접종 조회 오류:', error);
+      logServerError('[Vaccinations] 사용자 예방접종 조회 오류:', error, req);
       res.status(500).json({ success: false, message: '예방접종 스케줄을 조회할 수 없습니다.' });
     }
   });
@@ -19106,7 +19232,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const vaccinations = await storage.getVaccinationsByPetId(petId);
       res.json({ success: true, vaccinations });
     } catch (error: any) {
-      console.error('[Vaccinations] 반려동물 예방접종 조회 오류:', error);
+      logServerError('[Vaccinations] 반려동물 예방접종 조회 오류:', error, req);
       res.status(500).json({ success: false, message: '예방접종 스케줄을 조회할 수 없습니다.' });
     }
   });
@@ -19127,7 +19253,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const vaccinations = await storage.getUpcomingVaccinations(userId, days);
       res.json({ success: true, vaccinations });
     } catch (error: any) {
-      console.error('[Vaccinations] 다가오는 예방접종 조회 오류:', error);
+      logServerError('[Vaccinations] 다가오는 예방접종 조회 오류:', error, req);
       res.status(500).json({ success: false, message: '다가오는 예방접종을 조회할 수 없습니다.' });
     }
   });
@@ -19146,7 +19272,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       if (!access) return;
       res.json({ success: true, vaccination });
     } catch (error: any) {
-      console.error('[Vaccinations] 예방접종 조회 오류:', error);
+      logServerError('[Vaccinations] 예방접종 조회 오류:', error, req);
       res.status(500).json({ success: false, message: '예방접종 스케줄을 조회할 수 없습니다.' });
     }
   });
@@ -19181,7 +19307,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       } catch (e) { console.warn('[Vaccinations] 알림 생성 실패', e); }
       res.status(201).json({ success: true, vaccination: newVaccination });
     } catch (error: any) {
-      console.error('[Vaccinations] 예방접종 생성 오류:', error);
+      logServerError('[Vaccinations] 예방접종 생성 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({ success: false, message: '입력 데이터가 올바르지 않습니다.', errors: error.errors });
       }
@@ -19209,7 +19335,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const updatedVaccination = await storage.updateVaccination(id, validatedData);
       res.json({ success: true, vaccination: updatedVaccination });
     } catch (error: any) {
-      console.error('[Vaccinations] 예방접종 수정 오류:', error);
+      logServerError('[Vaccinations] 예방접종 수정 오류:', error, req);
       if (error.name === 'ZodError') {
         return res.status(400).json({ success: false, message: '입력 데이터가 올바르지 않습니다.', errors: error.errors });
       }
@@ -19241,7 +19367,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       }
       res.json({ success: true, message: '예방접종 스케줄이 삭제되었습니다.' });
     } catch (error: any) {
-      console.error('[Vaccinations] 예방접종 삭제 오류:', error);
+      logServerError('[Vaccinations] 예방접종 삭제 오류:', error, req);
       res.status(500).json({ success: false, message: '예방접종 스케줄을 삭제할 수 없습니다.' });
     }
   });
@@ -19260,7 +19386,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
     app.use('/api/test', databaseTestRoutes);
     console.log('[Database Test] 데이터베이스 테스트 라우트가 등록되었습니다.');
   }).catch(error => {
-    console.error('[Database Test] 라우트 등록 실패:', error);
+    logServerError('[Database Test] 라우트 등록 실패:', error);
   });
 
   // =============================================================================
@@ -19353,7 +19479,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       });
       
     } catch (error: any) {
-      console.error('[News API] 뉴스 검색 오류:', error);
+      logServerError('[News API] 뉴스 검색 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '뉴스를 검색하는 중 오류가 발생했습니다.',
@@ -19489,7 +19615,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
     app.use('/api/fcm', fcmModule.default);
     console.log('[FCM] Firebase Cloud Messaging 라우트가 등록되었습니다.');
   }).catch(error => {
-    console.error('[FCM] FCM 라우트 로드 실패:', error);
+    logServerError('[FCM] FCM 라우트 로드 실패:', error);
   });
 
   // 관리자 푸시 알림 관리 라우트 (대량/예약/세그먼트 발송)
@@ -19497,7 +19623,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
     app.use('/api/admin/push', pushAdminModule.default);
     console.log('[Push Admin] 푸시 알림 관리 라우트가 등록되었습니다.');
   }).catch(error => {
-    console.error('[Push Admin] 푸시 관리 라우트 로드 실패:', error);
+    logServerError('[Push Admin] 푸시 관리 라우트 로드 실패:', error);
   });
 
   // DogVoiceAI 강아지 AI 분석 라우트
@@ -19506,7 +19632,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
     app.use('/api/comprehensive-report', dogAiModule.default);
     console.log('[Dog AI] 강아지 AI 분석 라우트가 등록되었습니다.');
   }).catch(error => {
-    console.error('[Dog AI] 강아지 AI 분석 라우트 로드 실패:', error);
+    logServerError('[Dog AI] 강아지 AI 분석 라우트 로드 실패:', error);
   });
 
   // SSO 라우트
@@ -19514,7 +19640,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
     app.use(ssoModule.default);
     console.log('[SSO] SSO 라우트가 등록되었습니다.');
   }).catch(error => {
-    console.error('[SSO] SSO 라우트 로드 실패:', error);
+    logServerError('[SSO] SSO 라우트 로드 실패:', error);
   });
 
   // 모든 인증 API들은 setupAuth()에서 처리됩니다 (/api/auth/login, /api/auth/logout, /api/auth/me)
@@ -19548,7 +19674,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       });
       res.json({ success: true, data: userProfile });
     } catch (error) {
-      console.error('프로필 조회 오류:', error);
+      logServerError('프로필 조회 오류:', error, req);
       res.status(500).json({ success: false, error: "프로필 조회 중 오류가 발생했습니다." });
     }
   });
@@ -19593,7 +19719,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const { password, ...userProfile } = updatedUser[0];
       res.json({ success: true, data: userProfile });
     } catch (error) {
-      console.error('프로필 업데이트 오류:', error);
+      logServerError('프로필 업데이트 오류:', error, req);
       res.status(500).json({ success: false, error: "프로필 업데이트 중 오류가 발생했습니다." });
     }
   });
@@ -19626,7 +19752,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const { password, ...userProfile } = updatedUser[0];
       res.json({ success: true, data: userProfile });
     } catch (error) {
-      console.error('프로필 이미지 업데이트 오류:', error);
+      logServerError('프로필 이미지 업데이트 오류:', error, req);
       res.status(500).json({ success: false, error: "프로필 이미지 업데이트 중 오류가 발생했습니다." });
     }
   });

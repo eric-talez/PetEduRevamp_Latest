@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
 import { insertContentReportSchema } from "../../shared/schema";
 import { z } from "zod";
+import { recordAuditLog, logServerError } from "../middleware/audit-logger";
 
 // 임시 에러 핸들러
 const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
@@ -123,7 +124,7 @@ export function registerAdminRoutes(app: Express) {
 
       res.json(successResponse(result));
     } catch (error) {
-      console.error('회원 현황 조회 오류:', error);
+      logServerError('회원 현황 조회 오류:', error, req);
       throw ApiError.internal('회원 현황을 불러올 수 없습니다');
     }
   }));
@@ -144,13 +145,20 @@ export function registerAdminRoutes(app: Express) {
         updatedAt: new Date().toISOString()
       };
 
+      await recordAuditLog(req, {
+        action: 'admin.member.status_change',
+        targetType: 'user',
+        targetId: memberId,
+        payload: { status, reason },
+      });
+
       res.json({
         success: true,
         data: updatedMember,
         message: `회원 상태가 ${status}로 변경되었습니다.`
       });
     } catch (error) {
-      console.error('회원 상태 변경 오류:', error);
+      logServerError('회원 상태 변경 오류', error, req);
       res.status(500).json({ 
         success: false,
         message: '회원 상태 변경 중 오류가 발생했습니다.' 
@@ -167,7 +175,7 @@ export function registerAdminRoutes(app: Express) {
       ];
       res.json(approvals);
     } catch (error) {
-      console.error('Error fetching approvals:', error);
+      logServerError('Error fetching approvals:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -182,7 +190,7 @@ export function registerAdminRoutes(app: Express) {
       ];
       res.json(users);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logServerError('Error fetching users:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -214,7 +222,7 @@ export function registerAdminRoutes(app: Express) {
         message: '위치가 성공적으로 등록되었습니다.'
       });
     } catch (error) {
-      console.error('Error creating location:', error);
+      logServerError('Error creating location:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -282,7 +290,7 @@ export function registerAdminRoutes(app: Express) {
         message: '기관 목록을 성공적으로 조회했습니다.'
       });
     } catch (error) {
-      console.error('기관 목록 조회 오류:', error);
+      logServerError('기관 목록 조회 오류:', error, req);
       res.status(500).json({ 
         success: false,
         message: '기관 목록 조회 중 오류가 발생했습니다.' 
@@ -305,13 +313,20 @@ export function registerAdminRoutes(app: Express) {
         updatedAt: new Date().toISOString()
       };
 
+      await recordAuditLog(req, {
+        action: 'admin.institute.status_change',
+        targetType: 'institute',
+        targetId: instituteId,
+        payload: { status, reason },
+      });
+
       res.json({
         success: true,
         data: updatedInstitute,
         message: `기관 상태가 ${status}로 변경되었습니다.`
       });
     } catch (error) {
-      console.error('기관 상태 변경 오류:', error);
+      logServerError('기관 상태 변경 오류', error, req);
       res.status(500).json({ 
         success: false,
         message: '기관 상태 변경 중 오류가 발생했습니다.' 
@@ -355,7 +370,7 @@ export function registerAdminRoutes(app: Express) {
         total: locations.length
       });
     } catch (error) {
-      console.error('Error fetching admin locations:', error);
+      logServerError('Error fetching admin locations:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -381,7 +396,7 @@ export function registerAdminRoutes(app: Express) {
         message: approved ? '위치가 승인되었습니다.' : '위치가 거부되었습니다.'
       });
     } catch (error) {
-      console.error('Error approving location:', error);
+      logServerError('Error approving location:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -401,7 +416,7 @@ export function registerAdminRoutes(app: Express) {
         total: curriculums.length
       });
     } catch (error) {
-      console.error('커리큘럼 목록 조회 오류:', error);
+      logServerError('커리큘럼 목록 조회 오류:', error, req);
       res.status(500).json({ 
         success: false,
         message: '커리큘럼 목록을 불러올 수 없습니다.' 
@@ -427,7 +442,7 @@ export function registerAdminRoutes(app: Express) {
 
       res.json(successResponse(institutesWithDetails));
     } catch (error) {
-      console.error('기관 목록 조회 오류:', error);
+      logServerError('기관 목록 조회 오류:', error, req);
       throw ApiError.internal('기관 목록을 불러올 수 없습니다');
     }
   }));
@@ -465,7 +480,7 @@ export function registerAdminRoutes(app: Express) {
         programs
       });
     } catch (error) {
-      console.error('훈련사 프로그램 조회 오류:', error);
+      logServerError('훈련사 프로그램 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '훈련사 프로그램 조회 중 오류가 발생했습니다.'
@@ -504,7 +519,7 @@ export function registerAdminRoutes(app: Express) {
         certifications
       });
     } catch (error) {
-      console.error('훈련사 인증 조회 오류:', error);
+      logServerError('훈련사 인증 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '훈련사 인증 조회 중 오류가 발생했습니다.'

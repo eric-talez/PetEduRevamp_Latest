@@ -1,9 +1,20 @@
-import { Router } from 'express';
+import { Router, type Response, type NextFunction } from 'express';
 import { db } from '../db';
 import { products, productCommissions, referralProfiles, referralEarnings, settlements } from '../../shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { recordAuditLog, logServerError } from '../middleware/audit-logger';
+
+function requireAdmin(req: any, res: Response, next: NextFunction) {
+  const user = req.user || req.session?.user;
+  if (!user) return res.status(401).json({ success: false, error: '로그인이 필요합니다.' });
+  if (user.role !== 'admin' && user.role !== 'super-admin') {
+    return res.status(403).json({ success: false, error: '관리자 권한이 필요합니다.' });
+  }
+  next();
+}
 
 export const commissionRoutes = Router();
+commissionRoutes.use(requireAdmin);
 
 /**
  * GET /api/commission/products
@@ -44,7 +55,7 @@ commissionRoutes.get('/products', async (req, res) => {
     console.log(`[Commission] ${formattedProducts.length}개 상품 조회 완료`);
     res.json({ success: true, products: formattedProducts });
   } catch (error) {
-    console.error('[Commission] 상품 조회 오류:', error);
+    logServerError('[Commission] 상품 조회 오류:', error, req);
     res.status(500).json({ 
       success: false, 
       error: '상품 조회 중 오류가 발생했습니다.' 
@@ -94,9 +105,15 @@ commissionRoutes.put('/products/:id', async (req, res) => {
     }
 
     console.log(`[Commission] 수수료율 수정 완료`);
+    await recordAuditLog(req, {
+      action: 'admin.commission.rate_change',
+      targetType: 'product',
+      targetId: productId,
+      payload: { commissionRate },
+    });
     res.json({ success: true, message: '수수료율이 수정되었습니다.' });
   } catch (error) {
-    console.error('[Commission] 수수료율 수정 오류:', error);
+    logServerError('[Commission] 수수료율 수정 오류', error, req);
     res.status(500).json({ 
       success: false, 
       error: '수수료율 수정 중 오류가 발생했습니다.' 
@@ -138,7 +155,7 @@ commissionRoutes.get('/referrers', async (req, res) => {
     console.log(`[Commission] ${formattedReferrers.length}명 추천인 조회 완료`);
     res.json({ success: true, referrers: formattedReferrers });
   } catch (error) {
-    console.error('[Commission] 추천인 조회 오류:', error);
+    logServerError('[Commission] 추천인 조회 오류:', error, req);
     res.status(500).json({ 
       success: false, 
       error: '추천인 조회 중 오류가 발생했습니다.' 
@@ -193,13 +210,20 @@ commissionRoutes.post('/settlements/:id/approve', async (req, res) => {
       .where(eq(referralProfiles.id, referrerId));
 
     console.log(`[Commission] 정산 승인 완료: ${newSettlement[0].id}`);
+    await recordAuditLog(req, {
+      action: 'admin.settlement.approve',
+      targetType: 'settlement',
+      targetId: newSettlement[0].id,
+      targetName: '추천인 정산',
+      payload: { referrerId, amount, period },
+    });
     res.json({ 
       success: true, 
       message: '정산이 승인되었습니다.',
       settlement: newSettlement[0],
     });
   } catch (error) {
-    console.error('[Commission] 정산 승인 오류:', error);
+    logServerError('[Commission] 정산 승인 오류', error, req);
     res.status(500).json({ 
       success: false, 
       error: '정산 승인 중 오류가 발생했습니다.' 

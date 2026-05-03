@@ -10,14 +10,30 @@ if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
 
-// 포맷터 설정
+// 포맷터 설정 — 모든 메타데이터를 직렬화하여 컨텍스트(requestId/userId/route 등)를 보존
+const STANDARD_KEYS = new Set(['level', 'message', 'timestamp', 'stack', 'service', 'splat']);
 const formatter = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
-  winston.format.printf(({ level, message, timestamp, stack }) => {
-    return `${timestamp} [${level.toUpperCase()}]: ${message} ${stack || ''}`;
+  winston.format.printf((info) => {
+    const { level, message, timestamp, stack } = info as any;
+    const meta: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(info)) {
+      if (!STANDARD_KEYS.has(k) && v !== undefined) meta[k] = v;
+    }
+    const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    const stackStr = stack ? ` ${stack}` : '';
+    return `${timestamp} [${String(level).toUpperCase()}]: ${message}${metaStr}${stackStr}`;
   })
+);
+
+// 파일은 JSON 라인 형식으로 저장하여 구조화된 컨텍스트를 보존
+const jsonFileFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.errors({ stack: true }),
+  winston.format.splat(),
+  winston.format.json()
 );
 
 // 콘솔 트랜스포트 설정
@@ -36,7 +52,7 @@ const fileTransport = new winston.transports.DailyRotateFile({
   maxSize: '20m', // 20MB
   maxFiles: '14d', // 14일간 보관
   level: 'info',
-  format: formatter
+  format: jsonFileFormat
 });
 
 // 에러 전용 파일 트랜스포트 설정
@@ -46,7 +62,7 @@ const errorFileTransport = new winston.transports.DailyRotateFile({
   maxSize: '20m', // 20MB
   maxFiles: '30d', // 30일간 보관
   level: 'error',
-  format: formatter
+  format: jsonFileFormat
 });
 
 // 로거 생성

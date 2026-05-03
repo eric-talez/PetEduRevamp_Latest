@@ -1489,6 +1489,17 @@ function AuthenticatedRoutes() {
           }}
         </Route>
 
+        <Route path="/admin/audit-logs">
+          {() => {
+            const AdminAuditLogs = lazy(() => import('./pages/admin/AdminAuditLogs'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedAdminRoute component={AdminAuditLogs} />
+              </Suspense>
+            );
+          }}
+        </Route>
+
         <Route path="/admin/approvals">
           {() => {
             const AdminApprovals = lazy(() => import('./pages/admin/AdminApprovals'));

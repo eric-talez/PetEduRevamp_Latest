@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import winston from 'winston';
 import { 
   StandardApiError, 
   ApiErrorCode, 
@@ -8,22 +7,7 @@ import {
   ERROR_CODE_TO_HTTP_STATUS,
   HTTP_STATUS
 } from './api-standards';
-
-// 로깅 설정
-const logger = winston.createLogger({
-  level: 'error',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({ filename: 'logs/error.log' }),
-    new winston.transports.Console({
-      format: winston.format.simple()
-    })
-  ]
-});
+import { logger } from '../monitoring/logger';
 
 // =============================================================================
 // 기존 에러 클래스들 (하위 호환성 유지)
@@ -81,15 +65,16 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  // Winston 로거로 에러 로깅
-  logger.error({
-    message: error.message,
+  // Winston 로거로 에러 로깅 (요청 ID + 사용자 컨텍스트 첨부)
+  logger.error(`[ErrorHandler] ${error.message}`, {
     stack: error.stack,
-    url: req.url,
+    url: req.originalUrl || req.url,
     method: req.method,
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-    timestamp: new Date().toISOString(),
+    requestId: (req as any).requestId,
+    userId: (req as any).user?.id,
+    role: (req as any).user?.role,
     ...(error instanceof StandardApiError && { code: error.code }),
     ...(error instanceof AppError && { statusCode: error.statusCode })
   });
