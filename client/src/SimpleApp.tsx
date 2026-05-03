@@ -1594,6 +1594,19 @@ function AuthenticatedRoutes() {
             );
           }}
         </Route>
+        <Route path="/admin/notifications/send">
+          {() => {
+            const AdminSendNotification = lazy(() => import('./pages/admin/notifications/SendNotification'));
+            return (
+              <Suspense fallback={<div className="p-8 flex justify-center items-center">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                <span className="ml-2">알림 발송 페이지 로딩 중...</span>
+              </div>}>
+                <ProtectedAdminRoute component={AdminSendNotification} />
+              </Suspense>
+            );
+          }}
+        </Route>
         <Route path="/admin/settings">
           {() => {
             const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));

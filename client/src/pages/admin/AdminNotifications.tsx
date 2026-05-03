@@ -424,6 +424,15 @@ export default function AdminNotifications() {
           <h1 className="text-3xl font-bold tracking-tight">알림 관리</h1>
         </div>
         <div className="flex items-center space-x-2">
+          <Button
+            onClick={() => setLocation('/admin/notifications/send')}
+            variant="default"
+            size="sm"
+            data-testid="button-go-send-notification"
+          >
+            <Bell className="mr-2 h-4 w-4" />
+            알림 발송
+          </Button>
           <Button onClick={handleRefresh} variant="outline" size="sm">
             <RefreshCw className="mr-2 h-4 w-4" />
             새로고침

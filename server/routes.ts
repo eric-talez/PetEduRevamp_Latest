@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { randomBytes } from "crypto";
+import { z } from "zod";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, desc, or, ilike } from "drizzle-orm";
 import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles } from "../shared/schema";
@@ -1489,6 +1490,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         message: '사용자 삭제 중 오류가 발생했습니다.' 
       });
+    }
+  });
+
+  // 관리자 알림 발송 - 카테고리/대상 기반
+  app.post('/api/admin/notifications/send', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const sendSchema = z.object({
+        category: z.enum(['message', 'reservation', 'payment', 'system', 'training']),
+        title: z.string().trim().min(1).max(200),
+        message: z.string().trim().min(1).max(2000),
+        actionUrl: z.string().trim().max(500).optional().nullable(),
+        targetType: z.enum(['users', 'role', 'all']),
+        userIds: z.array(z.number().int().positive()).optional(),
+        role: z.enum(['admin', 'trainer', 'institute-admin', 'institute', 'pet-owner']).optional(),
+      });
+
+      const parsed = sendSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          success: false,
+          message: '입력값이 올바르지 않습니다.',
+          errors: parsed.error.flatten(),
+        });
+      }
+      const data = parsed.data;
+
+      // category → notification type 매핑 (notification-service 카테고리 매핑과 호환)
+      const categoryToType: Record<string, 'message' | 'reservation' | 'payment' | 'system' | 'training'> = {
+        message: 'message',
+        reservation: 'reservation',
+        payment: 'payment',
+        system: 'system',
+        training: 'training',
+      };
+      const notifType = categoryToType[data.category];
+
+      // 대상 사용자 ID 수집
+      type AdminTargetUser = { id: number; role?: string | null; isActive?: boolean | null };
+      let targetUserIds: number[] = [];
+      if (data.targetType === 'users') {
+        if (!data.userIds || data.userIds.length === 0) {
+          return res.status(400).json({ success: false, message: '대상 사용자를 선택하세요.' });
+        }
+        targetUserIds = Array.from(new Set(data.userIds));
+      } else if (data.targetType === 'role') {
+        if (!data.role) {
+          return res.status(400).json({ success: false, message: '대상 역할을 선택하세요.' });
+        }
+        const allUsers = (await storage.getAllUsers()) as AdminTargetUser[] | null | undefined;
+        const wanted = data.role === 'institute' ? 'institute-admin' : data.role;
+        targetUserIds = (allUsers ?? [])
+          .filter((u) => !!u && u.role === wanted && u.isActive !== false)
+          .map((u) => u.id);
+      } else {
+        const allUsers = (await storage.getAllUsers()) as AdminTargetUser[] | null | undefined;
+        targetUserIds = (allUsers ?? [])
+          .filter((u) => !!u && u.isActive !== false)
+          .map((u) => u.id);
+      }
+
+      if (targetUserIds.length === 0) {
+        return res.status(400).json({ success: false, message: '대상 사용자가 없습니다.' });
+      }
+
+      const actionUrl = data.actionUrl && data.actionUrl.length > 0 ? data.actionUrl : undefined;
+      const sentBy: number | null =
+        req.user && typeof (req.user as { id?: unknown }).id === 'number'
+          ? ((req.user as { id: number }).id)
+          : null;
+
+      let success = 0;
+      let failed = 0;
+      const failures: Array<{ userId: number; error: string }> = [];
+
+      for (const uid of targetUserIds) {
+        try {
+          await notificationService.sendNotification({
+            userId: uid,
+            type: notifType,
+            title: data.title,
+            message: data.message,
+            actionUrl,
+            data: { sentBy, source: 'admin-broadcast' },
+          });
+          success += 1;
+        } catch (err) {
+          failed += 1;
+          const errorMessage = err instanceof Error ? err.message : 'unknown error';
+          failures.push({ userId: uid, error: errorMessage });
+          logServerError('[Admin Notification] 발송 실패', err, req);
+        }
+      }
+
+      return res.json({
+        success: true,
+        total: targetUserIds.length,
+        successCount: success,
+        failedCount: failed,
+        failures: failures.slice(0, 20),
+        message: `발송 완료: 성공 ${success}건 / 실패 ${failed}건 (총 ${targetUserIds.length}명)`,
+      });
+    } catch (error) {
+      logServerError('[Admin Notification] 발송 처리 오류', error, req);
+      return res.status(500).json({ success: false, message: '알림 발송 중 오류가 발생했습니다.' });
     }
   });
 
