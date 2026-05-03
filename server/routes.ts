@@ -6113,6 +6113,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 1:1 수업/상담 완료 처리 - 트레이너 정산 항목 자동 생성 (sourceType: 'lesson')
+  // 보안: 관리자 전용 (server-authoritative). 일반 사용자가 임의 trainerId/amount 로
+  // 정산 항목을 생성하지 못하도록 admin 권한을 강제한다. 트레이너 본인 완료 플로우는
+  // 별도 PaymentService 결과를 admin/시스템이 confirm 하는 방식으로 처리한다.
+  app.post("/api/consultations/:id/complete", requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const consultationId = parseInt(req.params.id);
+      if (!Number.isFinite(consultationId)) {
+        return res.status(400).json({ success: false, message: "유효한 상담 ID가 필요합니다." });
+      }
+
+      const {
+        trainerId,
+        amount,
+        consultationType,
+        sourceName,
+        category,
+        notes,
+        paymentIntentId,
+      } = req.body || {};
+
+      const trainerIdNum = Number(trainerId);
+      const amountNum = Number(amount);
+      if (!Number.isFinite(trainerIdNum) || trainerIdNum <= 0
+          || !Number.isFinite(amountNum) || amountNum <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "trainerId(양수) 와 amount(>0) 는 필수입니다.",
+        });
+      }
+
+      // 트레이너 정산 항목 자동 생성 (멱등 - 동일 (lesson, consultationId) 1회만)
+      try {
+        const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
+        await createTrainerSettlementItem({
+          trainerId: trainerIdNum,
+          sourceType: 'lesson',
+          sourceId: consultationId,
+          sourceName: sourceName || `1:1 수업 #${consultationId}`,
+          category: category || (consultationType === 'video' ? 'video_consultation' : 'offline_lesson'),
+          grossAmount: amountNum,
+          occurredAt: new Date(),
+          metadata: {
+            consultationType: consultationType || 'offline',
+            confirmedBy: req.user?.id,
+            paymentIntentId: paymentIntentId || undefined, // 환불 시 자동 캐스케이드용
+            notes: notes || undefined,
+          },
+        });
+        console.log(`[트레이너 정산 자동 생성 - lesson] 상담 ${consultationId} 정산 항목 생성됨 (admin=${req.user?.id})`);
+      } catch (autoSettleErr) {
+        logServerError('[트레이너 정산 자동 생성 - lesson] 실패:', autoSettleErr, req);
+        return res.status(500).json({ success: false, message: "정산 항목 생성에 실패했습니다." });
+      }
+
+      res.json({
+        success: true,
+        message: "수업 완료가 처리되었고 정산 항목이 생성되었습니다.",
+      });
+    } catch (error) {
+      logServerError('상담 완료 처리 오류:', error, req);
+      res.status(500).json({ error: "상담 완료 처리 중 오류가 발생했습니다." });
+    }
+  });
+
   app.get("/api/consultations/:id", async (req, res) => {
     try {
       const consultationId = req.params.id;
@@ -7550,7 +7615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (paymentResult.success) {
             console.log(`[수수료 정산 완료] 상담 ${consultationId} - 수수료: ${paymentResult.feeAmount}원, 정산액: ${paymentResult.netAmount}원`);
-            
+
             // 상담 상태를 '진행 중'으로 업데이트
             // await storage.updateConsultationStatus(consultationId, 'in-progress');
             
@@ -12973,7 +13038,7 @@ app.get('/api/search', async (req, res) => {
   // 강의 구매 및 상품 구매 결제 인텐트 생성 - 인증, CSRF 보호, 입력 검증 적용
   app.post('/api/create-payment-intent', requireAuth(), csrfProtection, validateRequest(createPaymentIntentSchema), async (req, res) => {
     try {
-      const { amount, courseId, courseTitle, itemId, itemName, itemType } = req.body;
+      const { amount, courseId, courseTitle, itemId, itemName, itemType, trainerId: bodyTrainerId, category: bodyCategory } = req.body;
       
       // Stripe 사용 가능 여부 확인
       const currentStripeKey = process.env.STRIPE_SECRET_KEY;
@@ -13000,6 +13065,11 @@ app.get('/api/search', async (req, res) => {
         metadata.productId = itemId;
         metadata.productName = itemName || '상품 구매';
         metadata.type = 'product';
+        // 서버 측 트레이너 메타데이터 주입 (정산 자동 연결)
+        if (bodyTrainerId !== undefined && bodyTrainerId !== null && bodyTrainerId !== '') {
+          metadata.trainerId = String(bodyTrainerId);
+        }
+        if (bodyCategory) metadata.category = String(bodyCategory);
       } else {
         metadata.courseId = courseId || itemId;
         metadata.courseTitle = courseTitle || itemName || '강의 구매';
@@ -13114,6 +13184,12 @@ app.get('/api/search', async (req, res) => {
       }
 
       const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      // 주문 결제 시 트레이너 정산 자동 생성 (paymentIntent.metadata.trainerId 필요)
+      const md = paymentIntent.metadata || {};
+      const rawTrainerId = (md as Record<string, string | undefined>).trainerId
+        ?? (md as Record<string, string | undefined>).sellerId;
+      const trainerIdNum = rawTrainerId ? parseInt(String(rawTrainerId), 10) : NaN;
+      const settlementCategory = (md as Record<string, string | undefined>).category || 'product';
       let result: OrderRow;
       try {
         result = await db.transaction(async (tx) => {
@@ -13134,6 +13210,28 @@ app.get('/api/search', async (req, res) => {
             price: amount.toString(),
             totalPrice: amount.toString(),
           });
+
+          if (!Number.isNaN(trainerIdNum) && trainerIdNum > 0) {
+            try {
+              const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
+              await createTrainerSettlementItem(
+                {
+                  trainerId: trainerIdNum,
+                  sourceType: 'order',
+                  sourceId: order.id,
+                  sourceName: itemName,
+                  category: settlementCategory,
+                  grossAmount: amount,
+                  occurredAt: order.createdAt || new Date(),
+                  metadata: { userId: userIdNum, productId, paymentIntentId: paymentIntent.id },
+                },
+                tx
+              );
+            } catch (settleErr) {
+              console.error('[정산 자동 생성 - order] 실패:', settleErr);
+              throw settleErr;
+            }
+          }
 
           return order;
         });
@@ -13411,14 +13509,52 @@ app.get('/api/search', async (req, res) => {
         },
       });
 
-      // 트레이너 정산 항목 자동 취소 (refund metadata에 sourceType/sourceId 포함된 경우)
+      // 트레이너 정산 항목 자동 취소 - paymentIntentId 기반 서버측 source 도출
+      // 클라이언트가 보낸 sourceType/sourceId는 신뢰하지 않고, DB 조회로 결정한다.
       try {
-        const sourceType = req.body?.sourceType as ('course' | 'order' | 'lesson' | undefined);
-        const sourceId = req.body?.sourceId ? Number(req.body.sourceId) : undefined;
-        if (sourceType && sourceId) {
-          const { cancelTrainerSettlementItem } = await import('./routes/trainer-settlements');
-          const n = await cancelTrainerSettlementItem(sourceType, sourceId, `환불(${refund.id})`);
-          console.log(`[정산 자동 취소] ${sourceType}#${sourceId} → ${n}건 취소`);
+        const { cancelTrainerSettlementItem } = await import('./routes/trainer-settlements');
+        const cancelReason = `환불(${refund.id})`;
+        let cancelled = 0;
+
+        // 1) 강의 구매 매핑
+        const cp = await db.select().from(coursePurchases)
+          .where(eq(coursePurchases.paymentIntentId, paymentIntentId)).limit(1);
+        if (cp.length > 0) {
+          const n = await cancelTrainerSettlementItem('course', cp[0].id, cancelReason);
+          cancelled += n;
+          console.log(`[정산 자동 취소] course#${cp[0].id} → ${n}건 취소 (PI=${paymentIntentId})`);
+        }
+
+        // 2) 상품 주문 매핑
+        const od = await db.select().from(orders)
+          .where(eq(orders.paymentIntentId, paymentIntentId)).limit(1);
+        if (od.length > 0) {
+          const n = await cancelTrainerSettlementItem('order', od[0].id, cancelReason);
+          cancelled += n;
+          console.log(`[정산 자동 취소] order#${od[0].id} → ${n}건 취소 (PI=${paymentIntentId})`);
+        }
+
+        // 3) 1:1 수업/대체 세션 매핑 - lesson 정산 항목은 metadata->paymentIntentId 로 조회
+        try {
+          const { trainerSettlementItems } = await import('../shared/schema');
+          const lessonItems = await db
+            .select()
+            .from(trainerSettlementItems)
+            .where(and(
+              eq(trainerSettlementItems.sourceType, 'lesson'),
+              sql`${trainerSettlementItems.metadata}->>'paymentIntentId' = ${paymentIntentId}`,
+            ));
+          for (const item of lessonItems) {
+            const n = await cancelTrainerSettlementItem('lesson', item.sourceId, cancelReason);
+            cancelled += n;
+            console.log(`[정산 자동 취소] lesson#${item.sourceId} → ${n}건 취소 (PI=${paymentIntentId})`);
+          }
+        } catch (lessonErr) {
+          logServerError('[정산 자동 취소] lesson 매핑 조회 오류:', lessonErr, req);
+        }
+
+        if (cancelled === 0) {
+          console.log(`[정산 자동 취소] 대상 정산 항목 없음 (PI=${paymentIntentId})`);
         }
       } catch (cancelErr) {
         logServerError('[정산 자동 취소] 오류:', cancelErr, req);
@@ -18818,8 +18954,8 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
-  // 대체 훈련사 세션 완료 처리 및 결제
-  app.post("/api/substitute-trainer/sessions/:id/complete", async (req, res) => {
+  // 대체 훈련사 세션 완료 처리 및 결제 - 관리자 전용 (server-authoritative settlement)
+  app.post("/api/substitute-trainer/sessions/:id/complete", requireAuth('admin'), csrfProtection, async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
       const { notes, rating } = req.body;
@@ -18838,6 +18974,37 @@ export function registerTrainerCertificationRoutes(app: Express) {
         amount: session.paymentAmount,
         paymentDate: new Date()
       });
+
+      // 트레이너 정산 항목 자동 생성 (sourceType: 'lesson' - 오프라인 대체 수업)
+      // server-authoritative: trainerId/amount 모두 storage 의 session 으로부터만 도출
+      try {
+        const trainerIdForSettle = session.assignedTrainerId ?? session.substituteTrainerId ?? session.trainerId;
+        const grossAmount = Number(session.paymentAmount) || 0;
+        if (trainerIdForSettle && grossAmount > 0) {
+          const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
+          await createTrainerSettlementItem({
+            trainerId: Number(trainerIdForSettle),
+            sourceType: 'lesson',
+            sourceId: sessionId,
+            sourceName: `대체 훈련사 수업 #${sessionId}`,
+            category: 'substitute_lesson',
+            grossAmount,
+            occurredAt: new Date(),
+            metadata: {
+              substituteSessionId: sessionId,
+              paymentIntentId: session.paymentIntentId || req.body?.paymentIntentId || undefined,
+              rating: rating ?? undefined,
+              notes: notes ?? undefined,
+              confirmedBy: req.user?.id,
+            },
+          });
+          console.log(`[트레이너 정산 자동 생성 - lesson] 대체 세션 ${sessionId} 정산 항목 생성됨 (admin=${req.user?.id})`);
+        } else {
+          console.log(`[트레이너 정산 자동 생성 - lesson] 대체 세션 ${sessionId} 스킵 (trainerId/amount 없음)`);
+        }
+      } catch (autoSettleErr) {
+        logServerError('[트레이너 정산 자동 생성 - lesson] 대체 세션 실패:', autoSettleErr, req);
+      }
 
       res.json({
         success: true,

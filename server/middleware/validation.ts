@@ -138,7 +138,9 @@ export const createPaymentIntentSchema = {
     courseTitle: z.string().optional(),
     itemId: z.string().optional(),
     itemName: z.string().optional(),
-    itemType: z.enum(['course', 'product']).optional()
+    itemType: z.enum(['course', 'product']).optional(),
+    trainerId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).optional(),
+    category: z.string().max(100).optional(),
   }).refine(data => data.courseId || data.itemId, {
     message: '강의 ID 또는 상품 ID가 필요합니다.'
   })
