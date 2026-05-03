@@ -72,3 +72,8 @@ jwt-keys/
 *.backup
 *.bak
 backup_*
+# Playwright e2e 산출물 (실행 시 매번 갱신되므로 커밋 제외)
+playwright-report/
+test-results/
+tests/e2e/.auth/
+
