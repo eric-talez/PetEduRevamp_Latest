@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -8,9 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, TrendingUp, TrendingDown, Minus, ArrowRightLeft, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Calendar, TrendingUp, TrendingDown, Minus, ArrowRightLeft, Sparkles, AlertCircle, Download, FileImage, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 interface TrendsTabProps {
   petId: number | null;
@@ -36,6 +40,9 @@ function fetchJson(url: string) {
 }
 
 export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
+  const { toast } = useToast();
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState<'pdf' | 'png' | null>(null);
   const [period, setPeriod] = useState<string>('30d');
   const [customStart, setCustomStart] = useState<string>(
     new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]
@@ -84,6 +91,65 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
       fetchJson(`/api/ai-analysis/compare?analysisIdA=${analysisIdA}&analysisIdB=${analysisIdB}`),
   });
 
+  const periodLabel = useMemo(() => {
+    if (period === 'custom') return `${customStart} ~ ${customEnd}`;
+    const preset = PERIOD_PRESETS.find((p) => p.value === period);
+    return preset ? preset.label : period;
+  }, [period, customStart, customEnd]);
+
+  const handleExport = async (kind: 'pdf' | 'png') => {
+    if (!exportRef.current) return;
+    try {
+      setExporting(kind);
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const canvas = await html2canvas(exportRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const safeName = (petName || 'pet').replace(/[^\w가-힣-]+/g, '_');
+      const stamp = format(new Date(), 'yyyyMMdd-HHmm');
+      if (kind === 'png') {
+        const link = document.createElement('a');
+        link.download = `talez-trends-${safeName}-${stamp}.png`;
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } else {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const margin = 24;
+        const availW = pageW - margin * 2;
+        const availH = pageH - margin * 2;
+        // Scale to fit entire content on a single page
+        const scale = Math.min(availW / canvas.width, availH / canvas.height);
+        const imgW = canvas.width * scale;
+        const imgH = canvas.height * scale;
+        const offsetX = (pageW - imgW) / 2;
+        const offsetY = margin;
+        pdf.addImage(imgData, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
+        pdf.save(`talez-trends-${safeName}-${stamp}.pdf`);
+      }
+      toast({ title: '내보내기 완료', description: kind === 'pdf' ? 'PDF가 저장되었습니다.' : '이미지가 저장되었습니다.' });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : '내보내기 중 오류가 발생했습니다.';
+      toast({
+        title: '내보내기 실패',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const renderInsightIcon = (severity: string) => {
     if (severity === 'positive') return <TrendingUp className="w-4 h-4 text-green-600" />;
     if (severity === 'negative') return <TrendingDown className="w-4 h-4 text-red-600" />;
@@ -125,7 +191,30 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
                 {p.label}
               </Button>
             ))}
-            <div className="ml-auto">
+            <div className="ml-auto flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!!exporting || !trends?.success}
+                    data-testid="button-export-trends"
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    {exporting === 'pdf' ? 'PDF 생성 중...' : exporting === 'png' ? 'PNG 생성 중...' : '내보내기'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport('pdf')} data-testid="menu-export-pdf">
+                    <FileText className="w-4 h-4 mr-2" />
+                    PDF로 저장
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('png')} data-testid="menu-export-png">
+                    <FileImage className="w-4 h-4 mr-2" />
+                    PNG 이미지로 저장
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 size="sm"
                 variant={compareMode ? 'default' : 'outline'}
@@ -176,7 +265,26 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
           </CardContent>
         </Card>
       ) : trends?.success ? (
-        <>
+        <div ref={exportRef} className="space-y-4 bg-white p-4 rounded-md" data-testid="trends-export-area">
+          {/* 내보내기용 헤더 */}
+          <div className="border-b pb-3 mb-1">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  {petName ? `${petName}의 ` : ''}AI 분석 이력 추이 리포트
+                </h2>
+                <p className="text-xs text-gray-600 mt-1">
+                  기간: {periodLabel}
+                  {trends.range?.startDate && trends.range?.endDate
+                    ? ` (${trends.range.startDate} ~ ${trends.range.endDate})`
+                    : ''}
+                </p>
+              </div>
+              <div className="text-xs text-gray-500">
+                생성일: {format(new Date(), 'yyyy.M.d HH:mm', { locale: ko })}
+              </div>
+            </div>
+          </div>
           {/* 요약 카드 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <SummaryStat
@@ -309,10 +417,78 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
               </CardContent>
             </Card>
           )}
-        </>
+
+          {/* 비교 결과 (내보내기에 포함) */}
+          {compareMode && compareQuery.data?.success && (
+            <div className="space-y-4 border-t pt-4">
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="w-4 h-4" />
+                <h3 className="text-base font-semibold">두 분석 결과 비교</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <ComparisonPanel title="이전" data={compareQuery.data.analysisA} />
+                <ComparisonPanel title="이후" data={compareQuery.data.analysisB} />
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">지표 변화</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {compareQuery.data.diffs.map((d: any) => (
+                    <div
+                      key={d.metric}
+                      className={`flex items-center justify-between text-sm p-2 rounded ${
+                        d.severity === 'positive' ? 'bg-green-50' :
+                        d.severity === 'negative' ? 'bg-red-50' : 'bg-gray-50'
+                      }`}
+                      data-testid={`diff-${d.metric}`}
+                    >
+                      <span>{d.label}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="text-gray-600">{d.before ?? '-'}</span>
+                        <ArrowRightLeft className="w-3 h-3 text-gray-400" />
+                        <span className="font-semibold">{d.after ?? '-'}</span>
+                        {d.delta !== null && (
+                          <Badge variant={d.severity === 'positive' ? 'default' : d.severity === 'negative' ? 'destructive' : 'outline'}>
+                            {d.delta > 0 ? '+' : ''}{d.delta}
+                          </Badge>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {compareQuery.data.highlights?.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      주요 변화 하이라이트
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {compareQuery.data.highlights.map((h: any, i: number) => (
+                      <div
+                        key={i}
+                        className={`p-2 rounded text-sm border ${
+                          h.severity === 'positive' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                        }`}
+                        data-testid={`highlight-${h.metric}`}
+                      >
+                        {h.comment}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
       ) : null}
 
-      {/* 비교 모드 */}
+      {/* 비교 모드 — 분석 선택 UI (내보내기 제외) */}
       {compareMode && (
         <Card>
           <CardHeader>
@@ -348,67 +524,9 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
             )}
 
             {compareQuery.data?.success && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <ComparisonPanel title="이전" data={compareQuery.data.analysisA} />
-                  <ComparisonPanel title="이후" data={compareQuery.data.analysisB} />
-                </div>
-
-                {/* 변화량 표 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">지표 변화</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {compareQuery.data.diffs.map((d: any) => (
-                      <div
-                        key={d.metric}
-                        className={`flex items-center justify-between text-sm p-2 rounded ${
-                          d.severity === 'positive' ? 'bg-green-50' :
-                          d.severity === 'negative' ? 'bg-red-50' : 'bg-gray-50'
-                        }`}
-                        data-testid={`diff-${d.metric}`}
-                      >
-                        <span>{d.label}</span>
-                        <span className="flex items-center gap-2">
-                          <span className="text-gray-600">{d.before ?? '-'}</span>
-                          <ArrowRightLeft className="w-3 h-3 text-gray-400" />
-                          <span className="font-semibold">{d.after ?? '-'}</span>
-                          {d.delta !== null && (
-                            <Badge variant={d.severity === 'positive' ? 'default' : d.severity === 'negative' ? 'destructive' : 'outline'}>
-                              {d.delta > 0 ? '+' : ''}{d.delta}
-                            </Badge>
-                          )}
-                        </span>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                {compareQuery.data.highlights?.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-500" />
-                        주요 변화 하이라이트
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {compareQuery.data.highlights.map((h: any, i: number) => (
-                        <div
-                          key={i}
-                          className={`p-2 rounded text-sm border ${
-                            h.severity === 'positive' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                          }`}
-                          data-testid={`highlight-${h.metric}`}
-                        >
-                          {h.comment}
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              <p className="text-xs text-gray-500">
+                선택한 두 분석의 비교 결과가 위 추이 리포트에 함께 표시되며, "내보내기" 시 PDF/PNG에도 포함됩니다.
+              </p>
             )}
           </CardContent>
         </Card>
