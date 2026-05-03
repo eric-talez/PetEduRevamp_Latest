@@ -4895,6 +4895,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 알림장 PDF 내보내기 (인증 필요)
+  app.get("/api/notebook/entries/:id/pdf", requireAuth(), async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '해당 훈련 일지에 접근할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+
+      const pet = journal.petId ? storage.getPetById(journal.petId) : null;
+      const trainer = journal.trainerId ? storage.getUser(journal.trainerId) : null;
+      const owner = journal.petOwnerId ? storage.getUser(journal.petOwnerId) : null;
+      const { generateNotebookPdf } = await import('./services/notebook-pdf');
+      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner });
+
+      const safeName = (pet?.name || 'pet').toString().replace(/[^a-zA-Z0-9가-힣_-]/g, '_').slice(0, 40) || 'pet';
+      const filename = `talez-notebook-${safeName}-${journalId}.pdf`;
+      const asciiFallback = filename.replace(/[^\x20-\x7E]/g, '_');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+      res.setHeader('Cache-Control', 'private, no-store');
+      return res.end(buffer);
+    } catch (error) {
+      logServerError('[알림장 PDF] 생성 실패:', error, req);
+      res.status(500).json({ error: 'PDF 생성 중 오류가 발생했습니다.', code: 'PDF_GENERATION_FAILED' });
+    }
+  });
+
+  // 알림장 공유 토큰 발급 (단기 만료)
+  app.post("/api/notebook/entries/:id/share-token", requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '해당 훈련 일지에 접근할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+
+      // 만료 시간 (기본 24시간, 최소 1시간, 최대 30일)
+      const requested = parseInt(String(req.body?.expiresInHours ?? '24'), 10);
+      const expiresInHours = Math.min(Math.max(Number.isFinite(requested) ? requested : 24, 1), 24 * 30);
+      const token = randomBytes(24).toString('hex');
+      const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
+
+      storage.createNotebookShareToken({
+        token,
+        journalId,
+        createdBy: currentUser.id,
+        expiresAt,
+      });
+
+      const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers.host;
+      const baseUrl = host ? `${protocol}://${host}` : '';
+      const shareUrl = `${baseUrl}/api/notebook/shared/${token}`;
+
+      res.json({
+        success: true,
+        token,
+        expiresAt: expiresAt.toISOString(),
+        expiresInHours,
+        shareUrl,
+      });
+    } catch (error) {
+      logServerError('[알림장 공유] 토큰 발급 실패:', error, req);
+      res.status(500).json({ error: '공유 링크 생성 중 오류가 발생했습니다.', code: 'SHARE_TOKEN_FAILED' });
+    }
+  });
+
+  // 알림장 공개 공유 (PDF 인라인)
+  app.get("/api/notebook/shared/:token", async (req, res) => {
+    try {
+      const record = storage.getNotebookShareToken(req.params.token);
+      if (!record) {
+        return res.status(404).json({ error: '공유 링크가 만료되었거나 유효하지 않습니다.', code: 'SHARE_TOKEN_INVALID' });
+      }
+      const journal = storage.getTrainingJournalById(record.journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 알림장을 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      const pet = journal.petId ? storage.getPetById(journal.petId) : null;
+      const trainer = journal.trainerId ? storage.getUser(journal.trainerId) : null;
+      const owner = journal.petOwnerId ? storage.getUser(journal.petOwnerId) : null;
+      const { generateNotebookPdf } = await import('./services/notebook-pdf');
+      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner });
+
+      const safeName = (pet?.name || 'pet').toString().replace(/[^a-zA-Z0-9가-힣_-]/g, '_').slice(0, 40) || 'pet';
+      const filename = `talez-notebook-${safeName}-${journal.id}.pdf`;
+      const asciiFallback = filename.replace(/[^\x20-\x7E]/g, '_');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+      res.setHeader('Cache-Control', 'public, max-age=300');
+      return res.end(buffer);
+    } catch (error) {
+      logServerError('[알림장 공유 PDF] 생성 실패:', error, req);
+      res.status(500).json({ error: 'PDF 생성 중 오류가 발생했습니다.', code: 'PDF_GENERATION_FAILED' });
+    }
+  });
+
   // 6. 특정 펫의 훈련 일지 조회
   app.get("/api/pets/:petId/notebook", requireAuth(), async (req, res) => {
     try {

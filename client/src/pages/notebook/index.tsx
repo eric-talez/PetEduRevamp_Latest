@@ -2261,6 +2261,57 @@ export default function NotebookPage() {
               </DialogTitle>
             </DialogHeader>
 
+            {/* PDF 다운로드 / 공유 링크 */}
+            <div className="flex flex-wrap items-center gap-2 -mt-2 mb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  window.open(`/api/notebook/entries/${selectedEntry.id}/pdf`, '_blank');
+                }}
+                data-testid="button-notebook-download-pdf"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                PDF 다운로드
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const res = await secureRequest(`/api/notebook/entries/${selectedEntry.id}/share-token`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ expiresInHours: 24 }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data?.shareUrl) {
+                      throw new Error(data?.error || '공유 링크 생성에 실패했습니다.');
+                    }
+                    try {
+                      await navigator.clipboard.writeText(data.shareUrl);
+                      toast({
+                        title: '공유 링크가 복사되었습니다',
+                        description: `만료: ${new Date(data.expiresAt).toLocaleString('ko-KR')}`,
+                      });
+                    } catch {
+                      window.prompt('공유 링크 (24시간 유효)', data.shareUrl);
+                    }
+                  } catch (e: any) {
+                    toast({
+                      title: '오류',
+                      description: e?.message || '공유 링크 생성 중 오류가 발생했습니다.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                data-testid="button-notebook-share"
+              >
+                <Share className="h-4 w-4 mr-1" />
+                공유 링크 발급
+              </Button>
+            </div>
+
             <div className="space-y-6">
               {/* 기본 정보 */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">

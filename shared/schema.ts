@@ -1064,6 +1064,18 @@ export const trainingJournals = pgTable("training_journals", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// 알림장 공유 토큰 테이블 (PDF 외부 공유 링크)
+export const notebookShareTokens = pgTable("notebook_share_tokens", {
+  id: serial("id").primaryKey(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  journalId: integer("journal_id").references(() => trainingJournals.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type NotebookShareToken = typeof notebookShareTokens.$inferSelect;
+
 // 알림장 댓글 테이블 - 견주의 응답
 export const journalComments: any = pgTable("journal_comments", {
   id: serial("id").primaryKey(),

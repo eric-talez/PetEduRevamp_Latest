@@ -39,6 +39,7 @@ class Storage {
   products: any[] = [];
   pricingRules: any[] = [];
   trainingJournals: any[] = [];
+  notebookShareTokens: any[] = [];
   posts: any[] = [];
   coursePurchases: any[] = [];
   courseProgress: any[] = [];
@@ -6055,6 +6056,37 @@ class HybridStorage extends Storage {
       logServerError('[Share Token] DB 철회 실패:', err);
       return false;
     }
+  }
+
+  // =============================================================================
+  // 알림장 공유 토큰 (PDF 외부 공유 링크) - 인메모리 저장
+  // =============================================================================
+  createNotebookShareToken(data: { token: string; journalId: number; createdBy: number | null; expiresAt: Date; }) {
+    const row = {
+      id: this.notebookShareTokens.length + 1,
+      token: data.token,
+      journalId: data.journalId,
+      createdBy: data.createdBy ?? null,
+      expiresAt: data.expiresAt,
+      revokedAt: null as Date | null,
+      createdAt: new Date(),
+    };
+    this.notebookShareTokens.push(row);
+    return row;
+  }
+
+  getNotebookShareToken(token: string) {
+    const record = this.notebookShareTokens.find(t => t.token === token);
+    if (!record) return null;
+    if (record.revokedAt) return null;
+    if (record.expiresAt && new Date(record.expiresAt).getTime() < Date.now()) return null;
+    return record;
+  }
+
+  revokeNotebookShareToken(token: string) {
+    const record = this.notebookShareTokens.find(t => t.token === token);
+    if (record) record.revokedAt = new Date();
+    return !!record;
   }
 
   // Care logs를 날짜별로 그룹화하여 반환
