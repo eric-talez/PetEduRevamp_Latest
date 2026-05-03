@@ -3537,7 +3537,9 @@ export const notebookReportPreferences = pgTable("notebook_report_preferences", 
   monthlyEnabled: boolean("monthly_enabled").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  userPetUnique: uniqueIndex("notebook_report_prefs_user_pet_uniq").on(table.userId, table.petId),
+}));
 export const insertNotebookReportPreferenceSchema = createInsertSchema(notebookReportPreferences).omit({
   id: true, createdAt: true, updatedAt: true,
 });

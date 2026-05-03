@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { db } from "../db";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { notebookReportPreferences } from "../../shared/schema";
 import { storage } from "../storage";
 import { csrfProtection } from "../middleware/csrf";
@@ -96,29 +96,25 @@ export function registerNotebookReportRoutes(app: Express) {
       return res.status(403).json({ error: "권한이 없습니다" });
     }
     try {
-      const existing = await db
-        .select()
-        .from(notebookReportPreferences)
-        .where(and(eq(notebookReportPreferences.userId, u.id), eq(notebookReportPreferences.petId, petId)))
-        .limit(1);
-      if (existing.length === 0) {
-        await db.insert(notebookReportPreferences).values({
+      const update: { updatedAt: Date; weeklyEnabled?: boolean; monthlyEnabled?: boolean } = {
+        updatedAt: new Date(),
+      };
+      if (typeof weeklyEnabled === "boolean") update.weeklyEnabled = weeklyEnabled;
+      if (typeof monthlyEnabled === "boolean") update.monthlyEnabled = monthlyEnabled;
+
+      // 유니크 인덱스 (user_id, pet_id) 기반 upsert — 동시 요청에서도 단일 행 보장.
+      await db
+        .insert(notebookReportPreferences)
+        .values({
           userId: u.id,
           petId,
           weeklyEnabled: weeklyEnabled ?? true,
           monthlyEnabled: monthlyEnabled ?? false,
+        })
+        .onConflictDoUpdate({
+          target: [notebookReportPreferences.userId, notebookReportPreferences.petId],
+          set: update,
         });
-      } else {
-        const update: { updatedAt: Date; weeklyEnabled?: boolean; monthlyEnabled?: boolean } = {
-          updatedAt: new Date(),
-        };
-        if (typeof weeklyEnabled === "boolean") update.weeklyEnabled = weeklyEnabled;
-        if (typeof monthlyEnabled === "boolean") update.monthlyEnabled = monthlyEnabled;
-        await db
-          .update(notebookReportPreferences)
-          .set(update)
-          .where(eq(notebookReportPreferences.id, existing[0].id));
-      }
       res.json({ success: true });
     } catch (err) {
       logServerError("[notebookReport] update prefs failed", err);
