@@ -239,12 +239,22 @@ class PushSchedulerService {
 
       let anySuccess = false;
 
+      // FCM data payload 은 string key/value 만 허용 → 숫자/불리언 등은 문자열화
+      let normalizedData: Record<string, string> | undefined;
+      if (notif.data && typeof notif.data === 'object') {
+        normalizedData = {};
+        for (const [k, v] of Object.entries(notif.data as Record<string, unknown>)) {
+          if (v === null || v === undefined) continue;
+          normalizedData[k] = typeof v === 'string' ? v : JSON.stringify(v);
+        }
+      }
+
       for (const token of userTokens) {
         const result = await fcmService.sendToDevice(
           token.token,
           notif.title,
           notif.message,
-          notif.data as Record<string, string> | undefined
+          normalizedData
         );
 
         if (result.success) {

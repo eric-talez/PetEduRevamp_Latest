@@ -10853,6 +10853,27 @@ app.get('/api/search', async (req, res) => {
         }
       } catch (e) { console.warn('알림 생성 실패', e); }
 
+      // D-1 / 당일 푸시 알림 예약 (완료/취소 상태로 생성 시는 예약하지 않음)
+      try {
+        if (payload.reminderEnabled !== false && created.status !== 'completed' && created.status !== 'cancelled') {
+          const { scheduleHealthReminders } = await import('./services/diary-reminder');
+          const ids = await scheduleHealthReminders({
+            userId: access.userId,
+            petId: parseInt(petId),
+            petName: access.pet.name,
+            targetDate: String(payload.dueDate),
+            kind: 'medication',
+            itemId: created.id,
+            itemName: String(payload.name),
+            actionUrl: `/pet-care/health-diary?petId=${petId}`,
+          });
+          if (ids.length > 0) {
+            const updated = await storage.updateMedication(created.id, { reminderScheduleIds: ids });
+            Object.assign(created, updated);
+          }
+        }
+      } catch (e) { console.warn('[약복용] 푸시 예약 실패', e); }
+
       res.status(201).json({ success: true, medication: created });
     } catch (error) {
       logServerError('[약복용] 생성 오류:', error, req);
@@ -10874,6 +10895,35 @@ app.get('/api/search', async (req, res) => {
       const updates: Record<string, unknown> = {};
       for (const k of allowed) if (req.body?.[k] !== undefined) updates[k] = req.body[k];
       const updated = await storage.updateMedication(id, updates);
+
+      // 푸시 예약 재설정 (날짜/리마인더/상태 변경 시)
+      try {
+        const dateChanged = updates.dueDate !== undefined && updates.dueDate !== existing.dueDate;
+        const reminderToggled = updates.reminderEnabled !== undefined && updates.reminderEnabled !== existing.reminderEnabled;
+        const statusChanged = updates.status !== undefined && updates.status !== existing.status;
+        if (dateChanged || reminderToggled || statusChanged) {
+          const { scheduleHealthReminders, cancelScheduledReminders } = await import('./services/diary-reminder');
+          await cancelScheduledReminders(existing.reminderScheduleIds || []);
+          let newIds: number[] = [];
+          const finalReminderEnabled = updates.reminderEnabled !== undefined ? updates.reminderEnabled : existing.reminderEnabled;
+          const finalStatus = updates.status !== undefined ? updates.status : existing.status;
+          if (finalReminderEnabled !== false && finalStatus !== 'completed' && finalStatus !== 'cancelled') {
+            newIds = await scheduleHealthReminders({
+              userId: access.userId,
+              petId: existing.petId,
+              petName: access.pet.name,
+              targetDate: String(updated.dueDate),
+              kind: 'medication',
+              itemId: id,
+              itemName: String(updated.name),
+              actionUrl: `/pet-care/health-diary?petId=${existing.petId}`,
+            });
+          }
+          const refreshed = await storage.updateMedication(id, { reminderScheduleIds: newIds });
+          Object.assign(updated, refreshed);
+        }
+      } catch (e) { console.warn('[약복용] 푸시 재예약 실패', e); }
+
       res.json({ success: true, medication: updated });
     } catch (error) {
       logServerError('[약복용] 수정 오류:', error, req);
@@ -10891,11 +10941,49 @@ app.get('/api/search', async (req, res) => {
       const access = await requireDiaryAccess(req, res, existing.petId);
       if (!access) return;
       if (!access.isOwner && !access.isAdmin) return res.status(403).json({ success: false, error: '권한 없음' });
+      try {
+        const { cancelScheduledReminders } = await import('./services/diary-reminder');
+        await cancelScheduledReminders(existing.reminderScheduleIds || []);
+      } catch (e) { console.warn('[약복용] 푸시 취소 실패', e); }
       const ok = await storage.deleteMedication(id);
       res.json({ success: ok });
     } catch (error) {
       logServerError('[약복용] 삭제 오류:', error, req);
       res.status(500).json({ success: false, error: '삭제 중 오류' });
+    }
+  });
+
+  // 사용자별 알림 시간 설정 (D-1 / 당일 푸시 발송 시각)
+  app.get("/api/notifications/reminder-settings", async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      const { getUserReminderTime } = await import('./services/diary-reminder');
+      const time = await getUserReminderTime(userId);
+      res.json({ success: true, reminderTime: time });
+    } catch (error) {
+      logServerError('[알림설정] 조회 오류:', error, req);
+      res.status(500).json({ success: false, error: '조회 중 오류' });
+    }
+  });
+
+  app.put("/api/notifications/reminder-settings", async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      const { hour, minute } = req.body || {};
+      if (typeof hour !== 'number' || typeof minute !== 'number') {
+        return res.status(400).json({ success: false, error: 'hour, minute(숫자)가 필요합니다' });
+      }
+      if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        return res.status(400).json({ success: false, error: 'hour는 0-23, minute는 0-59 범위여야 합니다' });
+      }
+      const { setUserReminderTime } = await import('./services/diary-reminder');
+      const time = await setUserReminderTime(userId, hour, minute);
+      res.json({ success: true, reminderTime: time });
+    } catch (error) {
+      logServerError('[알림설정] 저장 오류:', error, req);
+      res.status(500).json({ success: false, error: '저장 중 오류' });
     }
   });
 
@@ -20060,6 +20148,33 @@ export function registerTrainerCertificationRoutes(app: Express) {
           });
         }
       } catch (e) { console.warn('[Vaccinations] 알림 생성 실패', e); }
+      // D-1 / 당일 푸시 알림 예약 (reminderEnabled / 완료·취소 상태 게이팅)
+      try {
+        const pet = await storage.getPet(newVaccination.petId);
+        if (
+          pet &&
+          newVaccination.userId &&
+          newVaccination.reminderEnabled !== false &&
+          newVaccination.status !== 'completed' &&
+          newVaccination.status !== 'cancelled'
+        ) {
+          const { scheduleHealthReminders } = await import('./services/diary-reminder');
+          const ids = await scheduleHealthReminders({
+            userId: newVaccination.userId,
+            petId: pet.id,
+            petName: pet.name,
+            targetDate: String(newVaccination.vaccineDate),
+            kind: 'vaccination',
+            itemId: newVaccination.id,
+            itemName: String(newVaccination.vaccineName),
+            actionUrl: `/pet-care/health-diary?petId=${pet.id}`,
+          });
+          if (ids.length > 0) {
+            const refreshed = await storage.updateVaccination(newVaccination.id, { reminderScheduleIds: ids });
+            Object.assign(newVaccination, refreshed);
+          }
+        }
+      } catch (e) { console.warn('[Vaccinations] 푸시 예약 실패', e); }
       res.status(201).json({ success: true, vaccination: newVaccination });
     } catch (error: any) {
       logServerError('[Vaccinations] 예방접종 생성 오류:', error, req);
@@ -20088,6 +20203,43 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const { updateVaccinationSchema } = await import('../shared/schema');
       const validatedData = updateVaccinationSchema.parse(req.body);
       const updatedVaccination = await storage.updateVaccination(id, validatedData);
+
+      // 푸시 예약 재설정 (날짜 / 상태 / 리마인더 토글 변경 시)
+      try {
+        const updateFields: {
+          vaccineDate?: string;
+          status?: string;
+          reminderEnabled?: boolean;
+        } = validatedData;
+        const dateChanged = updateFields.vaccineDate !== undefined && updateFields.vaccineDate !== existing.vaccineDate;
+        const statusChanged = updateFields.status !== undefined && updateFields.status !== existing.status;
+        const reminderToggled = updateFields.reminderEnabled !== undefined && updateFields.reminderEnabled !== existing.reminderEnabled;
+        if (dateChanged || statusChanged || reminderToggled) {
+          const { scheduleHealthReminders, cancelScheduledReminders } = await import('./services/diary-reminder');
+          await cancelScheduledReminders(existing.reminderScheduleIds || []);
+          let newIds: number[] = [];
+          const finalStatus = updateFields.status !== undefined ? updateFields.status : existing.status;
+          const finalReminderEnabled = updateFields.reminderEnabled !== undefined ? updateFields.reminderEnabled : existing.reminderEnabled;
+          if (finalReminderEnabled !== false && finalStatus !== 'completed' && finalStatus !== 'cancelled') {
+            const pet = await storage.getPet(existing.petId);
+            if (pet && existing.userId) {
+              newIds = await scheduleHealthReminders({
+                userId: existing.userId,
+                petId: pet.id,
+                petName: pet.name,
+                targetDate: String(updatedVaccination.vaccineDate),
+                kind: 'vaccination',
+                itemId: id,
+                itemName: String(updatedVaccination.vaccineName),
+                actionUrl: `/pet-care/health-diary?petId=${pet.id}`,
+              });
+            }
+          }
+          const refreshed = await storage.updateVaccination(id, { reminderScheduleIds: newIds });
+          Object.assign(updatedVaccination, refreshed);
+        }
+      } catch (e) { console.warn('[Vaccinations] 푸시 재예약 실패', e); }
+
       res.json({ success: true, vaccination: updatedVaccination });
     } catch (error: any) {
       logServerError('[Vaccinations] 예방접종 수정 오류:', error, req);
@@ -20116,6 +20268,10 @@ export function registerTrainerCertificationRoutes(app: Express) {
       if (!access.isOwner && !access.isAdmin) {
         return res.status(403).json({ success: false, message: '보호자만 삭제할 수 있습니다.' });
       }
+      try {
+        const { cancelScheduledReminders } = await import('./services/diary-reminder');
+        await cancelScheduledReminders(existing.reminderScheduleIds || []);
+      } catch (e) { console.warn('[Vaccinations] 푸시 취소 실패', e); }
       const deleted = await storage.deleteVaccination(id);
       if (!deleted) {
         return res.status(404).json({ success: false, message: '예방접종 스케줄을 찾을 수 없습니다.' });
