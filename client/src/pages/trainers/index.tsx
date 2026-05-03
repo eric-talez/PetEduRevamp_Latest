@@ -28,28 +28,7 @@ import { useAuth } from "@/hooks/useAuth"; // 모듈화된 useAuth 훅 사용
 import { UnifiedTrainerProfileModal } from "@/components/UnifiedTrainerProfileModal";
 import { GoogleMapView } from "@/components/GoogleMapView";
 import { useQuery } from "@tanstack/react-query";
-
-function TrainerRatingInline({ trainerId, fallbackRating, fallbackReviews }: { trainerId: number; fallbackRating?: number; fallbackReviews?: number }) {
-  const { data } = useQuery<{ success: boolean; average: number; count: number }>({
-    queryKey: ["/api/trainer-reviews/summary", trainerId],
-    queryFn: async () => {
-      const res = await fetch(`/api/trainer-reviews/summary/${trainerId}`);
-      if (!res.ok) throw new Error("failed");
-      return res.json();
-    },
-    staleTime: 60_000,
-  });
-  const avg = data?.count ? data.average : fallbackRating ?? 0;
-  const count = data?.count ?? fallbackReviews ?? 0;
-  return (
-    <div className="flex items-center" data-testid={`trainer-rating-${trainerId}`}>
-      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-2" />
-      <span className="text-sm text-gray-700 dark:text-gray-300">
-        {avg ? Number(avg).toFixed(1) : "-"} ({count} 후기)
-      </span>
-    </div>
-  );
-}
+import { TrainerRatingInline } from "@/components/business/TrainerRatingInline";
 
 export default function Trainers() {
   const [filter, setFilter] = useState("all");
@@ -114,6 +93,7 @@ export default function Trainers() {
         params.append('sortOrder', sortOrder);
         params.append('page', currentPage.toString());
         params.append('limit', '12');
+        params.append('withReviewSummary', 'true');
 
         const response = await fetch(`/api/trainers?${params.toString()}`, {
           cache: 'no-cache',
@@ -631,7 +611,13 @@ export default function Trainers() {
                   <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:underline">{trainer.location}</span>
                 </div>
 
-                <TrainerRatingInline trainerId={trainer.id} fallbackRating={trainer.rating} fallbackReviews={trainer.reviews} />
+                <TrainerRatingInline
+                  trainerId={trainer.id}
+                  fallbackRating={trainer.rating}
+                  fallbackReviews={trainer.reviews}
+                  initialAverage={trainer.ratingSummary?.average}
+                  initialCount={trainer.ratingSummary?.count}
+                />
 
                 <div className="flex items-center">
                   <Briefcase className="h-4 w-4 text-gray-500 dark:text-gray-400 mr-2" />

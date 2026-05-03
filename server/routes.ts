@@ -11364,20 +11364,37 @@ app.get('/api/search', async (req, res) => {
         page = 1,
         limit = 12,
         sortBy = 'rating',
-        sortOrder = 'desc'
+        sortOrder = 'desc',
+        withReviewSummary
       } = req.query;
 
       let rawTrainers = await storage.getAllTrainers();
+      const includeReviewSummary = withReviewSummary === 'true' || withReviewSummary === '1';
 
       // 데이터를 UnifiedTrainer 형태로 변환
-      let trainers = rawTrainers.map(trainer => ({
+      let trainers = rawTrainers.map(trainer => {
+        const reviewSummary = includeReviewSummary
+          ? storage.getTrainerReviewSummary(trainer.id)
+          : null;
+        const realRating = reviewSummary && reviewSummary.count > 0 ? reviewSummary.average : null;
+        const realCount = reviewSummary ? reviewSummary.count : null;
+        return {
         id: trainer.id,
         name: trainer.name,
         specialty: Array.isArray(trainer.specialization) ? trainer.specialization.join(', ') : trainer.specialization || trainer.specialty || '전문 분야 없음',
         description: trainer.bio || `${trainer.name}은 ${trainer.experience}년 경력의 전문 훈련사입니다.`,
-        rating: trainer.rating || 4.5,
-        reviewCount: trainer.reviewCount || 10,
-        reviews: trainer.reviews || trainer.reviewCount || 10,
+        rating: includeReviewSummary
+          ? (realRating ?? 0)
+          : (trainer.rating ?? 4.5),
+        reviewCount: includeReviewSummary
+          ? (realCount ?? 0)
+          : (trainer.reviewCount ?? 10),
+        reviews: includeReviewSummary
+          ? (realCount ?? 0)
+          : (trainer.reviews ?? trainer.reviewCount ?? 10),
+        ratingSummary: reviewSummary
+          ? { average: reviewSummary.average, count: reviewSummary.count }
+          : undefined,
         certifications: trainer.certifications || [trainer.certification || '기본 자격증'],
         location: trainer.location || trainer.address || '서울시',
         experience: trainer.experience || '2년',
@@ -11392,7 +11409,8 @@ app.get('/api/search', async (req, res) => {
           phone: trainer.phone,
           email: trainer.email
         }
-      }));
+        };
+      });
 
       // 필터링 적용
       if (specialty && specialty !== 'all') {

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { TalezTrainerCertificationBadge } from '@/components/business/TalezTrainerCertificationBadge';
+import { TrainerRatingInline } from '@/components/business/TrainerRatingInline';
 import { useToast } from '@/hooks/use-toast';
 import { Star, MessageCircle, Calendar, Phone, Mail, MapPin, Send, Clock } from 'lucide-react';
 
@@ -205,13 +206,13 @@ const MyTrainersPage = () => {
                         {trainer.specialty}
                       </p>
                       <div className="flex items-center mt-2 space-x-2">
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="ml-1 text-sm font-medium">{trainer.rating}</span>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          ({trainer.reviews}개 리뷰)
-                        </span>
+                        <TrainerRatingInline
+                          trainerId={trainer.id}
+                          fallbackRating={trainer.rating}
+                          fallbackReviews={trainer.reviews}
+                          iconClassName="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1"
+                          textClassName="text-sm font-medium text-gray-700 dark:text-gray-300"
+                        />
                       </div>
                       <div className="mt-2">
                         <TalezTrainerCertificationBadge 
@@ -384,10 +385,17 @@ const MyTrainersPage = () => {
                 <div>
                   <h4 className="font-medium">{selectedTrainer?.name}</h4>
                   <p className="text-sm text-gray-500">{selectedTrainer?.specialty}</p>
-                  <div className="flex items-center mt-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="ml-1 text-sm">{selectedTrainer?.rating}</span>
-                  </div>
+                  {selectedTrainer && (
+                    <div className="flex items-center mt-1">
+                      <TrainerRatingInline
+                        trainerId={selectedTrainer.id}
+                        fallbackRating={selectedTrainer.rating}
+                        fallbackReviews={selectedTrainer.reviews}
+                        iconClassName="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1"
+                        textClassName="text-sm text-gray-700 dark:text-gray-300"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
