@@ -434,6 +434,16 @@ export function standardErrorHandler(
 
   // 표준 API 에러인 경우
   if (error instanceof StandardApiError) {
+    const isProdEnv = process.env.NODE_ENV === 'production';
+    // 운영 환경의 5xx StandardApiError 는 내부 메시지/details 를 절대 노출하지 않는다
+    if (isProdEnv && error.statusCode >= 500) {
+      return res.error(
+        error.code,
+        '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        undefined,
+        error.statusCode,
+      );
+    }
     return res.error(error.code, error.message, error.details, error.statusCode);
   }
 
@@ -453,11 +463,12 @@ export function standardErrorHandler(
     );
   }
 
-  // 기본 에러 처리
+  // 기본 에러 처리 (운영: 일반 메시지만, 스택 절대 노출 X)
+  const isProd = process.env.NODE_ENV === 'production';
   return res.error(
     ApiErrorCode.INTERNAL_SERVER_ERROR,
-    process.env.NODE_ENV === 'development' ? error.message : '서버 오류가 발생했습니다.',
-    process.env.NODE_ENV === 'development' ? { stack: error.stack } : undefined,
+    isProd ? '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' : (error.message || '서버 오류가 발생했습니다.'),
+    isProd ? undefined : { stack: error.stack },
     HTTP_STATUS.INTERNAL_SERVER_ERROR
   );
 }

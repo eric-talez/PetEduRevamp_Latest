@@ -94,6 +94,8 @@ export const errorHandler = (
     ...(error instanceof AppError && { statusCode: error.statusCode })
   });
 
+  const isProd = process.env.NODE_ENV === 'production';
+
   // 표준 API 에러인 경우 새로운 표준 핸들러 사용
   if (error instanceof StandardApiError) {
     return standardErrorHandler(error, req, res, next);
@@ -102,10 +104,14 @@ export const errorHandler = (
   // 기존 AppError 클래스들 처리 (하위 호환성 유지)
   if (error instanceof AppError) {
     const errorCode = getErrorCodeFromAppError(error);
+    // 운영 환경의 5xx AppError 메시지는 절대 노출하지 않는다 (내부 정보 마스킹)
+    const safeMessage = (isProd && error.statusCode >= 500)
+      ? '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      : error.message;
     const response = createErrorResponse(
       errorCode,
-      error.message,
-      process.env.NODE_ENV === 'development' ? { stack: error.stack } : undefined
+      safeMessage,
+      isProd ? undefined : { stack: error.stack }
     );
     return res.status(error.statusCode).json(response);
   }
@@ -114,12 +120,19 @@ export const errorHandler = (
   let statusCode = 500;
   let message = error.message;
   let errorCode = ApiErrorCode.INTERNAL_SERVER_ERROR;
+  let exposeMessage = !isProd;
 
-  // 데이터베이스 에러 처리
-  if (error.name === 'MongoError' || error.name === 'ValidationError') {
+  // 데이터베이스 에러 처리 (DB 메시지는 절대 노출 X)
+  if (
+    error.name === 'MongoError' ||
+    error.name === 'ValidationError' ||
+    error.name === 'QueryFailedError' ||
+    /^([A-Z]{2}\d{3}|ER_)/i.test((error as any).code || '')
+  ) {
     statusCode = HTTP_STATUS.BAD_REQUEST;
     message = '데이터 처리 중 오류가 발생했습니다.';
     errorCode = ApiErrorCode.DATABASE_ERROR;
+    exposeMessage = true; // 이 메시지는 안전한 일반 문구
   }
 
   // JWT 에러 처리
@@ -127,19 +140,25 @@ export const errorHandler = (
     statusCode = HTTP_STATUS.UNAUTHORIZED;
     message = '유효하지 않은 토큰입니다.';
     errorCode = ApiErrorCode.TOKEN_INVALID;
+    exposeMessage = true;
   }
 
   if (error.name === 'TokenExpiredError') {
     statusCode = HTTP_STATUS.UNAUTHORIZED;
     message = '토큰이 만료되었습니다.';
     errorCode = ApiErrorCode.TOKEN_EXPIRED;
+    exposeMessage = true;
   }
 
-  // 표준 에러 응답 생성
+  // 운영 환경: 5xx 에러는 항상 일반 메시지로 마스킹, 스택트레이스 절대 노출 X
+  const safeMessage = (!exposeMessage && statusCode >= 500)
+    ? '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+    : (isProd && statusCode >= 500 ? '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' : message);
+
   const response = createErrorResponse(
     errorCode,
-    message,
-    process.env.NODE_ENV === 'development' ? { stack: error.stack } : undefined
+    safeMessage,
+    isProd ? undefined : { stack: error.stack }
   );
 
   res.status(statusCode).json(response);

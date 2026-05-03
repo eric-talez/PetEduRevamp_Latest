@@ -26,6 +26,7 @@ import { setupAuth } from "./auth";
 import { activitySessionMiddleware, ensureUserSessionsSchema, startUserSessionCleanupScheduler } from "./auth/session-manager";
 import { extendResponse } from "./middleware/api-standards";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
+import { closeDatabasePool } from "./db";
 import path from 'path'; // path 모듈 추가
 import locationRoutes from './location/routes';
 import { registerEventRoutes } from './events/routes';
@@ -177,8 +178,42 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// 업로드된 파일을 정적으로 제공
-app.use('/uploads', express.static('uploads'));
+// =============================================================================
+// Rate Limiters (개발 환경에서도 활성화하여 코드 경로 검증)
+// =============================================================================
+const isProdRL = process.env.NODE_ENV === 'production';
+
+// 정적 자산 (대용량 업/다운로드 남용 방지)
+const staticAssetLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: isProdRL ? 300 : 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { code: 'STATIC_RATE_LIMIT', message: '정적 자산 요청이 너무 많습니다.' },
+    meta: { timestamp: new Date().toISOString() }
+  }
+});
+
+// AI/분석 등 고비용 엔드포인트
+const aiHeavyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: isProdRL ? 20 : 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => req.session?.user?.id || req.ip,
+  message: {
+    success: false,
+    error: { code: 'AI_RATE_LIMIT', message: 'AI 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.' },
+    meta: { timestamp: new Date().toISOString() }
+  }
+});
+
+// (AI 라우트용 limiter 는 세션/인증 미들웨어 이후에 적용 — 아래 setupAuth 직후 등록됨)
+
+// 정적 자산 limiter 후 정적 서빙
+app.use('/uploads', staticAssetLimiter, express.static('uploads'));
 
 // 로고 및 기타 정적 파일 제공
 app.use(express.static('public'));
@@ -205,16 +240,19 @@ const loginLimiter = rateLimit({
 // 로그인 엔드포인트에만 적용
 app.use('/api/auth/login', loginLimiter);
 
-// 일반 API 레이트 리미터는 프로덕션에서만
-if (process.env.NODE_ENV === 'production') {
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false
-  });
-  app.use(limiter);
-}
+// 일반 API 레이트 리미터 - 운영/개발 모두 활성화 (개발은 완화 값)
+const generalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isProdRL ? 300 : 2000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { code: 'API_RATE_LIMIT', message: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+    meta: { timestamp: new Date().toISOString() }
+  }
+});
+app.use('/api/', generalApiLimiter);
 
 // 성능 최적화 설정 (압축, 캐시, 모니터링)
 setupPerformance(app);
@@ -231,10 +269,10 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static file serving for images and assets (BEFORE Vite middleware)
-app.use('/images', express.static('public/images'));
-app.use('/assets', express.static('public/assets'));
-app.use('/uploads', express.static('public/uploads'));
-app.use('/attached_assets', express.static('attached_assets'));
+app.use('/images', staticAssetLimiter, express.static('public/images'));
+app.use('/assets', staticAssetLimiter, express.static('public/assets'));
+app.use('/uploads', staticAssetLimiter, express.static('public/uploads'));
+app.use('/attached_assets', staticAssetLimiter, express.static('attached_assets'));
 
 // 로고 파일 직접 제공
 app.get('/logo.svg', (req, res) => {
@@ -347,20 +385,79 @@ ensureUserSessionsSchema()
 // Setup authentication system
 setupAuth(app);
 
+// AI 고비용 라우트 limiter — 세션/인증 미들웨어 이후에 등록되어야
+// keyGenerator 가 로그인 사용자 ID 를 정확히 사용함 (비로그인은 IP 폴백)
+app.use('/api/ai-proxy', aiHeavyLimiter);
+app.use('/api/ai', aiHeavyLimiter);
+app.use('/api/ai-fix', aiHeavyLimiter);
+app.use('/api/enhanced-analysis', aiHeavyLimiter);
+app.use('/api/dog-ai-analysis', aiHeavyLimiter);
+app.use('/api/admin/ai', aiHeavyLimiter);
+
 // REMOVED: Critical security fix - these endpoints have been moved to routes.ts with proper authentication
 
 // 인증 관련 라우트는 setupAuth()에서 처리됨
 // /api/auth/login, /api/auth/register, /api/auth/logout, /api/auth/me
 
-// Graceful shutdown handling
-process.on('SIGTERM', () => {
-  console.log('👋 SIGTERM received, shutting down gracefully');
-  process.exit(0);
+// Graceful shutdown handling - HTTP 서버 close 후 DB 풀 정리
+let httpServerRef: import('http').Server | null = null;
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal: string, exitCode: number = 0) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`👋 ${signal} received, shutting down gracefully...`);
+
+  // 강제 종료 안전장치 (25초) — close 가 멈춰도 반드시 종료
+  const forceExit = setTimeout(() => {
+    console.error('⛔ Graceful shutdown timeout, forcing exit');
+    process.exit(exitCode === 0 ? 1 : exitCode);
+  }, 25_000);
+  forceExit.unref();
+
+  try {
+    if (httpServerRef) {
+      await new Promise<void>((resolve) => {
+        httpServerRef!.close((err) => {
+          if (err) console.error('HTTP server close error:', err);
+          else console.log('✅ HTTP server closed (no new connections)');
+          resolve();
+        });
+      });
+    }
+  } catch (err) {
+    console.error('HTTP shutdown 에러:', err);
+  }
+
+  try {
+    await closeDatabasePool();
+  } catch (err) {
+    console.error('DB pool 종료 에러:', err);
+  }
+
+  clearTimeout(forceExit);
+  console.log('👋 Shutdown complete');
+  process.exit(exitCode);
+}
+
+process.on('SIGTERM', () => { void gracefulShutdown('SIGTERM'); });
+process.on('SIGINT', () => { void gracefulShutdown('SIGINT'); });
+
+// uncaughtException: Node 권장대로 프로세스 상태가 손상되었을 수 있으므로
+// 로깅 후 graceful shutdown 을 트리거하고 exit(1) 로 종료한다.
+// 외부 프로세스 매니저(systemd/PM2/Replit 워크플로)가 재시작하도록 fail-fast.
+process.on('uncaughtException', (err) => {
+  console.error('🚨 Uncaught Exception:', err);
+  void gracefulShutdown('uncaughtException', 1);
 });
 
-process.on('SIGINT', () => {
-  console.log('👋 SIGINT received, shutting down gracefully');
-  process.exit(0);
+// unhandledRejection: 기본은 fail-fast(1) 로 종료. 운영 정책에 따라
+// UNHANDLED_REJECTION_POLICY=log 로 설정하면 로깅만 하고 유지한다.
+process.on('unhandledRejection', (reason) => {
+  console.error('🚨 Unhandled Promise Rejection:', reason);
+  if ((process.env.UNHANDLED_REJECTION_POLICY || 'shutdown') === 'shutdown') {
+    void gracefulShutdown('unhandledRejection', 1);
+  }
 });
 
 // Start the server
@@ -645,6 +742,7 @@ async function startServer() {
     app.use(errorHandler);
 
     // Start the server
+    httpServerRef = server;
     server.listen(PORT, HOST, async () => {
       // 푸시 알림 예약 발송 스케줄러 시작
       try {
@@ -655,24 +753,7 @@ async function startServer() {
         console.warn('[Push Scheduler] 스케줄러 시작 실패:', error);
       }
 
-      // 운영 환경 모니터링 설정
       if (process.env.NODE_ENV === 'production') {
-        // 에러 로깅 강화
-        app.use((err: any, req: any, res: any, next: any) => {
-          console.error('🚨 Production Error:', {
-            message: err.message,
-            stack: err.stack,
-            url: req.url,
-            method: req.method,
-            timestamp: new Date().toISOString()
-          });
-
-          res.status(500).json({
-            success: false,
-            message: '서비스 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
-          });
-        });
-
         console.log('🚀 Server running on port 5000 in PRODUCTION mode');
         console.log('📊 Production monitoring active');
       } else {
