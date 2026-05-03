@@ -300,7 +300,47 @@ router.patch('/streams/:id/end', csrfProtection, async (req, res) => {
       .returning();
     
     console.log('[Live Streaming] Stream ended:', { id: streamId, duration });
-    
+
+    // 종료 후 후속 액션: 호스트(훈련사)에게 알림장 작성 알림, 시청자에게 리뷰 요청 알림
+    try {
+      const { notificationService } = await import('../notifications/notification-service');
+
+      // 1) 호스트에게 알림장 작성 안내
+      await notificationService.sendNotification({
+        userId: stream.hostId,
+        type: 'training',
+        title: '수업이 종료되었습니다',
+        message: `"${stream.title}" 수업이 종료되었어요. 알림장을 작성해 보호자에게 공유해보세요.`,
+        actionUrl: `/trainer/notebook?streamId=${streamId}`,
+        data: { streamId, kind: 'stream_ended_host' },
+      });
+
+      // 2) 로그인 시청자에게 리뷰 요청 (중복 userId 제거)
+      const viewerRows = await db.select({ userId: streamViewers.userId })
+        .from(streamViewers)
+        .where(eq(streamViewers.streamId, streamId));
+      const viewerIds = Array.from(new Set(
+        viewerRows.map((v) => v.userId).filter((id): id is number => typeof id === 'number')
+      ));
+      for (const viewerId of viewerIds) {
+        if (viewerId === stream.hostId) continue;
+        try {
+          await notificationService.sendNotification({
+            userId: viewerId,
+            type: 'training',
+            title: '수업은 어떠셨나요?',
+            message: `"${stream.title}" 라이브 수업에 대한 후기를 남겨주세요.`,
+            actionUrl: `/live-streaming/${streamId}/review`,
+            data: { streamId, kind: 'stream_ended_viewer_review' },
+          });
+        } catch (notifyErr) {
+          logServerError('[Live Streaming] 시청자 리뷰 알림 실패:', notifyErr, req);
+        }
+      }
+    } catch (notifyErr) {
+      logServerError('[Live Streaming] 종료 알림 발송 오류:', notifyErr, req);
+    }
+
     return res.success({ stream: updatedStream }, 'Stream ended');
   } catch (error) {
     logServerError('[Live Streaming] Error ending stream:', error, req);

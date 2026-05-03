@@ -19299,8 +19299,23 @@ export function registerTrainerCertificationRoutes(app: Express) {
         payload: {
           cancelReason,
           cancelAmount: cancelAmount ? parseInt(cancelAmount) : undefined,
+          sourceType: req.body?.sourceType,
+          sourceId: req.body?.sourceId,
         },
       });
+
+      // 트레이너 정산 항목 자동 취소 (요청 본문에 sourceType/sourceId 포함된 경우)
+      try {
+        const sourceType = req.body?.sourceType as ('course' | 'order' | 'lesson' | undefined);
+        const sourceId = req.body?.sourceId ? Number(req.body.sourceId) : undefined;
+        if (sourceType && sourceId) {
+          const { cancelTrainerSettlementItem } = await import('./routes/trainer-settlements');
+          const n = await cancelTrainerSettlementItem(sourceType, sourceId, `토스 환불(${paymentKey})`);
+          console.log(`[정산 자동 취소] ${sourceType}#${sourceId} → ${n}건 취소`);
+        }
+      } catch (cancelErr) {
+        logServerError('[정산 자동 취소] 오류:', cancelErr, req);
+      }
 
       res.json({
         success: true,
