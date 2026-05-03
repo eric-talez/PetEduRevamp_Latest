@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, PawPrint, Brain, Clock, AlertTriangle, CheckCircle, Upload, Image as ImageIcon, TrendingUp } from 'lucide-react';
+import { Calendar, PawPrint, Brain, Clock, AlertTriangle, CheckCircle, Upload, Image as ImageIcon, TrendingUp, Download, Share2, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { TrendsTab } from './TrendsTab';
@@ -89,6 +89,70 @@ export default function AiAnalysisPage() {
   const [mediaMemo, setMediaMemo] = useState<string>('');
   const [mediaAnalysisResult, setMediaAnalysisResult] = useState<any>(null);
   const [showResultDialog, setShowResultDialog] = useState(false);
+
+  // PDF / 공유 링크 상태
+  const [pdfBusyId, setPdfBusyId] = useState<number | null>(null);
+  const [shareBusyId, setShareBusyId] = useState<number | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareInfo, setShareInfo] = useState<{ url: string; expiresAt: string; expiresInHours: number } | null>(null);
+  const [shareExpiresInHours, setShareExpiresInHours] = useState<number>(24);
+
+  const handleDownloadPdf = async (analysisId: number) => {
+    try {
+      setPdfBusyId(analysisId);
+      const response = await fetch(`/api/ai-analysis/${analysisId}/pdf`, { credentials: 'include' });
+      if (!response.ok) {
+        let msg = 'PDF 다운로드에 실패했습니다.';
+        try { const j = await response.json(); msg = j.error || msg; } catch {}
+        throw new Error(msg);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `talez-ai-report-${analysisId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast({ title: 'PDF 다운로드 완료', description: '분석 리포트가 저장되었습니다.' });
+    } catch (e: any) {
+      toast({ title: '다운로드 실패', description: e?.message || 'PDF 다운로드 중 오류가 발생했습니다.', variant: 'destructive' });
+    } finally {
+      setPdfBusyId(null);
+    }
+  };
+
+  const handleCreateShareLink = async (analysisId: number) => {
+    try {
+      setShareBusyId(analysisId);
+      const csrfToken = await getCSRFToken();
+      const response = await fetch(`/api/ai-analysis/${analysisId}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ expiresInHours: shareExpiresInHours }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.success) throw new Error(data?.error || '공유 링크 생성 실패');
+      setShareInfo({ url: data.shareUrl, expiresAt: data.expiresAt, expiresInHours: data.expiresInHours });
+      setShareDialogOpen(true);
+    } catch (e: any) {
+      toast({ title: '공유 링크 실패', description: e?.message || '공유 링크 생성 중 오류가 발생했습니다.', variant: 'destructive' });
+    } finally {
+      setShareBusyId(null);
+    }
+  };
+
+  const copyShareUrl = async () => {
+    if (!shareInfo?.url) return;
+    try {
+      await navigator.clipboard.writeText(shareInfo.url);
+      toast({ title: '복사 완료', description: '공유 링크가 클립보드에 복사되었습니다.' });
+    } catch {
+      toast({ title: '복사 실패', description: '브라우저 권한을 확인해주세요.', variant: 'destructive' });
+    }
+  };
 
   // 실제 반려동물 목록 조회
   const petsQuery = useQuery({
@@ -646,16 +710,54 @@ export default function AiAnalysisPage() {
           {analyzeDataMutation.isSuccess && analyzeDataMutation.data ? (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  최신 분석 결과
-                </CardTitle>
-                <CardDescription>
-                  방금 완료된 AI 분석 결과입니다 ({
-                    selectedModel.startsWith('claude') ? 'Claude' : 
-                    selectedModel.startsWith('gemini') ? 'Gemini' : 'ChatGPT'
-                  } {selectedModel})
-                </CardDescription>
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      최신 분석 결과
+                    </CardTitle>
+                    <CardDescription>
+                      방금 완료된 AI 분석 결과입니다 ({
+                        selectedModel.startsWith('claude') ? 'Claude' : 
+                        selectedModel.startsWith('gemini') ? 'Gemini' : 'ChatGPT'
+                      } {selectedModel})
+                    </CardDescription>
+                  </div>
+                  {(() => {
+                    const latestId = (analyzeDataMutation.data as any)?.analysis?.id;
+                    if (!latestId) return null;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDownloadPdf(latestId)}
+                          disabled={pdfBusyId === latestId}
+                          data-testid="button-download-pdf-latest"
+                        >
+                          {pdfBusyId === latestId ? (
+                            <><Clock className="w-4 h-4 mr-1 animate-spin" />생성 중...</>
+                          ) : (
+                            <><Download className="w-4 h-4 mr-1" />PDF 다운로드</>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCreateShareLink(latestId)}
+                          disabled={shareBusyId === latestId}
+                          data-testid="button-share-pdf-latest"
+                        >
+                          {shareBusyId === latestId ? (
+                            <><Clock className="w-4 h-4 mr-1 animate-spin" />발급 중...</>
+                          ) : (
+                            <><Share2 className="w-4 h-4 mr-1" />공유 링크</>
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -895,7 +997,7 @@ export default function AiAnalysisPage() {
             <div className="space-y-4">
               {analysisHistoryData?.analyses?.map((analysis: AiAnalysis) => (
                 <div key={analysis.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start gap-3 flex-wrap">
                     <div>
                       <h4 className="font-medium">분석 #{analysis.id}</h4>
                       <p className="text-sm text-muted-foreground">
@@ -906,7 +1008,35 @@ export default function AiAnalysisPage() {
                         } ({analysis.model})
                       </p>
                     </div>
-                    <Badge variant="outline">{analysis.timeRange}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{analysis.timeRange}</Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadPdf(analysis.id)}
+                        disabled={pdfBusyId === analysis.id}
+                        data-testid={`button-download-pdf-${analysis.id}`}
+                      >
+                        {pdfBusyId === analysis.id ? (
+                          <><Clock className="w-3 h-3 mr-1 animate-spin" />생성 중</>
+                        ) : (
+                          <><Download className="w-3 h-3 mr-1" />PDF</>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCreateShareLink(analysis.id)}
+                        disabled={shareBusyId === analysis.id}
+                        data-testid={`button-share-pdf-${analysis.id}`}
+                      >
+                        {shareBusyId === analysis.id ? (
+                          <><Clock className="w-3 h-3 mr-1 animate-spin" />발급 중</>
+                        ) : (
+                          <><Share2 className="w-3 h-3 mr-1" />공유</>
+                        )}
+                      </Button>
+                    </div>
                   </div>
 
                   <div>
@@ -937,6 +1067,58 @@ export default function AiAnalysisPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* 공유 링크 다이얼로그 */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5" />
+              공유 링크 생성됨
+            </DialogTitle>
+            <DialogDescription>
+              아래 링크를 통해 PDF 리포트를 공유할 수 있습니다. 만료 후에는 더 이상 접근할 수 없습니다.
+            </DialogDescription>
+          </DialogHeader>
+          {shareInfo && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">공유 URL</label>
+                <div className="flex gap-2">
+                  <input
+                    readOnly
+                    value={shareInfo.url}
+                    className="flex-1 px-3 py-2 border rounded-md text-sm bg-gray-50"
+                    data-testid="input-share-url"
+                  />
+                  <Button size="sm" variant="outline" onClick={copyShareUrl} data-testid="button-copy-share-url">
+                    <Copy className="w-4 h-4 mr-1" />복사
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                만료: {format(new Date(shareInfo.expiresAt), 'yyyy년 M월 d일 HH:mm', { locale: ko })} (약 {shareInfo.expiresInHours}시간)
+              </p>
+              <div className="border-t pt-3">
+                <label className="text-sm font-medium mb-1 block">만료 시간 (다음 발급 시 적용)</label>
+                <Select value={shareExpiresInHours.toString()} onValueChange={(v) => setShareExpiresInHours(parseInt(v, 10))}>
+                  <SelectTrigger data-testid="select-share-expiry">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1시간</SelectItem>
+                    <SelectItem value="6">6시간</SelectItem>
+                    <SelectItem value="24">24시간 (1일)</SelectItem>
+                    <SelectItem value="72">3일</SelectItem>
+                    <SelectItem value="168">7일</SelectItem>
+                    <SelectItem value="720">30일</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* 미디어 분석 결과 팝업 */}
       <Dialog open={showResultDialog} onOpenChange={setShowResultDialog}>

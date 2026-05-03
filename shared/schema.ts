@@ -293,6 +293,18 @@ export const aiAnalyses = pgTable("ai_analyses", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// AI 분석 리포트 공유 토큰 테이블 (PDF 공유 링크)
+export const aiAnalysisShareTokens = pgTable("ai_analysis_share_tokens", {
+  id: serial("id").primaryKey(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  analysisId: integer("analysis_id").references(() => aiAnalyses.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type AiAnalysisShareToken = typeof aiAnalysisShareTokens.$inferSelect;
+
 // 예방접종 스케줄 테이블
 export const vaccinations = pgTable("vaccinations", {
   id: serial("id").primaryKey(),

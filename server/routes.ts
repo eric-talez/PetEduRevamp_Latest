@@ -10530,6 +10530,160 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
+// =============================================================================
+// AI 분석 PDF 리포트 다운로드 / 공유 링크
+// =============================================================================
+  const { generateAnalysisPdf } = await import('./services/pdf-report');
+
+  async function resolveAnalysisOwnerId(analysis: { userId?: number | null; petId?: number | null }): Promise<number | null> {
+    if (analysis.userId) return analysis.userId;
+    if (analysis.petId) {
+      const petRec = await storage.getPet(analysis.petId);
+      const ownerId = (petRec as { ownerId?: number | null } | null | undefined)?.ownerId;
+      if (ownerId) return ownerId;
+    }
+    return null;
+  }
+
+  async function buildAnalysisPdfBuffer(analysisId: number) {
+    const analysis = await storage.getAiAnalysisById(analysisId);
+    if (!analysis) return null;
+    const pet = analysis.petId ? await storage.getPet(analysis.petId) : null;
+    const ownerId = await resolveAnalysisOwnerId(analysis);
+    const owner = ownerId ? await storage.getUser(ownerId) : null;
+
+    let careLogsByDate: Record<string, any[]> = {};
+    let careDates: string[] = [];
+    try {
+      const range = String(analysis.timeRange || '');
+      const m = range.match(/(\d{4}-\d{2}-\d{2}).*?(\d{4}-\d{2}-\d{2})/);
+      if (m && analysis.petId) {
+        const grouped = await storage.getCareLogsGroupedByDate(analysis.petId, m[1], m[2]);
+        careLogsByDate = grouped.logsByDate || {};
+        careDates = grouped.dates || [];
+      }
+    } catch (err) {
+      console.warn('[AI 분석 PDF] 케어로그 수집 실패:', err);
+    }
+
+    const buffer = await generateAnalysisPdf({
+      analysis,
+      pet,
+      owner,
+      watermark: 'TALEZ AI REPORT',
+      careLogsByDate,
+      careDates,
+    });
+    return { analysis, pet, buffer };
+  }
+
+  function pdfFilename(petName: string | undefined, analysisId: number) {
+    const safe = (petName || 'pet').toString().replace(/[^a-zA-Z0-9가-힣_-]/g, '_').slice(0, 40) || 'pet';
+    return `talez-ai-report-${safe}-${analysisId}.pdf`;
+  }
+  function contentDisposition(disposition: 'attachment' | 'inline', filename: string) {
+    const asciiFallback = filename.replace(/[^\x20-\x7E]/g, '_');
+    return `${disposition}; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
+  }
+
+  app.get('/api/ai-analysis/:id/pdf', requireAuth(), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ success: false, error: '잘못된 분석 ID 입니다.' });
+      }
+      const sessionUser = (req as any).user || (req as any).session?.user;
+      if (!sessionUser?.id) {
+        return res.status(401).json({ success: false, error: '로그인이 필요합니다.' });
+      }
+      const analysis = await storage.getAiAnalysisById(id);
+      if (!analysis) return res.status(404).json({ success: false, error: '분석 결과를 찾을 수 없습니다.' });
+      const isAdmin = sessionUser.role === 'admin';
+      if (!isAdmin) {
+        const ownerId = await resolveAnalysisOwnerId(analysis);
+        if (!ownerId || sessionUser.id !== ownerId) {
+          return res.status(403).json({ success: false, error: '본 리포트에 대한 권한이 없습니다.' });
+        }
+      }
+      const result = await buildAnalysisPdfBuffer(id);
+      if (!result) return res.status(404).json({ success: false, error: '분석 결과를 찾을 수 없습니다.' });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', contentDisposition('attachment', pdfFilename(result.pet?.name, id)));
+      res.setHeader('Cache-Control', 'private, no-store');
+      return res.end(result.buffer);
+    } catch (error) {
+      console.error('[AI 분석 PDF] 생성 실패:', error);
+      res.status(500).json({ success: false, error: 'PDF 생성 중 오류가 발생했습니다.' });
+    }
+  });
+
+  app.post('/api/ai-analysis/:id/share', requireAuth(), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ success: false, error: '잘못된 분석 ID 입니다.' });
+      }
+      const sessionUser = (req as any).user || (req as any).session?.user;
+      if (!sessionUser?.id) {
+        return res.status(401).json({ success: false, error: '로그인이 필요합니다.' });
+      }
+      const analysis = await storage.getAiAnalysisById(id);
+      if (!analysis) return res.status(404).json({ success: false, error: '분석 결과를 찾을 수 없습니다.' });
+
+      const isAdmin = sessionUser.role === 'admin';
+      if (!isAdmin) {
+        const ownerId = await resolveAnalysisOwnerId(analysis);
+        if (!ownerId || sessionUser.id !== ownerId) {
+          return res.status(403).json({ success: false, error: '본 리포트에 대한 권한이 없습니다.' });
+        }
+      }
+
+      const expiresInHours = Math.min(Math.max(parseInt(String(req.body?.expiresInHours ?? '24'), 10) || 24, 1), 24 * 30);
+      const token = randomBytes(24).toString('hex');
+      const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
+      await storage.createAiAnalysisShareToken({
+        token,
+        analysisId: id,
+        createdBy: sessionUser.id,
+        expiresAt,
+      });
+
+      const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers.host;
+      const baseUrl = host ? `${protocol}://${host}` : '';
+      const shareUrl = `${baseUrl}/api/ai-analysis/share/${token}/pdf`;
+
+      res.json({
+        success: true,
+        token,
+        expiresAt: expiresAt.toISOString(),
+        expiresInHours,
+        shareUrl,
+      });
+    } catch (error) {
+      console.error('[AI 분석 공유] 토큰 발급 실패:', error);
+      res.status(500).json({ success: false, error: '공유 링크 생성 중 오류가 발생했습니다.' });
+    }
+  });
+
+  app.get('/api/ai-analysis/share/:token/pdf', async (req, res) => {
+    try {
+      const record = await storage.getAiAnalysisShareToken(req.params.token);
+      if (!record) {
+        return res.status(404).json({ success: false, error: '공유 링크가 만료되었거나 유효하지 않습니다.' });
+      }
+      const result = await buildAnalysisPdfBuffer(record.analysisId);
+      if (!result) return res.status(404).json({ success: false, error: '분석 결과를 찾을 수 없습니다.' });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', contentDisposition('inline', pdfFilename(result.pet?.name, record.analysisId)));
+      res.setHeader('Cache-Control', 'private, no-store');
+      return res.end(result.buffer);
+    } catch (error) {
+      console.error('[AI 분석 공유] PDF 다운로드 실패:', error);
+      res.status(500).json({ success: false, error: 'PDF 생성 중 오류가 발생했습니다.' });
+    }
+  });
+
 // Get trainers with video conference info for video call page
   app.get("/api/trainers/with-video-info", async (req, res) => {
     try {

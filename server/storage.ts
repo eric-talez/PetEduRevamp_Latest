@@ -5698,6 +5698,51 @@ class HybridStorage extends Storage {
     return this.aiAnalyses.find(analysis => analysis.id === id) || null;
   }
 
+  // =============================================================================
+  // AI 분석 리포트 공유 토큰 (PDF 공유 링크) - DB 영속화
+  // =============================================================================
+  async createAiAnalysisShareToken(data: { token: string; analysisId: number; createdBy: number | null; expiresAt: Date; }) {
+    try {
+      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      const [row] = await db.insert(aiAnalysisShareTokens).values({
+        token: data.token,
+        analysisId: data.analysisId,
+        createdBy: data.createdBy ?? undefined,
+        expiresAt: data.expiresAt,
+      }).returning();
+      return row;
+    } catch (err) {
+      console.error('[Share Token] DB 저장 실패:', err);
+      throw err;
+    }
+  }
+
+  async getAiAnalysisShareToken(token: string) {
+    try {
+      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      const rows = await db.select().from(aiAnalysisShareTokens).where(eq(aiAnalysisShareTokens.token, token)).limit(1);
+      const record = rows[0];
+      if (!record) return null;
+      if (record.revokedAt) return null;
+      if (record.expiresAt && new Date(record.expiresAt).getTime() < Date.now()) return null;
+      return record;
+    } catch (err) {
+      console.error('[Share Token] DB 조회 실패:', err);
+      return null;
+    }
+  }
+
+  async revokeAiAnalysisShareToken(token: string) {
+    try {
+      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      await db.update(aiAnalysisShareTokens).set({ revokedAt: new Date() }).where(eq(aiAnalysisShareTokens.token, token));
+      return true;
+    } catch (err) {
+      console.error('[Share Token] DB 철회 실패:', err);
+      return false;
+    }
+  }
+
   // Care logs를 날짜별로 그룹화하여 반환
   async getCareLogsGroupedByDate(petId: number, startDate?: string, endDate?: string): Promise<{dates: string[], logsByDate: Record<string, any[]>, counts: Record<string, number>}> {
     let logs = this.careLogs.filter(log => log.petId === petId);
