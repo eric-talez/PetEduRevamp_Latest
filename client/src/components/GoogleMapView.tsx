@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { LocalErrorBoundary } from '@/components/ErrorBoundary';
 
 interface GoogleMapViewProps {
   locations?: Array<{
@@ -55,7 +56,7 @@ const categoryColors: Record<string, string> = {
   default: '#757575'
 };
 
-export function GoogleMapView({
+function GoogleMapViewInner({
   locations = [],
   center = { lat: 37.5665, lng: 126.9780 }, // 서울시청 기본 좌표
   onLocationSelect,
@@ -328,6 +329,14 @@ export function GoogleMapView({
         minHeight: '300px' // 모바일에서 최소 높이 보장
       }}
     />
+  );
+}
+
+export function GoogleMapView(props: GoogleMapViewProps) {
+  return (
+    <LocalErrorBoundary name="지도">
+      <GoogleMapViewInner {...props} />
+    </LocalErrorBoundary>
   );
 }
 

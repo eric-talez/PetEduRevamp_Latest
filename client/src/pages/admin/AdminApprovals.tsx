@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { PageSkeleton } from '@/components/ui/SkeletonLoader';
 
 interface PendingApproval {
   id: number;
@@ -377,23 +378,7 @@ export default function AdminApprovals() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                    <div className="rounded-full bg-gray-200 h-12 w-12"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                      <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <PageSkeleton header={false} variant="list" count={5} className="p-0" />
           ) : filteredApprovals.length === 0 ? (
             <div className="text-center py-8">
               <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />

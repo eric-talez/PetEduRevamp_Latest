@@ -39,6 +39,7 @@ import VideoClassBannerImage from '@assets/stock_images/virtual_online_pet_d_cb8
 import { PageBanner } from '@/components/PageBanner';
 import { LiveStreamViewer } from '@/components/streaming/LiveStreamViewer';
 import { StreamSession } from '@/components/streaming/StreamSession';
+import { LocalErrorBoundary } from '@/components/ErrorBoundary';
 
 interface Meeting {
   id: string;
@@ -562,21 +563,25 @@ export default function VideoCallPage() {
 
       {/* 라이브 시청 중인 경우 - 유튜브 스타일 플레이어 + 채팅 */}
       {watchingStream && (
-        <LiveStreamViewer 
-          stream={watchingStream} 
-          onExit={exitLiveStream}
-        />
+        <LocalErrorBoundary name="라이브 시청" onReset={exitLiveStream}>
+          <LiveStreamViewer 
+            stream={watchingStream} 
+            onExit={exitLiveStream}
+          />
+        </LocalErrorBoundary>
       )}
       
       {/* 호스트 스트리밍 중인 경우 - WebRTC 방송 화면 */}
       {hostingStream && (
-        <StreamSession
-          streamId={hostingStream.id}
-          userId={currentUserId || undefined}
-          isHost={true}
-          userName={userName || '호스트'}
-          onExit={exitHosting}
-        />
+        <LocalErrorBoundary name="라이브 방송" onReset={exitHosting}>
+          <StreamSession
+            streamId={hostingStream.id}
+            userId={currentUserId || undefined}
+            isHost={true}
+            userName={userName || '호스트'}
+            onExit={exitHosting}
+          />
+        </LocalErrorBoundary>
       )}
 
       {/* 메인 탭 */}

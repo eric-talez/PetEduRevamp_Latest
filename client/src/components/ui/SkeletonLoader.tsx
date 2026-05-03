@@ -204,4 +204,136 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
   );
 };
 
-// 모든 컴포넌트는 이미 기본 및 명명된 내보내기로 선언되었습니다
+interface PageSkeletonProps {
+  /** 페이지 헤더(제목/필터) 영역 표시 */
+  header?: boolean;
+  /** 카드 그리드 형태(레이아웃 시프트 방지) */
+  variant?: 'list' | 'grid' | 'table' | 'detail';
+  /** 표시할 카드/행 개수 */
+  count?: number;
+  className?: string;
+}
+
+/**
+ * 페이지 단위 스켈레톤 - admin/trainer/일반 페이지에서 공통으로 사용해
+ * 로딩 시 레이아웃 시프트와 빈 화면을 방지합니다.
+ */
+export const PageSkeleton: React.FC<PageSkeletonProps> = ({
+  header = true,
+  variant = 'list',
+  count = 6,
+  className,
+}) => {
+  return (
+    <div
+      className={cn('w-full space-y-6 p-4 md:p-6', className)}
+      aria-busy="true"
+      aria-live="polite"
+    >
+      {header && (
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72 max-w-full" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </div>
+      )}
+
+      {variant === 'table' && (
+        <SkeletonTable rows={count} columns={5} />
+      )}
+
+      {variant === 'grid' && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: count }).map((_, i) => (
+            <SkeletonCard key={i} image lines={2} footer={false} imageHeight={140} />
+          ))}
+        </div>
+      )}
+
+      {variant === 'list' && (
+        <div className="space-y-3">
+          {Array.from({ length: count }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 rounded-lg border bg-card p-4"
+            >
+              <Skeleton circle width={48} height={48} />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <Skeleton className="h-8 w-20" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {variant === 'detail' && (
+        <div className="space-y-4">
+          <Skeleton className="h-48 w-full" />
+          <SkeletonText lines={4} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SkeletonCard image={false} footer={false} lines={3} />
+            <SkeletonCard image={false} footer={false} lines={3} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * 데이터 전환(탭/필터 변경) 시 사용할 오버레이 - isFetching 중일 때
+ * 이전 데이터 위에 살짝 표시해 잔존 데이터로 인한 혼동을 줄입니다.
+ */
+interface FetchingOverlayProps {
+  isFetching: boolean;
+  label?: string;
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export const FetchingOverlay: React.FC<FetchingOverlayProps> = ({
+  isFetching,
+  label = '불러오는 중...',
+  className,
+  children,
+}) => {
+  if (children === undefined) {
+    if (!isFetching) return null;
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center pt-4"
+        aria-live="polite"
+      >
+        <div className="flex items-center gap-2 rounded-full border bg-background/90 px-3 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          {label}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className={`relative ${className ?? ''}`} aria-busy={isFetching}>
+      <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+        {children}
+      </div>
+      {isFetching && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-2 rounded-full border bg-background/90 px-3 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur">
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            {label}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

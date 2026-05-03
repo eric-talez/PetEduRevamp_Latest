@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../SimpleApp';
 import { useToast } from '@/hooks/use-toast';
+import { PageSkeleton } from '@/components/ui/SkeletonLoader';
 import {
   Card,
   CardContent,
@@ -522,13 +523,7 @@ export default function TrainerStats() {
       
       {/* 요약 카드 */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="h-24 bg-muted/50"></CardHeader>
-            </Card>
-          ))}
-        </div>
+        <PageSkeleton header={false} variant="grid" count={3} className="p-0" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -630,9 +625,7 @@ export default function TrainerStats() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="h-64 flex justify-center items-center">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-            </div>
+            <PageSkeleton header={false} variant="detail" count={1} className="p-0" />
           ) : (
             <div className="h-64 relative">
               {/* 실제 구현 시 Recharts와 같은 차트 라이브러리로 대체 */}
@@ -754,9 +747,7 @@ export default function TrainerStats() {
         <Card>
           <CardContent className="p-0">
             {isLoading ? (
-              <div className="flex justify-center items-center p-8">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>
+              <PageSkeleton header={false} variant="list" count={5} className="p-4" />
             ) : paginatedTransactions.length === 0 ? (
               <div className="text-center p-8 text-muted-foreground">
                 조건에 맞는 거래 내역이 없습니다

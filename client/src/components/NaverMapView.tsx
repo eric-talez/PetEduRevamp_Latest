@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { LocalErrorBoundary } from '@/components/ErrorBoundary';
 
 interface NaverMapViewProps {
   locations?: Array<{
@@ -20,7 +21,7 @@ interface NaverMapViewProps {
   zoom?: number;
 }
 
-export function NaverMapView({
+function NaverMapViewInner({
   locations = [],
   center = { lat: 37.5665, lng: 126.9780 }, // 서울시청 기본 좌표
   onLocationSelect,
@@ -185,6 +186,14 @@ export function NaverMapView({
       className="w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
       style={{ height }}
     />
+  );
+}
+
+export function NaverMapView(props: NaverMapViewProps) {
+  return (
+    <LocalErrorBoundary name="지도">
+      <NaverMapViewInner {...props} />
+    </LocalErrorBoundary>
   );
 }
 

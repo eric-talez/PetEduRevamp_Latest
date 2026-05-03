@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { SubscriptionChangeDialog } from "@/components/SubscriptionChangeDialog";
+import { PageSkeleton } from "@/components/ui/SkeletonLoader";
 
 interface SubscriptionPlan {
   id: number;
@@ -369,13 +370,7 @@ export default function AdminInstitutes() {
 
   // 로딩 상태 처리
   if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-center items-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="table" count={6} />;
   }
 
   // 에러 상태 처리

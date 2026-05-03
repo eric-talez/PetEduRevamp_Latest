@@ -115,6 +115,7 @@ import { AccessibilityFloatingButton } from "@/components/ui/AccessibilityContro
 import { DogLoading, FullScreenLoading } from "@/components/DogLoading";
 import { SkipToContent } from "@/components/ui/skip-to-content";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PageSkeleton } from "@/components/ui/SkeletonLoader";
 import { AIAssistant } from "@/components/ui/AIAssistant";
 import { ThemeProvider } from "@/context/theme-context";
 
@@ -600,9 +601,11 @@ function AuthenticatedRoutes() {
         <Route path="/certificates" component={() => <div className="p-8"><h1 className="text-2xl font-bold mb-4">자격증 및 수료증</h1><p>자격증 및 수료증을 확인할 수 있는 페이지입니다.</p></div>} />
         <Route path="/video-training" component={VideoTrainingPage} />
         <Route path="/video-call">
-          <Suspense fallback={<SimpleLoading />}>
-            <VideoCallPage />
-          </Suspense>
+          <ErrorBoundary name="영상통화">
+            <Suspense fallback={<SimpleLoading />}>
+              <VideoCallPage />
+            </Suspense>
+          </ErrorBoundary>
         </Route>
         <Route path="/chatbot" component={ChatbotPage} />
         {/* 쇼핑몰 메인 */}
@@ -1189,13 +1192,11 @@ function AuthenticatedRoutes() {
         <Route path="/ai-analysis">
           {() => {
             return (
-              <Suspense fallback={
-                <div className="p-8 flex justify-center items-center">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              }>
-                <ProtectedRoute component={AiAnalysisPage} requiredRoles={['pet-owner', 'trainer', 'admin']} />
-              </Suspense>
+              <ErrorBoundary name="AI 분석">
+                <Suspense fallback={<PageSkeleton variant="detail" />}>
+                  <ProtectedRoute component={AiAnalysisPage} requiredRoles={['pet-owner', 'trainer', 'admin']} />
+                </Suspense>
+              </ErrorBoundary>
             );
           }}
         </Route>
@@ -1204,13 +1205,11 @@ function AuthenticatedRoutes() {
           {() => {
             const DogAnalysisPage = lazy(() => import('./pages/dog-analysis'));
             return (
-              <Suspense fallback={
-                <div className="p-8 flex justify-center items-center">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              }>
-                <DogAnalysisPage />
-              </Suspense>
+              <ErrorBoundary name="강아지 AI 분석">
+                <Suspense fallback={<PageSkeleton variant="detail" />}>
+                  <DogAnalysisPage />
+                </Suspense>
+              </ErrorBoundary>
             );
           }}
         </Route>

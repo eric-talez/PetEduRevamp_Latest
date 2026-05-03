@@ -10,6 +10,7 @@ import { Search, Filter, Plus, Eye, Edit, Trash2, GraduationCap, MapPin, Star, T
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { getCSRFToken } from "@/lib/csrf";
+import { PageSkeleton } from "@/components/ui/SkeletonLoader";
 
 export default function AdminTrainers() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -405,10 +406,7 @@ export default function AdminTrainers() {
               <div>작업</div>
             </div>
             {isLoading ? (
-              <div className="p-8 text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p className="mt-2">훈련사 목록을 불러오는 중...</p>
-              </div>
+              <PageSkeleton header={false} variant="list" count={5} className="p-4" />
             ) : filteredTrainers.length === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-gray-500">등록된 훈련사가 없습니다.</p>

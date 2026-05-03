@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { getCSRFToken } from '@/lib/csrf';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,8 @@ import { Calendar, PawPrint, Brain, Clock, AlertTriangle, CheckCircle, Upload, I
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { TrendsTab } from './TrendsTab';
+import { LocalErrorBoundary } from '@/components/ErrorBoundary';
+import { PageSkeleton, FetchingOverlay } from '@/components/ui/SkeletonLoader';
 
 interface CareLog {
   id: number;
@@ -169,6 +171,7 @@ export default function AiAnalysisPage() {
   const careLogsQuery = useQuery({
     queryKey: ['/api/ai-analysis/care-logs', selectedPetId, dateRange],
     enabled: !!selectedPetId,
+    placeholderData: keepPreviousData,
     queryFn: () => {
       const params = new URLSearchParams({
         petId: selectedPetId!.toString(),
@@ -184,6 +187,7 @@ export default function AiAnalysisPage() {
   const analysisHistoryQuery = useQuery({
     queryKey: ['/api/ai-analysis/history', selectedPetId],
     enabled: !!selectedPetId,
+    placeholderData: keepPreviousData,
     queryFn: () => {
       const params = new URLSearchParams({
         petId: selectedPetId!.toString()
@@ -698,15 +702,18 @@ export default function AiAnalysisPage() {
 
         {/* 이력 추이/비교 탭 */}
         <TabsContent value="trends" className="space-y-4">
-          <TrendsTab
-            petId={selectedPetId}
-            petName={pets.find((p: any) => p.id === selectedPetId)?.name}
-            analyses={(analysisHistoryData as any)?.analyses || []}
-          />
+          <LocalErrorBoundary name="추이 분석">
+            <TrendsTab
+              petId={selectedPetId}
+              petName={pets.find((p: any) => p.id === selectedPetId)?.name}
+              analyses={(analysisHistoryData as any)?.analyses || []}
+            />
+          </LocalErrorBoundary>
         </TabsContent>
 
         {/* 최신 분석 결과 탭 */}
         <TabsContent value="results" className="space-y-4">
+          <LocalErrorBoundary name="분석 결과">
           {analyzeDataMutation.isSuccess && analyzeDataMutation.data ? (
             <Card>
               <CardHeader>
@@ -848,10 +855,12 @@ export default function AiAnalysisPage() {
               </CardContent>
             </Card>
           )}
+          </LocalErrorBoundary>
         </TabsContent>
 
         {/* 미디어 분석 탭 */}
         <TabsContent value="media" className="space-y-4">
+          <LocalErrorBoundary name="미디어 분석">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -967,6 +976,7 @@ export default function AiAnalysisPage() {
 
             </CardContent>
           </Card>
+          </LocalErrorBoundary>
         </TabsContent>
 
         {/* 분석 기록 탭 */}
@@ -979,12 +989,7 @@ export default function AiAnalysisPage() {
               </CardContent>
             </Card>
           ) : analysisHistoryQuery.isLoading ? (
-            <Card>
-              <CardContent className="text-center py-8">
-                <Clock className="w-6 h-6 mx-auto mb-2 animate-spin" />
-                <p>분석 기록을 불러오는 중...</p>
-              </CardContent>
-            </Card>
+            <PageSkeleton header={false} variant="list" count={4} className="p-0" />
           ) : analysisHistoryData?.analyses?.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8 text-gray-500">
@@ -994,7 +999,7 @@ export default function AiAnalysisPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <FetchingOverlay isFetching={analysisHistoryQuery.isFetching && !analysisHistoryQuery.isLoading} className="space-y-4">
               {analysisHistoryData?.analyses?.map((analysis: AiAnalysis) => (
                 <div key={analysis.id} className="border rounded-lg p-4 space-y-3">
                   <div className="flex justify-between items-start gap-3 flex-wrap">
@@ -1063,7 +1068,7 @@ export default function AiAnalysisPage() {
                   )}
                 </div>
               ))}
-            </div>
+            </FetchingOverlay>
           )}
         </TabsContent>
       </Tabs>

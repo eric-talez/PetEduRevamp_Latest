@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../SimpleApp';
 import { useToast } from '@/hooks/use-toast';
+import { PageSkeleton } from '@/components/ui/SkeletonLoader';
 import {
   Card,
   CardContent,
@@ -637,12 +638,7 @@ export default function TrainerClasses() {
       
       {/* 수업 목록 테이블 */}
       {isLoading ? (
-        <div className="animate-pulse space-y-4">
-          <div className="h-12 bg-muted/50 rounded w-full"></div>
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-16 bg-muted/50 rounded w-full"></div>
-          ))}
-        </div>
+        <PageSkeleton header={false} variant="table" count={6} className="p-0" />
       ) : (
         <div>
           {filteredSessions.length === 0 ? (
