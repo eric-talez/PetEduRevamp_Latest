@@ -302,7 +302,7 @@ export function Sidebar({
   useEffect(() => {
     // 권한별 메뉴 표시 권한 확인
     const isInstituteAdmin = userRole === 'institute-admin';
-    const isAdmin = userRole === 'admin';
+    const isAdmin = userRole === 'admin' || userRole === 'super-admin';
     const isTrainer = userRole === 'trainer';
     const isPetOwner = userRole === 'pet-owner';
 
@@ -476,7 +476,7 @@ export function Sidebar({
       }
 
       // 시스템 관리자 전용 페이지
-      if (path.startsWith('/admin') && userRole !== 'admin') {
+      if (path.startsWith('/admin') && userRole !== 'admin' && userRole !== 'super-admin') {
 
         // 접근 제한 알림 표시
         const overlay = document.createElement('div');
@@ -586,7 +586,7 @@ export function Sidebar({
   const showDashboardLink = userRole !== null;
   
   // 역할별 기본 플래그
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === 'admin' || userRole === 'super-admin';
   const isTrainer = userRole === 'trainer';
   const isInstituteAdmin = userRole === 'institute-admin';
   const isPetOwner = userRole === 'pet-owner';
@@ -970,6 +970,7 @@ export function Sidebar({
                         <AccessibleNavItem href="/admin/menu-visibility" icon={<Eye className="w-5 h-5 mr-2" />} hoverIcon={<EyeOff className="w-5 h-5 mr-2 text-primary" />} active={isActive("/admin/menu-visibility")} onClick={handleItemClick} show={true}>메뉴 표시 제어</AccessibleNavItem>
                         <AccessibleNavItem href="/admin/settings" icon={<Settings className="w-5 h-5 mr-2" />} hoverIcon={<Wrench className="w-5 h-5 mr-2 text-primary" />} active={isActive("/admin/settings")} onClick={handleItemClick} show={isMenuVisible('system-settings')}>시스템 설정</AccessibleNavItem>
                         <AccessibleNavItem href="/admin/messaging-settings" icon={<MessageSquare className="w-5 h-5 mr-2" />} hoverIcon={<Mail className="w-5 h-5 mr-2 text-primary" />} active={isActive("/admin/messaging-settings")} onClick={handleItemClick} show={isMenuVisible('messaging-settings')}>메시징 설정</AccessibleNavItem>
+                        <AccessibleNavItem href="/admin/audit-logs" icon={<FileText className="w-5 h-5 mr-2" />} hoverIcon={<Shield className="w-5 h-5 mr-2 text-primary" />} active={isActive("/admin/audit-logs")} onClick={handleItemClick} show={userRole === 'admin' || userRole === 'super-admin'}>감사 로그</AccessibleNavItem>
                       </>
                     )}
                   </>
