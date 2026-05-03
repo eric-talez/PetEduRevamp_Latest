@@ -10255,6 +10255,290 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
+  // =============================================================================
+  // AI 분석 이력 추이/비교 시스템
+  // =============================================================================
+
+  // 기간 옵션 → 시작/종료일 계산
+  function resolveTrendPeriod(period: string, startDate?: string, endDate?: string) {
+    const today = new Date();
+    const end = endDate || today.toISOString().split('T')[0];
+    let start = startDate;
+    if (!start) {
+      const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 30;
+      const d = new Date(today);
+      d.setDate(d.getDate() - days + 1);
+      start = d.toISOString().split('T')[0];
+    }
+    return { start, end };
+  }
+
+  // 부정 신호 가중치 → 0~10 스트레스 점수
+  function computeStressScore(log: any): number {
+    let score = 0;
+    const badPoop = ['diarrhea', 'bloody', 'constipated'];
+    const badMeal = ['skipped', 'vomited'];
+    const badWalk = ['limp', 'hyper'];
+    const badMood = ['anxious', 'sad', 'tired'];
+    if (badPoop.includes(log.poopStatus)) score += 3;
+    if (badMeal.includes(log.mealStatus)) score += 3;
+    if (badWalk.includes(log.walkStatus)) score += 2;
+    if (badMood.includes(log.mood)) score += 2;
+    if (typeof log.energyLevel === 'number' && log.energyLevel <= 3) score += 1;
+    return Math.min(10, score);
+  }
+
+  // 일자별 집계
+  function aggregateLogsByDate(logs: any[]) {
+    const byDate: Record<string, any> = {};
+    for (const log of logs) {
+      const d = log.date;
+      if (!byDate[d]) {
+        byDate[d] = {
+          date: d,
+          count: 0,
+          energySum: 0, energyCount: 0,
+          stressSum: 0,
+          moodCounts: {} as Record<string, number>,
+          poopNormal: 0, poopAbnormal: 0,
+          mealNormal: 0, mealAbnormal: 0,
+          walkNormal: 0, walkAbnormal: 0,
+        };
+      }
+      const b = byDate[d];
+      b.count += 1;
+      if (typeof log.energyLevel === 'number') {
+        b.energySum += log.energyLevel;
+        b.energyCount += 1;
+      }
+      b.stressSum += computeStressScore(log);
+      if (log.mood) b.moodCounts[log.mood] = (b.moodCounts[log.mood] || 0) + 1;
+      if (log.poopStatus) {
+        if (log.poopStatus === 'normal') b.poopNormal++; else b.poopAbnormal++;
+      }
+      if (log.mealStatus) {
+        if (log.mealStatus === 'normal') b.mealNormal++; else b.mealAbnormal++;
+      }
+      if (log.walkStatus) {
+        if (log.walkStatus === 'normal') b.walkNormal++; else b.walkAbnormal++;
+      }
+    }
+    return Object.values(byDate)
+      .map((b: any) => ({
+        date: b.date,
+        count: b.count,
+        avgEnergy: b.energyCount ? +(b.energySum / b.energyCount).toFixed(2) : null,
+        avgStress: b.count ? +(b.stressSum / b.count).toFixed(2) : 0,
+        moodCounts: b.moodCounts,
+        poopNormal: b.poopNormal,
+        poopAbnormal: b.poopAbnormal,
+        mealNormal: b.mealNormal,
+        mealAbnormal: b.mealAbnormal,
+        walkNormal: b.walkNormal,
+        walkAbnormal: b.walkAbnormal,
+      }))
+      .sort((a: any, b: any) => a.date.localeCompare(b.date));
+  }
+
+  // 집계 요약
+  function summarizeSeries(series: any[]) {
+    if (series.length === 0) {
+      return { avgEnergy: null, avgStress: 0, moodDistribution: {}, totalLogs: 0,
+               poopNormalRate: 0, mealNormalRate: 0, walkNormalRate: 0 };
+    }
+    let energySum = 0, energyCount = 0, stressSum = 0, totalLogs = 0;
+    const moodDistribution: Record<string, number> = {};
+    let pn = 0, pa = 0, mn = 0, ma = 0, wn = 0, wa = 0;
+    for (const day of series) {
+      totalLogs += day.count;
+      if (day.avgEnergy !== null) { energySum += day.avgEnergy * day.count; energyCount += day.count; }
+      stressSum += day.avgStress * day.count;
+      for (const [mood, c] of Object.entries(day.moodCounts as Record<string, number>)) {
+        moodDistribution[mood] = (moodDistribution[mood] || 0) + c;
+      }
+      pn += day.poopNormal; pa += day.poopAbnormal;
+      mn += day.mealNormal; ma += day.mealAbnormal;
+      wn += day.walkNormal; wa += day.walkAbnormal;
+    }
+    const rate = (n: number, d: number) => d ? +((n / d) * 100).toFixed(1) : 0;
+    return {
+      totalLogs,
+      avgEnergy: energyCount ? +(energySum / energyCount).toFixed(2) : null,
+      avgStress: totalLogs ? +(stressSum / totalLogs).toFixed(2) : 0,
+      moodDistribution,
+      poopNormalRate: rate(pn, pn + pa),
+      mealNormalRate: rate(mn, mn + ma),
+      walkNormalRate: rate(wn, wn + wa),
+    };
+  }
+
+  // 반려동물 소유권 검증 (owner 본인 또는 admin만 허용)
+  async function assertPetAccess(req: any, res: any, petId: number): Promise<boolean> {
+    const userId = req.session?.user?.id;
+    const role = req.session?.user?.role;
+    if (!userId) {
+      res.status(401).json({ success: false, error: '로그인이 필요합니다.' });
+      return false;
+    }
+    const pet = await storage.getPet(petId);
+    if (!pet) {
+      res.status(404).json({ success: false, error: '반려동물을 찾을 수 없습니다.' });
+      return false;
+    }
+    if (pet.ownerId !== userId && role !== 'admin') {
+      res.status(403).json({ success: false, error: '해당 반려동물에 접근할 권한이 없습니다.' });
+      return false;
+    }
+    return true;
+  }
+
+  // AI 분석 이력 추이 조회
+  app.get("/api/ai-analysis/trends", async (req, res) => {
+    try {
+      const { petId, period = '30d', startDate, endDate } = req.query as Record<string, string>;
+      if (!petId) {
+        return res.status(400).json({ success: false, error: '반려동물 ID는 필수입니다.' });
+      }
+      const petIdNum = parseInt(petId);
+      if (!(await assertPetAccess(req, res, petIdNum))) return;
+      const { start, end } = resolveTrendPeriod(period, startDate, endDate);
+      const logs = await storage.getCareLogsByDateRange(petIdNum, start, end);
+      const series = aggregateLogsByDate(logs);
+      const summary = summarizeSeries(series);
+
+      // 이전 동일 기간과 비교한 인사이트
+      const startD = new Date(start);
+      const endD = new Date(end);
+      const spanDays = Math.max(1, Math.round((endD.getTime() - startD.getTime()) / 86400000) + 1);
+      const prevEnd = new Date(startD); prevEnd.setDate(prevEnd.getDate() - 1);
+      const prevStart = new Date(prevEnd); prevStart.setDate(prevStart.getDate() - spanDays + 1);
+      const prevLogs = await storage.getCareLogsByDateRange(
+        petIdNum,
+        prevStart.toISOString().split('T')[0],
+        prevEnd.toISOString().split('T')[0]
+      );
+      const prevSummary = summarizeSeries(aggregateLogsByDate(prevLogs));
+
+      const insights: { metric: string; direction: 'up' | 'down' | 'flat'; delta: number; comment: string; severity: 'positive' | 'negative' | 'neutral' }[] = [];
+      const pushInsight = (metric: string, current: number | null, previous: number | null, betterWhenLower: boolean, label: string) => {
+        if (current === null || previous === null) return;
+        const delta = +(current - previous).toFixed(2);
+        if (Math.abs(delta) < 0.1 && Math.abs(delta / Math.max(previous, 0.1)) < 0.1) return;
+        const direction: 'up' | 'down' = delta > 0 ? 'up' : 'down';
+        const isImprovement = betterWhenLower ? delta < 0 : delta > 0;
+        const arrow = direction === 'up' ? '증가' : '감소';
+        insights.push({
+          metric,
+          direction,
+          delta,
+          severity: isImprovement ? 'positive' : 'negative',
+          comment: `${label}이(가) 이전 대비 ${Math.abs(delta)}만큼 ${arrow}했습니다. ${isImprovement ? '좋은 변화예요.' : '관찰이 필요해요.'}`
+        });
+      };
+      pushInsight('avgStress', summary.avgStress, prevSummary.avgStress, true, '평균 스트레스 점수');
+      pushInsight('avgEnergy', summary.avgEnergy, prevSummary.avgEnergy, false, '평균 활동성');
+      pushInsight('poopNormalRate', summary.poopNormalRate, prevSummary.poopNormalRate, false, '정상 배변 비율');
+      pushInsight('mealNormalRate', summary.mealNormalRate, prevSummary.mealNormalRate, false, '정상 식사 비율');
+      pushInsight('walkNormalRate', summary.walkNormalRate, prevSummary.walkNormalRate, false, '정상 산책 비율');
+
+      res.json({
+        success: true,
+        period: { start, end, days: spanDays },
+        previousPeriod: {
+          start: prevStart.toISOString().split('T')[0],
+          end: prevEnd.toISOString().split('T')[0],
+        },
+        series,
+        summary,
+        previousSummary: prevSummary,
+        insights,
+        isEmpty: series.length === 0,
+      });
+    } catch (error) {
+      console.error('Error fetching AI analysis trends:', error);
+      res.status(500).json({ success: false, error: '추이 데이터를 가져오는 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 두 AI 분석 결과 비교
+  app.get("/api/ai-analysis/compare", async (req, res) => {
+    try {
+      const { analysisIdA, analysisIdB } = req.query as Record<string, string>;
+      if (!analysisIdA || !analysisIdB) {
+        return res.status(400).json({ success: false, error: '비교할 두 분석 ID가 필요합니다.' });
+      }
+      const a = await storage.getAiAnalysisById(parseInt(analysisIdA));
+      const b = await storage.getAiAnalysisById(parseInt(analysisIdB));
+      if (!a || !b) {
+        return res.status(404).json({ success: false, error: '비교할 분석 결과를 찾을 수 없습니다.' });
+      }
+
+      // 한 마리 기준 비교만 허용 (cross-pet 비교 차단)
+      if (a.petId !== b.petId) {
+        return res.status(400).json({ success: false, error: '같은 반려동물의 분석끼리만 비교할 수 있습니다.' });
+      }
+
+      // 소유권/접근권 검증
+      if (!(await assertPetAccess(req, res, a.petId))) return;
+
+      // 분석 시점에 사용된 로그 기반으로 지표 비교
+      const aLogs = await storage.getCareLogsByIds(a.inputLogIds || []);
+      const bLogs = await storage.getCareLogsByIds(b.inputLogIds || []);
+      const aSummary = summarizeSeries(aggregateLogsByDate(aLogs));
+      const bSummary = summarizeSeries(aggregateLogsByDate(bLogs));
+
+      const diffs: { metric: string; label: string; before: number | null; after: number | null; delta: number | null; severity: 'positive' | 'negative' | 'neutral' }[] = [];
+      const compare = (metric: string, label: string, before: number | null, after: number | null, betterWhenLower: boolean) => {
+        if (before === null || after === null) {
+          diffs.push({ metric, label, before, after, delta: null, severity: 'neutral' });
+          return;
+        }
+        const delta = +(after - before).toFixed(2);
+        const isImprovement = betterWhenLower ? delta < 0 : delta > 0;
+        const severity: 'positive' | 'negative' | 'neutral' = Math.abs(delta) < 0.1 ? 'neutral' : (isImprovement ? 'positive' : 'negative');
+        diffs.push({ metric, label, before, after, delta, severity });
+      };
+      compare('avgStress', '평균 스트레스 점수', aSummary.avgStress, bSummary.avgStress, true);
+      compare('avgEnergy', '평균 활동성', aSummary.avgEnergy, bSummary.avgEnergy, false);
+      compare('poopNormalRate', '정상 배변 비율(%)', aSummary.poopNormalRate, bSummary.poopNormalRate, false);
+      compare('mealNormalRate', '정상 식사 비율(%)', aSummary.mealNormalRate, bSummary.mealNormalRate, false);
+      compare('walkNormalRate', '정상 산책 비율(%)', aSummary.walkNormalRate, bSummary.walkNormalRate, false);
+
+      const highlights = diffs
+        .filter(d => d.delta !== null && Math.abs(d.delta) >= 1 && d.severity !== 'neutral')
+        .map(d => ({
+          metric: d.metric,
+          severity: d.severity,
+          comment: `${d.label}: ${d.before} → ${d.after} (${d.delta! > 0 ? '+' : ''}${d.delta}) ${d.severity === 'positive' ? '개선' : '악화'}`
+        }));
+
+      // UI에 필요한 최소 필드만 반환 (데이터 노출 최소화)
+      const projectAnalysis = (x: any, computed: any) => ({
+        id: x.id,
+        petId: x.petId,
+        createdAt: x.createdAt,
+        model: x.model,
+        resultJson: {
+          summary: x.resultJson?.summary,
+          redFlags: x.resultJson?.redFlags,
+          nextSteps: x.resultJson?.nextSteps,
+        },
+        computed,
+      });
+
+      res.json({
+        success: true,
+        analysisA: projectAnalysis(a, aSummary),
+        analysisB: projectAnalysis(b, bSummary),
+        diffs,
+        highlights,
+      });
+    } catch (error) {
+      console.error('Error comparing AI analyses:', error);
+      res.status(500).json({ success: false, error: '분석 비교 중 오류가 발생했습니다.' });
+    }
+  });
+
 // Get trainers with video conference info for video call page
   app.get("/api/trainers/with-video-info", async (req, res) => {
     try {

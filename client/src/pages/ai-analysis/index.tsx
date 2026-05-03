@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, PawPrint, Brain, Clock, AlertTriangle, CheckCircle, Upload, Image as ImageIcon } from 'lucide-react';
+import { Calendar, PawPrint, Brain, Clock, AlertTriangle, CheckCircle, Upload, Image as ImageIcon, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { TrendsTab } from './TrendsTab';
 
 interface CareLog {
   id: number;
@@ -621,11 +622,24 @@ export default function AiAnalysisPage() {
 
       {/* 분석 결과 섹션 */}
       <Tabs defaultValue="results" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="results" data-testid="tab-results">최신 분석 결과</TabsTrigger>
           <TabsTrigger value="media" data-testid="tab-media">미디어 분석</TabsTrigger>
+          <TabsTrigger value="trends" data-testid="tab-trends">
+            <TrendingUp className="w-4 h-4 mr-1" />
+            이력 추이
+          </TabsTrigger>
           <TabsTrigger value="history" data-testid="tab-history">분석 기록</TabsTrigger>
         </TabsList>
+
+        {/* 이력 추이/비교 탭 */}
+        <TabsContent value="trends" className="space-y-4">
+          <TrendsTab
+            petId={selectedPetId}
+            petName={pets.find((p: any) => p.id === selectedPetId)?.name}
+            analyses={(analysisHistoryData as any)?.analyses || []}
+          />
+        </TabsContent>
 
         {/* 최신 분석 결과 탭 */}
         <TabsContent value="results" className="space-y-4">
