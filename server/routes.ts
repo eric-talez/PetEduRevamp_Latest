@@ -5954,29 +5954,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 예약 생성 API
-  app.post("/api/reservations/create", csrfProtection, async (req, res) => {
+  // 예약 생성 API (화상수업 등 실제 reservations 테이블에 저장)
+  app.post("/api/reservations/create", requireAuth(), csrfProtection, async (req, res) => {
     try {
-      const { trainerId, date, time, notes } = req.body;
+      const sessionUser = (req as any).user;
+      if (!sessionUser?.id) {
+        return res.status(401).json({ error: "인증이 필요합니다." });
+      }
 
-      console.log('예약 생성 요청:', { trainerId, date, time, notes });
+      const {
+        trainerId,
+        date,
+        time,
+        notes,
+        petId,
+        service,
+        serviceType,
+        duration,
+        price,
+      } = req.body || {};
 
-      const reservationId = Date.now();
-      const reservationData = {
-        id: reservationId,
-        trainerId: trainerId,
-        userId: 'user',
-        date: date,
-        time: time,
-        notes: notes,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      };
+      const trainerIdNum = Number(trainerId);
+      if (!trainerIdNum || Number.isNaN(trainerIdNum)) {
+        return res.status(400).json({ error: "trainerId가 유효하지 않습니다." });
+      }
+      if (!date || typeof date !== 'string') {
+        return res.status(400).json({ error: "예약 날짜(date)가 필요합니다." });
+      }
+      const timeStr = typeof time === 'string' && /^\d{2}:\d{2}$/.test(time) ? time : '00:00';
+      const scheduledAt = new Date(`${date}T${timeStr}:00`);
+      if (Number.isNaN(scheduledAt.getTime())) {
+        return res.status(400).json({ error: "예약 일시가 유효하지 않습니다." });
+      }
 
-      res.json({ 
-        success: true, 
-        message: "예약 요청이 성공적으로 전송되었습니다.",
-        data: reservationData
+      const durationNum = duration != null ? Number(duration) : 60;
+
+      // 트레이너 조회: 입력된 trainerId가 trainers.id 또는 users.id 어느 쪽이든
+      // 허용. reservations.trainerId 는 users.id FK 이므로 항상 users.id로 정규화.
+      let trainerName: string | undefined;
+      let basePrice = 0;
+      let trainerUserId: number = trainerIdNum;
+      try {
+        // 1) trainers.id 로 우선 조회
+        const [byTrainersId] = await db
+          .select({ id: trainers.id, userId: trainers.userId, price: trainers.price, name: trainers.name })
+          .from(trainers)
+          .where(eq(trainers.id, trainerIdNum))
+          .limit(1);
+        if (byTrainersId) {
+          trainerName = byTrainersId.name || undefined;
+          basePrice = Number(byTrainersId.price ?? 0);
+          if (byTrainersId.userId) trainerUserId = byTrainersId.userId;
+        } else {
+          // 2) trainers.userId 로 폴백 조회 (이미 users.id가 전달된 경우)
+          const [byUserId] = await db
+            .select({ id: trainers.id, userId: trainers.userId, price: trainers.price, name: trainers.name })
+            .from(trainers)
+            .where(eq(trainers.userId, trainerIdNum))
+            .limit(1);
+          if (byUserId) {
+            trainerName = byUserId.name || undefined;
+            basePrice = Number(byUserId.price ?? 0);
+            if (byUserId.userId) trainerUserId = byUserId.userId;
+          }
+        }
+      } catch (lookupErr) {
+        logServerError('[예약] 훈련사 조회 실패:', lookupErr, req);
+      }
+
+      // 가격 결정: 요청 본문 우선, 없으면 trainers.price * (duration/60)
+      let grossAmount = Number(price);
+      if (!grossAmount || Number.isNaN(grossAmount)) {
+        grossAmount = Math.round(basePrice * (durationNum / 60));
+      }
+
+      const reservation = await storage.createReservation({
+        userId: sessionUser.id,
+        trainerId: trainerUserId,
+        petId: petId != null ? Number(petId) : null,
+        serviceType: String(serviceType || service || '화상수업'),
+        scheduledAt,
+        duration: durationNum,
+        status: 'confirmed',
+        notes: notes ? String(notes) : null,
+        price: grossAmount > 0 ? grossAmount : null,
+      });
+
+      // 트레이너 정산 항목 생성 (결제 성공 처리)
+      if (grossAmount > 0) {
+        try {
+          const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
+          await createTrainerSettlementItem({
+            trainerId: trainerUserId,
+            sourceType: 'lesson',
+            sourceId: reservation.id,
+            sourceName: `화상수업 예약 #${reservation.id}`,
+            category: 'lesson',
+            grossAmount,
+            occurredAt: reservation.createdAt || new Date(),
+            metadata: {
+              userId: sessionUser.id,
+              scheduledAt: scheduledAt.toISOString(),
+              duration: durationNum,
+            },
+          });
+        } catch (settlementErr) {
+          logServerError('[예약] 트레이너 정산 자동 생성 실패:', settlementErr, req);
+        }
+      }
+
+      // 보호자/훈련사 양쪽에 예약 확정 알림 발송
+      const scheduleLabel = `${date} ${timeStr}`;
+      try {
+        await notificationService.sendNotification({
+          userId: sessionUser.id,
+          type: 'reservation',
+          title: '예약이 확정되었습니다',
+          message: `${trainerName ? trainerName + ' 훈련사와의 ' : ''}화상수업 예약이 확정되었습니다. (${scheduleLabel})`,
+          data: { reservationId: reservation.id, trainerId: trainerUserId, scheduledAt: scheduledAt.toISOString(), action: 'reservation_confirmed' },
+          actionUrl: `/reservations/${reservation.id}`,
+        });
+      } catch (notifyErr) {
+        logServerError('[예약] 보호자 알림 전송 실패:', notifyErr, req);
+      }
+      try {
+        await notificationService.sendNotification({
+          userId: trainerUserId,
+          type: 'reservation',
+          title: '새로운 예약이 확정되었습니다',
+          message: `${sessionUser.name || '보호자'}님의 화상수업 예약이 확정되었습니다. (${scheduleLabel})`,
+          data: { reservationId: reservation.id, userId: sessionUser.id, scheduledAt: scheduledAt.toISOString(), action: 'reservation_confirmed' },
+          actionUrl: `/trainer/reservations/${reservation.id}`,
+        });
+      } catch (notifyErr) {
+        logServerError('[예약] 훈련사 알림 전송 실패:', notifyErr, req);
+      }
+
+      res.json({
+        success: true,
+        message: "예약이 성공적으로 등록되었습니다.",
+        data: reservation,
       });
     } catch (error) {
       logServerError('예약 생성 오류:', error, req);

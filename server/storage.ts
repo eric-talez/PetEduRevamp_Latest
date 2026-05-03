@@ -6990,6 +6990,40 @@ class HybridStorage extends Storage {
       geography: { regions: regionsArr },
     };
   }
+
+  // 화상수업/세션 예약 생성 (PostgreSQL)
+  async createReservation(data: {
+    userId: number;
+    trainerId: number;
+    petId?: number | null;
+    serviceType: string;
+    scheduledAt: Date;
+    duration?: number | null;
+    status?: string | null;
+    notes?: string | null;
+    price?: number | string | null;
+  }): Promise<any> {
+    try {
+      const [row] = await db
+        .insert(reservationsTable)
+        .values({
+          userId: data.userId,
+          trainerId: data.trainerId,
+          petId: data.petId ?? null,
+          serviceType: data.serviceType,
+          scheduledAt: data.scheduledAt,
+          duration: data.duration ?? 60,
+          status: data.status ?? 'pending',
+          notes: data.notes ?? null,
+          price: data.price != null ? String(data.price) : null,
+        })
+        .returning();
+      return row;
+    } catch (error) {
+      logServerError('[Storage] 예약 생성 실패:', error);
+      throw error;
+    }
+  }
 }
 
 const storage = new HybridStorage();
