@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Award, Printer } from "lucide-react";
+import { Award, Printer, Download } from "lucide-react";
 
 interface CertData {
   certificateNo: string; userName: string; petName?: string | null; courseTitle: string;
@@ -26,11 +26,21 @@ export default function CertificatePage() {
 
   return (
     <div className="container mx-auto p-6 max-w-3xl" data-testid="page-certificate">
-      <div className="flex justify-between mb-4 print:hidden">
+      <div className="flex flex-wrap justify-between gap-2 mb-4 print:hidden">
         <Button variant="ghost" onClick={() => setLocation(`/my-courses/${courseId}/progress`)}>← 돌아가기</Button>
-        <Button onClick={() => window.print()} data-testid="button-print">
-          <Printer className="w-4 h-4 mr-2" /> 인쇄 / PDF 저장
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild data-testid="button-download-pdf">
+            <a
+              href={`/api/courses/${courseId}/certificate.pdf`}
+              download={`certificate-${c.certificateNo}.pdf`}
+            >
+              <Download className="w-4 h-4 mr-2" /> PDF 다운로드
+            </a>
+          </Button>
+          <Button onClick={() => window.print()} data-testid="button-print">
+            <Printer className="w-4 h-4 mr-2" /> 인쇄
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white border-8 border-double border-warning/50 p-12 print:border-warning/50" id="certificate">

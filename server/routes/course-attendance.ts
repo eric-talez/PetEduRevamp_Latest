@@ -625,6 +625,63 @@ export function registerCourseAttendanceRoutes(app: Express) {
     });
   });
 
+  // 보호자: 수료증 PDF 다운로드
+  app.get("/api/courses/:courseId/certificate.pdf", requireAuth, async (req: Request, res: Response) => {
+    const me = getUser(req)!;
+    const courseId = parseInt(req.params.courseId, 10);
+    if (Number.isNaN(courseId)) return res.status(400).json({ message: "잘못된 courseId" });
+    let targetUserId = me.id;
+    if (req.query.userId !== undefined) {
+      const parsed = parseInt(req.query.userId as string, 10);
+      if (Number.isNaN(parsed)) return res.status(400).json({ message: "잘못된 userId" });
+      targetUserId = parsed;
+    }
+    const course = findCourse(courseId);
+    if (!course) return res.status(404).json({ message: "코스를 찾을 수 없습니다." });
+
+    if (targetUserId !== me.id && !canManageCourse(me, course)) {
+      return res.status(403).json({ message: "권한이 없습니다." });
+    }
+
+    const result = recomputeProgress(targetUserId, courseId);
+    if (result.progress.status !== "completed") {
+      return res.status(400).json({ message: "아직 수료하지 않았습니다." });
+    }
+
+    const users = storage.users as Array<{ id: number; name?: string }>;
+    const pets = storage.pets as Array<{ id: number; ownerId: number; name?: string }>;
+    const user = users.find((u) => u.id === targetUserId);
+    const trainer = course.instructorId ? users.find((u) => u.id === course.instructorId) : null;
+    const pet = pets.find((p) => p.ownerId === targetUserId);
+
+    const completedTs = result.progress.completedAt ? new Date(result.progress.completedAt).getTime() : Date.now();
+    const certificateNo = `WZ-${courseId}-${targetUserId}-${completedTs.toString().slice(-6)}`;
+
+    try {
+      const { generateCertificatePdf } = await import("../services/certificate-pdf");
+      const buffer = await generateCertificatePdf({
+        certificateNo,
+        userName: user?.name || "수강생",
+        petName: pet?.name || null,
+        courseTitle: course.title || "코스",
+        trainerName: trainer?.name || "담당 트레이너",
+        instituteName: "왕짱스쿨",
+        completedAt: result.progress.completedAt,
+        totalSessions: result.totalSessions,
+        completedSessions: result.completedSessions,
+      });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="certificate-${certificateNo}.pdf"`,
+      );
+      res.send(buffer);
+    } catch (err) {
+      console.error("[Certificate PDF] 생성 실패:", err);
+      res.status(500).json({ message: "수료증 PDF 생성에 실패했습니다." });
+    }
+  });
+
   // 관리자: 코스별 평균 출석률 통계
   app.get("/api/admin/courses/attendance-stats", requireAuth, (req: Request, res: Response) => {
     const me = getUser(req)!;
