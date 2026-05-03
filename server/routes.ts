@@ -12,6 +12,7 @@ import { setupStreamingSocket } from "./streaming/socket-server";
 import { registerAdminRoutes } from "./routes/admin";
 // import { errorHandler } from "./middleware/error-handler";
 import { registerShoppingRoutes } from "./routes/shopping";
+import { registerSubscriptionRoutes } from "./routes/subscriptions";
 import { productRoutes } from "./routes/products";
 import { simpleProductRoutes } from "./routes/simple-products";
 // import { registerNotificationRoutes } from "./routes/notification-routes";
@@ -1867,17 +1868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 구독 플랜 관련 API
-  app.get('/api/subscription-plans', (req, res) => {
-    try {
-      const plans = storage.getSubscriptionPlans();
-      console.log('[Admin] 구독 플랜 조회:', plans.length + '개');
-      res.json(plans);
-    } catch (error) {
-      console.error('구독 플랜 조회 오류:', error);
-      res.status(500).json({ error: '구독 플랜 조회에 실패했습니다.' });
-    }
-  });
+  // /api/subscription-plans 는 registerSubscriptionRoutes()에서 등록됩니다.
 
   // 관리자 - 기관 등록 (구독 플랜 포함)
   app.post('/api/admin/institutes', csrfProtection, (req, res) => {
@@ -15922,6 +15913,7 @@ app.get('/api/search', async (req, res) => {
 
   // Register shopping routes
   registerShoppingRoutes(app, storage);
+  registerSubscriptionRoutes(app);
 
   // Gemini AI API endpoints
   app.post("/api/ai/analyze-behavior", async (req, res) => {

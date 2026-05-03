@@ -114,18 +114,85 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  discountRate: decimal("discount_rate", { precision: 5, scale: 2 }).default("0"), // 할인율 (%)
-  finalPrice: decimal("final_price", { precision: 10, scale: 2 }), // 최종 가격 (할인 적용 후)
+  discountRate: decimal("discount_rate", { precision: 5, scale: 2 }).default("0"),
+  finalPrice: decimal("final_price", { precision: 10, scale: 2 }),
   currency: varchar("currency", { length: 3 }).default("KRW"),
   billingPeriod: varchar("billing_period", { length: 20 }).default("monthly"),
   maxMembers: integer("max_members").notNull(),
   maxVideoHours: integer("max_video_hours").notNull(),
   maxAiAnalysis: integer("max_ai_analysis").notNull(),
   features: jsonb("features").notNull(),
+  benefits: jsonb("benefits"),
+  stripeProductId: varchar("stripe_product_id", { length: 100 }),
+  stripePriceId: varchar("stripe_price_id", { length: 100 }),
+  audience: varchar("audience", { length: 20 }).default("user"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// 사용자 구독 테이블 (Stripe 정기 구독)
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  planId: integer("plan_id").references(() => subscriptionPlans.id).notNull(),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 100 }),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 100 }),
+  status: varchar("status", { length: 30 }).notNull().default("incomplete"),
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  canceledAt: timestamp("canceled_at"),
+  defaultPaymentMethodBrand: varchar("default_payment_method_brand", { length: 50 }),
+  defaultPaymentMethodLast4: varchar("default_payment_method_last4", { length: 10 }),
+  latestInvoiceStatus: varchar("latest_invoice_status", { length: 30 }),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 구독 결제 이력 (Stripe Invoice)
+export const subscriptionInvoices = pgTable("subscription_invoices", {
+  id: serial("id").primaryKey(),
+  userSubscriptionId: integer("user_subscription_id").references(() => userSubscriptions.id),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  stripeInvoiceId: varchar("stripe_invoice_id", { length: 100 }),
+  amountDue: integer("amount_due").notNull().default(0),
+  amountPaid: integer("amount_paid").notNull().default(0),
+  currency: varchar("currency", { length: 10 }).default("krw"),
+  status: varchar("status", { length: 30 }).notNull(),
+  hostedInvoiceUrl: text("hosted_invoice_url"),
+  periodStart: timestamp("period_start"),
+  periodEnd: timestamp("period_end"),
+  paidAt: timestamp("paid_at"),
+  failureMessage: text("failure_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSubscriptionPlanSchema = z.object({
+  name: z.string().min(1),
+  code: z.string().min(1),
+  description: z.string().optional(),
+  price: z.number().nonnegative(),
+  currency: z.string().default("KRW"),
+  billingPeriod: z.enum(["monthly", "yearly"]).default("monthly"),
+  maxMembers: z.number().int().default(0),
+  maxVideoHours: z.number().int().default(0),
+  maxAiAnalysis: z.number().int().default(0),
+  features: z.record(z.any()).optional().default({}),
+  benefits: z.array(z.string()).optional().default([]),
+  stripeProductId: z.string().optional(),
+  stripePriceId: z.string().optional(),
+  audience: z.enum(["user", "institute", "trainer"]).default("user"),
+  isActive: z.boolean().default(true),
+});
+
+export const updateSubscriptionPlanSchema = insertSubscriptionPlanSchema.partial();
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+export type UpdateSubscriptionPlan = z.infer<typeof updateSubscriptionPlanSchema>;
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type SubscriptionInvoice = typeof subscriptionInvoices.$inferSelect;
 
 // 반려동물 테이블
 export const pets = pgTable("pets", {

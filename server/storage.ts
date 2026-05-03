@@ -2073,6 +2073,140 @@ class Storage {
     return this.subscriptionPlans?.find(plan => plan.id === id);
   }
 
+  createSubscriptionPlan(data: any) {
+    const nextId = (this.subscriptionPlans.reduce((m, p) => Math.max(m, p.id || 0), 0) || 0) + 1;
+    const plan = {
+      id: nextId,
+      audience: 'user',
+      benefits: [],
+      isActive: true,
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.subscriptionPlans.push(plan);
+    return plan;
+  }
+
+  updateSubscriptionPlan(id: number, data: any) {
+    const idx = this.subscriptionPlans.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    this.subscriptionPlans[idx] = {
+      ...this.subscriptionPlans[idx],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    return this.subscriptionPlans[idx];
+  }
+
+  deactivateSubscriptionPlan(id: number) {
+    return this.updateSubscriptionPlan(id, { isActive: false });
+  }
+
+  // 사용자 구독 (Stripe 정기 구독) 관련
+  userSubscriptions: any[] = [];
+  subscriptionInvoices: any[] = [];
+
+  getUserSubscriptionByUserId(userId: number) {
+    const rows = this.userSubscriptions.filter(s => s.userId === userId);
+    if (rows.length === 0) return undefined;
+    const statusRank: Record<string, number> = {
+      active: 6,
+      trialing: 6,
+      past_due: 5,
+      unpaid: 4,
+      incomplete: 3,
+      incomplete_expired: 1,
+      canceled: 1,
+    };
+    const score = (s: any) =>
+      (s.stripeSubscriptionId ? 100 : 0) + (statusRank[s.status] ?? 0);
+    return rows
+      .slice()
+      .sort((a, b) => score(b) - score(a) || (b.id || 0) - (a.id || 0))[0];
+  }
+
+  getUserSubscriptionByStripeId(stripeSubscriptionId: string) {
+    return this.userSubscriptions.find(s => s.stripeSubscriptionId === stripeSubscriptionId);
+  }
+
+  upsertUserSubscription(data: any) {
+    // 1) Stripe Subscription ID로 정확히 매칭되는 레코드 우선
+    if (data.stripeSubscriptionId) {
+      const existing = this.getUserSubscriptionByStripeId(data.stripeSubscriptionId);
+      if (existing) {
+        Object.assign(existing, data, { updatedAt: new Date().toISOString() });
+        return existing;
+      }
+    }
+    // 2) 사용자 기준으로 기존 레코드를 찾되, 활성 Stripe 구독을 가진 레코드를
+    //    덮어쓰지 않도록 안전하게 매칭
+    if (data.userId) {
+      const userRows = this.userSubscriptions.filter(s => s.userId === data.userId);
+      // 새 데이터에 stripeSubscriptionId가 있으면 → 동일 사용자의 어떤 레코드든 머지 가능
+      // 새 데이터가 placeholder(stripeSubscriptionId 없음)면 → placeholder 또는 비어있는 레코드만 머지
+      let target;
+      if (data.stripeSubscriptionId) {
+        target =
+          userRows.find(s => !s.stripeSubscriptionId) ||
+          userRows.find(s => s.status === 'incomplete' || s.status === 'incomplete_expired');
+      } else {
+        target = userRows.find(s => !s.stripeSubscriptionId);
+      }
+      if (target) {
+        // placeholder 머지 시에는 활성 구독의 핵심 필드를 덮지 않도록 주의
+        Object.assign(target, data, { updatedAt: new Date().toISOString() });
+        return target;
+      }
+      // 새 데이터가 placeholder인데 사용자가 이미 Stripe 활성 구독을 갖고 있다면
+      // 새 placeholder 행을 만들지 않고 기존 레코드의 customerId만 보강
+      if (!data.stripeSubscriptionId && userRows.length > 0) {
+        const active = userRows.find(s => s.stripeSubscriptionId);
+        if (active) {
+          if (data.stripeCustomerId && !active.stripeCustomerId) {
+            active.stripeCustomerId = data.stripeCustomerId;
+            active.updatedAt = new Date().toISOString();
+          }
+          return active;
+        }
+      }
+    }
+    const nextId = (this.userSubscriptions.reduce((m, s) => Math.max(m, s.id || 0), 0) || 0) + 1;
+    const sub = {
+      id: nextId,
+      cancelAtPeriodEnd: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...data,
+    };
+    this.userSubscriptions.push(sub);
+    return sub;
+  }
+
+  getInvoicesByUserId(userId: number) {
+    return this.subscriptionInvoices
+      .filter(i => i.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  addSubscriptionInvoice(data: any) {
+    const existing = data.stripeInvoiceId
+      ? this.subscriptionInvoices.find(i => i.stripeInvoiceId === data.stripeInvoiceId)
+      : null;
+    if (existing) {
+      Object.assign(existing, data);
+      return existing;
+    }
+    const nextId = (this.subscriptionInvoices.reduce((m, i) => Math.max(m, i.id || 0), 0) || 0) + 1;
+    const inv = {
+      id: nextId,
+      createdAt: new Date().toISOString(),
+      ...data,
+    };
+    this.subscriptionInvoices.push(inv);
+    return inv;
+  }
+
   // 기관 구독 관련 메서드들
   createInstituteWithSubscription(instituteData: any) {
     const newInstitute = {
