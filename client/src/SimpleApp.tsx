@@ -106,6 +106,7 @@ import { WeatherEffects } from "./components/WeatherEffects";
 import { TopBar } from "@/components/TopBar";
 import { Sidebar } from "@/components/Sidebar";
 import { Toaster } from "@/components/ui/toaster";
+import { IdleLogoutWarning } from "@/components/IdleLogoutWarning";
 import Footer from "@/components/Footer";
 
 import { ThemeManager } from "@/components/ThemeManager";
@@ -2160,6 +2161,7 @@ function SimpleApp() {
                     <CheckinOrAppRoutes isAuthenticated={auth.isAuthenticated} />
                     <DebugButton />
                     <Toaster />
+                    <IdleLogoutWarning />
                     <NotificationPermissionPopup />
                   </>
                 </KeyboardShortcutsManager>

@@ -23,6 +23,7 @@ import { setupPerformance } from "./performance";
 import { registerAdminRoutes } from "./routes/admin";
 import { registerPaymentIntegrationRoutes } from "./routes/payment-integration";
 import { setupAuth } from "./auth";
+import { activitySessionMiddleware, ensureUserSessionsSchema } from "./auth/session-manager";
 import { extendResponse } from "./middleware/api-standards";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import path from 'path'; // path 모듈 추가
@@ -324,6 +325,16 @@ app.use((req: any, res: any, next: any) => {
 
 // API 표준화 미들웨어 적용 - Response 객체에 표준 메서드 추가
 app.use(extendResponse);
+
+// 세션 활동 추적 / 자동 로그아웃 미들웨어
+// (express-session + passport.session 이후, 모든 /api 라우트(인증 포함)에 적용)
+app.use('/api', activitySessionMiddleware);
+
+// user_sessions 테이블 존재 확인 (없으면 생성, 검증 실패 시 startup 중단)
+ensureUserSessionsSchema().catch((err) => {
+  console.error('[Startup] user_sessions 스키마 보장 실패:', err);
+  process.exit(1);
+});
 
 // Setup authentication system
 setupAuth(app);

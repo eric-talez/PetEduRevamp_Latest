@@ -14,6 +14,13 @@ import { User as SelectUser, users, friendInvitations, educationCredits } from '
 import { UserRole } from '../../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { csrfProtection, getCSRFToken } from '../middleware/csrf';
+import {
+  registerLoginSession,
+  revokeCurrentSession,
+  listActiveSessions,
+  revokeSessionById,
+  touchSessionActivity,
+} from './session-manager';
 import { 
   ApiErrorCode, 
   createSuccessResponse,
@@ -259,7 +266,7 @@ function setupAuthRoutes(app: Express) {
         };
         
         // 세션 명시적 저장
-        req.session.save((saveErr) => {
+        req.session.save(async (saveErr) => {
           if (saveErr) {
             console.error('세션 저장 오류:', saveErr);
             return res.error(
@@ -267,7 +274,10 @@ function setupAuthRoutes(app: Express) {
               '세션 저장 중 오류가 발생했습니다'
             );
           }
-          
+
+          // 활성 세션 추적 등록
+          await registerLoginSession(req, user.id);
+
           console.log('로그인 성공:', user.username);
           console.log('세션 저장 완료 - SessionID:', req.sessionID);
           return res.success({
@@ -287,9 +297,13 @@ function setupAuthRoutes(app: Express) {
   });
   
   // 로그아웃 API (표준화 적용)
-  router.post('/logout', csrfProtection, (req, res) => {
+  router.post('/logout', csrfProtection, async (req, res) => {
     const wasAuthenticated = req.isAuthenticated();
-    
+    const sessionId = req.sessionID;
+
+    // 활성 세션 row revoke (DB)
+    await revokeCurrentSession(sessionId, 'logout');
+
     req.logout((err) => {
       if (err) {
         console.error('로그아웃 오류:', err);
@@ -298,12 +312,93 @@ function setupAuthRoutes(app: Express) {
           '로그아웃 처리 중 오류가 발생했습니다'
         );
       }
-      
+
       return res.success(
         { wasAuthenticated },
         '로그아웃되었습니다.'
       );
     });
+  });
+
+  // ==========================================================================
+  // 활성 세션 관리 API
+  // ==========================================================================
+
+  // 현재 사용자의 활성 세션 목록 조회
+  router.get('/sessions', async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.error(
+        ApiErrorCode.AUTHENTICATION_REQUIRED,
+        '로그인이 필요합니다.'
+      );
+    }
+    try {
+      const userId = (req.user as SelectUser).id;
+      const sessions = await listActiveSessions(userId, req.sessionID);
+      return res.success(sessions, '활성 세션 목록을 조회했습니다.');
+    } catch (error) {
+      console.error('[Auth] 세션 목록 조회 오류:', error);
+      return res.error(
+        ApiErrorCode.INTERNAL_SERVER_ERROR,
+        '세션 목록을 조회할 수 없습니다.'
+      );
+    }
+  });
+
+  // 특정 세션 강제 로그아웃
+  router.delete('/sessions/:id', csrfProtection, async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.error(
+        ApiErrorCode.AUTHENTICATION_REQUIRED,
+        '로그인이 필요합니다.'
+      );
+    }
+    const sessionRowId = parseInt(req.params.id, 10);
+    if (isNaN(sessionRowId)) {
+      return res.error(
+        ApiErrorCode.VALIDATION_ERROR,
+        '올바르지 않은 세션 ID 입니다.'
+      );
+    }
+    try {
+      const userId = (req.user as SelectUser).id;
+      const revoked = await revokeSessionById(userId, sessionRowId, 'manual');
+      if (!revoked) {
+        return res.error(
+          ApiErrorCode.RESOURCE_NOT_FOUND,
+          '해당 세션을 찾을 수 없습니다.'
+        );
+      }
+      // 현재 세션을 끊은 경우, 즉시 세션을 파기
+      if (revoked.sessionId === req.sessionID) {
+        return req.logout((err) => {
+          if (err) console.error('[Auth] sessions DELETE logout 오류:', err);
+          req.session?.destroy(() => {
+            res.clearCookie('talez.sid');
+            return res.success({ revokedCurrent: true }, '현재 세션을 종료했습니다.');
+          });
+        });
+      }
+      return res.success({ revokedCurrent: false }, '세션을 강제 종료했습니다.');
+    } catch (error) {
+      console.error('[Auth] 세션 강제 종료 오류:', error);
+      return res.error(
+        ApiErrorCode.INTERNAL_SERVER_ERROR,
+        '세션을 종료할 수 없습니다.'
+      );
+    }
+  });
+
+  // 세션 keep-alive (heartbeat)
+  router.post('/sessions/heartbeat', csrfProtection, async (req, res) => {
+    if (!req.isAuthenticated() || !req.sessionID) {
+      return res.error(
+        ApiErrorCode.AUTHENTICATION_REQUIRED,
+        '로그인이 필요합니다.'
+      );
+    }
+    await touchSessionActivity(req.sessionID);
+    return res.success({ ok: true }, '세션이 갱신되었습니다.');
   });
   
   // 퀵로그인 API (테스트/데모 용도) - CSRF 보호 적용
@@ -361,7 +456,7 @@ function setupAuthRoutes(app: Express) {
         };
         
         // 세션 명시적 저장
-        req.session.save((saveErr) => {
+        req.session.save(async (saveErr) => {
           if (saveErr) {
             console.error('[QuickLogin] 세션 저장 오류:', saveErr);
             return res.error(
@@ -370,6 +465,7 @@ function setupAuthRoutes(app: Express) {
             );
           }
           
+          await registerLoginSession(req, user.id);
           console.log(`[QuickLogin] 퀵로그인 성공: ${user.username} (${user.role})`);
           console.log('[QuickLogin] 세션 저장 완료 - SessionID:', req.sessionID);
           

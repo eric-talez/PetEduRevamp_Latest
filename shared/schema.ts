@@ -3215,3 +3215,21 @@ export const insertSessionAttendanceSchema = createInsertSchema(sessionAttendanc
 export type InsertSessionAttendance = z.infer<typeof insertSessionAttendanceSchema>;
 export type SessionAttendance = typeof sessionAttendance.$inferSelect;
 
+// 사용자 활성 세션 관리 테이블 (자동 로그아웃 / 다중 기기 관리)
+export const userSessions = pgTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 255 }).notNull().unique(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  userAgent: text("user_agent"),
+  ipAddress: varchar("ip_address", { length: 64 }),
+  deviceLabel: varchar("device_label", { length: 120 }),
+  lastActivity: timestamp("last_activity").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  revokedReason: varchar("revoked_reason", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserSessionSchema = createInsertSchema(userSessions).omit({ id: true, createdAt: true });
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+export type UserSession = typeof userSessions.$inferSelect;

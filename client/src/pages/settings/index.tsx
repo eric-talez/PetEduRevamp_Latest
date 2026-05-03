@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeSettings } from "@/components/ThemeSettings";
 import { AccessibilitySettings } from "@/components/ui/AccessibilityControls";
+import { SecuritySessionsPanel } from "@/components/SecuritySessionsPanel";
 
 interface SettingsPageProps {
   userRole?: string;
@@ -230,6 +231,19 @@ export default function SettingsPage({ userRole: propUserRole }: SettingsPagePro
                 </button>
               </li>
             )}
+            <li>
+              <button
+                onClick={() => setActiveTab("security")}
+                className={`w-full text-left px-4 py-2 rounded-lg ${
+                  activeTab === "security"
+                    ? "bg-primary text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+                data-testid="tab-security"
+              >
+                보안 / 활성 세션
+              </button>
+            </li>
             {userRole === 'institute-admin' && (
               <li>
                 <button 
@@ -510,6 +524,12 @@ export default function SettingsPage({ userRole: propUserRole }: SettingsPagePro
             </div>
           )}
           
+          {activeTab === "security" && (
+            <div data-testid="settings-security-panel">
+              <SecuritySessionsPanel />
+            </div>
+          )}
+
           {activeTab === "institute" && (
             <div>
               <h2 className="text-xl font-semibold mb-4">기관 설정</h2>

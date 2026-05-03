@@ -8,6 +8,20 @@ interface ApiError extends Error {
   fieldErrors?: Record<string, string[]>;
 }
 
+function dispatchSessionExpired(reason: string, message?: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("session-expired", {
+      detail: { reason, message },
+    }),
+  );
+}
+
+function dispatchUserActivity() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("user-activity"));
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     // 응답이 JSON인지 확인
@@ -15,6 +29,7 @@ async function throwIfResNotOk(res: Response) {
     let errorMessage: string;
     let errorCode: string | undefined;
     let fieldErrors: Record<string, string[]> | undefined;
+    let reason: string | undefined;
 
     if (contentType && contentType.includes("application/json")) {
       try {
@@ -22,11 +37,19 @@ async function throwIfResNotOk(res: Response) {
         errorMessage = errorData.message || res.statusText;
         errorCode = errorData.code;
         fieldErrors = errorData.fieldErrors;
+        reason = errorData.reason;
       } catch (e) {
         errorMessage = await res.text() || res.statusText;
       }
     } else {
       errorMessage = await res.text() || res.statusText;
+    }
+
+    if (
+      res.status === 401 &&
+      (errorCode === "SESSION_EXPIRED" || errorCode === "IDLE_TIMEOUT")
+    ) {
+      dispatchSessionExpired(reason || "session-expired", errorMessage);
     }
 
     const error = new Error(`${res.status}: ${errorMessage}`) as ApiError;
@@ -75,20 +98,33 @@ export const apiRequest = async (method: string, url: string, data?: any): Promi
 
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      let errorCode: string | undefined;
+      let reason: string | undefined;
 
       try {
-        const errorBody = await response.text();
+        const errorBody = await response.clone().text();
         if (errorBody) {
           const errorData = JSON.parse(errorBody);
           errorMessage = errorData.message || errorData.error || errorMessage;
+          errorCode = errorData.code;
+          reason = errorData.reason;
         }
       } catch (parseError) {
         console.warn('[apiRequest] 오류 응답 파싱 실패:', parseError);
       }
 
+      if (
+        response.status === 401 &&
+        (errorCode === "SESSION_EXPIRED" || errorCode === "IDLE_TIMEOUT")
+      ) {
+        dispatchSessionExpired(reason || "session-expired", errorMessage);
+      }
+
       throw new Error(errorMessage);
     }
 
+    // 인증된 정상 응답은 사용자 활동으로 간주 (idle 타이머 리셋)
+    if (response.ok) dispatchUserActivity();
     return response;
   } catch (networkError) {
     console.error(`[apiRequest] 네트워크 오류:`, networkError);
@@ -106,11 +142,22 @@ export const getQueryFn: <T>(options: {
       credentials: "include",
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    if (res.status === 401) {
+      // SESSION_EXPIRED/IDLE_TIMEOUT 코드면 전역 이벤트 dispatch
+      try {
+        const cloned = res.clone();
+        const data = await cloned.json();
+        if (data?.code === "SESSION_EXPIRED" || data?.code === "IDLE_TIMEOUT") {
+          dispatchSessionExpired(data?.reason || "session-expired", data?.message);
+        }
+      } catch {
+        /* noop */
+      }
+      if (unauthorizedBehavior === "returnNull") return null;
     }
 
     await throwIfResNotOk(res);
+    if (res.ok) dispatchUserActivity();
     return await res.json();
   };
 
