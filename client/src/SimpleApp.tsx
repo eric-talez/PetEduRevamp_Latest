@@ -576,6 +576,28 @@ function AuthenticatedRoutes() {
             );
           }}
         </Route>
+
+        {/* 수료증 진위 확인 (공개, 인증 사용자도 접근 가능) */}
+        <Route path="/verify">
+          {() => {
+            const VerifyPage = lazy(() => import('./pages/verify/Certificate'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <VerifyPage />
+              </Suspense>
+            );
+          }}
+        </Route>
+        <Route path="/verify/:certificateNo">
+          {() => {
+            const VerifyPage = lazy(() => import('./pages/verify/Certificate'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <VerifyPage />
+              </Suspense>
+            );
+          }}
+        </Route>
         <Route path="/trainer/attendance">
           {() => {
             const TrainerAttendance = lazy(() => import('./pages/trainer/Attendance'));
@@ -1953,6 +1975,28 @@ function UnauthenticatedRoutes() {
         <Route path="/auth" component={Login} />
         <Route path="/auth/register" component={Register} />
         <Route path="/chatbot" component={ChatbotPage} />
+
+        {/* 수료증 진위 확인 (공개) */}
+        <Route path="/verify">
+          {() => {
+            const VerifyPage = lazy(() => import('./pages/verify/Certificate'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <VerifyPage />
+              </Suspense>
+            );
+          }}
+        </Route>
+        <Route path="/verify/:certificateNo">
+          {() => {
+            const VerifyPage = lazy(() => import('./pages/verify/Certificate'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <VerifyPage />
+              </Suspense>
+            );
+          }}
+        </Route>
 
         {/* TALEZ 체험 서비스 */}
         <Route path="/experience">

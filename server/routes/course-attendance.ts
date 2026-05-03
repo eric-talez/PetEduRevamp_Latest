@@ -298,7 +298,66 @@ const bulkAttendanceSchema = z.object({
   items: z.array(attendanceUpdateItemSchema).min(1),
 });
 
+function maskName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "***";
+  const chars = Array.from(trimmed);
+  if (chars.length === 1) return chars[0] + "*";
+  if (chars.length === 2) return chars[0] + "*";
+  return chars[0] + "*".repeat(chars.length - 2) + chars[chars.length - 1];
+}
+
 export function registerCourseAttendanceRoutes(app: Express) {
+  // 공개: 수료증 번호 진위 확인 (인증 불필요, 개인정보 최소 노출)
+  app.get("/api/verify/:certificateNo", (req: Request, res: Response) => {
+    const certificateNo = String(req.params.certificateNo || "").trim();
+    const match = /^WZ-(\d+)-(\d+)-(\d{6})$/.exec(certificateNo);
+    if (!match) {
+      return res.status(404).json({ success: false, message: "유효하지 않은 수료증 번호입니다." });
+    }
+    const courseId = parseInt(match[1], 10);
+    const userId = parseInt(match[2], 10);
+    const tsSuffix = match[3];
+
+    const course = findCourse(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: "수료증을 찾을 수 없습니다." });
+    }
+    const purchase = purchases().find((p) => p.userId === userId && p.courseId === courseId);
+    if (!purchase) {
+      return res.status(404).json({ success: false, message: "수료증을 찾을 수 없습니다." });
+    }
+
+    const list = progresses();
+    const progress = list.find((p) => p.userId === userId && p.courseId === courseId);
+    if (!progress || progress.status !== "completed" || !progress.completedAt) {
+      return res.status(404).json({ success: false, message: "수료증을 찾을 수 없습니다." });
+    }
+
+    const completedTs = new Date(progress.completedAt).getTime();
+    const expectedSuffix = completedTs.toString().slice(-6);
+    if (expectedSuffix !== tsSuffix) {
+      return res.status(404).json({ success: false, message: "수료증 번호가 일치하지 않습니다." });
+    }
+
+    const users = storage.users as Array<{ id: number; name?: string }>;
+    const user = users.find((u) => u.id === userId);
+    const trainer = course.instructorId ? users.find((u) => u.id === course.instructorId) : null;
+
+    res.json({
+      success: true,
+      data: {
+        certificateNo,
+        userName: maskName(user?.name || "수강생"),
+        courseTitle: course.title || `코스 #${courseId}`,
+        trainerName: trainer?.name || "담당 트레이너",
+        instituteName: "왕짱스쿨",
+        completedAt: progress.completedAt,
+        totalSessions: progress.totalLessons,
+      },
+    });
+  });
+
   // 회차 목록 조회 — 인증 필수. 트레이너/관리자/등록한 보호자만 접근.
   app.get("/api/courses/:courseId/sessions", requireAuth, (req: Request, res: Response) => {
     const me = getUser(req)!;
