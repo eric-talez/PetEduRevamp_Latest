@@ -154,10 +154,20 @@ export default function TrainerNotebookPage() {
     enabled: !!streamId && isAuthenticated,
   });
 
+  type AiDraftTone = 'friendly' | 'formal' | 'short' | 'detailed';
+  type AiDraftFields = {
+    title: string;
+    content: string;
+    behaviorNotes: string;
+    homeworkInstructions: string;
+    nextGoals: string;
+  };
   const [aiKeywords, setAiKeywords] = useState('');
-  const [aiTone, setAiTone] = useState<'friendly' | 'formal' | 'short' | 'detailed'>('friendly');
+  const [aiTone, setAiTone] = useState<AiDraftTone>('friendly');
   const [aiUsageInfo, setAiUsageInfo] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const [isAiDraftFlag, setIsAiDraftFlag] = useState(false);
+  // AI 초안 적용 직전의 본문 스냅샷 — "AI 초안 취소" 시 복원
+  const [aiDraftBackup, setAiDraftBackup] = useState<AiDraftFields | null>(null);
 
   const [notebookForm, setNotebookForm] = useState({
     title: '',
@@ -263,20 +273,30 @@ export default function TrainerNotebookPage() {
       return json;
     },
     onSuccess: (data) => {
-      const d = data?.draft || {};
-      setNotebookForm(prev => ({
-        ...prev,
-        title: d.title || prev.title,
-        content: d.content || prev.content,
-        behaviorNotes: d.behaviorNotes || prev.behaviorNotes,
-        homeworkInstructions: d.homeworkInstructions || prev.homeworkInstructions,
-        nextGoals: d.nextGoals || prev.nextGoals,
-      }));
+      const d = (data?.draft || {}) as Partial<AiDraftFields>;
+      setNotebookForm(prev => {
+        // 적용 직전 스냅샷 저장(취소 시 복원)
+        setAiDraftBackup({
+          title: prev.title,
+          content: prev.content,
+          behaviorNotes: prev.behaviorNotes,
+          homeworkInstructions: prev.homeworkInstructions,
+          nextGoals: prev.nextGoals,
+        });
+        return {
+          ...prev,
+          title: d.title || prev.title,
+          content: d.content || prev.content,
+          behaviorNotes: d.behaviorNotes || prev.behaviorNotes,
+          homeworkInstructions: d.homeworkInstructions || prev.homeworkInstructions,
+          nextGoals: d.nextGoals || prev.nextGoals,
+        };
+      });
       setIsAiDraftFlag(true);
       if (data?.usage) setAiUsageInfo(data.usage);
       toast({
         title: 'AI 초안 생성 완료',
-        description: '내용을 검토하고 자유롭게 편집해 주세요.',
+        description: '내용을 검토하고 자유롭게 편집해 주세요. 마음에 들지 않으면 "AI 초안 취소"를 누르세요.',
       });
       setActiveTab('basic');
     },
@@ -346,6 +366,7 @@ export default function TrainerNotebookPage() {
       setIsAiDraftFlag(false);
       setAiKeywords('');
       setAiUsageInfo(null);
+      setAiDraftBackup(null);
     },
     onError: (error) => {
       toast({
@@ -1058,7 +1079,7 @@ export default function TrainerNotebookPage() {
                         </div>
                         <div>
                           <Label htmlFor="ai-tone">톤</Label>
-                          <Select value={aiTone} onValueChange={(v) => setAiTone(v as any)}>
+                          <Select value={aiTone} onValueChange={(v) => setAiTone(v as AiDraftTone)}>
                             <SelectTrigger id="ai-tone" data-testid="select-ai-tone">
                               <SelectValue />
                             </SelectTrigger>
@@ -1088,6 +1109,29 @@ export default function TrainerNotebookPage() {
                             </>
                           )}
                         </Button>
+                        {isAiDraftFlag && aiDraftBackup && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => {
+                              setNotebookForm(prev => ({
+                                ...prev,
+                                title: aiDraftBackup.title,
+                                content: aiDraftBackup.content,
+                                behaviorNotes: aiDraftBackup.behaviorNotes,
+                                homeworkInstructions: aiDraftBackup.homeworkInstructions,
+                                nextGoals: aiDraftBackup.nextGoals,
+                              }));
+                              setIsAiDraftFlag(false);
+                              setAiDraftBackup(null);
+                              toast({ title: 'AI 초안 취소', description: '이전 입력 내용으로 되돌렸습니다.' });
+                            }}
+                            data-testid="button-revert-ai-draft"
+                          >
+                            AI 초안 취소 (이전 내용 복원)
+                          </Button>
+                        )}
                         {aiUsageInfo && (
                           <p className="text-xs text-muted-foreground text-right">
                             오늘 사용: {aiUsageInfo.used} / {aiUsageInfo.limit} (남은 횟수 {aiUsageInfo.remaining}회)
