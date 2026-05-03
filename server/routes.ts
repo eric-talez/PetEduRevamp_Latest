@@ -20,6 +20,7 @@ import { productRoutes } from "./routes/products";
 import { simpleProductRoutes } from "./routes/simple-products";
 // import { registerNotificationRoutes } from "./routes/notification-routes";
 import { registerEmailNotificationRoutes } from "./routes/email-notifications";
+import { registerNotebookReportRoutes } from "./routes/notebook-report";
 import { registerUploadRoutes } from "./routes/upload";
 import { notificationService } from "./notifications/notification-service";
 import OpenAI from "openai";
@@ -821,6 +822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 이메일 알림 (SendGrid) 라우트 등록 - Task #24
   registerEmailNotificationRoutes(app);
+  registerNotebookReportRoutes(app);
 
   // 날씨 API 라우트 등록
   app.use('/api/weather', weatherRoutes);

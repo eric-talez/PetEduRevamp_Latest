@@ -274,6 +274,42 @@ const DEFAULT_TEMPLATES: Array<{
     },
   },
   {
+    key: "notebook_weekly_report",
+    category: "notebook_weekly_report",
+    name: "알림장 주간 리포트",
+    subject: "[TALEZ] {{petName}} {{periodLabel}} 알림장 리포트가 도착했어요",
+    bodyHtml:
+      "<h2>{{name}}님, {{petName}}의 한 주 훈련 기록이에요 🐾</h2><p>이번 주({{periodKey}}) 작성된 알림장 <b>{{journalCount}}건</b>과 숙제 완료 현황({{homeworkCompleted}}/{{homeworkTotal}})을 PDF로 정리해 보내드려요.</p><p>첨부된 리포트를 확인해보시고, 다음 주 훈련 목표도 함께 점검해보세요.</p>",
+    description: "매주 월요일 오전 9시(KST) 자동 발송되는 주간 알림장 리포트",
+    variables: {
+      name: "보호자 이름",
+      petName: "반려동물 이름",
+      periodKey: "주차 키",
+      periodLabel: "기간 라벨",
+      journalCount: "알림장 수",
+      homeworkCompleted: "완료한 숙제 수",
+      homeworkTotal: "전체 숙제 수",
+    },
+  },
+  {
+    key: "notebook_monthly_report",
+    category: "notebook_monthly_report",
+    name: "알림장 월간 리포트",
+    subject: "[TALEZ] {{petName}} {{periodLabel}} 알림장 리포트가 도착했어요",
+    bodyHtml:
+      "<h2>{{name}}님, {{petName}}의 지난 달 훈련 기록이에요 🐾</h2><p>지난 달({{periodKey}}) 작성된 알림장 <b>{{journalCount}}건</b>과 숙제 완료 현황({{homeworkCompleted}}/{{homeworkTotal}})을 PDF로 정리해 보내드려요.</p>",
+    description: "매월 1일 오전 9시(KST) 자동 발송되는 월간 알림장 리포트",
+    variables: {
+      name: "보호자 이름",
+      petName: "반려동물 이름",
+      periodKey: "월 키",
+      periodLabel: "기간 라벨",
+      journalCount: "알림장 수",
+      homeworkCompleted: "완료한 숙제 수",
+      homeworkTotal: "전체 숙제 수",
+    },
+  },
+  {
     key: "settlement_deadline",
     category: "settlement_deadline",
     name: "정산 마감 안내",
@@ -303,6 +339,8 @@ const attachmentBuilders = new Map<string, AttachmentBuilder>();
 // 빌더가 등록되지 않은 상태로는 절대 발송되지 않는다.
 export const REQUIRED_ATTACHMENT_TEMPLATES = new Set<string>([
   "course_completion_certificate",
+  "notebook_weekly_report",
+  "notebook_monthly_report",
 ]);
 
 export function registerAttachmentBuilder(
@@ -324,6 +362,14 @@ export async function ensureEmailSystemInitialized(): Promise<void> {
   } catch (err) {
     console.warn(
       "[email] attachment notifier 로드 실패:",
+      (err as Error).message,
+    );
+  }
+  try {
+    await import("./notebook-report-notifier");
+  } catch (err) {
+    console.warn(
+      "[email] notebook-report notifier 로드 실패:",
       (err as Error).message,
     );
   }

@@ -779,6 +779,14 @@ async function startServer() {
         console.warn('[Push Scheduler] 스케줄러 시작 실패:', error);
       }
 
+      // 알림장 주/월간 리포트 스케줄러
+      try {
+        const { notebookReportScheduler } = await import('./services/notebook-report-scheduler');
+        notebookReportScheduler.start();
+      } catch (error) {
+        console.warn('[Notebook Report Scheduler] 시작 실패:', error);
+      }
+
       // AI 분석 공유 토큰 정리 스케줄러 (만료/철회 7일 경과 토큰 삭제)
       try {
         const { storage } = await import('./storage');

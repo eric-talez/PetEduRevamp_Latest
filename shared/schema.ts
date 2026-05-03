@@ -3524,8 +3524,25 @@ export const EMAIL_CATEGORIES = [
   "payment_failed",
   "settlement_deadline",
   "review_request",
+  "notebook_weekly_report",
+  "notebook_monthly_report",
 ] as const;
 export type EmailCategory = (typeof EMAIL_CATEGORIES)[number];
+
+export const notebookReportPreferences = pgTable("notebook_report_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  weeklyEnabled: boolean("weekly_enabled").default(true),
+  monthlyEnabled: boolean("monthly_enabled").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertNotebookReportPreferenceSchema = createInsertSchema(notebookReportPreferences).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export type InsertNotebookReportPreference = z.infer<typeof insertNotebookReportPreferenceSchema>;
+export type NotebookReportPreference = typeof notebookReportPreferences.$inferSelect;
 
 // 트레이너 정산 자동화 — 수수료율 정책
 export const trainerCommissionRates = pgTable("trainer_commission_rates", {

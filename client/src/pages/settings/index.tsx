@@ -8,6 +8,7 @@ import { ThemeSettings } from "@/components/ThemeSettings";
 import { AccessibilitySettings } from "@/components/ui/AccessibilityControls";
 import { SecuritySessionsPanel } from "@/components/SecuritySessionsPanel";
 import EmailNotificationsSettings from "@/components/EmailNotificationsSettings";
+import NotebookReportSettings from "@/components/NotebookReportSettings";
 
 interface SettingsPageProps {
   userRole?: string;
@@ -432,6 +433,9 @@ export default function SettingsPage({ userRole: propUserRole }: SettingsPagePro
 
                 <div className="border-t pt-6 mt-6">
                   <EmailNotificationsSettings />
+                  <div className="mt-6">
+                    <NotebookReportSettings />
+                  </div>
                 </div>
               </div>
             </div>
