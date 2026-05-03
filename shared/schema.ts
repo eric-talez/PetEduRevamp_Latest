@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, serial, decimal, jsonb, json, varchar, date } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, serial, decimal, jsonb, json, varchar, date, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
@@ -3320,3 +3320,51 @@ export const EMAIL_CATEGORIES = [
   "settlement_deadline",
 ] as const;
 export type EmailCategory = (typeof EMAIL_CATEGORIES)[number];
+
+// 트레이너 정산 자동화 — 수수료율 정책
+export const trainerCommissionRates = pgTable("trainer_commission_rates", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainer_id").references(() => users.id), // null = 카테고리/전역 정책
+  category: varchar("category", { length: 100 }), // null = 모든 카테고리
+  ratePercent: decimal("rate_percent", { precision: 5, scale: 2 }).notNull().default("20"),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTrainerCommissionRateSchema = createInsertSchema(trainerCommissionRates).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertTrainerCommissionRate = z.infer<typeof insertTrainerCommissionRateSchema>;
+export type TrainerCommissionRate = typeof trainerCommissionRates.$inferSelect;
+
+// 트레이너 정산 항목
+export const trainerSettlementItems = pgTable("trainer_settlement_items", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainer_id").references(() => users.id).notNull(),
+  sourceType: varchar("source_type", { length: 30 }).notNull(), // 'course', 'order', 'lesson'
+  sourceId: integer("source_id").notNull(),
+  sourceName: varchar("source_name", { length: 200 }),
+  category: varchar("category", { length: 100 }),
+  grossAmount: decimal("gross_amount", { precision: 12, scale: 2 }).notNull(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).notNull(),
+  platformFee: decimal("platform_fee", { precision: 12, scale: 2 }).notNull(),
+  netAmount: decimal("net_amount", { precision: 12, scale: 2 }).notNull(),
+  // 정산 회계월 (YYYY-MM)
+  settlementMonth: varchar("settlement_month", { length: 7 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending(예정), confirmed(확정), locked(마감), paid(지급), canceled(취소)
+  settlementId: integer("settlement_id").references(() => settlements.id),
+  occurredAt: timestamp("occurred_at").defaultNow(),
+  canceledAt: timestamp("canceled_at"),
+  cancelReason: text("cancel_reason"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => ({
+  uniqSource: uniqueIndex("uniq_trainer_settlement_source").on(t.sourceType, t.sourceId),
+  byTrainer: index("idx_trainer_settlement_items_trainer").on(t.trainerId),
+  byMonth: index("idx_trainer_settlement_items_month").on(t.settlementMonth),
+}));
+
+export const insertTrainerSettlementItemSchema = createInsertSchema(trainerSettlementItems).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertTrainerSettlementItem = z.infer<typeof insertTrainerSettlementItemSchema>;
+export type TrainerSettlementItem = typeof trainerSettlementItems.$inferSelect;

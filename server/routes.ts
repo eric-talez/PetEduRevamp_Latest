@@ -386,6 +386,7 @@ import {
   compareModelPerformance
 } from "./ai-fusion";
 import { setupCommissionRoutes } from './commission/routes';
+import { registerTrainerSettlementRoutes } from './routes/trainer-settlements';
 // import { setupHealthRoutes } from './routes/health';
 import { registerAnalyticsRoutes } from './routes/analytics';
 import { setupSocialRoutes } from './routes/social';
@@ -1042,6 +1043,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 커미션 라우트 등록
   setupCommissionRoutes(app);
+
+  // 트레이너 정산 자동화 라우트 등록
+  registerTrainerSettlementRoutes(app);
 
   // AI 에러 자동 수정 라우트 등록
   registerAIErrorFixRoutes(app);
@@ -12613,6 +12617,19 @@ app.get('/api/search', async (req, res) => {
 
       console.log('💰 환불 처리 완료:', refund.id);
 
+      // 트레이너 정산 항목 자동 취소 (refund metadata에 sourceType/sourceId 포함된 경우)
+      try {
+        const sourceType = req.body?.sourceType as ('course' | 'order' | 'lesson' | undefined);
+        const sourceId = req.body?.sourceId ? Number(req.body.sourceId) : undefined;
+        if (sourceType && sourceId) {
+          const { cancelTrainerSettlementItem } = await import('./routes/trainer-settlements');
+          const n = await cancelTrainerSettlementItem(sourceType, sourceId, `환불(${refund.id})`);
+          console.log(`[정산 자동 취소] ${sourceType}#${sourceId} → ${n}건 취소`);
+        }
+      } catch (cancelErr) {
+        console.error('[정산 자동 취소] 오류:', cancelErr);
+      }
+
       res.json({
         success: true,
         refundId: refund.id,
@@ -15617,7 +15634,50 @@ app.get('/api/search', async (req, res) => {
 
         if (paymentResult.success) {
           console.log(`[영상강의 수수료 정산 완료] 강의 ${courseId} - 수수료: ${paymentResult.feeAmount}원, 정산액: ${paymentResult.netAmount}원`);
-          
+
+          // 트레이너 정산 항목 자동 생성 (트랜잭션으로 원자성 보장)
+          // 1) coursePurchases INSERT + 정산 항목 생성을 동일 tx에서 실행
+          // 2) 어느 하나라도 실패하면 전체 롤백 → 결제 응답도 실패로 반환
+          try {
+            const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
+            const { coursePurchases: cp } = await import('../shared/schema');
+            await db.transaction(async (tx) => {
+              const [purchaseRow] = await tx
+                .insert(cp)
+                .values({
+                  userId,
+                  courseId: parseInt(courseId),
+                  purchaseAmount: String(courseInfo.price),
+                  paymentMethod: 'card',
+                  paymentStatus: 'completed',
+                  accessGranted: true,
+                })
+                .returning();
+              purchaseData.id = `purchase-${purchaseRow.id}`;
+
+              await createTrainerSettlementItem(
+                {
+                  trainerId: courseInfo.trainerId,
+                  sourceType: 'course',
+                  sourceId: purchaseRow.id,
+                  sourceName: courseInfo.title,
+                  category: null,
+                  grossAmount: courseInfo.price,
+                  occurredAt: purchaseRow.createdAt || new Date(),
+                  metadata: { userId, paymentMethod: 'card', courseId: parseInt(courseId) },
+                },
+                tx
+              );
+            });
+          } catch (autoErr) {
+            console.error('[트레이너 정산 자동 생성] 트랜잭션 실패 - 구매/정산 모두 롤백됨:', autoErr);
+            return res.status(500).json({
+              success: false,
+              error: '결제 처리는 완료되었으나 구매/정산 기록에 실패했습니다. 관리자에게 문의해주세요.',
+              details: (autoErr as Error)?.message,
+            });
+          }
+
           res.json({ 
             success: true,
             purchaseId: purchaseData.id,

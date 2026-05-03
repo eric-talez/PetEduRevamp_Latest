@@ -806,6 +806,16 @@ function AuthenticatedRoutes() {
             );
           }}
         </Route>
+        <Route path="/trainer/settlements">
+          {() => {
+            const TrainerSettlements = lazy(() => import('./pages/trainer/settlements'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedTrainerRoute component={TrainerSettlements} />
+              </Suspense>
+            );
+          }}
+        </Route>
         <Route path="/trainer/reviews">
           {() => {
             const TrainerReviews = lazy(() => import('./pages/trainer/reviews'));
@@ -1692,6 +1702,16 @@ function AuthenticatedRoutes() {
               component={AdminSettlementPage}
             />
           )}
+        </Route>
+        <Route path="/admin/trainer-settlements">
+          {() => {
+            const AdminTrainerSettlements = lazy(() => import('./pages/admin/trainer-settlements'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedAdminRoute component={AdminTrainerSettlements} />
+              </Suspense>
+            );
+          }}
         </Route>
         <Route path="/admin/service-inspection">
           {() => {
