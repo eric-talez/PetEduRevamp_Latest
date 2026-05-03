@@ -4624,8 +4624,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isRead: false
       });
 
-      // 보호자에게 알림 발송 (인앱 + 이메일)
-      if (pet.ownerId) {
+      // 보호자에게 알림 발송 (인앱 + 이메일) - draft가 아닐 때만
+      if (pet.ownerId && journalEntry.status !== 'draft') {
         try {
           const { notificationService } = await import('./notifications/notification-service');
           await notificationService.sendNotification({
@@ -4651,9 +4651,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               link: `${process.env.APP_URL || ''}/notebook?entryId=${journalEntry.id}`,
             },
           });
-        } catch (e: any) {
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
           // 템플릿 미존재 등은 무시
-          if (!String(e?.message || '').includes('템플릿이 존재하지 않습니다')) {
+          if (!msg.includes('템플릿이 존재하지 않습니다')) {
             logServerError('알림장 이메일 발송 실패:', e, req);
           }
         }
@@ -8154,11 +8155,14 @@ app.get('/api/search', async (req, res) => {
       const journals = await storage.getTrainingJournalsByTrainer(trainerId);
 
       // 펫/소유자 정보로 보강
-      const enriched = await Promise.all(journals.map(async (j: any) => {
-        const pet = storage.getPet(j.petId);
-        let owner: any = null;
+      type Journal = { petId: number; [k: string]: unknown };
+      type Pet = { id: number; name?: string; breed?: string; age?: number; ownerId?: number };
+      type User = { id: number; name?: string; email?: string };
+      const enriched = await Promise.all((journals as Journal[]).map(async (j) => {
+        const pet = storage.getPet(j.petId) as Pet | null;
+        let owner: User | null = null;
         if (pet?.ownerId) {
-          try { owner = await storage.getUser?.(pet.ownerId); } catch {}
+          try { owner = (await storage.getUser?.(pet.ownerId)) as User | null; } catch {}
         }
         return {
           ...j,
@@ -8181,13 +8185,16 @@ app.get('/api/search', async (req, res) => {
   app.get("/api/trainer/students-for-journal", requireAuth('trainer'), async (req, res) => {
     try {
       const trainerId = req.session!.user!.id;
-      const pets = storage.getPetsByTrainerId(trainerId);
-      const result = await Promise.all(pets.map(async (pet: any) => {
-        let owner: any = null;
-        try { owner = await storage.getUser?.(pet.ownerId); } catch {}
-        const journals = (storage.getTrainingJournalsByPet?.(pet.id) || []);
+      type PetRow = { id: number; name?: string; breed?: string; age?: number; ownerId: number; trainingType?: string };
+      type UserRow = { id: number; name?: string; email?: string };
+      type JournalRow = { trainingDate?: string; createdAt?: string };
+      const pets = storage.getPetsByTrainerId(trainerId) as PetRow[];
+      const result = await Promise.all(pets.map(async (pet) => {
+        let owner: UserRow | null = null;
+        try { owner = (await storage.getUser?.(pet.ownerId)) as UserRow | null; } catch {}
+        const journals = (storage.getTrainingJournalsByPet?.(pet.id) || []) as JournalRow[];
         const lastJournal = journals.length
-          ? journals.map((j: any) => j.trainingDate || j.createdAt).sort().slice(-1)[0]
+          ? journals.map((j) => j.trainingDate || j.createdAt || '').sort().slice(-1)[0]
           : null;
         return {
           id: pet.ownerId,
@@ -8224,7 +8231,7 @@ app.get('/api/search', async (req, res) => {
       });
       try { fs.unlinkSync(req.file.path); } catch {}
       return res.json({ success: true, text: transcription.text });
-    } catch (error: any) {
+    } catch (error) {
       logServerError('알림장 STT 오류:', error, req);
       try { if (req.file) require('fs').unlinkSync(req.file.path); } catch {}
       return res.status(500).json({ success: false, error: '음성 인식 중 오류가 발생했습니다.' });

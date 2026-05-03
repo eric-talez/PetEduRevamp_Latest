@@ -390,9 +390,37 @@ export default function NotebookPage() {
       const data = await response.json();
 
       if (data.success) {
-        const list = (data.data || data.entries || []) as any[];
+        type NotebookEntryApi = {
+          id: number | string;
+          trainingDate?: string;
+          createdAt?: string;
+          updatedAt?: string;
+          petId?: number | string;
+          petName?: string;
+          pet?: { id?: number | string; name?: string };
+          trainerId?: number | string;
+          trainerName?: string;
+          trainer?: { id?: number | string; name?: string };
+          title?: string;
+          content?: string;
+          activities?: NotebookEntry['activities'];
+          mood?: NotebookEntry['mood'];
+          attachments?: string[];
+          photos?: string[];
+          videos?: string[];
+          behaviorNotes?: string;
+          notes?: string;
+          nextGoals?: string | string[];
+          weather?: string;
+          trainingDuration?: number;
+          duration?: number;
+          location?: string;
+          tags?: string[];
+          isRead?: boolean;
+        };
+        const list: NotebookEntryApi[] = data.data || data.entries || [];
         // 서버 trainingJournals 스키마를 NotebookEntry 표시 형식으로 매핑
-        const mapped: NotebookEntry[] = list.map((j: any) => ({
+        const mapped: NotebookEntry[] = list.map((j) => ({
           id: String(j.id),
           date: (j.trainingDate || j.createdAt || '').toString().slice(0, 10),
           petName: j.petName || j.pet?.name || '반려동물',
@@ -402,7 +430,7 @@ export default function NotebookPage() {
           title: j.title || '훈련 일지',
           content: j.content || '',
           activities: j.activities || {},
-          mood: (j.mood || 'normal') as NotebookEntry['mood'],
+          mood: j.mood || 'normal',
           photos: Array.isArray(j.attachments) ? j.attachments.filter((u: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(u)) : (j.photos || []),
           videos: Array.isArray(j.attachments) ? j.attachments.filter((u: string) => /\.(mp4|mov|webm)$/i.test(u)) : (j.videos || []),
           notes: j.behaviorNotes || j.notes || '',

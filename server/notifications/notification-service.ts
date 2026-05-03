@@ -178,7 +178,8 @@ export class NotificationService {
   // 알림 타입 → 카테고리 매핑
   private getCategoryFromType(type: string): string {
     if (type === 'message') return 'message';
-    if (['reservation', 'course', 'training'].includes(type)) return 'reservation';
+    if (type === 'training') return 'training';
+    if (['reservation', 'course'].includes(type)) return 'reservation';
     if (type === 'payment') return 'payment';
     return 'system';
   }
