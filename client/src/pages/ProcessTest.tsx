@@ -222,8 +222,8 @@ export default function ProcessTest() {
               <ArrowRight className="w-5 h-5 text-gray-400" />
               
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Play className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Play className="w-6 h-6 text-primary" />
                 </div>
                 <span className="text-sm font-medium">강의 발행</span>
               </div>

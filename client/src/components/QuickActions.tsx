@@ -36,26 +36,26 @@ export function QuickActions({ userRole, onClick }: QuickActionsProps) {
     switch (userRole) {
       case 'pet-owner':
         return [
-          { icon: <PawPrint className="w-4 h-4" />, label: "반려동물 추가", href: "/my-pets/add", color: "bg-pink-500" },
+          { icon: <PawPrint className="w-4 h-4" />, label: "반려동물 추가", href: "/my-pets/add", color: "bg-secondary/100" },
           { icon: <BookOpen className="w-4 h-4" />, label: "강의 신청", href: "/courses", color: "bg-blue-500" },
           { icon: <Calendar className="w-4 h-4" />, label: "일정 확인", href: "/education-schedule", color: "bg-green-500" },
         ];
       case 'trainer':
         return [
           { icon: <Plus className="w-4 h-4" />, label: "강의 등록", href: "/trainer/courses/new", color: "bg-blue-500" },
-          { icon: <MessageSquare className="w-4 h-4" />, label: "알림장 작성", href: "/trainer/notebook", color: "bg-purple-500" },
+          { icon: <MessageSquare className="w-4 h-4" />, label: "알림장 작성", href: "/trainer/notebook", color: "bg-primary/50" },
           { icon: <DollarSign className="w-4 h-4" />, label: "수익 확인", href: "/trainer/earnings", color: "bg-green-500" },
         ];
       case 'institute-admin':
         return [
           { icon: <Users className="w-4 h-4" />, label: "강사 추가", href: "/institute/trainers/add", color: "bg-blue-500" },
-          { icon: <BarChart3 className="w-4 h-4" />, label: "현황 확인", href: "/institute/dashboard", color: "bg-purple-500" },
+          { icon: <BarChart3 className="w-4 h-4" />, label: "현황 확인", href: "/institute/dashboard", color: "bg-primary/50" },
           { icon: <Settings className="w-4 h-4" />, label: "시설 관리", href: "/institute/facility", color: "bg-orange-500" },
         ];
       case 'admin':
         return [
           { icon: <BarChart3 className="w-4 h-4" />, label: "대시보드", href: "/admin/dashboard", color: "bg-blue-500" },
-          { icon: <Users className="w-4 h-4" />, label: "사용자", href: "/admin/users", color: "bg-purple-500" },
+          { icon: <Users className="w-4 h-4" />, label: "사용자", href: "/admin/users", color: "bg-primary/50" },
           { icon: <Settings className="w-4 h-4" />, label: "설정", href: "/admin/settings", color: "bg-gray-500" },
         ];
       default:

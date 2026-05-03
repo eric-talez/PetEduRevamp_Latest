@@ -102,7 +102,7 @@ export default function NotebookMonitorPage() {
     switch (status) {
       case 'sent': return 'bg-blue-500';
       case 'read': return 'bg-green-500';
-      case 'replied': return 'bg-purple-500';
+      case 'replied': return 'bg-primary/50';
       case 'draft': return 'bg-yellow-500';
       default: return 'bg-gray-500';
     }
@@ -265,7 +265,7 @@ export default function NotebookMonitorPage() {
                   {filteredStats.reduce((sum, stat) => sum + stat.sentJournals, 0)}
                 </p>
               </div>
-              <MessageCircle className="h-8 w-8 text-purple-500" />
+              <MessageCircle className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -405,7 +405,7 @@ export default function NotebookMonitorPage() {
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-purple-600">{selectedTrainer.readJournals}</div>
+                    <div className="text-2xl font-bold text-primary">{selectedTrainer.readJournals}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">읽음</div>
                   </CardContent>
                 </Card>

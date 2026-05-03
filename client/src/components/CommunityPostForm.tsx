@@ -172,8 +172,8 @@ export function CommunityPostForm({ isOpen, onOpenChange, onPostCreated }: Commu
       health: 'bg-green-100 text-green-800',
       behavior: 'bg-yellow-100 text-yellow-800',
       food: 'bg-orange-100 text-orange-800',
-      grooming: 'bg-purple-100 text-purple-800',
-      play: 'bg-pink-100 text-pink-800',
+      grooming: 'bg-primary/10 text-primary',
+      play: 'bg-secondary/15 text-secondary-foreground',
       general: 'bg-gray-100 text-gray-800',
       question: 'bg-red-100 text-red-800'
     };

@@ -653,8 +653,8 @@ export default function CommissionSettingsPage() {
                   
                   <Card className="p-5">
                     <div className="flex items-center">
-                      <div className="rounded-full bg-purple-50 dark:bg-purple-900/20 p-3 mr-3">
-                        <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      <div className="rounded-full bg-primary/5 dark:bg-primary/15 p-3 mr-3">
+                        <Users className="h-6 w-6 text-primary dark:text-primary" />
                       </div>
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">활성 추천인</p>

@@ -536,20 +536,20 @@ export default function ReferralCodeManagement() {
                         </div>
                         <div className="flex justify-between mt-1">
                           <span>지난 달 대비</span>
-                          <span className="font-medium text-emerald-600 dark:text-emerald-400">+23%</span>
+                          <span className="font-medium text-primary dark:text-primary">+23%</span>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
+                  <Card className="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/20 dark:to-primary/30 border-primary/30 dark:border-primary/40">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg flex items-center">
-                        <ClipboardCheck className="mr-2 h-5 w-5 text-purple-600 dark:text-purple-400" /> 판매 현황
+                        <ClipboardCheck className="mr-2 h-5 w-5 text-primary dark:text-primary" /> 판매 현황
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      <div className="text-3xl font-bold text-primary dark:text-primary">
                         32
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

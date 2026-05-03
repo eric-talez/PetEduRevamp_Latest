@@ -159,14 +159,14 @@ export default function AdminCommunityManagement() {
       '법률정보': 'bg-red-100 text-red-800',
       '여행정보': 'bg-blue-100 text-blue-800',
       '의료정보': 'bg-green-100 text-green-800',
-      '생활정보': 'bg-purple-100 text-purple-800',
+      '생활정보': 'bg-primary/10 text-primary',
       '건강관리': 'bg-orange-100 text-orange-800',
       '훈련정보': 'bg-yellow-100 text-yellow-800',
-      '사회화': 'bg-pink-100 text-pink-800',
+      '사회화': 'bg-secondary/15 text-primary',
       '안전관리': 'bg-indigo-100 text-indigo-800',
       '시니어케어': 'bg-gray-100 text-gray-800',
-      '고양이케어': 'bg-teal-100 text-teal-800',
-      '동물보호': 'bg-cyan-100 text-cyan-800',
+      '고양이케어': 'bg-secondary/15 text-secondary-foreground',
+      '동물보호': 'bg-secondary/15 text-secondary-foreground',
     };
     return colors[tag as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };

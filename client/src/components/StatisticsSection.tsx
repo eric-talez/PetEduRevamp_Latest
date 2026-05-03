@@ -44,7 +44,7 @@ function WeatherSection() {
     { type: 'clear', label: '맑음', icon: Sun, color: 'text-amber-500' },
     { type: 'cloudy', label: '흐림', icon: Cloud, color: 'text-gray-500' },
     { type: 'rain', label: '비', icon: CloudRain, color: 'text-blue-500' },
-    { type: 'snow', label: '눈', icon: CloudSnow, color: 'text-cyan-400' },
+    { type: 'snow', label: '눈', icon: CloudSnow, color: 'text-secondary-foreground' },
   ] as const;
   
   const currentWeather = weatherTypes.find(w => w.type === weather.type) || weatherTypes[0];

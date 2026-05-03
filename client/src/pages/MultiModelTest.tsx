@@ -284,8 +284,8 @@ export default function MultiModelTest() {
                       </p>
                     </div>
                     <div>
-                      <h5 className="font-medium mb-2 text-purple-600">🧠 OpenAI 분석</h5>
-                      <p className="text-xs bg-purple-50 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <h5 className="font-medium mb-2 text-primary">🧠 OpenAI 분석</h5>
+                      <p className="text-xs bg-primary/5 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {fusedResults.behavior.openaiResult}
                       </p>
                     </div>
@@ -401,8 +401,8 @@ export default function MultiModelTest() {
                       </p>
                     </div>
                     <div>
-                      <h5 className="font-medium mb-2 text-purple-600">🧠 OpenAI 계획</h5>
-                      <p className="text-xs bg-purple-50 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <h5 className="font-medium mb-2 text-primary">🧠 OpenAI 계획</h5>
+                      <p className="text-xs bg-primary/5 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {fusedResults.training.openaiResult}
                       </p>
                     </div>
@@ -490,8 +490,8 @@ export default function MultiModelTest() {
                       </p>
                     </div>
                     <div>
-                      <h5 className="font-medium mb-2 text-purple-600">🧠 OpenAI 분석</h5>
-                      <p className="text-xs bg-purple-50 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <h5 className="font-medium mb-2 text-primary">🧠 OpenAI 분석</h5>
+                      <p className="text-xs bg-primary/5 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {fusedResults.health.openaiResult}
                       </p>
                     </div>
@@ -599,8 +599,8 @@ export default function MultiModelTest() {
                         <div>신뢰도: {Math.round(fusedResults.sentiment.geminiSentiment.confidence * 100)}%</div>
                       </div>
                     </div>
-                    <div className="bg-purple-50 p-3 rounded">
-                      <h5 className="font-medium mb-2 text-purple-600">🧠 OpenAI 감정 분석</h5>
+                    <div className="bg-primary/5 p-3 rounded">
+                      <h5 className="font-medium mb-2 text-primary">🧠 OpenAI 감정 분석</h5>
                       <div className="text-sm">
                         <div>평점: {fusedResults.sentiment.openaiSentiment.rating}/5</div>
                         <div>신뢰도: {Math.round(fusedResults.sentiment.openaiSentiment.confidence * 100)}%</div>

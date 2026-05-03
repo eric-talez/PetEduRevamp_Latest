@@ -500,9 +500,9 @@ export default function AdminMonetization() {
                   <p className="text-sm text-muted-foreground">콘텐츠 좋아요 수</p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <MessageCircle className="h-8 w-8 mx-auto mb-2 text-purple-500" />
+                  <MessageCircle className="h-8 w-8 mx-auto mb-2 text-primary" />
                   <h4 className="font-bold">채택 답변</h4>
-                  <p className="text-2xl font-bold text-purple-500">20%</p>
+                  <p className="text-2xl font-bold text-primary">20%</p>
                   <p className="text-sm text-muted-foreground">Q&A 채택률</p>
                 </div>
               </div>

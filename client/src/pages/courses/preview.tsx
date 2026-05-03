@@ -168,7 +168,7 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-primary rounded-lg flex items-center justify-center">
                   <BookOpen className="h-12 w-12 text-white" />
                 </div>
                 <div className="flex-1">

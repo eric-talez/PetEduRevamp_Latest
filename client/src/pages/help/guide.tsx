@@ -28,7 +28,7 @@ export default function GuidePage() {
     {
       id: 'getting-started',
       title: '시작하기',
-      icon: <PawPrint className="w-6 h-6 text-emerald-500" />,
+      icon: <PawPrint className="w-6 h-6 text-primary" />,
       steps: [
         {
           title: '계정 만들기',
@@ -77,7 +77,7 @@ export default function GuidePage() {
     {
       id: 'consultations',
       title: '화상 상담',
-      icon: <Video className="w-6 h-6 text-purple-500" />,
+      icon: <Video className="w-6 h-6 text-primary" />,
       steps: [
         {
           title: '훈련사 찾기',
@@ -126,7 +126,7 @@ export default function GuidePage() {
     {
       id: 'community',
       title: '커뮤니티',
-      icon: <Users className="w-6 h-6 text-pink-500" />,
+      icon: <Users className="w-6 h-6 text-primary" />,
       steps: [
         {
           title: '커뮤니티 게시판 이용하기',

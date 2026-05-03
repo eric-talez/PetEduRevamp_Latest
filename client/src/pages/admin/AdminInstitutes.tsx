@@ -330,11 +330,11 @@ export default function AdminInstitutes() {
       case 'aiRecommendation':
         return <CheckCircle className="w-4 h-4 text-blue-500" />;
       case 'customBranding':
-        return <CheckCircle className="w-4 h-4 text-purple-500" />;
+        return <CheckCircle className="w-4 h-4 text-primary" />;
       case 'apiIntegration':
         return <CheckCircle className="w-4 h-4 text-orange-500" />;
       case 'dedicatedSupport':
-        return <CheckCircle className="w-4 h-4 text-pink-500" />;
+        return <CheckCircle className="w-4 h-4 text-primary" />;
       case 'whiteLabel':
         return <CheckCircle className="w-4 h-4 text-indigo-500" />;
       default:
@@ -861,7 +861,7 @@ export default function AdminInstitutes() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleChangeSubscription(institute)}
-                      className="text-purple-600 border-purple-300 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-400"
+                      className="text-primary border-primary/40 hover:bg-primary/5 hover:text-primary hover:border-primary/40"
                       data-testid={`button-subscription-${institute.id}`}
                     >
                       <CreditCard className="h-4 w-4" />
@@ -905,7 +905,7 @@ export default function AdminInstitutes() {
                   <div className="text-sm text-muted-foreground">등록 교육생</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">
+                  <div className="text-2xl font-bold text-primary">
                     {selectedInstitute.subscriptionStatus === 'active' ? '활성' : '대기'}
                   </div>
                   <div className="text-sm text-muted-foreground">구독 상태</div>

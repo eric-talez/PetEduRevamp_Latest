@@ -194,7 +194,7 @@ export default function CustomerHistory() {
       B: { label: "B 흥분 조절", color: "bg-yellow-100 text-yellow-700" },
       C: { label: "C 짖음/경계", color: "bg-orange-100 text-orange-700" },
       D: { label: "D 공격성", color: "bg-red-100 text-red-700" },
-      E: { label: "E 분리불안", color: "bg-purple-100 text-purple-700" },
+      E: { label: "E 분리불안", color: "bg-primary/10 text-primary" },
     };
     if (!level || !map[level]) return null;
     const info = map[level];

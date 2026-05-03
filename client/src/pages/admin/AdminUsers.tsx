@@ -105,7 +105,7 @@ export default function AdminUsers() {
       case 'trainer':
         return <Badge className="bg-blue-100 text-blue-800">훈련사</Badge>;
       case 'institute-admin':
-        return <Badge className="bg-purple-100 text-purple-800">기관관리자</Badge>;
+        return <Badge className="bg-primary/10 text-primary">기관관리자</Badge>;
       case 'user':
         return <Badge className="bg-green-100 text-green-800">일반회원</Badge>;
       default:

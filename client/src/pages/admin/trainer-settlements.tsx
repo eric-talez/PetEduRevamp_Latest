@@ -61,7 +61,7 @@ interface BackfillResult { success: boolean; data?: { created?: number } }
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending: { label: '예정', color: 'bg-yellow-100 text-yellow-800' },
   confirmed: { label: '확정', color: 'bg-blue-100 text-blue-800' },
-  locked: { label: '마감', color: 'bg-purple-100 text-purple-800' },
+  locked: { label: '마감', color: 'bg-primary/10 text-primary' },
   paid: { label: '지급완료', color: 'bg-green-100 text-green-800' },
   canceled: { label: '취소', color: 'bg-red-100 text-red-800' },
 };

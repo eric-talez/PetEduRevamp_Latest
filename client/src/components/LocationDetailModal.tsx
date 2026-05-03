@@ -475,7 +475,7 @@ export function LocationDetailModal({ location, isOpen, onOpenChange, onReservat
                         <span className="text-sm">주차 가능</span>
                       </div>
                       <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                        <CreditCard className="h-4 w-4 text-purple-600" />
+                        <CreditCard className="h-4 w-4 text-primary" />
                         <span className="text-sm">카드 결제</span>
                       </div>
                       <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">

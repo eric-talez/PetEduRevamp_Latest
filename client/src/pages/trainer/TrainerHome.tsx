@@ -207,7 +207,7 @@ export default function TrainerHome() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-3 rounded-full mr-4">
+              <div className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary p-3 rounded-full mr-4">
                 <List className="h-6 w-6" />
               </div>
               <div>
@@ -272,8 +272,8 @@ export default function TrainerHome() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">프로필 관리</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">프로필과 자격증을 관리하세요</p>
                 </div>
-                <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
-                  <Award className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-full">
+                  <Award className="w-6 h-6 text-primary dark:text-primary" />
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between">
@@ -311,7 +311,7 @@ export default function TrainerHome() {
                       <div className="font-medium">{schedule.title}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
                         <span className="mr-2">{schedule.time}</span>
-                        <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${schedule.type === "수업" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800" : "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400 border-purple-200 dark:border-purple-800"}`}>
+                        <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${schedule.type === "수업" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800" : "bg-primary/5 text-primary dark:bg-primary/15 dark:text-primary border-primary/30 dark:border-primary/40"}`}>
                           {schedule.type}
                         </Badge>
                       </div>
@@ -494,7 +494,7 @@ export default function TrainerHome() {
         <Card className="hover:bg-primary-50 dark:hover:bg-primary-950/10 cursor-pointer transition-colors">
           <Link href="/trainer-referrals">
             <CardContent className="p-6 flex items-center">
-              <div className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-3 rounded-full mr-4">
+              <div className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary p-3 rounded-full mr-4">
                 <Award className="h-6 w-6" />
               </div>
               <div>

@@ -102,13 +102,13 @@ export function RecommendationCard() {
     <div className="space-y-6">
       {courses.length > 0 && (
         <Card className="border-none shadow-md overflow-hidden">
-          <CardHeader className="pb-3 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30">
+          <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/15 dark:to-secondary/15">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-violet-600" />
+                <Sparkles className="h-5 w-5 text-primary" />
                 {petInfo ? `${petInfo.name}를 위한 추천 강의` : '맞춤 추천 강의'}
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setLocation('/courses')} className="text-violet-600 gap-1">
+              <Button variant="ghost" size="sm" onClick={() => setLocation('/courses')} className="text-primary gap-1">
                 전체보기 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -135,7 +135,7 @@ export function RecommendationCard() {
                         className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute top-2 left-2">
-                        <Badge className="bg-violet-600 text-white text-xs flex items-center gap-1">
+                        <Badge className="bg-primary text-white text-xs flex items-center gap-1">
                           <ReasonIcon className="h-3 w-3" />
                           {reasonLabels[course.reasonType] || 'AI 추천'}
                         </Badge>
@@ -172,7 +172,7 @@ export function RecommendationCard() {
                         </Button>
                       </div>
                       <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                        <p className="text-xs text-violet-600 dark:text-violet-400 flex items-center gap-1">
+                        <p className="text-xs text-primary dark:text-primary flex items-center gap-1">
                           <Heart className="h-3 w-3" />
                           {course.reason}
                         </p>

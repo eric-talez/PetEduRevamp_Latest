@@ -316,7 +316,7 @@ export default function TrainerCertificationManagement() {
       case 'basic':
         return <Badge className="bg-blue-100 text-blue-800 border-blue-200">기본</Badge>;
       case 'advanced':
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-200">전문</Badge>;
+        return <Badge className="bg-primary/10 text-primary border-primary/30">전문</Badge>;
       case 'expert':
         return <Badge className="bg-amber-100 text-amber-800 border-amber-200">마스터</Badge>;
       default:
@@ -408,8 +408,8 @@ export default function TrainerCertificationManagement() {
                   }%
                 </p>
               </div>
-              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-purple-600" />
+              <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -1395,7 +1395,7 @@ function getLevelBadge(level: string) {
     case 'basic':
       return <Badge variant="outline" className="text-blue-600 border-blue-600">기초</Badge>;
     case 'advanced':
-      return <Badge variant="outline" className="text-purple-600 border-purple-600">고급</Badge>;
+      return <Badge variant="outline" className="text-primary border-primary/60">고급</Badge>;
     case 'expert':
       return <Badge variant="outline" className="text-red-600 border-red-600">전문가</Badge>;
     default:

@@ -422,8 +422,8 @@ export function TrustBadges() {
         </div>
         
         <div className="flex items-start gap-2">
-          <div className="flex-shrink-0 w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-            <Truck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <div className="flex-shrink-0 w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+            <Truck className="h-4 w-4 text-primary dark:text-primary" />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-white">빠른 배송</p>

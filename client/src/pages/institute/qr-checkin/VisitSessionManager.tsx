@@ -65,7 +65,7 @@ const TEMPERAMENT_COLORS: Record<string, string> = {
   B: "bg-blue-100 text-blue-800",
   C: "bg-yellow-100 text-yellow-800",
   D: "bg-red-100 text-red-800",
-  E: "bg-purple-100 text-purple-800",
+  E: "bg-primary/10 text-primary",
 };
 
 const TEMPERAMENT_LABELS: Record<string, string> = {

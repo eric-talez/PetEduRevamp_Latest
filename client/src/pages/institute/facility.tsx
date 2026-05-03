@@ -368,7 +368,7 @@ export default function FacilityManagementPage() {
       case 'outdoor_area':
         return <MapPin className="h-5 w-5 text-green-600" />;
       case 'consultation_room':
-        return <Users className="h-5 w-5 text-purple-600" />;
+        return <Users className="h-5 w-5 text-primary" />;
       case 'grooming_room':
         return <Coffee className="h-5 w-5 text-orange-600" />;
       default:
@@ -473,11 +473,11 @@ export default function FacilityManagementPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">오늘 예약</p>
-                    <p className="text-2xl font-bold text-purple-600">
+                    <p className="text-2xl font-bold text-primary">
                       {reservations?.filter(r => r.date === '2025-01-22').length || 0}
                     </p>
                   </div>
-                  <Calendar className="h-8 w-8 text-purple-500" />
+                  <Calendar className="h-8 w-8 text-primary" />
                 </div>
               </CardContent>
             </Card>

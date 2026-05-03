@@ -26,7 +26,7 @@ const INCIDENT_TYPES: Record<string, { label: string; color: string; icon: strin
   dog_fight: { label: '타견 접촉 사고', color: 'bg-orange-100 text-orange-800', icon: '🐕' },
   injury: { label: '부상/낙상', color: 'bg-yellow-100 text-yellow-800', icon: '🩹' },
   escape: { label: '이탈/도주', color: 'bg-blue-100 text-blue-800', icon: '🏃' },
-  health_emergency: { label: '건강 응급', color: 'bg-purple-100 text-purple-800', icon: '🏥' },
+  health_emergency: { label: '건강 응급', color: 'bg-primary/10 text-primary', icon: '🏥' },
   other: { label: '기타 사고', color: 'bg-gray-100 text-gray-800', icon: '⚠️' },
 };
 

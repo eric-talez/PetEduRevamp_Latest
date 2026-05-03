@@ -237,7 +237,7 @@ export default function InstituteDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <BookOpen className="h-8 w-8 text-purple-600" />
+              <BookOpen className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">운영 강좌</p>
                 <p className="text-2xl font-bold">{stats.activeCourses}개</p>
@@ -290,7 +290,7 @@ export default function InstituteDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <Target className="h-8 w-8 text-pink-600" />
+              <Target className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">평균 평점</p>
                 <p className="text-2xl font-bold">{stats.avgRating}</p>
@@ -303,7 +303,7 @@ export default function InstituteDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-teal-600" />
+              <Calendar className="h-8 w-8 text-secondary-foreground" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">예정 수업</p>
                 <p className="text-2xl font-bold">{stats.upcomingClasses}개</p>

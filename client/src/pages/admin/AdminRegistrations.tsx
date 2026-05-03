@@ -367,7 +367,7 @@ export default function AdminRegistrations() {
                         {application.type === 'trainer' ? 
                           <User className="w-6 h-6 text-blue-600" /> : 
                           application.type === 'institute' ?
-                          <Building className="w-6 h-6 text-purple-600" /> :
+                          <Building className="w-6 h-6 text-primary" /> :
                           <FileText className="w-6 h-6 text-green-600" />
                         }
                         <div>

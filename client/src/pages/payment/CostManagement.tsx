@@ -833,8 +833,8 @@ export default function CostManagementPage() {
                       훈련사 89명, 기관 145개
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Users className="h-6 w-6 text-purple-600" />
+                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Users className="h-6 w-6 text-primary" />
                   </div>
                 </div>
               </CardContent>

@@ -394,8 +394,8 @@ export function LiveStreamViewer({ stream, onExit }: LiveStreamViewerProps) {
                   ) : isConnecting ? (
                     <>
                       <div className="relative mb-6">
-                        <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
-                        <Loader2 className="relative w-16 h-16 text-emerald-400 mx-auto animate-spin" />
+                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+                        <Loader2 className="relative w-16 h-16 text-primary mx-auto animate-spin" />
                       </div>
                       <h3 className="text-white text-xl font-bold mb-2">{stream.title}</h3>
                       <p className="text-white/70 text-sm mb-2">{stream.hostName || '훈련사'}</p>
@@ -409,7 +409,7 @@ export function LiveStreamViewer({ stream, onExit }: LiveStreamViewerProps) {
                     </>
                   ) : (
                     <>
-                      <Video className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
+                      <Video className="w-16 h-16 text-primary mx-auto mb-4" />
                       <h3 className="text-white text-lg font-bold mb-2">대기 중</h3>
                       <p className="text-white/70 text-sm">호스트가 방송을 시작하면 영상이 표시됩니다.</p>
                     </>

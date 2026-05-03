@@ -49,7 +49,7 @@ const statusInfo = {
   },
   shipped: {
     label: '배송 중',
-    color: 'text-purple-500 bg-purple-100 dark:bg-purple-900/30',
+    color: 'text-primary bg-primary/10 dark:bg-primary/20',
     icon: <Truck className="h-4 w-4" />
   },
   delivered: {

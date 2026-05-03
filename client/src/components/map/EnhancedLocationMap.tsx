@@ -586,9 +586,9 @@ export function EnhancedLocationMap({
       'veterinary': 'bg-red-100 text-red-800',
       'hospital': 'bg-red-100 text-red-800',
       'event': 'bg-blue-100 text-blue-800',
-      'grooming': 'bg-purple-100 text-purple-800',
+      'grooming': 'bg-primary/10 text-primary',
       'hotel': 'bg-yellow-100 text-yellow-800',
-      'cafe': 'bg-pink-100 text-pink-800',
+      'cafe': 'bg-secondary/15 text-secondary-foreground',
       'park': 'bg-green-100 text-green-800'
     };
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800';

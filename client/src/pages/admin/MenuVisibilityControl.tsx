@@ -131,7 +131,7 @@ const MenuVisibilityControl: React.FC = () => {
     },
     institute: {
       name: '기관 관리자',
-      color: 'bg-purple-500',
+      color: 'bg-primary/50',
       icon: <Building className="w-4 h-4" />,
       menuItems: [
         { id: 'institute-trainers', name: '훈련사 관리', path: '/institute/trainers', category: '인사', description: '소속 훈련사 관리', icon: 'UserCog' },
@@ -292,12 +292,12 @@ const MenuVisibilityControl: React.FC = () => {
                         {category === '메인' && <CheckCircle className="w-5 h-5 text-blue-500" />}
                         {category === '학습' && <CheckCircle className="w-5 h-5 text-green-500" />}
                         {category === '교육' && <CheckCircle className="w-5 h-5 text-green-500" />}
-                        {category === '개인' && <CheckCircle className="w-5 h-5 text-purple-500" />}
+                        {category === '개인' && <CheckCircle className="w-5 h-5 text-primary" />}
                         {category === '상거래' && <CheckCircle className="w-5 h-5 text-orange-500" />}
-                        {category === '소통' && <CheckCircle className="w-5 h-5 text-cyan-500" />}
+                        {category === '소통' && <CheckCircle className="w-5 h-5 text-secondary-foreground" />}
                         {category === '도구' && <CheckCircle className="w-5 h-5 text-gray-500" />}
                         {category === '인사' && <CheckCircle className="w-5 h-5 text-indigo-500" />}
-                        {category === '운영' && <CheckCircle className="w-5 h-5 text-teal-500" />}
+                        {category === '운영' && <CheckCircle className="w-5 h-5 text-secondary-foreground" />}
                         {category === '재정' && <CheckCircle className="w-5 h-5 text-yellow-500" />}
                         {category === '관리' && <CheckCircle className="w-5 h-5 text-red-500" />}
                         {category === '대시보드' && <CheckCircle className="w-5 h-5 text-blue-600" />}

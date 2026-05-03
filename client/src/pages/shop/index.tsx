@@ -763,7 +763,7 @@ export default function ShopIndex() {
                           </span>
                         ))}
                         {product.targetInfo.weightRange && (
-                          <span className="bg-purple-50 text-purple-700 text-[10px] px-1.5 py-0.5 rounded border border-purple-200">
+                          <span className="bg-primary/5 text-primary text-[10px] px-1.5 py-0.5 rounded border border-primary/30">
                             {product.targetInfo.weightRange}
                           </span>
                         )}
@@ -879,7 +879,7 @@ export default function ShopIndex() {
                           </span>
                         ))}
                         {product.targetInfo.weightRange && (
-                          <span className="bg-purple-50 text-purple-700 text-[10px] px-1.5 py-0.5 rounded border border-purple-200">
+                          <span className="bg-primary/5 text-primary text-[10px] px-1.5 py-0.5 rounded border border-primary/30">
                             {product.targetInfo.weightRange}
                           </span>
                         )}

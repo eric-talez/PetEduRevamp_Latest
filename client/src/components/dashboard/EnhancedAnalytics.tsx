@@ -120,12 +120,12 @@ export function EnhancedAnalytics() {
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">주간 진도</p>
                 <p className="text-2xl font-bold">{analytics.weeklyProgress}%</p>
-                <p className="text-xs text-purple-600 flex items-center mt-1">
+                <p className="text-xs text-primary flex items-center mt-1">
                   <BarChart3 className="h-3 w-3 mr-1" />
                   목표 대비
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-purple-500" />
+              <TrendingUp className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>

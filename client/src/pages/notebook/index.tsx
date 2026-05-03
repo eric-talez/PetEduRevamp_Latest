@@ -1577,7 +1577,7 @@ export default function NotebookPage() {
                     {/* 훈련 활동 */}
                     <div className="p-4 border rounded-lg">
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                           🎓
                         </div>
                         훈련 활동

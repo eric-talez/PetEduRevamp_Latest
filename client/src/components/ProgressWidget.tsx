@@ -56,7 +56,7 @@ export function ProgressWidget() {
 
   if (error || !data?.courses?.length) {
     return (
-      <Card className="border-none shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+      <Card className="border-none shadow-md bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/15 dark:to-secondary/15">
         <CardContent className="p-6">
           <div className="flex flex-col items-center text-center py-6">
             <div className="p-4 rounded-full bg-blue-100 dark:bg-blue-900/50 mb-4">
@@ -108,7 +108,7 @@ export function ProgressWidget() {
           </div>
 
           <div 
-            className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-4 cursor-pointer hover:shadow-md transition-all"
+            className="bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/15 dark:to-secondary/15 rounded-lg p-4 cursor-pointer hover:shadow-md transition-all"
             onClick={() => setLocation(`/courses/${mainCourse.id}`)}
           >
             <div className="flex items-start gap-4">

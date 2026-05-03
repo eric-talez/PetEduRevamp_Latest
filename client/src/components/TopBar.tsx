@@ -373,7 +373,7 @@ export function TopBar({ sidebarOpen, onToggleSidebar }: TopBarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-emerald-100/50 bg-gradient-to-r from-white via-emerald-50/30 to-white dark:from-gray-950 dark:via-emerald-950/20 dark:to-gray-950 backdrop-blur-lg supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-gray-950/80 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 shadow-sm">
       <div className="container flex h-16 items-center px-2 sm:px-4 lg:px-8">
           {/* Mobile Menu Button - 터치 최적화 */}
           <button
@@ -393,7 +393,7 @@ export function TopBar({ sidebarOpen, onToggleSidebar }: TopBarProps) {
               alt="TALEZ" 
               className="h-9 w-9 object-contain"
             />
-            <span className="ml-2 text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            <span className="ml-2 text-lg font-bold text-primary">
               TALEZ
             </span>
           </Link>

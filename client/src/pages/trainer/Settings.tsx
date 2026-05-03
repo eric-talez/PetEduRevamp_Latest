@@ -528,12 +528,12 @@ export default function TrainerSettings() {
                 )}
 
                 {profile.videoCallPreference === 'teams' && (
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                    <h4 className="font-medium text-purple-900 dark:text-purple-200 flex items-center gap-2 mb-2">
+                  <div className="p-4 bg-primary/5 dark:bg-primary/15 rounded-lg">
+                    <h4 className="font-medium text-primary dark:text-primary-foreground flex items-center gap-2 mb-2">
                       <Monitor className="w-4 h-4" />
                       Teams 설정 가이드
                     </h4>
-                    <ul className="text-sm text-purple-800 dark:text-purple-300 space-y-1">
+                    <ul className="text-sm text-primary dark:text-primary/80 space-y-1">
                       <li>• Teams에서 "새 모임" → "링크 복사"</li>
                       <li>• 또는 개인 룸 링크를 사용하세요</li>
                       <li>• 모임 옵션에서 로비 우회 설정을 권장합니다</li>

@@ -249,7 +249,7 @@ export default function AdminShopPage() {
       homepage: 'bg-blue-100 text-blue-800',
       category: 'bg-green-100 text-green-800',
       search: 'bg-yellow-100 text-yellow-800',
-      promotion: 'bg-purple-100 text-purple-800'
+      promotion: 'bg-primary/10 text-primary'
     };
     
     const labels = {
@@ -461,8 +461,8 @@ export default function AdminShopPage() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-purple-600" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-500">평균 전환율</div>

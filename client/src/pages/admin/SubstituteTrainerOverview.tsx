@@ -222,7 +222,7 @@ export default function SubstituteTrainerOverview() {
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'certified': return 'bg-purple-500';
+      case 'certified': return 'bg-primary/50';
       case 'semi_certified': return 'bg-blue-500';
       case 'general': return 'bg-green-500';
       default: return 'bg-gray-500';
@@ -315,12 +315,12 @@ export default function SubstituteTrainerOverview() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-purple-600" />
+                  <CheckCircle className="h-5 w-5 text-primary" />
                   완료된 배정
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-600">
+                <div className="text-3xl font-bold text-primary">
                   {MOCK_OVERVIEW.totalAssignments}
                 </div>
                 <p className="text-sm text-gray-600">배정 완료</p>

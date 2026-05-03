@@ -458,11 +458,11 @@ export default function LocationManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">파트너 시설</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-primary">
                   {locations.filter(l => l.isPartner).length}
                 </p>
               </div>
-              <Star className="h-8 w-8 text-purple-600" />
+              <Star className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>

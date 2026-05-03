@@ -265,8 +265,8 @@ export default function AIApiManagement() {
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Bot className="h-5 w-5 text-purple-600" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Bot className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-medium">Perplexity</h3>
@@ -316,7 +316,7 @@ export default function AIApiManagement() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-purple-500" />
+                <TrendingUp className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">일간 제한</span>
               </div>
               <p className="text-2xl font-bold mt-1">{config.dailyLimitPerUser}</p>

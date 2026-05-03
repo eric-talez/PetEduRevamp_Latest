@@ -36,7 +36,7 @@ export const RouteLoadingBar: React.FC<RouteLoadingBarProps> = ({
         )}
         style={{ 
           width: `${progress}%`,
-          background: 'linear-gradient(90deg, #2BAA61 0%, #FFA726 50%, #29B5F6 100%)'
+          background: 'linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%)'
         }}
       />
       

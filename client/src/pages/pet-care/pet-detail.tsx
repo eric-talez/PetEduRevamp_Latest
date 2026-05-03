@@ -226,7 +226,7 @@ export default function PetDetailPage() {
                 )}
                 {pet.health && (
                   <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-purple-500" />
+                    <Heart className="w-4 h-4 text-primary" />
                     <span className="font-medium">건강상태:</span>
                     <span>{pet.health}</span>
                   </div>

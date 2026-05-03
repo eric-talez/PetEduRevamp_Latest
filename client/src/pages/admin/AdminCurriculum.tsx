@@ -2698,14 +2698,14 @@ export default function AdminCurriculum() {
                               <div className="text-xs text-orange-600 font-medium mb-1">총 영상</div>
                               <div className="text-lg font-bold text-orange-700">{totalVideos}개</div>
                             </div>
-                            <div className="bg-purple-50 p-3 rounded-lg">
-                              <div className="text-xs text-purple-600 font-medium mb-1">준비된 영상</div>
-                              <div className="text-lg font-bold text-purple-700">{readyVideos}개</div>
+                            <div className="bg-primary/5 p-3 rounded-lg">
+                              <div className="text-xs text-primary font-medium mb-1">준비된 영상</div>
+                              <div className="text-lg font-bold text-primary">{readyVideos}개</div>
                             </div>
                           </div>
 
                           {/* 수익 정산 정보 */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gradient-to-r from-indigo-50 to-primary/5 rounded-lg border">
                             <div className="text-center">
                               <div className="text-xs text-indigo-600 font-medium mb-1">총 수익</div>
                               <div className="text-lg font-bold text-indigo-700">
@@ -2793,7 +2793,7 @@ export default function AdminCurriculum() {
                                             {module.videos.map((video, videoIndex) => (
                                               <div key={video.id || videoIndex} className="flex items-center gap-3 bg-white dark:bg-gray-700 rounded p-2">
                                                 {/* 영상 썸네일 */}
-                                                <div className="w-16 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center flex-shrink-0">
+                                                <div className="w-16 h-10 bg-gradient-to-br from-blue-500 to-primary rounded flex items-center justify-center flex-shrink-0">
                                                   <Video className="w-4 h-4 text-white" />
                                                 </div>
                                                 
@@ -2976,12 +2976,12 @@ export default function AdminCurriculum() {
                   <div className="text-green-100">훈련사 수익</div>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+              <Card className="bg-gradient-to-r from-primary/50 to-primary text-white">
                 <CardContent className="p-6 text-center">
                   <div className="text-2xl font-bold mb-2">
                     ₩{((curriculums as CurriculumData[] | undefined) || []).reduce((sum, c) => sum + ((c.totalRevenue || 0) * (c.revenueShare?.platformShare || 30) / 100), 0).toLocaleString()}
                   </div>
-                  <div className="text-purple-100">플랫폼 수익</div>
+                  <div className="text-primary-foreground">플랫폼 수익</div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
@@ -3044,13 +3044,13 @@ export default function AdminCurriculum() {
                           <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right font-medium text-green-600">
                             ₩{trainerRevenue.toLocaleString()}
                           </td>
-                          <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right font-medium text-purple-600">
+                          <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right font-medium text-primary">
                             ₩{platformRevenue.toLocaleString()}
                           </td>
                           <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-center">
                             <div className="text-sm">
                               <div className="text-green-600">{curriculum.revenueShare?.trainerShare || 70}%</div>
-                              <div className="text-purple-600">{curriculum.revenueShare?.platformShare || 30}%</div>
+                              <div className="text-primary">{curriculum.revenueShare?.platformShare || 30}%</div>
                             </div>
                           </td>
                           <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-center">
@@ -3099,7 +3099,7 @@ export default function AdminCurriculum() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-700 dark:text-gray-300">플랫폼 수익:</span>
-                        <span className="font-medium text-purple-600">30%</span>
+                        <span className="font-medium text-primary">30%</span>
                       </div>
                     </div>
                   </div>
@@ -3112,7 +3112,7 @@ export default function AdminCurriculum() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-700 dark:text-gray-300">플랫폼 수익:</span>
-                        <span className="font-medium text-purple-600">25%</span>
+                        <span className="font-medium text-primary">25%</span>
                       </div>
                     </div>
                   </div>
@@ -3668,8 +3668,8 @@ export default function AdminCurriculum() {
                                 <div className="mb-3 space-y-2">
                                   {module.detailedContent.introduction && (
                                     <div>
-                                      <h6 className="text-xs font-medium text-purple-700 mb-1">🚀 수업 소개:</h6>
-                                      <p className="text-xs text-gray-600 bg-purple-50 p-2 rounded">{module.detailedContent.introduction}</p>
+                                      <h6 className="text-xs font-medium text-primary mb-1">🚀 수업 소개:</h6>
+                                      <p className="text-xs text-gray-600 bg-primary/5 p-2 rounded">{module.detailedContent.introduction}</p>
                                     </div>
                                   )}
                                   
@@ -3706,13 +3706,13 @@ export default function AdminCurriculum() {
                               {/* 준비물 섹션 */}
                               {module.materials && Array.isArray(module.materials) && module.materials.length > 0 && (
                                 <div className="mb-3">
-                                  <h5 className="text-sm font-medium text-purple-700 mb-2">🛒 준비물/용품:</h5>
+                                  <h5 className="text-sm font-medium text-primary mb-2">🛒 준비물/용품:</h5>
                                   <div className="flex flex-wrap gap-2">
                                     {module.materials.map((material, matIndex) => (
                                       <button
                                         key={matIndex}
                                         onClick={() => handleMaterialClick(material)}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs hover:bg-purple-200 transition-colors cursor-pointer"
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/15 transition-colors cursor-pointer"
                                       >
                                         <Package className="w-3 h-3" />
                                         <span>{material}</span>

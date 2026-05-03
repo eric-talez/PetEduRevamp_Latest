@@ -217,9 +217,9 @@ export default function InstituteMyPoints() {
     switch (type) {
       case 'trainer_management': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'facility_upgrade': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'curriculum_approval': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'curriculum_approval': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground';
       case 'event_hosting': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
-      case 'partnership': return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200';
+      case 'partnership': return 'bg-secondary/15 text-secondary-foreground dark:bg-secondary/20 dark:text-secondary-foreground';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
@@ -324,9 +324,9 @@ export default function InstituteMyPoints() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">소속 훈련사</p>
-                <p className="text-2xl font-bold text-purple-600">{data.trainerCount}</p>
+                <p className="text-2xl font-bold text-primary">{data.trainerCount}</p>
               </div>
-              <Users className="w-8 h-8 text-purple-500" />
+              <Users className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -438,7 +438,7 @@ export default function InstituteMyPoints() {
                         <span className="font-bold text-gray-600 dark:text-gray-300">{index + 1}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-primary/50 rounded-full flex items-center justify-center">
                           <span className="text-white font-bold">{trainer.name[0]}</span>
                         </div>
                         <div>

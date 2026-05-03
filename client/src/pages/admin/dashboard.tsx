@@ -226,8 +226,8 @@ const AdminDashboard = () => {
                   15% 증가
                 </span>
               </div>
-              <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
-                <PawPrint className="h-5 w-5 text-purple-500 dark:text-purple-300" />
+              <div className="bg-primary/10 dark:bg-primary/20 p-2 rounded-full">
+                <PawPrint className="h-5 w-5 text-primary dark:text-primary/80" />
               </div>
             </div>
           </CardContent>

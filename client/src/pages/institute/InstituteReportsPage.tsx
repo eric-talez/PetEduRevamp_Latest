@@ -41,7 +41,7 @@ export default function InstituteReportsPage() {
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">매출</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">₩4,850,000</p>
+                <p className="text-3xl font-bold text-primary dark:text-primary">₩4,850,000</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">이번 달</p>
               </div>
               <div className="text-green-500 text-sm font-semibold">

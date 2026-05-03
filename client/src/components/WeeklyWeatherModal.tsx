@@ -104,7 +104,7 @@ export function WeeklyWeatherModal({ isOpen, onClose, location = { name: "서울
       case "비":
         return "bg-indigo-50 dark:bg-indigo-900/20";
       case "눈":
-        return "bg-purple-50 dark:bg-purple-900/20";
+        return "bg-primary/5 dark:bg-primary/15";
       default:
         return "bg-gray-50 dark:bg-gray-800/50";
     }
@@ -121,7 +121,7 @@ export function WeeklyWeatherModal({ isOpen, onClose, location = { name: "서울
       case "비":
         return "text-indigo-500 dark:text-indigo-300";
       case "눈":
-        return "text-purple-500 dark:text-purple-300";
+        return "text-primary dark:text-primary/80";
       default:
         return "text-gray-500 dark:text-gray-300";
     }
@@ -167,7 +167,7 @@ export function WeeklyWeatherModal({ isOpen, onClose, location = { name: "서울
   // 점수에 따른 색상 반환
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-500 dark:text-green-400";
-    if (score >= 60) return "text-emerald-500 dark:text-emerald-400";
+    if (score >= 60) return "text-primary dark:text-primary";
     if (score >= 40) return "text-amber-500 dark:text-amber-400";
     if (score >= 20) return "text-orange-500 dark:text-orange-400";
     return "text-red-500 dark:text-red-400";
@@ -215,7 +215,7 @@ export function WeeklyWeatherModal({ isOpen, onClose, location = { name: "서울
               <div className="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mt-1">
                 <div
                   className={`h-full ${todayScore >= 80 ? 'bg-green-500' : 
-                    todayScore >= 60 ? 'bg-emerald-500' : 
+                    todayScore >= 60 ? 'bg-primary/50' : 
                     todayScore >= 40 ? 'bg-amber-500' : 
                     todayScore >= 20 ? 'bg-orange-500' : 'bg-red-500'}`}
                   style={{ width: `${todayScore}%` }}

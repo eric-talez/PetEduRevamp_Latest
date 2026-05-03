@@ -48,7 +48,7 @@ export default function NotificationsMenu({ currentPath }: NotificationsMenuProp
           className="w-full justify-start" 
           onClick={() => navigate("/notifications/training")}
         >
-          <div className="mr-2 w-2 h-2 rounded-full bg-purple-500" />
+          <div className="mr-2 w-2 h-2 rounded-full bg-primary/50" />
           훈련 피드백
         </Button>
         <Button 

@@ -963,7 +963,7 @@ export default function AdminShop() {
       case 'processing':
         return <Badge className="bg-blue-500">처리 중</Badge>;
       case 'shipped':
-        return <Badge className="bg-purple-500">배송 중</Badge>;
+        return <Badge className="bg-primary/50">배송 중</Badge>;
       case 'delivered':
         return <Badge className="bg-green-500">배송 완료</Badge>;
       case 'cancelled':
@@ -983,7 +983,7 @@ export default function AdminShop() {
       case '훈련사':
         return <Badge variant="outline" className="border-blue-500 text-blue-500">훈련사 추천</Badge>;
       case '기관':
-        return <Badge variant="outline" className="border-purple-500 text-purple-500">기관 추천</Badge>;
+        return <Badge variant="outline" className="border-primary/50 text-primary">기관 추천</Badge>;
       default:
         return <Badge variant="outline">{source}</Badge>;
     }
@@ -1444,7 +1444,7 @@ export default function AdminShop() {
                                   )}
                                   {order.status === 'processing' && (
                                     <DropdownMenuItem onClick={() => handleChangeOrderStatus(order.id, 'shipped')}>
-                                      <Truck className="h-4 w-4 mr-2 text-purple-500" />
+                                      <Truck className="h-4 w-4 mr-2 text-primary" />
                                       배송 중으로 변경
                                     </DropdownMenuItem>
                                   )}
@@ -1730,7 +1730,7 @@ export default function AdminShop() {
                         </Avatar>
                         <div>
                           <div>알파 트레이닝 센터</div>
-                          <Badge variant="outline" className="border-purple-500 text-purple-500">기관</Badge>
+                          <Badge variant="outline" className="border-primary/50 text-primary">기관</Badge>
                         </div>
                       </div>
                       <div className="font-medium">₩950,700</div>
@@ -1754,7 +1754,7 @@ export default function AdminShop() {
                         </Avatar>
                         <div>
                           <div>베타 애견 학교</div>
-                          <Badge variant="outline" className="border-purple-500 text-purple-500">기관</Badge>
+                          <Badge variant="outline" className="border-primary/50 text-primary">기관</Badge>
                         </div>
                       </div>
                       <div className="font-medium">₩635,800</div>
@@ -2482,7 +2482,7 @@ export default function AdminShop() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2">
-                        <ShoppingCart className="h-5 w-5 text-purple-600" />
+                        <ShoppingCart className="h-5 w-5 text-primary" />
                         <div>
                           <div className="text-2xl font-bold">127</div>
                           <div className="text-sm text-muted-foreground">총 구매</div>
@@ -2779,7 +2779,7 @@ export default function AdminShop() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2">
-                        <RotateCcw className="h-5 w-5 text-purple-600" />
+                        <RotateCcw className="h-5 w-5 text-primary" />
                         <div>
                           <div className="text-2xl font-bold">12</div>
                           <div className="text-sm text-muted-foreground">자동 주문 활성</div>
@@ -3525,7 +3525,7 @@ export default function AdminShop() {
                           variant="outline"
                           onClick={() => handleChangeOrderStatus(selectedOrder.id, 'shipped')}
                         >
-                          <Truck className="h-4 w-4 mr-2 text-purple-500" />
+                          <Truck className="h-4 w-4 mr-2 text-primary" />
                           배송 중으로 변경
                         </Button>
                       )}

@@ -143,7 +143,7 @@ export default function Register() {
 
   if (registrationSuccess) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-primary/10 dark:from-gray-900 dark:to-gray-800 p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <div className="mx-auto w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mb-4">
@@ -334,7 +334,7 @@ export default function Register() {
         </div>
       </div>
       
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-green-600 to-emerald-700 items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary to-secondary items-center justify-center p-12">
         <div className="max-w-md text-white text-center">
           <h2 className="text-4xl font-bold mb-6">Talez와 함께하는 반려견 교육</h2>
           <p className="text-lg opacity-90 mb-8">

@@ -111,7 +111,7 @@ export function UnifiedTrainerProfileModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="p-8 border-b border-gray-200 dark:border-gray-700 relative bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
+        <div className="p-8 border-b border-gray-200 dark:border-gray-700 relative bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/10 dark:from-primary/20 dark:via-secondary/20 dark:to-primary/20">
           <div className="flex items-start gap-6">
             <div className="relative">
               <div className="h-24 w-24 rounded-full overflow-hidden border-4 border-white shadow-2xl">
@@ -149,7 +149,7 @@ export function UnifiedTrainerProfileModal({
                   TALEZ 인증
                 </div>
                 {normalizedTrainer.featured && (
-                  <div className="flex items-center text-sm text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-3 py-2 rounded-full border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center text-sm text-primary dark:text-primary bg-primary/10 dark:bg-primary/20 px-3 py-2 rounded-full border border-primary/30 dark:border-primary/40">
                     <Sparkles className="w-4 h-4 mr-2" />
                     추천 훈련사
                   </div>
@@ -300,7 +300,7 @@ export function UnifiedTrainerProfileModal({
               </div>
             </Button>
             <Button 
-              className="w-full h-14 bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200" 
+              className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
               onClick={() => {
                 alert(`${normalizedTrainer.name} 훈련사 이메일 연락\n\n이메일: ${normalizedTrainer.contactInfo.email}\n응답 시간: 1-2일 내\n\n주의: 실제 서비스에서는 이메일 작성 창이 열립니다.`);
               }}

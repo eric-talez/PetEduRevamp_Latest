@@ -1197,7 +1197,7 @@ export default function AdminSettings() {
                         { key: 'main', label: '메인', color: 'bg-blue-100 text-blue-800' },
                         { key: 'mainDark', label: '메인(다크)', color: 'bg-slate-100 text-slate-800' },
                         { key: 'compact', label: '컴팩트', color: 'bg-green-100 text-green-800' },
-                        { key: 'compactDark', label: '컴팩트(다크)', color: 'bg-purple-100 text-purple-800' },
+                        { key: 'compactDark', label: '컴팩트(다크)', color: 'bg-primary/10 text-primary' },
                         { key: 'favicon', label: '파비콘', color: 'bg-orange-100 text-orange-800' }
                       ].map((logo) => (
                         <div key={logo.key} className="text-center p-3 border rounded-lg bg-card">
@@ -1408,18 +1408,18 @@ export default function AdminSettings() {
                     </Card>
 
                     {/* 컴팩트 로고 (다크 모드) - 향상된 UI */}
-                    <Card className="border-2 border-purple-200 bg-purple-50/30">
+                    <Card className="border-2 border-primary/30 bg-primary/5">
                       <CardHeader className="pb-3">
                         <div className="flex items-center space-x-2">
-                          <div className="h-3 w-3 bg-purple-500 rounded-full"></div>
+                          <div className="h-3 w-3 bg-primary/50 rounded-full"></div>
                           <CardTitle className="text-lg">컴팩트 로고 (다크 모드)</CardTitle>
-                          <div className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full">40×40px 권장</div>
+                          <div className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">40×40px 권장</div>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-start space-x-6">
                           <div className="space-y-2">
-                            <div className="h-16 w-16 bg-slate-800 rounded-lg border-2 border-dashed border-purple-400 flex items-center justify-center group hover:border-purple-600 transition-all duration-200 hover:shadow-md">
+                            <div className="h-16 w-16 bg-slate-800 rounded-lg border-2 border-dashed border-primary/50 flex items-center justify-center group hover:border-primary transition-all duration-200 hover:shadow-md">
                               {currentLogos?.compactDark ? (
                                 <img 
                                   src={currentLogos.compactDark} 
@@ -1427,7 +1427,7 @@ export default function AdminSettings() {
                                   className="max-h-full max-w-full object-contain rounded"
                                 />
                               ) : (
-                                <div className="text-center text-purple-400 group-hover:text-purple-300 transition-colors">
+                                <div className="text-center text-primary group-hover:text-primary/80 transition-colors">
                                   <ImageIcon className="h-6 w-6 mx-auto mb-1" />
                                   <div className="text-xs font-medium">로고 업로드</div>
                                 </div>
@@ -2242,7 +2242,7 @@ export default function AdminSettings() {
                       </Card>
                       <Card className="p-4">
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-purple-600">
+                          <div className="text-2xl font-bold text-primary">
                             {aiFixStats?.successRate || '0'}%
                           </div>
                           <div className="text-sm text-muted-foreground">수정 성공률</div>

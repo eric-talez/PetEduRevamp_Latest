@@ -142,7 +142,7 @@ const TrainerActivityLogs: React.FC = () => {
     const colors = {
       'video_upload': 'bg-blue-500',
       'comment': 'bg-green-500',
-      'view': 'bg-purple-500',
+      'view': 'bg-primary/50',
       'member_recruitment': 'bg-orange-500',
       'certification': 'bg-red-500',
       'consultation': 'bg-yellow-500',

@@ -262,7 +262,7 @@ export default function Courses() {
                     <span className="font-semibold">{selectedCourse.modules}개 강의</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <User className="w-5 h-5 text-purple-600" />
+                    <User className="w-5 h-5 text-primary" />
                     <span className="font-semibold">{selectedCourse.level}</span>
                   </div>
                 </div>

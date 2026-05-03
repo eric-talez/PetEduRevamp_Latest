@@ -260,7 +260,7 @@ export default function AdminHome() {
                       <span>훈련사 12%</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-purple-500 mr-1"></div>
+                      <div className="w-2 h-2 rounded-full bg-primary/50 mr-1"></div>
                       <span>기관 8%</span>
                     </div>
                     <div className="flex items-center">
@@ -388,7 +388,7 @@ export default function AdminHome() {
         </Card>
         <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setLocation('/admin/trainers')}>
           <div className="flex flex-col items-center text-center">
-            <UserCheck className="w-8 h-8 text-purple-600 mb-2" />
+            <UserCheck className="w-8 h-8 text-primary mb-2" />
             <span className="text-sm font-medium">훈련사</span>
           </div>
         </Card>
@@ -400,7 +400,7 @@ export default function AdminHome() {
         </Card>
         <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setLocation('/admin/shop')}>
           <div className="flex flex-col items-center text-center">
-            <ShoppingBag className="w-8 h-8 text-pink-600 mb-2" />
+            <ShoppingBag className="w-8 h-8 text-primary mb-2" />
             <span className="text-sm font-medium">쇼핑몰</span>
           </div>
         </Card>

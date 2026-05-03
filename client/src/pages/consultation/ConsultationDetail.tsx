@@ -220,7 +220,7 @@ export default function ConsultationDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-purple-500" />
+                <GraduationCap className="w-5 h-5 text-primary" />
                 훈련 이력 및 목표
               </CardTitle>
             </CardHeader>

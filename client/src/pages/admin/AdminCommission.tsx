@@ -785,7 +785,7 @@ export default function AdminCommission() {
       case 'trainer':
         return <Badge variant="outline" className="border-blue-500 text-blue-500">훈련사</Badge>;
       case 'institute':
-        return <Badge variant="outline" className="border-purple-500 text-purple-500">기관</Badge>;
+        return <Badge variant="outline" className="border-primary/50 text-primary">기관</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
     }

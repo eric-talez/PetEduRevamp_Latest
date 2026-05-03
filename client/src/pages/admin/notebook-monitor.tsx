@@ -90,7 +90,7 @@ export default function NotebookMonitorPage() {
     switch (status) {
       case 'sent': return 'bg-blue-500';
       case 'read': return 'bg-green-500';
-      case 'replied': return 'bg-purple-500';
+      case 'replied': return 'bg-primary/50';
       case 'draft': return 'bg-yellow-500';
       default: return 'bg-gray-500';
     }
@@ -362,7 +362,7 @@ export default function NotebookMonitorPage() {
                     <div className="text-sm text-gray-600">전송됨</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">{trainer.readJournals}</div>
+                    <div className="text-2xl font-bold text-primary">{trainer.readJournals}</div>
                     <div className="text-sm text-gray-600">읽음</div>
                   </div>
                 </div>
@@ -418,7 +418,7 @@ export default function NotebookMonitorPage() {
                     <CardTitle className="text-sm">읽음</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-purple-600">{selectedTrainer.readJournals}</div>
+                    <div className="text-2xl font-bold text-primary">{selectedTrainer.readJournals}</div>
                   </CardContent>
                 </Card>
               </div>

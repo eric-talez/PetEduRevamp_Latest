@@ -169,7 +169,7 @@ const PostCard = ({ post, onClick }: { post: any; onClick: (post: any) => void }
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div className="text-xs">
                   <div className="flex items-center gap-1 mb-1">
-                    <Users className="h-3 w-3 text-purple-600" />
+                    <Users className="h-3 w-3 text-primary" />
                     <span>성별 분포</span>
                   </div>
                   <div className="text-gray-600">

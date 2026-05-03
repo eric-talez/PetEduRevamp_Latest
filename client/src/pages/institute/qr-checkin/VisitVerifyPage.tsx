@@ -50,7 +50,7 @@ const TEMPERAMENT_MAP: Record<string, { label: string; color: string; bg: string
   B: { label: "흥분 조절", color: "text-blue-700", bg: "bg-blue-100" },
   C: { label: "짖음/경계", color: "text-yellow-700", bg: "bg-yellow-100" },
   D: { label: "공격성 주의", color: "text-red-700", bg: "bg-red-100" },
-  E: { label: "분리불안", color: "text-purple-700", bg: "bg-purple-100" },
+  E: { label: "분리불안", color: "text-primary", bg: "bg-primary/10" },
 };
 
 export default function VisitVerifyPage() {

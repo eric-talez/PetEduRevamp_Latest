@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
 
   const getLevelBadgeColor = (level: string) => {
     switch (level) {
-      case '마스터': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case '마스터': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground';
       case '숙련': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case '중급': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case '초급': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
@@ -234,7 +234,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="flex items-center justify-center">
-            <div className="w-48 h-48 rounded-full border-8 border-gray-200 dark:border-gray-700 flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900 dark:to-purple-900">
+            <div className="w-48 h-48 rounded-full border-8 border-gray-200 dark:border-gray-700 flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/15 dark:to-secondary/15">
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-800 dark:text-white">
                   {Math.round(trainingProgressData.reduce((acc, item) => acc + item.progress, 0) / trainingProgressData.length)}%
@@ -526,7 +526,7 @@ export default function AnalyticsPage() {
                   )}
                 </p>
               </div>
-              <Target className="h-8 w-8 text-purple-500" />
+              <Target className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -680,7 +680,7 @@ export default function AnalyticsPage() {
                             <div className="text-gray-600 dark:text-gray-400">학습 시간</div>
                           </div>
                           <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                            <div className="font-medium text-purple-600 dark:text-purple-400">
+                            <div className="font-medium text-primary dark:text-primary">
                               {course.lastAccessed || 'N/A'}
                             </div>
                             <div className="text-gray-600 dark:text-gray-400">최근 접속</div>

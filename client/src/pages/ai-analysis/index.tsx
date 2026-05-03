@@ -804,7 +804,7 @@ export default function AiAnalysisPage() {
                 {(analyzeDataMutation.data as any)?.analysis?.resultJson?.activity && (
                   <div>
                     <h4 className="font-medium mb-2">🏃 활동 상태</h4>
-                    <p className="text-sm text-gray-700 bg-purple-50 p-3 rounded">
+                    <p className="text-sm text-gray-700 bg-primary/5 p-3 rounded">
                       {(analyzeDataMutation.data as any).analysis.resultJson.activity}
                     </p>
                   </div>
@@ -1179,7 +1179,7 @@ export default function AiAnalysisPage() {
 
                 {/* 행동 분석 */}
                 {mediaAnalysisResult?.analysis?.behavior && (
-                  <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                  <div className="bg-primary/5 dark:bg-primary/20 p-4 rounded-lg">
                     <h4 className="font-medium mb-2">🎯 행동 분석</h4>
                     <div className="space-y-2 text-sm">
                       {mediaAnalysisResult.analysis.behavior.observed?.length > 0 && (

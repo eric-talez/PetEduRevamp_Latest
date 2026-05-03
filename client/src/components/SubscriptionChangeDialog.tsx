@@ -296,7 +296,7 @@ export const SubscriptionChangeDialog: React.FC<SubscriptionChangeDialogProps> =
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Zap className="w-4 h-4 text-purple-500" />
+                            <Zap className="w-4 h-4 text-primary" />
                             <span className="text-sm">
                               월 {plan.maxAiAnalysis === -1 ? '무제한' : plan.maxAiAnalysis}회 AI 분석
                             </span>

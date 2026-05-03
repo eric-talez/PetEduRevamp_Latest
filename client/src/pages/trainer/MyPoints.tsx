@@ -187,9 +187,9 @@ export default function MyPoints() {
     switch (type) {
       case 'review': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'consultation': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'course': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'course': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground';
       case 'community': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
-      case 'referral': return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200';
+      case 'referral': return 'bg-secondary/15 text-primary dark:bg-secondary/20 dark:text-secondary-foreground';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
@@ -245,7 +245,7 @@ export default function MyPoints() {
 
       {/* 포인트 현황 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+        <Card className="bg-gradient-to-r from-blue-500 to-primary text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -274,9 +274,9 @@ export default function MyPoints() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">이달 포인트</p>
-                <p className="text-2xl font-bold text-purple-600">{data.monthlyPoints.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-primary">{data.monthlyPoints.toLocaleString()}</p>
               </div>
-              <Calendar className="w-8 h-8 text-purple-500" />
+              <Calendar className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -437,7 +437,7 @@ export default function MyPoints() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {data.rewards.map((reward) => (
                   <div key={reward.id} className="border rounded-lg p-4 dark:border-gray-700">
-                    <div className="aspect-video bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-lg mb-3 flex items-center justify-center">
+                    <div className="aspect-video bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 rounded-lg mb-3 flex items-center justify-center">
                       <Gift className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                     </div>
                     <h3 className="font-medium mb-1">{reward.title}</h3>
@@ -449,7 +449,7 @@ export default function MyPoints() {
                       <Button 
                         size="sm" 
                         disabled={!reward.available || data.currentPoints < reward.pointsCost}
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                        className="bg-gradient-to-r from-blue-500 to-primary hover:from-blue-600 hover:to-primary/90"
                       >
                         {data.currentPoints < reward.pointsCost ? '포인트 부족' : '교환하기'}
                       </Button>

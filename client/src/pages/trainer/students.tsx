@@ -812,8 +812,8 @@ function StudentDetailDialog({
 
           <TabsContent value="performance" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
+              <div className="text-center p-4 bg-primary/5 dark:bg-primary/15 rounded-lg">
+                <div className="text-2xl font-bold text-primary">
                   {student.performance.overallRating}
                 </div>
                 <div className="text-sm text-gray-600">종합 평점</div>
@@ -824,14 +824,14 @@ function StudentDetailDialog({
                 </div>
                 <div className="text-sm text-gray-600">행동 점수</div>
               </div>
-              <div className="text-center p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-pink-600">
+              <div className="text-center p-4 bg-secondary/10 dark:bg-secondary/20 rounded-lg">
+                <div className="text-2xl font-bold text-primary">
                   {student.performance.learningSpeed}
                 </div>
                 <div className="text-sm text-gray-600">학습 속도</div>
               </div>
-              <div className="text-center p-4 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-cyan-600">
+              <div className="text-center p-4 bg-secondary/10 dark:bg-secondary/20 rounded-lg">
+                <div className="text-2xl font-bold text-secondary-foreground">
                   {student.performance.socialSkills}
                 </div>
                 <div className="text-sm text-gray-600">사회성</div>

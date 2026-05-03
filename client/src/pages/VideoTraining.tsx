@@ -338,11 +338,11 @@ export default function VideoTraining() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">총 수강생</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-primary">
                   {displayedCourses.reduce((sum, c) => sum + (c.enrollmentCount || 0), 0)}
                 </p>
               </div>
-              <Users className="w-8 h-8 text-purple-600" />
+              <Users className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>

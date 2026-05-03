@@ -488,7 +488,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
 
         <Card className="p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => setLocation('/schedule')}>
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary rounded-full flex items-center justify-center">
               <Calendar className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -499,11 +499,11 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
           <div className="mt-4">
             <div className="text-xs text-gray-700 dark:text-gray-300">
               <div className="flex items-center mb-1">
-                <Clock className="h-3 w-3 text-purple-500 dark:text-purple-400 mr-1" />
+                <Clock className="h-3 w-3 text-primary dark:text-primary mr-1" />
                 <span>오늘 17:00 - 기본 훈련 3주차</span>
               </div>
               <div className="flex items-center">
-                <Clock className="h-3 w-3 text-purple-500 dark:text-purple-400 mr-1" />
+                <Clock className="h-3 w-3 text-primary dark:text-primary mr-1" />
                 <span>내일 14:00 - 사회화 훈련 세션</span>
               </div>
             </div>
@@ -692,7 +692,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
                     <span className={`text-xs px-2 py-1 rounded-full ${
                         post.tag === "산책팁" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" :
                         post.tag === "훈련팁" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : 
-                        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                        "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/80"
                       }`}>
                       {post.tag}
                     </span>
@@ -748,10 +748,10 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
                 <h3 className="font-semibold text-yellow-800 dark:text-yellow-300">첫 수료증</h3>
                 <p className="text-sm text-yellow-600 dark:text-yellow-400">기초 훈련 과정 완료</p>
               </div>
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <Medal className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-purple-800 dark:text-purple-300">7일 연속 학습</h3>
-                <p className="text-sm text-purple-600 dark:text-purple-400">꾸준한 학습 습관 형성</p>
+              <div className="text-center p-4 bg-primary/5 dark:bg-primary/15 rounded-lg">
+                <Medal className="h-8 w-8 text-primary mx-auto mb-2" />
+                <h3 className="font-semibold text-primary dark:text-primary/80">7일 연속 학습</h3>
+                <p className="text-sm text-primary dark:text-primary">꾸준한 학습 습관 형성</p>
               </div>
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <Star className="h-8 w-8 text-green-500 mx-auto mb-2" />

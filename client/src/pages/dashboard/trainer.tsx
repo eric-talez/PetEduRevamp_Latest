@@ -279,7 +279,7 @@ export default function TrainerDashboard({ onAction }: TrainerDashboardProps) {
         
         <Card className="p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary rounded-full flex items-center justify-center">
               <Calendar className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -290,13 +290,13 @@ export default function TrainerDashboard({ onAction }: TrainerDashboardProps) {
           <div className="mt-4">
             <div className="text-xs text-gray-700 dark:text-gray-300">
               <div className="flex items-center mb-1">
-                <svg className="h-3 w-3 text-purple-500 dark:text-purple-400 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-3 w-3 text-primary dark:text-primary mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>
                 <span>오늘 15:00 - 기초 훈련반</span>
               </div>
               <div className="flex items-center">
-                <svg className="h-3 w-3 text-purple-500 dark:text-purple-400 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-3 w-3 text-primary dark:text-primary mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>
                 <span>내일 13:00 - 심화 과정</span>

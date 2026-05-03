@@ -43,12 +43,12 @@ export function PageLoadingSplash({ isVisible, message }: { isVisible: boolean; 
 
   return (
     <div 
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50/95 via-white/95 to-teal-50/95 dark:from-gray-900/95 dark:via-gray-800/95 dark:to-emerald-950/95 backdrop-blur-sm transition-opacity duration-300 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background/95 to-secondary/10 dark:from-primary/20 dark:via-background/95 dark:to-secondary/10 backdrop-blur-sm transition-opacity duration-300 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
       data-testid="page-loading-splash"
     >
       <div className="flex flex-col items-center space-y-4">
         <div className="relative">
-          <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-2xl animate-pulse" />
+          <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
           <img 
             src="/logo-symbol-new.png"
             alt="TALEZ" 
@@ -57,9 +57,9 @@ export function PageLoadingSplash({ isVisible, message }: { isVisible: boolean; 
         </div>
         
         <div className="flex space-x-2">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
         </div>
 
         {message && (
@@ -218,12 +218,12 @@ export function SplashScreen({ onComplete, minDisplayTime = 2000 }: SplashScreen
 
   return (
     <div 
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-emerald-950 transition-opacity duration-500 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 dark:from-primary/20 dark:via-background dark:to-secondary/10 transition-opacity duration-500 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
       data-testid="splash-screen"
     >
       <div className="flex flex-col items-center space-y-6 animate-fade-in">
         <div className="relative">
-          <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
           <img 
             src="/logo-symbol-new.png"
             alt="TALEZ" 
@@ -233,7 +233,7 @@ export function SplashScreen({ onComplete, minDisplayTime = 2000 }: SplashScreen
         </div>
         
         <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             TALEZ
           </h1>
           <p className="mt-2 text-sm md:text-base text-gray-500 dark:text-gray-400">
@@ -242,9 +242,9 @@ export function SplashScreen({ onComplete, minDisplayTime = 2000 }: SplashScreen
         </div>
 
         <div className="flex space-x-2 mt-8">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
         </div>
       </div>
       

@@ -31,7 +31,7 @@ export function ActivitySelector({
   
   // 카테고리별 아이콘 색상
   const categoryColors = {
-    training: 'text-purple-500 dark:text-purple-400',
+    training: 'text-primary dark:text-primary',
     play: 'text-green-500 dark:text-green-400',
     care: 'text-blue-500 dark:text-blue-400',
     health: 'text-red-500 dark:text-red-400'

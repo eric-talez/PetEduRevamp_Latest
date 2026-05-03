@@ -287,13 +287,13 @@ export default function ContentCrawler() {
     const colors = {
       '건강정보': 'bg-red-100 text-red-800',
       '훈련교육': 'bg-blue-100 text-blue-800',
-      '행동분석': 'bg-purple-100 text-purple-800',
+      '행동분석': 'bg-primary/10 text-primary',
       '생활정보': 'bg-green-100 text-green-800',
-      '미용관리': 'bg-pink-100 text-pink-800',
+      '미용관리': 'bg-secondary/15 text-primary',
       '법률정보': 'bg-yellow-100 text-yellow-800',
       '여행정보': 'bg-indigo-100 text-indigo-800',
       '입양분양': 'bg-orange-100 text-orange-800',
-      '품종정보': 'bg-teal-100 text-teal-800',
+      '품종정보': 'bg-secondary/15 text-secondary-foreground',
       '일반정보': 'bg-gray-100 text-gray-800'
     };
     return colors[category] || colors['일반정보'];

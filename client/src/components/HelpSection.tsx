@@ -166,7 +166,7 @@ export function HelpSection({ expanded, handleItemClick }: HelpSectionProps) {
           <MenuGroup title="자주 묻는 질문" icon={<Target className="h-4 w-4 text-primary" />}>
             <NavItem
               href="/help/faq/general"
-              icon={<Star className="h-4 w-4 text-purple-500" />}
+              icon={<Star className="h-4 w-4 text-primary" />}
               onClick={handleItemClick}
             >
               일반 질문

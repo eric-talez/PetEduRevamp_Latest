@@ -1238,8 +1238,8 @@ export default function ConsultationStatusPage() {
                   )}
                   {selectedConsultation.status === 'in-progress' && (
                     <>
-                      <Video className="h-5 w-5 text-purple-500" />
-                      <Badge className="bg-purple-100 text-purple-800">진행 중</Badge>
+                      <Video className="h-5 w-5 text-primary" />
+                      <Badge className="bg-primary/10 text-primary">진행 중</Badge>
                     </>
                   )}
                 </div>

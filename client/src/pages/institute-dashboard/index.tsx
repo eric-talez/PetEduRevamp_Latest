@@ -534,8 +534,8 @@ export default function InstituteDashboardPage() {
                 <p className="text-sm text-gray-500">예약 건수 (이번 달)</p>
                 <h3 className="text-2xl font-bold">28</h3>
               </div>
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <CalendarCheck className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <CalendarCheck className="w-5 h-5 text-primary" />
               </div>
             </div>
             <div className="mt-2">

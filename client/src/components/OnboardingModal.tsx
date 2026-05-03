@@ -169,8 +169,8 @@ export function OnboardingModal({ isAuthenticated, onComplete }: OnboardingModal
       case 2:
         return (
           <div className={cn(baseClasses, "text-center px-2")}>
-            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
-              <PawPrint className="w-10 h-10 text-pink-500" />
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center">
+              <PawPrint className="w-10 h-10 text-primary" />
             </div>
             <h2 className="text-xl font-bold mb-3 text-foreground">
               반려동물을 등록해주세요

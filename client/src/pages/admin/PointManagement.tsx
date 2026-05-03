@@ -296,7 +296,7 @@ const PointManagement: React.FC = () => {
                 {pointStats?.topPerformers?.map((trainer, index) => (
                   <div key={trainer.trainerId} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-primary flex items-center justify-center text-white font-bold">
                         {trainer.rank}
                       </div>
                       <div>

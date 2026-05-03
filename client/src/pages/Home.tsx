@@ -562,8 +562,8 @@ export default function Home() {
                   onClick={() => setLocation('/my-pets')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-pink-100 dark:bg-pink-900/30 group-hover:bg-pink-200 dark:group-hover:bg-pink-800/40 transition-colors">
-                      <Heart className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                    <div className="p-3 rounded-full bg-secondary/15 dark:bg-secondary/20 group-hover:bg-secondary/20 dark:group-hover:bg-secondary/20 transition-colors">
+                      <Heart className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -659,8 +659,8 @@ export default function Home() {
                   onClick={() => setLocation('/trainer/students')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/40 transition-colors">
-                      <LucideUsers className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/40 transition-colors">
+                      <LucideUsers className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -718,8 +718,8 @@ export default function Home() {
                   onClick={() => setLocation('/institute-admin/trainers')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/40 transition-colors">
-                      <LucideUsers className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/40 transition-colors">
+                      <LucideUsers className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -815,8 +815,8 @@ export default function Home() {
                   onClick={() => setLocation('/about')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/40 transition-colors">
-                      <Info className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/40 transition-colors">
+                      <Info className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -1047,7 +1047,7 @@ export default function Home() {
 
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">등록 반려견</span>
+                      <span className="text-sm font-semibold text-primary dark:text-primary">등록 반려견</span>
                       <span className="text-lg font-bold">3</span>
                     </div>
                     <button
@@ -1169,14 +1169,14 @@ export default function Home() {
                     </div>
 
                     {/* 등록 반려견 */}
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
+                    <div className="bg-primary/5 dark:bg-primary/15 p-3 rounded-lg">
                       <div className="flex justify-between items-center">
                         <div>
-                          <span className="text-xl font-bold text-purple-600 dark:text-purple-400">3</span>
+                          <span className="text-xl font-bold text-primary dark:text-primary">3</span>
                           <div className="text-xs text-gray-600 dark:text-gray-400">등록 반려견 (현재)</div>
                         </div>
-                        <div className="w-8 h-8 bg-purple-100 dark:bg-purple-800/50 rounded flex items-center justify-center">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <div className="w-8 h-8 bg-primary/10 dark:bg-primary/50 rounded flex items-center justify-center">
+                          <div className="w-2 h-2 bg-primary/50 rounded-full"></div>
                         </div>
                       </div>
                       <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">실제현황</div>
@@ -1185,7 +1185,7 @@ export default function Home() {
                           {(weeklyStats?.petRegistrations || [1, 0, 2, 0, 1, 1, 0]).map((value, index) => (
                             <div key={index} className="flex-1 relative group">
                               <div
-                                className="bg-purple-200 dark:bg-purple-700 rounded-sm transition-colors hover:bg-purple-300 dark:hover:bg-purple-600"
+                                className="bg-primary/15 dark:bg-primary/20 rounded-sm transition-colors hover:bg-primary/15 dark:hover:bg-primary"
                                 style={{height: `${Math.max(value * 12, 4)}px`}}
                               ></div>
                               <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -1267,7 +1267,7 @@ export default function Home() {
 
         {/* TALEZ 체험 서비스 섹션 */}
         <div className="mb-8">
-          <div className="relative bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl p-8 border border-emerald-200 dark:border-emerald-800 overflow-hidden">
+          <div className="relative bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 rounded-2xl p-8 border border-primary/30 dark:border-primary/40 overflow-hidden">
             {/* 백그라운드 이미지 - 강아지와 AI 분석 테마 */}
             <div
               className="absolute inset-0 opacity-10 bg-cover bg-center bg-no-repeat"
@@ -1329,7 +1329,7 @@ export default function Home() {
 
             <div className="relative z-10 text-center mb-6">
               <div className="flex items-center justify-center mb-4">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg animate-pulse">
                   <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
@@ -1350,7 +1350,7 @@ export default function Home() {
               <div className="relative z-10 text-center">
                 <Button
                   onClick={() => setShowExperience(true)}
-                  className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-700 text-white px-10 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden"
+                  className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white px-10 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden"
                 >
                   <span className="relative z-10 flex items-center">
                     <svg className="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1436,7 +1436,7 @@ export default function Home() {
                       <Button
                         onClick={startAnalysis}
                         disabled={!videoDescription || videoDescription.trim().length < 20}
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
+                        className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 disabled:opacity-50"
                       >
                         <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -1472,15 +1472,15 @@ export default function Home() {
 
                     <div className="space-y-6">
                       {/* 전체 요약 */}
-                      <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
-                        <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center">
+                      <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/15 dark:to-secondary/15 rounded-lg border border-primary/30 dark:border-primary/40">
+                        <h4 className="font-semibold text-primary dark:text-primary-foreground mb-2 flex items-center">
                           <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                             <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
                           </svg>
                           분석 요약
                         </h4>
-                        <p className="text-sm text-purple-800 dark:text-purple-200">
+                        <p className="text-sm text-primary dark:text-primary-foreground">
                           {analysisResult.behaviorAnalysis?.summary || '강아지의 행동과 특성을 종합적으로 분석했습니다.'}
                         </p>
                       </div>
@@ -1495,7 +1495,7 @@ export default function Home() {
                         </h4>
 
                         <div className="text-center mb-4">
-                          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg mb-2">
+                          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary text-white shadow-lg mb-2">
                             <span className="text-3xl font-bold">{analysisResult.trainingAssessment?.overallScore || 0}</span>
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">전반적 훈련 점수</p>
@@ -1575,7 +1575,7 @@ export default function Home() {
                       )}
 
                       {/* 맞춤형 추천 */}
-                      <div className="p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                      <div className="p-5 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-900/20 dark:to-primary/15 rounded-lg border border-green-200 dark:border-green-700">
                         <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center">
                           <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -1616,7 +1616,7 @@ export default function Home() {
                           </svg>
                           최적의 훈련소 찾기
                         </Button>
-                        <Button onClick={() => setLocation('/auth')} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+                        <Button onClick={() => setLocation('/auth')} className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90">
                           <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>

@@ -136,7 +136,7 @@ export default function TrainerDetail({ trainerId: propTrainerId }: TrainerDetai
       {/* 훈련사 프로필 헤더 */}
       <Card className="mb-6 overflow-hidden">
         {/* 프로필 이미지를 맨 위로 이동 */}
-        <div className="w-full h-64 bg-gradient-to-br from-blue-50 to-purple-50 relative flex items-center justify-center">
+        <div className="w-full h-64 bg-gradient-to-br from-blue-50 to-primary/5 relative flex items-center justify-center">
           <Avatar className="w-48 h-48 border-4 border-white shadow-xl">
             <AvatarImage 
               src={displayData.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayData.name)}&backgroundColor=6366f1&textColor=ffffff`} 

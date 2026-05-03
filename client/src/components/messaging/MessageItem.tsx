@@ -16,8 +16,8 @@ interface MessageItemProps {
 // 아바타 색상 생성 (이름 기반)
 const getInitialsColor = (name: string) => {
   const colors = [
-    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500',
-    'bg-pink-500', 'bg-indigo-500', 'bg-yellow-500', 'bg-teal-500'
+    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-primary/50',
+    'bg-secondary/100', 'bg-indigo-500', 'bg-yellow-500', 'bg-primary'
   ];
   
   let hash = 0;

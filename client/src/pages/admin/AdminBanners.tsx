@@ -528,7 +528,7 @@ export default function AdminBanners() {
       case 'hero':
         return <span className="text-blue-500 text-xs">히어로</span>;
       case 'sidebar':
-        return <span className="text-purple-500 text-xs">사이드바</span>;
+        return <span className="text-primary text-xs">사이드바</span>;
       case 'footer':
         return <span className="text-gray-500 text-xs">푸터</span>;
       case 'popup':

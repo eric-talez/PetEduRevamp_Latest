@@ -612,7 +612,7 @@ export function Sidebar({
           expanded ? "w-64" : "w-[70px]"
         )}
       >
-        <div className="p-4 border-b border-emerald-100 dark:border-emerald-800/30 bg-gradient-to-r from-emerald-50 to-emerald-50/50 dark:from-emerald-950/30 dark:to-emerald-950/10 h-16 flex items-center justify-between px-3 transition-all duration-300">
+        <div className="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/10 h-16 flex items-center justify-between px-3 transition-all duration-300">
           {expanded ? (
             <ScrollReveal direction="left" delay={100}>
               <a href="/" className="flex items-center justify-center w-full h-full group">
@@ -732,7 +732,7 @@ export function Sidebar({
                 {/* 비로그인 상태에서 특별 메뉴 내용도 숨김 처리 */}
 
                 {expanded ? (
-                  <div className="flex items-center mx-auto mt-4 px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-sm w-full">
+                  <div className="flex items-center mx-auto mt-4 px-6 py-3 border border-border rounded-lg bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/10 shadow-sm w-full">
                     <div className="flex-1 pr-4">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">반려견 교육 시작하기</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">회원가입 후 맞춤형 교육을 경험하세요.</p>
@@ -998,7 +998,7 @@ export function Sidebar({
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-b border-emerald-100 dark:border-emerald-800/30 bg-gradient-to-r from-emerald-50 to-emerald-50/50 dark:from-emerald-950/30 dark:to-emerald-950/10">
+        <div className="p-4 border-t border-border bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/5">
           <div className="text-xs text-gray-500 dark:text-gray-400">
             {expanded ? (
               <>

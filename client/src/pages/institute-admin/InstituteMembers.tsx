@@ -60,7 +60,7 @@ export default function InstituteMembers() {
   const getMembershipBadge = (type: string) => {
     switch (type) {
       case 'premium':
-        return <Badge className="bg-purple-100 text-purple-800">프리미엄</Badge>;
+        return <Badge className="bg-primary/10 text-primary">프리미엄</Badge>;
       case 'basic':
         return <Badge className="bg-blue-100 text-blue-800">기본</Badge>;
       default:

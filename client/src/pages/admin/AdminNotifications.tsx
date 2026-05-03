@@ -259,11 +259,11 @@ export default function AdminNotifications() {
       case 'security':
         return <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />;
       case 'database':
-        return <Database className="h-5 w-5 text-purple-600 dark:text-purple-400" />;
+        return <Database className="h-5 w-5 text-primary dark:text-primary" />;
       case 'warning':
         return <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />;
       case 'user':
-        return <Bell className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />;
+        return <Bell className="h-5 w-5 text-secondary-foreground dark:text-secondary-foreground" />;
       default:
         return <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
     }
@@ -277,11 +277,11 @@ export default function AdminNotifications() {
       case 'security':
         return <Badge className="bg-green-500">보안</Badge>;
       case 'database':
-        return <Badge className="bg-purple-500">데이터베이스</Badge>;
+        return <Badge className="bg-primary/50">데이터베이스</Badge>;
       case 'warning':
         return <Badge className="bg-amber-500">경고</Badge>;
       case 'user':
-        return <Badge className="bg-cyan-500">사용자</Badge>;
+        return <Badge className="bg-secondary/100">사용자</Badge>;
       default:
         return <Badge>{type}</Badge>;
     }

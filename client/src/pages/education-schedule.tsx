@@ -268,7 +268,7 @@ export default function EducationSchedulePage() {
             <div className="text-sm text-gray-600">인기 강의</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-primary">
               {filteredCourses.filter((c: any) => c.is_certified).length}
             </div>
             <div className="text-sm text-gray-600">자격증 과정</div>

@@ -454,7 +454,7 @@ export default function TrainerEarnings() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <CreditCard className="h-8 w-8 text-purple-600" />
+              <CreditCard className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">평균 수수료율</p>
                 <p className="text-2xl font-bold">{averageCommissionRate.toFixed(1)}%</p>
@@ -559,7 +559,7 @@ export default function TrainerEarnings() {
                   <CardContent className="p-4">
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">평균 수수료율</p>
-                      <p className="text-xl font-bold text-purple-600">
+                      <p className="text-xl font-bold text-primary">
                         {selectedMonthDetail.averageCommissionRate}%
                       </p>
                     </div>

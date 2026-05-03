@@ -202,7 +202,7 @@ export default function InstituteAdminHome() {
     { name: '신규 등록', value: metricsData.newRegistrations, change: metricsData.newRegistrationsChange, icon: Users, color: 'text-blue-500' },
     { name: '완료된 과정', value: metricsData.completedCourses, change: metricsData.completedCoursesChange, icon: CheckCircle2, color: 'text-green-500' },
     { name: '발급 수료증', value: metricsData.issuedCertificates, change: metricsData.issuedCertificatesChange, icon: Award, color: 'text-yellow-500' },
-    { name: '운영 중 과정', value: metricsData.activeCourses, change: metricsData.activeCoursesChange, icon: Zap, color: 'text-purple-500' },
+    { name: '운영 중 과정', value: metricsData.activeCourses, change: metricsData.activeCoursesChange, icon: Zap, color: 'text-primary' },
   ];
 
   // courseData를 useQuery 데이터로 설정

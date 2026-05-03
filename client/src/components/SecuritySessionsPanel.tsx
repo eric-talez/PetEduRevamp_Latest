@@ -122,7 +122,7 @@ export function SecuritySessionsPanel() {
                   <div className="font-medium">
                     {s.deviceLabel}
                     {s.isCurrent && (
-                      <span className="ml-2 rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                      <span className="ml-2 rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary dark:bg-primary/30 dark:text-primary-foreground">
                         현재 세션
                       </span>
                     )}

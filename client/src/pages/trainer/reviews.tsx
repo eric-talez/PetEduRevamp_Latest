@@ -180,7 +180,7 @@ export default function TrainerReviews() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center">
-            <ThumbsUp className="h-8 w-8 text-purple-600" />
+            <ThumbsUp className="h-8 w-8 text-primary" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">최근 평점 분포</p>
               <p className="text-xs">

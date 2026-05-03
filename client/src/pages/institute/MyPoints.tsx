@@ -162,11 +162,11 @@ export default function InstituteMyPoints() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-sm font-medium">
               <span>누적 포인트</span>
-              <Award className="w-4 h-4 text-purple-500" />
+              <Award className="w-4 h-4 text-primary" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{data.totalLifetimePoints.toLocaleString()}P</div>
+            <div className="text-2xl font-bold text-primary">{data.totalLifetimePoints.toLocaleString()}P</div>
             <p className="text-xs text-gray-500 mt-1">총 누적 포인트</p>
           </CardContent>
         </Card>

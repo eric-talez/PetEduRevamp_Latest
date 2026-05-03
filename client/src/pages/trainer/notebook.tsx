@@ -826,7 +826,7 @@ export default function TrainerNotebookPage() {
                       {/* 놀이 활동 */}
                       <div className="border rounded-lg p-4">
                         <h3 className="font-medium mb-3 flex items-center">
-                          <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                          <div className="w-3 h-3 bg-primary/50 rounded-full mr-2"></div>
                           놀이 활동
                         </h3>
                         <div className="grid grid-cols-6 gap-2 text-xs">
@@ -1079,11 +1079,11 @@ export default function TrainerNotebookPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">답장받음</p>
-                    <p className="text-2xl font-bold text-purple-600">
+                    <p className="text-2xl font-bold text-primary">
                       {journals?.filter(j => j.status === 'replied').length || 0}
                     </p>
                   </div>
-                  <MessageSquare className="h-8 w-8 text-purple-500" />
+                  <MessageSquare className="h-8 w-8 text-primary" />
                 </div>
               </CardContent>
             </Card>
@@ -1467,7 +1467,7 @@ export default function TrainerNotebookPage() {
                 {selectedJournal.replyMessage && (
                   <div>
                     <h4 className="font-semibold mb-2">학부모 답장</h4>
-                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <div className="p-4 bg-primary/5 dark:bg-primary/15 rounded-lg">
                       <p className="text-sm">{selectedJournal.replyMessage}</p>
                     </div>
                   </div>

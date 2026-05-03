@@ -35,7 +35,7 @@ interface ItemRow {
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending: { label: '예정', color: 'bg-yellow-100 text-yellow-800' },
   confirmed: { label: '확정', color: 'bg-blue-100 text-blue-800' },
-  locked: { label: '마감', color: 'bg-purple-100 text-purple-800' },
+  locked: { label: '마감', color: 'bg-primary/10 text-primary' },
   paid: { label: '지급완료', color: 'bg-green-100 text-green-800' },
   canceled: { label: '취소', color: 'bg-red-100 text-red-800' },
 };
@@ -109,7 +109,7 @@ export default function TrainerSettlementsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-purple-600" />
+              <DollarSign className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm text-muted-foreground">누적 정산액</p>
                 <p className="text-2xl font-bold">{(summary?.totalLifetime || 0).toLocaleString()}원</p>

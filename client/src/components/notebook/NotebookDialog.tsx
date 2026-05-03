@@ -419,7 +419,7 @@ export default function NotebookDialog({
         <div className="mb-4 p-2 bg-yellow-100 border-2 border-yellow-400 rounded-lg">
           <div className="text-xs text-blue-600 font-medium mb-1 text-center">탭 네비게이션 시스템</div>
           <div className="text-xs text-red-600 font-medium mb-2 text-center">현재 활성 탭: {activeTab}</div>
-          <div className="flex space-x-1 bg-gradient-to-r from-blue-100 to-indigo-100 p-2 rounded-lg border-2 border-blue-300 shadow-lg">
+          <div className="flex space-x-1 bg-gradient-to-r from-primary/10 to-secondary/10 p-2 rounded-lg border-2 border-primary/30 shadow-lg">
             <button 
               onClick={() => {
                 console.log('Tab clicked: basic');

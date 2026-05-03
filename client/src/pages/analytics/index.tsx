@@ -566,8 +566,8 @@ export default function AnalyticsPage() {
                       평균 평점 {analytics?.averageRating || 0}점
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Users className="h-6 w-6 text-purple-600" />
+                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Users className="h-6 w-6 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -687,7 +687,7 @@ export default function AnalyticsPage() {
                     <span className="text-sm text-gray-500">68%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full shadow-sm" style={{width: '68%'}}></div>
+                    <div className="bg-gradient-to-r from-primary/50 to-primary h-3 rounded-full shadow-sm" style={{width: '68%'}}></div>
                   </div>
                 </div>
                 
@@ -879,11 +879,11 @@ export default function AnalyticsPage() {
                       <span className="text-xs font-medium text-green-700">신규 50명</span>
                     </div>
                     
-                    <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
-                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <GraduationCap className="h-6 w-6 text-purple-600" />
+                    <div className="text-center p-3 bg-primary/5 rounded-lg border border-primary/30">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <GraduationCap className="h-6 w-6 text-primary" />
                       </div>
-                      <span className="text-xs font-medium text-purple-700">수료 25명</span>
+                      <span className="text-xs font-medium text-primary">수료 25명</span>
                     </div>
                   </div>
                 </div>
@@ -910,10 +910,10 @@ export default function AnalyticsPage() {
                     
                     <div className="flex justify-between items-center">
                       <span className="text-sm">신규 학생 목표 (500명)</span>
-                      <span className="text-sm font-medium text-purple-600">45/500 (9%)</span>
+                      <span className="text-sm font-medium text-primary">45/500 (9%)</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full" style={{width: '9%'}}></div>
+                      <div className="bg-gradient-to-r from-primary/50 to-primary h-2 rounded-full" style={{width: '9%'}}></div>
                     </div>
                   </div>
                 </div>
@@ -967,13 +967,13 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">연간 목표 달성률</p>
-                    <p className="text-2xl font-bold text-purple-600">8.3%</p>
+                    <p className="text-2xl font-bold text-primary">8.3%</p>
                     <p className="text-xs text-gray-500 mt-1">
                       목표: 1억 5천만원
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Target className="h-6 w-6 text-purple-600" />
+                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Target className="h-6 w-6 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -1019,7 +1019,7 @@ export default function AnalyticsPage() {
                     
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 bg-purple-500 rounded"></div>
+                        <div className="w-4 h-4 bg-primary/50 rounded"></div>
                         <span className="text-sm">행동 교정</span>
                       </div>
                       <div className="text-right">
@@ -1119,8 +1119,8 @@ export default function AnalyticsPage() {
                       <div className="text-sm text-gray-600">3,500만원</div>
                       <div className="text-xs text-gray-600 mt-1">예측</div>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-                      <div className="text-lg font-bold text-purple-600">4Q</div>
+                    <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/30">
+                      <div className="text-lg font-bold text-primary">4Q</div>
                       <div className="text-sm text-gray-600">4,500만원</div>
                       <div className="text-xs text-gray-600 mt-1">예측</div>
                     </div>
@@ -1140,7 +1140,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <span className="text-sm font-medium">재수강률 향상</span>
-                      <span className="text-sm text-purple-600">45% → 65%</span>
+                      <span className="text-sm text-primary">45% → 65%</span>
                     </div>
                   </div>
                 </div>
@@ -1194,7 +1194,7 @@ export default function AnalyticsPage() {
                 {/* 시간대별 패턴 */}
                 <div>
                   <h4 className="text-sm font-medium mb-4">시간대별 세션 분포</h4>
-                  <div className="flex items-end justify-between h-40 bg-gradient-to-t from-purple-50 to-transparent rounded-lg p-4">
+                  <div className="flex items-end justify-between h-40 bg-gradient-to-t from-primary/5 to-transparent rounded-lg p-4">
                     {[
                       { time: '09', height: 30, sessions: 8 },
                       { time: '10', height: 45, sessions: 12 },
@@ -1208,7 +1208,7 @@ export default function AnalyticsPage() {
                     ].map((item, idx) => (
                       <div key={idx} className="flex flex-col items-center">
                         <div 
-                          className="w-6 bg-purple-500 rounded-t mb-2 hover:bg-purple-600 transition-colors cursor-pointer"
+                          className="w-6 bg-primary/50 rounded-t mb-2 hover:bg-primary transition-colors cursor-pointer"
                           style={{height: `${item.height}%`}}
                           title={`${item.time}시: ${item.sessions}세션`}
                         ></div>

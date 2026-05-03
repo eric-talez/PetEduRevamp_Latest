@@ -34,8 +34,8 @@ const notificationTypeMap = {
     color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
   },
   training: {
-    icon: <div className="w-2 h-2 rounded-full bg-purple-500" />,
-    color: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+    icon: <div className="w-2 h-2 rounded-full bg-primary/50" />,
+    color: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary",
   },
   event: {
     icon: <div className="w-2 h-2 rounded-full bg-green-500" />,

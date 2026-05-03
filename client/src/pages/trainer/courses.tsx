@@ -386,11 +386,11 @@ export default function TrainerCoursesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">총 수익</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-primary">
                   {(courses?.reduce((sum, c) => sum + c.trainerRevenue, 0) || 0).toLocaleString()}원
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-purple-500" />
+              <TrendingUp className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -677,8 +677,8 @@ export default function TrainerCoursesPage() {
                       <div className="text-2xl font-bold text-green-600">{selectedCourse.completedStudents}</div>
                       <div className="text-sm text-gray-600">수료생</div>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{selectedCourse.maxStudents}</div>
+                    <div className="text-center p-4 bg-primary/5 dark:bg-primary/15 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{selectedCourse.maxStudents}</div>
                       <div className="text-sm text-gray-600">최대 정원</div>
                     </div>
                   </div>
@@ -699,8 +699,8 @@ export default function TrainerCoursesPage() {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">
+                    <div className="text-center p-4 bg-primary/5 dark:bg-primary/15 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">
                         {selectedCourse.totalRevenue.toLocaleString()}원
                       </div>
                       <div className="text-sm text-gray-600">총 수익</div>

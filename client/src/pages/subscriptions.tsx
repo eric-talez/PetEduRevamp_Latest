@@ -158,7 +158,7 @@ export default function SubscriptionsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-purple-500" />
+                    <Calendar className="w-5 h-5 text-primary" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">다음 결제일</p>
                       <p className="font-semibold">{currentSubscription.nextBilling}</p>
@@ -214,7 +214,7 @@ export default function SubscriptionsPage() {
                       <span>89/무제한</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-purple-500 h-2 rounded-full w-full"></div>
+                      <div className="bg-primary/50 h-2 rounded-full w-full"></div>
                     </div>
                   </div>
                 </div>
@@ -289,7 +289,7 @@ export default function SubscriptionsPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded flex items-center justify-center">
+                    <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-primary rounded flex items-center justify-center">
                       <CreditCard className="w-5 h-5 text-white" />
                     </div>
                     <div>

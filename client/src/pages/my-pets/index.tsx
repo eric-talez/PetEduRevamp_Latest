@@ -680,7 +680,7 @@ export default function MyPetsPage() {
           {pets.map((pet) => (
             <Card key={pet.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               {/* 반려동물 프로필 이미지 - 맨 위로 이동 */}
-              <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
+              <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-blue-50 to-primary/5 relative">
                 {pet.imageUrl ? (
                   <img 
                     src={pet.imageUrl} 

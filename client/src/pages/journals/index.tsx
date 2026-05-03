@@ -367,7 +367,7 @@ export default function JournalsPage() {
       case 'read':
         return <Badge variant="outline" className="text-green-600">읽음</Badge>;
       case 'replied':
-        return <Badge variant="outline" className="text-purple-600">답변됨</Badge>;
+        return <Badge variant="outline" className="text-primary">답변됨</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }

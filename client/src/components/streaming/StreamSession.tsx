@@ -459,8 +459,8 @@ export function StreamSession({
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
                     <div className="text-center px-4">
                       <div className="relative mb-6">
-                        <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
-                        <Video className="relative w-24 h-24 text-emerald-400 mx-auto" />
+                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+                        <Video className="relative w-24 h-24 text-primary mx-auto" />
                       </div>
                       <p className="text-white/70 text-sm">호스트의 영상을 기다리는 중...</p>
                     </div>

@@ -135,7 +135,7 @@ export default function InstituteAdminDashboard({ onAction }: InstituteAdminDash
         
         <Card className="p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary rounded-full flex items-center justify-center">
               <DollarSign className="h-6 w-6" />
             </div>
             <div className="ml-4">

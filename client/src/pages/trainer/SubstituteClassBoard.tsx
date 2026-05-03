@@ -258,7 +258,7 @@ export default function SubstituteClassBoard() {
       case 'open': return 'bg-green-500';
       case 'in_progress': return 'bg-blue-500';
       case 'closed': return 'bg-gray-500';
-      case 'completed': return 'bg-purple-500';
+      case 'completed': return 'bg-primary/50';
       default: return 'bg-gray-500';
     }
   };

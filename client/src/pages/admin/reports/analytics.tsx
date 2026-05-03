@@ -292,7 +292,7 @@ export default function AnalyticsReportPage() {
                     <span className="text-sm font-medium">12%</span>
                   </div>
                   <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+                    <div className="w-3 h-3 rounded-full bg-primary/50 mr-2"></div>
                     <span className="text-sm flex-1">기관 관리자</span>
                     <span className="text-sm font-medium">8%</span>
                   </div>

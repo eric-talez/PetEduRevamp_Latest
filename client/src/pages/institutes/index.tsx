@@ -1359,7 +1359,7 @@ export default function LocationServices() {
           <>
             {/* 검색 결과 카운터 및 정렬 - 접근성 개선 */}
             <div 
-              className="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 rounded-lg border border-green-200 dark:border-green-800"
+              className="mb-4 p-4 bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/15 dark:to-secondary/15 rounded-lg border border-green-200 dark:border-green-800"
               aria-live="polite"
               aria-atomic="true"
             >
@@ -2954,7 +2954,7 @@ function AiMatchDialog({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Bot className="h-6 w-6 text-purple-600" />
+            <Bot className="h-6 w-6 text-primary" />
             AI 업체 매칭
           </DialogTitle>
           <DialogDescription>
@@ -3057,7 +3057,7 @@ function AiRecommendationsDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Bot className="h-6 w-6 text-purple-600" />
+            <Bot className="h-6 w-6 text-primary" />
             AI 추천 결과
           </DialogTitle>
           <DialogDescription>
@@ -3067,7 +3067,7 @@ function AiRecommendationsDialog({
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 animate-spin text-purple-600 mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
             <p className="text-gray-600 dark:text-gray-400">AI가 최적의 기관을 분석하고 있습니다...</p>
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">잠시만 기다려주세요</p>
           </div>
@@ -3075,12 +3075,12 @@ function AiRecommendationsDialog({
           <div className="space-y-6 mt-4">
             {/* 요약 */}
             {summary && (
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
-                <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+              <div className="bg-gradient-to-r from-primary/5 to-blue-50 dark:from-primary/15 dark:to-blue-900/20 p-4 rounded-lg border border-primary/30 dark:border-primary/40">
+                <h3 className="font-semibold text-primary dark:text-primary-foreground mb-2 flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
                   AI 분석 요약
                 </h3>
-                <p className="text-sm text-purple-800 dark:text-purple-200">{summary}</p>
+                <p className="text-sm text-primary dark:text-primary-foreground">{summary}</p>
               </div>
             )}
 
@@ -3097,9 +3097,9 @@ function AiRecommendationsDialog({
                         </div>
                         <h4 className="font-bold text-lg">{rec.instituteName}</h4>
                       </div>
-                      <div className="flex items-center gap-1 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 px-3 py-1 rounded-full">
-                        <Star className="h-4 w-4 text-purple-600 dark:text-purple-400 fill-purple-600 dark:fill-purple-400" />
-                        <span className="font-bold text-purple-900 dark:text-purple-100">{rec.matchScore}점</span>
+                      <div className="flex items-center gap-1 bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 px-3 py-1 rounded-full">
+                        <Star className="h-4 w-4 text-primary dark:text-primary fill-primary dark:fill-primary" />
+                        <span className="font-bold text-primary dark:text-primary-foreground">{rec.matchScore}점</span>
                       </div>
                     </div>
 
