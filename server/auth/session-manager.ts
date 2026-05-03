@@ -9,7 +9,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { userSessions, type UserSession, type User } from "../../shared/schema";
-import { and, eq, isNull, desc, ne, gt, sql as drizzleSql } from "drizzle-orm";
+import { and, eq, isNull, desc, ne, gt, lt, or, isNotNull, sql as drizzleSql } from "drizzle-orm";
 
 type AuthedUser = Pick<User, "id">;
 function getUserId(req: Request): number | undefined {
@@ -321,6 +321,83 @@ export async function revokeCurrentSession(sessionId: string | undefined, reason
       .where(eq(userSessions.sessionId, sessionId));
   } catch (error) {
     console.error("[SessionManager] revokeCurrentSession 오류:", error);
+  }
+}
+
+/**
+ * 만료/폐기된 user_sessions 행을 정리합니다.
+ * - expires_at이 retentionDays일 이전인 행
+ * - revoked_at이 retentionDays일 이전인 행
+ * 두 조건 중 하나라도 만족하는 행을 삭제합니다.
+ */
+export async function cleanupExpiredUserSessions(retentionDays: number = 7): Promise<number> {
+  const threshold = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  try {
+    const result = await db
+      .delete(userSessions)
+      .where(
+        or(
+          lt(userSessions.expiresAt, threshold),
+          and(isNotNull(userSessions.revokedAt), lt(userSessions.revokedAt, threshold)),
+        ),
+      )
+      .returning({ id: userSessions.id });
+    const deleted = result.length;
+    console.log(
+      `[SessionManager] 오래된 세션 정리 완료: ${deleted}건 삭제 (기준: ${retentionDays}일, threshold=${threshold.toISOString()})`,
+    );
+    // 메모리 캐시도 정리 (만료된 세션 ID 제거)
+    if (deleted > 0) {
+      const now = Date.now();
+      for (const [sid, ts] of recentActivityTouch.entries()) {
+        if (now - ts > IDLE_TIMEOUT_MS) recentActivityTouch.delete(sid);
+      }
+    }
+    return deleted;
+  } catch (error) {
+    console.error("[SessionManager] cleanupExpiredUserSessions 오류:", error);
+    return 0;
+  }
+}
+
+let cleanupTimer: NodeJS.Timeout | null = null;
+
+/**
+ * 주기적으로 cleanupExpiredUserSessions를 실행하는 스케줄러.
+ * 기본값: 24시간마다, 만료/폐기 후 7일 지난 행 삭제.
+ * 서버 시작 직후 1회 즉시 실행.
+ */
+export function startUserSessionCleanupScheduler(options?: {
+  intervalMs?: number;
+  retentionDays?: number;
+}): void {
+  const intervalMs = options?.intervalMs ?? 24 * 60 * 60 * 1000;
+  const retentionDays = options?.retentionDays ?? 7;
+
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+    cleanupTimer = null;
+  }
+
+  console.log(
+    `[SessionManager] 세션 정리 스케줄러 시작 (주기: ${Math.round(intervalMs / 1000 / 60)}분, 보관: ${retentionDays}일)`,
+  );
+
+  // 시작 시 1회 즉시 실행
+  void cleanupExpiredUserSessions(retentionDays);
+
+  cleanupTimer = setInterval(() => {
+    void cleanupExpiredUserSessions(retentionDays);
+  }, intervalMs);
+
+  // Node가 이 타이머 때문에 종료되지 않도록 unref
+  if (typeof cleanupTimer.unref === "function") cleanupTimer.unref();
+}
+
+export function stopUserSessionCleanupScheduler(): void {
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+    cleanupTimer = null;
   }
 }
 

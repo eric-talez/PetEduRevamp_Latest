@@ -23,7 +23,7 @@ import { setupPerformance } from "./performance";
 import { registerAdminRoutes } from "./routes/admin";
 import { registerPaymentIntegrationRoutes } from "./routes/payment-integration";
 import { setupAuth } from "./auth";
-import { activitySessionMiddleware, ensureUserSessionsSchema } from "./auth/session-manager";
+import { activitySessionMiddleware, ensureUserSessionsSchema, startUserSessionCleanupScheduler } from "./auth/session-manager";
 import { extendResponse } from "./middleware/api-standards";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import path from 'path'; // path 모듈 추가
@@ -331,10 +331,18 @@ app.use(extendResponse);
 app.use('/api', activitySessionMiddleware);
 
 // user_sessions 테이블 존재 확인 (없으면 생성, 검증 실패 시 startup 중단)
-ensureUserSessionsSchema().catch((err) => {
-  console.error('[Startup] user_sessions 스키마 보장 실패:', err);
-  process.exit(1);
-});
+ensureUserSessionsSchema()
+  .then(() => {
+    // 만료/폐기 후 7일 지난 세션 행을 매일 정리
+    startUserSessionCleanupScheduler({
+      intervalMs: 24 * 60 * 60 * 1000,
+      retentionDays: 7,
+    });
+  })
+  .catch((err) => {
+    console.error('[Startup] user_sessions 스키마 보장 실패:', err);
+    process.exit(1);
+  });
 
 // Setup authentication system
 setupAuth(app);
