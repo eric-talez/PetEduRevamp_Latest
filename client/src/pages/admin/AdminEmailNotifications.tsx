@@ -50,7 +50,10 @@ interface EmailLog {
   lastError: string | null;
   sentAt: string | null;
   createdAt: string;
+  payload: Record<string, any> | null;
 }
+
+const CERTIFICATE_TEMPLATE_KEY = "course_completion_certificate";
 
 const STATUS_COLOR: Record<string, string> = {
   sent: "bg-success/10 text-success",
@@ -101,6 +104,13 @@ export default function AdminEmailNotifications() {
   const [previewSubject, setPreviewSubject] = useState<string>("");
   const [testTo, setTestTo] = useState("");
   const [serviceStatus, setServiceStatus] = useState<EmailServiceStatus | null>(null);
+  const [certLogs, setCertLogs] = useState<EmailLog[]>([]);
+  const [certTotal, setCertTotal] = useState(0);
+  const [certStatus, setCertStatus] = useState<string>("");
+  const [certSearch, setCertSearch] = useState<string>("");
+  const [loadingCerts, setLoadingCerts] = useState(true);
+  const [certOffset, setCertOffset] = useState(0);
+  const CERT_PAGE_SIZE = 50;
 
   async function loadStatus() {
     try {
@@ -146,9 +156,36 @@ export default function AdminEmailNotifications() {
     }
   }
 
+  async function loadCertLogs(opts: { append?: boolean; offset?: number } = {}) {
+    setLoadingCerts(true);
+    const offset = opts.offset ?? 0;
+    try {
+      const params = new URLSearchParams();
+      params.set("templateKey", CERTIFICATE_TEMPLATE_KEY);
+      params.set("limit", String(CERT_PAGE_SIZE));
+      params.set("offset", String(offset));
+      if (certStatus) params.set("status", certStatus);
+      if (certSearch) params.set("search", certSearch);
+      const r = await fetch(`/api/admin/email-logs?${params.toString()}`, {
+        credentials: "include",
+      });
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      const newLogs: EmailLog[] = d.logs || [];
+      setCertLogs((prev) => (opts.append ? [...prev, ...newLogs] : newLogs));
+      setCertTotal(d.total || 0);
+      setCertOffset(offset + newLogs.length);
+    } catch {
+      toast({ title: "수료증 발송 이력을 불러오지 못했습니다", variant: "destructive" });
+    } finally {
+      setLoadingCerts(false);
+    }
+  }
+
   useEffect(() => {
     loadTemplates();
     loadLogs();
+    loadCertLogs();
     loadStatus();
     const id = setInterval(loadStatus, 30_000);
     return () => clearInterval(id);
@@ -249,6 +286,10 @@ export default function AdminEmailNotifications() {
     if (r.ok) {
       toast({ title: "재발송이 큐잉되었습니다" });
       loadLogs();
+      loadCertLogs({ offset: 0 });
+    } else {
+      const d = await r.json().catch(() => ({}));
+      toast({ title: d.error || "재발송 실패", variant: "destructive" });
     }
   }
 
@@ -314,6 +355,9 @@ export default function AdminEmailNotifications() {
           </TabsTrigger>
           <TabsTrigger value="logs" data-testid="tab-logs">
             발송 이력
+          </TabsTrigger>
+          <TabsTrigger value="certificates" data-testid="tab-certificates">
+            수료증 발송
           </TabsTrigger>
         </TabsList>
 
@@ -553,7 +597,7 @@ export default function AdminEmailNotifications() {
                         </TableCell>
                         <TableCell>{log.attempts}</TableCell>
                         <TableCell>
-                          {(log.status === "failed" || log.status === "queued") && (
+                          {(log.status === "failed" || log.status === "skipped") && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -575,6 +619,152 @@ export default function AdminEmailNotifications() {
                     )}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="certificates">
+          <Card>
+            <CardHeader>
+              <CardTitle>수료증 이메일 발송 내역 ({certTotal})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <Input
+                  placeholder="수신자 이메일 검색"
+                  className="max-w-xs"
+                  value={certSearch}
+                  onChange={(e) => setCertSearch(e.target.value)}
+                  data-testid="input-cert-search"
+                />
+                <select
+                  className="border rounded px-2"
+                  value={certStatus}
+                  onChange={(e) => setCertStatus(e.target.value)}
+                  data-testid="select-cert-status"
+                >
+                  <option value="">전체 상태</option>
+                  <option value="sent">발송됨</option>
+                  <option value="queued">대기</option>
+                  <option value="failed">실패</option>
+                  <option value="skipped">건너뜀</option>
+                </select>
+                <Button onClick={() => loadCertLogs({ offset: 0 })} data-testid="button-search-certs">
+                  <RefreshCw className="w-4 h-4 mr-1" /> 조회
+                </Button>
+              </div>
+
+              {loadingCerts ? (
+                <p>불러오는 중...</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>일시</TableHead>
+                      <TableHead>수신자</TableHead>
+                      <TableHead>코스</TableHead>
+                      <TableHead>수료증 번호</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead>시도</TableHead>
+                      <TableHead>마지막 오류</TableHead>
+                      <TableHead>작업</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {certLogs.map((log) => {
+                      const p = log.payload || {};
+                      return (
+                        <TableRow key={log.id} data-testid={`row-cert-${log.id}`}>
+                          <TableCell className="text-xs">
+                            {new Date(log.createdAt).toLocaleString("ko-KR")}
+                            {log.sentAt && (
+                              <div className="text-xs text-gray-500">
+                                발송:{" "}
+                                {new Date(log.sentAt).toLocaleString("ko-KR")}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div>{log.recipient}</div>
+                            {p.name && (
+                              <div className="text-xs text-gray-500">{p.name}</div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">
+                              {p.courseTitle || "-"}
+                            </div>
+                            {p.trainerName && (
+                              <div className="text-xs text-gray-500">
+                                트레이너: {p.trainerName}
+                              </div>
+                            )}
+                            {p.completedAt && (
+                              <div className="text-xs text-gray-500">
+                                수료일: {p.completedAt}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs">
+                              {p.certificateNo || "-"}
+                            </code>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={STATUS_COLOR[log.status] || ""}>
+                              {log.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{log.attempts}</TableCell>
+                          <TableCell className="max-w-xs">
+                            {log.lastError ? (
+                              <span className="text-xs text-destructive break-words">
+                                {log.lastError}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {(log.status === "failed" || log.status === "skipped") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => resend(log.id)}
+                                data-testid={`button-resend-cert-${log.id}`}
+                              >
+                                재발송
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {certLogs.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={8}
+                          className="text-center text-gray-500"
+                        >
+                          수료증 이메일 발송 이력이 없습니다
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+              {certLogs.length > 0 && certLogs.length < certTotal && (
+                <div className="flex justify-center mt-4">
+                  <Button
+                    variant="outline"
+                    disabled={loadingCerts}
+                    onClick={() => loadCertLogs({ append: true, offset: certOffset })}
+                    data-testid="button-load-more-certs"
+                  >
+                    더 보기 ({certLogs.length} / {certTotal})
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
