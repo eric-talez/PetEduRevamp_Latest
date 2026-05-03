@@ -5128,6 +5128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: c.content,
         parentCommentId: c.parentCommentId ?? null,
         createdAt: c.createdAt,
+        updatedAt: c.updatedAt ?? null,
         canDelete: c.authorId === currentUserId,
       };
     });
