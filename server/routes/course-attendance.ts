@@ -113,6 +113,49 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+async function notifyCertificateEmailForCourse(
+  userId: number,
+  courseId: number,
+  totalSessions: number,
+  completedSessions: number,
+  completedAt: string | null,
+) {
+  try {
+    const course = findCourse(courseId);
+    if (!course) return;
+    const userList = storage.users as Array<{ id: number; name?: string; email?: string }>;
+    const petList = storage.pets as Array<{ id: number; ownerId: number; name?: string }>;
+    const owner = userList.find((u) => u.id === userId);
+    // 이메일이 storage에 없어도 notifier가 DB users 테이블에서 다시 조회하므로
+    // 여기서는 발송 자체를 막지 않는다.
+    const trainer = course.instructorId
+      ? userList.find((u) => u.id === course.instructorId)
+      : null;
+    const pet = petList.find((p) => p.ownerId === userId);
+    const completedTs = completedAt ? new Date(completedAt).getTime() : Date.now();
+    const certificateNo = `WZ-${courseId}-${userId}-${completedTs.toString().slice(-6)}`;
+    const { triggerCertificateEmail } = await import(
+      "../services/certificate-email-notifier"
+    );
+    await triggerCertificateEmail({
+      userId,
+      userName: owner?.name || "보호자",
+      userEmail: owner?.email,
+      petName: pet?.name || null,
+      courseId,
+      courseTitle: course.title || `코스 #${courseId}`,
+      trainerName: trainer?.name || "담당 트레이너",
+      instituteName: "왕짱스쿨",
+      certificateNo,
+      completedAt,
+      totalSessions,
+      completedSessions,
+    });
+  } catch {
+    /* noop */
+  }
+}
+
 async function notifyReviewRequestForCourse(userId: number, courseId: number) {
   try {
     const course = findCourse(courseId);
@@ -233,6 +276,12 @@ function recomputeProgress(userId: number, courseId: number) {
       updatedAt: now,
     };
     list.push(progress);
+    if (isComplete) {
+      notifyReviewRequestForCourse(userId, courseId).catch(() => {/* noop */});
+      notifyCertificateEmailForCourse(userId, courseId, total, completed, now).catch(
+        () => {/* noop */},
+      );
+    }
   } else {
     progress.totalLessons = total;
     progress.completedLessons = completed;
@@ -243,6 +292,9 @@ function recomputeProgress(userId: number, courseId: number) {
       progress.status = "completed";
       progress.completedAt = now;
       notifyReviewRequestForCourse(userId, courseId).catch(() => {/* noop */});
+      notifyCertificateEmailForCourse(userId, courseId, total, completed, now).catch(
+        () => {/* noop */},
+      );
     } else if (!isComplete) {
       progress.status = "active";
       progress.completedAt = null;

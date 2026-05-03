@@ -257,6 +257,23 @@ const DEFAULT_TEMPLATES: Array<{
     },
   },
   {
+    key: "course_completion_certificate",
+    category: "review_request",
+    name: "수료증 발급 안내",
+    subject: "[TALEZ] {{courseTitle}} 수료를 축하합니다 - 수료증 첨부",
+    bodyHtml:
+      "<h2>{{name}}님, 수료를 축하드립니다 🎉</h2><p><b>{{courseTitle}}</b> 과정을 모두 이수하셨습니다.</p><p>수료증 PDF를 본 메일에 첨부해 드렸습니다. 다운로드하여 보관해 주세요.</p><ul><li>수료증 번호: {{certificateNo}}</li><li>수료일: {{completedAt}}</li><li>담당 트레이너: {{trainerName}}</li></ul><p>앞으로도 {{petName}}와의 멋진 여정을 응원합니다.</p>",
+    description: "코스 수료 확정 시 수료증 PDF 첨부 발송",
+    variables: {
+      name: "보호자 이름",
+      courseTitle: "코스명",
+      certificateNo: "수료증 번호",
+      completedAt: "수료일",
+      trainerName: "트레이너 이름",
+      petName: "반려동물 이름",
+    },
+  },
+  {
     key: "settlement_deadline",
     category: "settlement_deadline",
     name: "정산 마감 안내",
@@ -268,11 +285,48 @@ const DEFAULT_TEMPLATES: Array<{
   },
 ];
 
+export interface EmailAttachment {
+  content: string; // base64
+  filename: string;
+  type: string;
+  disposition?: string;
+}
+
+export type AttachmentBuilder = (
+  vars: Record<string, any>,
+  log: EmailLog,
+) => Promise<EmailAttachment[]>;
+
+const attachmentBuilders = new Map<string, AttachmentBuilder>();
+
+// 첨부파일이 반드시 동봉되어야 하는 템플릿 키 집합.
+// 빌더가 등록되지 않은 상태로는 절대 발송되지 않는다.
+export const REQUIRED_ATTACHMENT_TEMPLATES = new Set<string>([
+  "course_completion_certificate",
+]);
+
+export function registerAttachmentBuilder(
+  templateKey: string,
+  builder: AttachmentBuilder,
+): void {
+  attachmentBuilders.set(templateKey, builder);
+}
+
 let initialized = false;
 let queueTimer: NodeJS.Timeout | null = null;
 
 export async function ensureEmailSystemInitialized(): Promise<void> {
   if (initialized) return;
+  // 첨부파일 빌더가 필요한 알림 모듈을 우선 로드하여
+  // 템플릿 시드 실패와 무관하게 deliver 시점에 빌더가 항상 등록되어 있도록 보장.
+  try {
+    await import("./certificate-email-notifier");
+  } catch (err) {
+    console.warn(
+      "[email] attachment notifier 로드 실패:",
+      (err as Error).message,
+    );
+  }
   try {
     for (const t of DEFAULT_TEMPLATES) {
       const existing = await db
@@ -457,6 +511,35 @@ async function deliver(logId: number): Promise<void> {
     if (template.sendgridTemplateId) {
       msg.templateId = template.sendgridTemplateId;
       msg.dynamicTemplateData = vars;
+    }
+    const builder = attachmentBuilders.get(log.templateKey);
+    if (builder) {
+      const atts = await builder(vars, log);
+      if (atts && atts.length > 0) {
+        msg.attachments = atts.map((a) => ({
+          content: a.content,
+          filename: a.filename,
+          type: a.type,
+          disposition: a.disposition || "attachment",
+        }));
+      }
+    } else if (REQUIRED_ATTACHMENT_TEMPLATES.has(log.templateKey)) {
+      // 첨부 파일이 필수인 템플릿인데 빌더가 등록되지 않은 경우(예: 모듈 로드 실패)
+      // 첨부 없이 발송되는 사고를 막기 위해 명시적으로 실패 처리하여 retry 큐에 남긴다.
+      const errMsg = `필수 첨부 빌더 미등록: ${log.templateKey}`;
+      const attempts = (log.attempts || 0) + 1;
+      const failed = attempts >= MAX_ATTEMPTS;
+      await db
+        .update(emailLogs)
+        .set({
+          status: failed ? "failed" : "queued",
+          attempts,
+          lastError: errMsg,
+          updatedAt: new Date(),
+        })
+        .where(eq(emailLogs.id, logId));
+      logServerError(`[email] 첨부 빌더 미등록으로 발송 보류 (logId=${logId}):`, errMsg);
+      return;
     }
     const [resp] = await sgMail.send(msg);
     const messageId =
