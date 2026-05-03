@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Loader2, Upload, Trash2, Image as ImageIcon, Video as VideoIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Upload, Trash2, Image as ImageIcon, Video as VideoIcon, X, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { secureRequest } from '@/lib/csrf';
 
@@ -69,6 +69,40 @@ export function JournalAttachmentManager({ journalId, canEdit = false }: Props) 
       toast({ title: '업로드 실패', description: err?.message || '오류가 발생했습니다.', variant: 'destructive' });
     },
   });
+
+  const reorderMut = useMutation({
+    mutationFn: async (orderedIds: number[]) => {
+      const res = await secureRequest(`/api/notebook/entries/${journalId}/attachments/reorder`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderedIds }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || '재정렬 실패');
+      return json;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/notebook/entries', journalId, 'attachments'] });
+    },
+    onError: (err: any) => {
+      toast({ title: '순서 변경 실패', description: err?.message || '오류', variant: 'destructive' });
+    },
+  });
+
+  const moveAttachment = (kind: 'image' | 'video', index: number, direction: -1 | 1) => {
+    const list = kind === 'image' ? images : videos;
+    const newIdx = index + direction;
+    if (newIdx < 0 || newIdx >= list.length) return;
+    const swapped = [...list];
+    [swapped[index], swapped[newIdx]] = [swapped[newIdx], swapped[index]];
+    // 전체 첨부 순서: 같은 kind 만 재정렬, 다른 kind 는 원위치 유지
+    const newOrder = attachments.map(a => {
+      if (a.kind !== kind) return a;
+      const idxInKind = list.indexOf(a);
+      return swapped[idxInKind];
+    });
+    reorderMut.mutate(newOrder.map(a => a.id));
+  };
 
   const deleteMut = useMutation({
     mutationFn: async (id: number) => {
@@ -200,17 +234,41 @@ export function JournalAttachmentManager({ journalId, canEdit = false }: Props) 
                     <img src={a.url} alt="알림장 사진" className="w-full h-full object-cover" loading="lazy" />
                   </button>
                   {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm('이 첨부파일을 삭제하시겠습니까?')) deleteMut.mutate(a.id);
-                      }}
-                      className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                      data-testid={`button-delete-attachment-${a.id}`}
-                      aria-label="삭제"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <>
+                      <div className="absolute top-1 left-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => moveAttachment('image', idx, -1)}
+                          disabled={idx === 0 || reorderMut.isPending}
+                          className="p-1 rounded-full bg-black/60 text-white disabled:opacity-30"
+                          aria-label="앞으로"
+                          data-testid={`button-move-up-${a.id}`}
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveAttachment('image', idx, 1)}
+                          disabled={idx === images.length - 1 || reorderMut.isPending}
+                          className="p-1 rounded-full bg-black/60 text-white disabled:opacity-30"
+                          aria-label="뒤로"
+                          data-testid={`button-move-down-${a.id}`}
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('이 첨부파일을 삭제하시겠습니까?')) deleteMut.mutate(a.id);
+                        }}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        data-testid={`button-delete-attachment-${a.id}`}
+                        aria-label="삭제"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
                   )}
                 </div>
               ))}
