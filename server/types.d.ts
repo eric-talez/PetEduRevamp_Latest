@@ -12,6 +12,10 @@ declare module 'express-session' {
       instituteId?: number;
       [key: string]: any;
     };
+    oauthState?: {
+      kakao?: string;
+      naver?: string;
+    };
     socialSignup?: {
       provider: string;
       socialId: string;

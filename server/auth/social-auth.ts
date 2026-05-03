@@ -5,6 +5,7 @@ import { UserRole } from '@shared/schema';
 import { storage } from '../storage';
 import { Express, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
+import { generateOAuthState, verifyOAuthState } from './oauth-state';
 
 /**
  * 현재 환경의 공개 도메인을 반환합니다.
@@ -95,16 +96,25 @@ export function setupSocialAuth(app: Express) {
       )
     );
     
-    // 카카오 로그인 라우트 (동적 콜백 URL 사용)
+    // 카카오 로그인 라우트 (state CSRF 보호 + 동적 콜백 URL 사용)
     app.get('/api/auth/kakao', (req, res, next) => {
       const callbackURL = getDynamicCallbackUrl(req, '/api/auth/kakao/callback');
-      passport.authenticate('kakao', { callbackURL } as any)(req, res, next);
+      const state = generateOAuthState();
+      req.session.oauthState = { ...(req.session.oauthState || {}), kakao: state };
+      req.session.save((err) => {
+        if (err) {
+          console.error('[SocialAuth] kakao state 세션 저장 실패:', err);
+          return res.redirect('/auth?error=session-error');
+        }
+        passport.authenticate('kakao', { callbackURL, state } as any)(req, res, next);
+      });
     });
     
-    // 카카오 로그인 콜백 라우트 (동적 콜백 URL 사용)
+    // 카카오 로그인 콜백 라우트 (state 검증 + 동적 콜백 URL 사용)
     app.get(
       '/api/auth/kakao/callback',
       (req, res, next) => {
+        if (!verifyOAuthState('kakao', req, res)) return;
         const callbackURL = getDynamicCallbackUrl(req, '/api/auth/kakao/callback');
         passport.authenticate('kakao', {
           failureRedirect: '/auth?error=social-login-failed',
@@ -191,16 +201,25 @@ export function setupSocialAuth(app: Express) {
       )
     );
     
-    // 네이버 로그인 라우트 (동적 콜백 URL 사용)
+    // 네이버 로그인 라우트 (state CSRF 보호 + 동적 콜백 URL 사용)
     app.get('/api/auth/naver', (req, res, next) => {
       const callbackURL = getDynamicCallbackUrl(req, '/api/auth/naver/callback');
-      passport.authenticate('naver', { callbackURL } as any)(req, res, next);
+      const state = generateOAuthState();
+      req.session.oauthState = { ...(req.session.oauthState || {}), naver: state };
+      req.session.save((err) => {
+        if (err) {
+          console.error('[SocialAuth] naver state 세션 저장 실패:', err);
+          return res.redirect('/auth?error=session-error');
+        }
+        passport.authenticate('naver', { callbackURL, state } as any)(req, res, next);
+      });
     });
     
-    // 네이버 로그인 콜백 라우트 (동적 콜백 URL 사용)
+    // 네이버 로그인 콜백 라우트 (state 검증 + 동적 콜백 URL 사용)
     app.get(
       '/api/auth/naver/callback',
       (req, res, next) => {
+        if (!verifyOAuthState('naver', req, res)) return;
         const callbackURL = getDynamicCallbackUrl(req, '/api/auth/naver/callback');
         passport.authenticate('naver', {
           failureRedirect: '/auth?error=social-login-failed',
