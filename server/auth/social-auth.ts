@@ -8,12 +8,21 @@ import passport from 'passport';
 import { generateOAuthState, verifyOAuthState } from './oauth-state';
 
 /**
+ * 운영 환경에서 사용해야 하는 공식 콜백 도메인.
+ * 카카오/네이버/구글 콘솔에 등록된 redirect URI와 반드시 일치해야 합니다.
+ */
+const PRODUCTION_CALLBACK_BASE_URL = 'https://hitalez.com';
+
+/**
  * 현재 환경의 공개 도메인을 반환합니다.
- * 우선순위: OAUTH_CALLBACK_BASE_URL > REPLIT_DEV_DOMAIN > REPLIT_DOMAINS(첫 항목)
+ * 우선순위: OAUTH_CALLBACK_BASE_URL > (운영 환경이면) hitalez.com > REPLIT_DEV_DOMAIN > REPLIT_DOMAINS(첫 항목)
  */
 function getPublicBaseUrl(): string | null {
   if (process.env.OAUTH_CALLBACK_BASE_URL) {
     return process.env.OAUTH_CALLBACK_BASE_URL.replace(/\/+$/, '');
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return PRODUCTION_CALLBACK_BASE_URL;
   }
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
@@ -23,6 +32,34 @@ function getPublicBaseUrl(): string | null {
     if (first) return `https://${first}`;
   }
   return null;
+}
+
+/**
+ * 운영 환경에서 OAUTH_CALLBACK_BASE_URL Secret이 설정되어 있는지 점검합니다.
+ * - 미설정 시: 기본값(hitalez.com)을 사용하지만 명확한 경고를 출력합니다.
+ * - 잘못된 도메인(예: replit.app)이 설정된 경우: 경고를 출력합니다.
+ */
+function assertProductionCallbackBaseUrl(): void {
+  if (process.env.NODE_ENV !== 'production') return;
+
+  const configured = process.env.OAUTH_CALLBACK_BASE_URL?.replace(/\/+$/, '');
+  if (!configured) {
+    console.warn(
+      `[SocialAuth] ⚠ 운영 환경에서 OAUTH_CALLBACK_BASE_URL Secret이 설정되지 않았습니다. ` +
+      `기본값 ${PRODUCTION_CALLBACK_BASE_URL} 으로 동작하지만, ` +
+      `Replit Secrets(production scope)에 OAUTH_CALLBACK_BASE_URL=${PRODUCTION_CALLBACK_BASE_URL} 을 명시적으로 설정해 주세요.`
+    );
+    return;
+  }
+
+  if (configured !== PRODUCTION_CALLBACK_BASE_URL) {
+    console.warn(
+      `[SocialAuth] ⚠ OAUTH_CALLBACK_BASE_URL=${configured} 이(가) 운영 도메인 ${PRODUCTION_CALLBACK_BASE_URL} 과(와) 다릅니다. ` +
+      `카카오/네이버/구글 콘솔의 redirect URI 등록 상태를 다시 확인하세요.`
+    );
+  } else {
+    console.log(`[SocialAuth] 운영 콜백 도메인 확인: ${configured}`);
+  }
 }
 
 function buildCallbackUrl(path: string): string {
@@ -54,6 +91,9 @@ function getDynamicCallbackUrl(req: Request, path: string): string {
  * 소셜 로그인 전략 설정
  */
 export function setupSocialAuth(app: Express) {
+  // 운영 환경 콜백 도메인 점검 (Secret 미설정 시 경고)
+  assertProductionCallbackBaseUrl();
+
   // 카카오 로그인 전략 설정
   if (process.env.KAKAO_CLIENT_ID) {
     passport.use(
