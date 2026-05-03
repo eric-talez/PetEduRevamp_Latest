@@ -1511,12 +1511,32 @@ class Storage {
   updatePet(id: number, updates: any) {
     const petIndex = this.pets.findIndex(pet => pet.id === id);
     if (petIndex !== -1) {
-      this.pets[petIndex] = {
-        ...this.pets[petIndex],
+      const prev = this.pets[petIndex];
+      const next = {
+        ...prev,
         ...updates,
         updatedAt: new Date().toISOString()
       };
-      return this.pets[petIndex];
+      this.pets[petIndex] = next;
+
+      // 훈련 완료 시 보호자에게 리뷰 작성 요청 알림 (1회)
+      try {
+        const becameCompleted =
+          (updates.trainingStatus === "completed" && prev.trainingStatus !== "completed") ||
+          (updates.status === "completed" && prev.status !== "completed");
+        if (becameCompleted && next.ownerId && next.assignedTrainerId) {
+          const trainerName = next.assignedTrainerName || `트레이너 #${next.assignedTrainerId}`;
+          this.createNotification?.({
+            userId: next.ownerId,
+            title: "훈련 수업이 완료되었어요!",
+            message: `${trainerName}님의 수업은 어떠셨나요? 소중한 후기를 남겨주세요.`,
+            type: "review_reminder",
+            actionUrl: "/reviews/write",
+          });
+        }
+      } catch { /* noop */ }
+
+      return next;
     }
     return null;
   }
@@ -4895,6 +4915,200 @@ class Storage {
         createdAt: new Date('2025-01-25T09:20:00').toISOString()
       }
     ];
+  }
+
+  // =============================================================================
+  // 트레이너 리뷰 & 평점 (Task #19) — 인메모리 구현
+  // =============================================================================
+  trainerReviews: any[] = [];
+  trainerReviewReplies: any[] = [];
+  trainerReviewReports: any[] = [];
+
+  private nextId(arr: any[]): number {
+    return arr.length ? Math.max(...arr.map((x: any) => x.id || 0)) + 1 : 1;
+  }
+
+  createTrainerReview(data: any, user?: { id: number; name?: string }) {
+    const review = {
+      id: this.nextId(this.trainerReviews),
+      trainerId: Number(data.trainerId),
+      authorId: Number(data.authorId),
+      authorName: user?.name || (this.users.find((u: any) => u.id === Number(data.authorId))?.name) || "보호자",
+      petId: data.petId ?? null,
+      courseId: data.courseId ?? null,
+      lessonRef: data.lessonRef ?? null,
+      rating: Math.max(1, Math.min(5, Number(data.rating))),
+      title: data.title ?? null,
+      content: String(data.content || ""),
+      photos: Array.isArray(data.photos) ? data.photos : [],
+      status: "active",
+      hiddenReason: null,
+      moderatedBy: null,
+      moderatedAt: null,
+      helpfulCount: 0,
+      reportCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.trainerReviews.push(review);
+    return review;
+  }
+
+  getTrainerReviewById(id: number) {
+    return this.trainerReviews.find((r: any) => r.id === id) || null;
+  }
+
+  listTrainerReviews(opts: { trainerId?: number; authorId?: number; includeHidden?: boolean }) {
+    let list = this.trainerReviews.slice();
+    if (!opts.includeHidden) list = list.filter((r: any) => r.status === "active");
+    if (typeof opts.trainerId === "number") list = list.filter((r: any) => r.trainerId === opts.trainerId);
+    if (typeof opts.authorId === "number") list = list.filter((r: any) => r.authorId === opts.authorId);
+    list.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return list.map((r: any) => ({
+      ...r,
+      reply: this.trainerReviewReplies.find((rep: any) => rep.reviewId === r.id) || null,
+    }));
+  }
+
+  getTrainerReviewSummary(trainerId: number) {
+    const reviews = this.trainerReviews.filter((r: any) => r.trainerId === trainerId && r.status === "active");
+    const count = reviews.length;
+    const average = count ? reviews.reduce((s: number, r: any) => s + r.rating, 0) / count : 0;
+    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    reviews.forEach((r: any) => { distribution[r.rating] = (distribution[r.rating] || 0) + 1; });
+    return {
+      trainerId,
+      count,
+      average: Number(average.toFixed(2)),
+      distribution,
+    };
+  }
+
+  getTrainerReviewReply(reviewId: number) {
+    return this.trainerReviewReplies.find((r: any) => r.reviewId === reviewId) || null;
+  }
+
+  createTrainerReviewReply(data: any) {
+    const reply = {
+      id: this.nextId(this.trainerReviewReplies),
+      reviewId: Number(data.reviewId),
+      trainerId: Number(data.trainerId),
+      content: String(data.content || ""),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.trainerReviewReplies.push(reply);
+    return reply;
+  }
+
+  createTrainerReviewReport(data: any) {
+    const report = {
+      id: this.nextId(this.trainerReviewReports),
+      reviewId: Number(data.reviewId),
+      reporterId: Number(data.reporterId),
+      reason: data.reason,
+      description: data.description ?? null,
+      status: "pending",
+      resolvedBy: null,
+      resolvedAt: null,
+      createdAt: new Date().toISOString(),
+    };
+    this.trainerReviewReports.push(report);
+    const review = this.getTrainerReviewById(report.reviewId);
+    if (review) {
+      review.reportCount = (review.reportCount || 0) + 1;
+      review.updatedAt = new Date().toISOString();
+    }
+    return report;
+  }
+
+  adminListTrainerReviews(opts: { status?: string }) {
+    let reviews = this.trainerReviews.slice();
+    if (opts.status && opts.status !== "all") reviews = reviews.filter((r: any) => r.status === opts.status);
+    reviews.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const enriched = reviews.map((r: any) => ({
+      ...r,
+      trainerName: this.users.find((u: any) => u.id === r.trainerId)?.name || `트레이너#${r.trainerId}`,
+      authorName: r.authorName || (this.users.find((u: any) => u.id === r.authorId)?.name) || "보호자",
+      reply: this.trainerReviewReplies.find((rep: any) => rep.reviewId === r.id) || null,
+      reports: this.trainerReviewReports.filter((rep: any) => rep.reviewId === r.id),
+    }));
+    return {
+      reviews: enriched,
+      reports: this.trainerReviewReports.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+      total: enriched.length,
+    };
+  }
+
+  adminModerateTrainerReview(id: number, action: "hide" | "restore" | "delete", reason: string | undefined, moderatorId: number) {
+    const review = this.getTrainerReviewById(id);
+    if (!review) return null;
+    if (action === "hide") {
+      review.status = "hidden";
+      review.hiddenReason = reason || null;
+    } else if (action === "restore") {
+      review.status = "active";
+      review.hiddenReason = null;
+    } else if (action === "delete") {
+      review.status = "deleted";
+    }
+    review.moderatedBy = moderatorId;
+    review.moderatedAt = new Date().toISOString();
+    review.updatedAt = new Date().toISOString();
+    return review;
+  }
+
+  adminUpdateTrainerReviewReport(id: number, status: "reviewed" | "dismissed", resolverId: number) {
+    const report = this.trainerReviewReports.find((r: any) => r.id === id);
+    if (!report) return null;
+    report.status = status;
+    report.resolvedBy = resolverId;
+    report.resolvedAt = new Date().toISOString();
+    return report;
+  }
+
+  // 수업 완료 후 N(=14)일 이내, 아직 리뷰 미작성 항목 추출
+  getEligibleReviewTargets(userId: number) {
+    const now = Date.now();
+    const windowMs = 14 * 24 * 60 * 60 * 1000;
+    const written = new Set(
+      this.trainerReviews
+        .filter((r: any) => r.authorId === userId)
+        .map((r: any) => `${r.trainerId}:${r.lessonRef || ""}`)
+    );
+    const targets: any[] = [];
+
+    (this.pets || [])
+      .filter((p: any) => p.ownerId === userId && p.assignedTrainerId)
+      .forEach((p: any) => {
+        // 완료 상태만 인정
+        const isCompleted =
+          p.trainingStatus === "completed" || p.status === "completed";
+        if (!isCompleted) return;
+
+        // 완료 시각 추출 (trainingEndDate, completedAt, updatedAt 순)
+        const completedAtRaw = p.trainingEndDate || p.completedAt || p.updatedAt;
+        if (!completedAtRaw) return;
+        const completedTs = new Date(completedAtRaw).getTime();
+        if (isNaN(completedTs)) return;
+
+        // 완료 후 N일 이내
+        if (now - completedTs > windowMs || completedTs > now) return;
+
+        const lessonRef = `pet-${p.id}`;
+        const key = `${p.assignedTrainerId}:${lessonRef}`;
+        if (written.has(key)) return;
+
+        targets.push({
+          trainerId: p.assignedTrainerId,
+          trainerName: p.assignedTrainerName,
+          petId: p.id,
+          petName: p.name,
+          lessonRef,
+          completedAt: new Date(completedTs).toISOString(),
+        });
+      });
+    return targets;
   }
 }
 

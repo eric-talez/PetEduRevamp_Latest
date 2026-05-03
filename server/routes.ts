@@ -389,6 +389,7 @@ import { setupCommissionRoutes } from './commission/routes';
 import { registerTrainerSettlementRoutes } from './routes/trainer-settlements';
 // import { setupHealthRoutes } from './routes/health';
 import { registerAnalyticsRoutes } from './routes/analytics';
+import { registerTrainerReviewRoutes } from './routes/trainer-reviews';
 import { setupSocialRoutes } from './routes/social';
 import { registerCourseManagementRoutes } from './routes/course-management';
 import { registerCourseAttendanceRoutes } from './routes/course-attendance';
@@ -9568,6 +9569,9 @@ app.get('/api/search', async (req, res) => {
 
   // 분석 라우트  
   registerAnalyticsRoutes(app);
+
+  // 트레이너 리뷰 & 평점 라우트
+  registerTrainerReviewRoutes(app);
 
   // 소셜/커뮤니티 라우트 (임시 비활성화)
   // setupSocialRoutes(app);

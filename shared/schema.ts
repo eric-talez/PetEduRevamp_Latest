@@ -3368,3 +3368,82 @@ export const trainerSettlementItems = pgTable("trainer_settlement_items", {
 export const insertTrainerSettlementItemSchema = createInsertSchema(trainerSettlementItems).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertTrainerSettlementItem = z.infer<typeof insertTrainerSettlementItemSchema>;
 export type TrainerSettlementItem = typeof trainerSettlementItems.$inferSelect;
+
+// =============================================================================
+// 트레이너 리뷰 & 평점 시스템 (Task #19)
+// =============================================================================
+
+export const trainerReviews = pgTable("trainer_reviews", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainer_id").references(() => users.id).notNull(),
+  authorId: integer("author_id").references(() => users.id).notNull(),
+  petId: integer("pet_id").references(() => pets.id),
+  courseId: integer("course_id").references(() => courses.id),
+  lessonRef: varchar("lesson_ref", { length: 100 }),
+  rating: integer("rating").notNull(),
+  title: varchar("title", { length: 200 }),
+  content: text("content").notNull(),
+  photos: jsonb("photos").$type<string[]>().default([]),
+  status: varchar("status", { length: 20 }).default("active"),
+  hiddenReason: text("hidden_reason"),
+  moderatedBy: integer("moderated_by").references(() => users.id),
+  moderatedAt: timestamp("moderated_at"),
+  helpfulCount: integer("helpful_count").default(0),
+  reportCount: integer("report_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const trainerReviewReplies = pgTable("trainer_review_replies", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").references(() => trainerReviews.id).notNull(),
+  trainerId: integer("trainer_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const trainerReviewReports = pgTable("trainer_review_reports", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").references(() => trainerReviews.id).notNull(),
+  reporterId: integer("reporter_id").references(() => users.id).notNull(),
+  reason: varchar("reason", { length: 50 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 20 }).default("pending"),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTrainerReviewSchema = createInsertSchema(trainerReviews, {
+  rating: z.number().int().min(1).max(5),
+  content: z.string().min(5).max(2000),
+  title: z.string().max(200).optional(),
+  photos: z.array(z.string().url()).max(5).optional(),
+}).omit({
+  id: true,
+  status: true,
+  hiddenReason: true,
+  moderatedBy: true,
+  moderatedAt: true,
+  helpfulCount: true,
+  reportCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrainerReviewReplySchema = createInsertSchema(trainerReviewReplies, {
+  content: z.string().min(2).max(1000),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertTrainerReviewReportSchema = createInsertSchema(trainerReviewReports, {
+  reason: z.enum(["spam", "abuse", "false_info", "privacy", "other"]),
+  description: z.string().max(1000).optional(),
+}).omit({ id: true, status: true, resolvedBy: true, resolvedAt: true, createdAt: true });
+
+export type TrainerReview = typeof trainerReviews.$inferSelect;
+export type InsertTrainerReview = z.infer<typeof insertTrainerReviewSchema>;
+export type TrainerReviewReply = typeof trainerReviewReplies.$inferSelect;
+export type InsertTrainerReviewReply = z.infer<typeof insertTrainerReviewReplySchema>;
+export type TrainerReviewReport = typeof trainerReviewReports.$inferSelect;
+export type InsertTrainerReviewReport = z.infer<typeof insertTrainerReviewReportSchema>;

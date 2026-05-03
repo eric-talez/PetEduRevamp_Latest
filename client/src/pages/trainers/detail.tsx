@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, MapPin, Phone, Mail, Calendar, Award, Users, BookOpen } from 'lucide-react';
+import { PublicTrainerReviews } from '@/components/PublicTrainerReviews';
 
 interface TrainerDetailProps {
   trainerId?: string;
@@ -295,9 +296,7 @@ export default function TrainerDetail({ trainerId: propTrainerId }: TrainerDetai
               <CardTitle>수강생 리뷰</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                리뷰 기능은 준비 중입니다.
-              </div>
+              <PublicTrainerReviews trainerId={Number(displayData.id ?? trainer?.id ?? propTrainerId)} />
             </CardContent>
           </Card>
         </TabsContent>
