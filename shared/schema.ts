@@ -2678,6 +2678,28 @@ export const streamViewers = pgTable("stream_viewers", {
   isActive: boolean("is_active").default(true),
 });
 
+// 화상수업(라이브 스트리밍) 출석 기록 테이블 - 예약 기준 자동 출석 집계
+export const liveSessionAttendance = pgTable("live_session_attendance", {
+  id: serial("id").primaryKey(),
+  streamId: integer("stream_id").notNull().references(() => liveStreams.id),
+  reservationId: integer("reservation_id").references(() => reservations.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  joinedAt: timestamp("joined_at").defaultNow(),
+  leftAt: timestamp("left_at"),
+  totalSeconds: integer("total_seconds").default(0),
+  status: varchar("status", { length: 20 }).default("joined"), // joined, left, ended
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertLiveSessionAttendanceSchema = createInsertSchema(liveSessionAttendance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertLiveSessionAttendance = z.infer<typeof insertLiveSessionAttendanceSchema>;
+export type LiveSessionAttendance = typeof liveSessionAttendance.$inferSelect;
+
 // 라이브 스트리밍 채팅 메시지 테이블
 export const streamChatMessages = pgTable("stream_chat_messages", {
   id: serial("id").primaryKey(),

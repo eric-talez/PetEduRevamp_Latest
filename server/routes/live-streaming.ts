@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { liveStreams, streamViewers, streamChatMessages, users, insertLiveStreamSchema, insertStreamChatSchema } from '../../shared/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { liveStreams, streamViewers, streamChatMessages, users, insertLiveStreamSchema, insertStreamChatSchema, liveSessionAttendance, reservations, type LiveSessionAttendance } from '../../shared/schema';
+import { eq, desc, and, isNull } from 'drizzle-orm';
 import { csrfProtection } from '../middleware/csrf';
 import { 
   ApiErrorCode,
@@ -287,6 +287,33 @@ router.patch('/streams/:id/end', csrfProtection, async (req, res) => {
         eq(streamViewers.streamId, streamId),
         eq(streamViewers.isActive, true)
       ));
+
+    // 화상수업 출석 마감: 아직 leftAt이 없는 row를 마감하고 totalSeconds 계산
+    let attendeeCount = 0;
+    try {
+      const openAttendances = await db.select().from(liveSessionAttendance).where(and(
+        eq(liveSessionAttendance.streamId, streamId),
+        isNull(liveSessionAttendance.leftAt),
+      ));
+      for (const att of openAttendances) {
+        const joinedAt = att.joinedAt ? new Date(att.joinedAt) : endTime;
+        const seconds = Math.max(0, Math.floor((endTime.getTime() - joinedAt.getTime()) / 1000));
+        await db.update(liveSessionAttendance)
+          .set({
+            leftAt: endTime,
+            totalSeconds: (att.totalSeconds || 0) + seconds,
+            status: 'ended',
+            updatedAt: endTime,
+          })
+          .where(eq(liveSessionAttendance.id, att.id));
+      }
+      const allAttendances = await db.select({ userId: liveSessionAttendance.userId })
+        .from(liveSessionAttendance)
+        .where(eq(liveSessionAttendance.streamId, streamId));
+      attendeeCount = new Set(allAttendances.map((a) => a.userId)).size;
+    } catch (attErr) {
+      logServerError('[Live Streaming] Attendance close failed:', attErr, req);
+    }
     
     const [updatedStream] = await db.update(liveStreams)
       .set({
@@ -310,9 +337,9 @@ router.patch('/streams/:id/end', csrfProtection, async (req, res) => {
         userId: stream.hostId,
         type: 'training',
         title: '수업이 종료되었습니다',
-        message: `"${stream.title}" 수업이 종료되었어요. 알림장을 작성해 보호자에게 공유해보세요.`,
+        message: `"${stream.title}" 수업이 종료되었어요. 참여자 ${attendeeCount}명. 알림장을 작성해 보호자에게 공유해보세요.`,
         actionUrl: `/trainer/notebook?streamId=${streamId}`,
-        data: { streamId, kind: 'stream_ended_host' },
+        data: { streamId, kind: 'stream_ended_host', attendeeCount },
       });
 
       // 2) 로그인 시청자에게 리뷰 요청 (중복 userId 제거)
@@ -373,6 +400,7 @@ router.delete('/streams/:id', csrfProtection, async (req, res) => {
       return res.error(ApiErrorCode.INSUFFICIENT_PERMISSIONS, 'Only the host can delete this stream');
     }
     
+    await db.delete(liveSessionAttendance).where(eq(liveSessionAttendance.streamId, streamId));
     await db.delete(streamViewers).where(eq(streamViewers.streamId, streamId));
     await db.delete(streamChatMessages).where(eq(streamChatMessages.streamId, streamId));
     await db.delete(liveStreams).where(eq(liveStreams.id, streamId));
@@ -391,6 +419,10 @@ router.post('/streams/:id/join', csrfProtection, async (req, res) => {
     const streamId = parseInt(req.params.id);
     const userId = req.session?.user?.id;
     const sessionId = req.body.sessionId || crypto.randomBytes(8).toString('hex');
+    const reservationIdRaw = req.body.reservationId;
+    const reservationId = typeof reservationIdRaw === 'number'
+      ? reservationIdRaw
+      : (reservationIdRaw ? parseInt(reservationIdRaw, 10) : undefined);
     
     if (isNaN(streamId)) {
       return res.error(ApiErrorCode.VALIDATION_ERROR, 'Invalid stream ID');
@@ -412,6 +444,42 @@ router.post('/streams/:id/join', csrfProtection, async (req, res) => {
       sessionId,
       isActive: true,
     }).returning();
+
+    // 화상수업 출석 자동 기록 (로그인 사용자 한정)
+    let attendance: LiveSessionAttendance | null = null;
+    if (userId) {
+      try {
+        const normalizedReservationId = reservationId && !isNaN(reservationId) ? reservationId : null;
+
+        // 예약 단위로 활성 row를 분리 관리: (streamId, userId, reservationId, leftAt is null)
+        const reservationCond = normalizedReservationId === null
+          ? isNull(liveSessionAttendance.reservationId)
+          : eq(liveSessionAttendance.reservationId, normalizedReservationId);
+
+        const existingRows = await db.select().from(liveSessionAttendance).where(and(
+          eq(liveSessionAttendance.streamId, streamId),
+          eq(liveSessionAttendance.userId, userId),
+          reservationCond,
+          isNull(liveSessionAttendance.leftAt),
+        ));
+        const existing = existingRows[0];
+
+        if (existing) {
+          attendance = existing;
+        } else {
+          const [created] = await db.insert(liveSessionAttendance).values({
+            streamId,
+            userId,
+            reservationId: normalizedReservationId,
+            status: 'joined',
+            totalSeconds: 0,
+          }).returning();
+          attendance = created;
+        }
+      } catch (attErr) {
+        logServerError('[Live Streaming] Attendance create failed:', attErr, req);
+      }
+    }
     
     const newViewerCount = (stream.currentViewers || 0) + 1;
     const peakViewers = Math.max(stream.peakViewers || 0, newViewerCount);
@@ -426,10 +494,11 @@ router.post('/streams/:id/join', csrfProtection, async (req, res) => {
       })
       .where(eq(liveStreams.id, streamId));
     
-    console.log('[Live Streaming] Viewer joined:', { streamId, viewerId: viewer.id });
+    console.log('[Live Streaming] Viewer joined:', { streamId, viewerId: viewer.id, attendanceId: attendance?.id });
     
     return res.success({ 
       viewer,
+      attendance,
       stream: {
         ...stream,
         currentViewers: newViewerCount,
@@ -483,6 +552,31 @@ router.post('/streams/:id/leave', csrfProtection, async (req, res) => {
           watchTime,
         })
         .where(eq(streamViewers.id, viewer.id));
+
+      // 출석 row 마감
+      if (viewer.userId) {
+        try {
+          const openRows = await db.select().from(liveSessionAttendance).where(and(
+            eq(liveSessionAttendance.streamId, streamId),
+            eq(liveSessionAttendance.userId, viewer.userId),
+            isNull(liveSessionAttendance.leftAt),
+          ));
+          for (const att of openRows) {
+            const joinedAt = att.joinedAt ? new Date(att.joinedAt) : leftAt;
+            const seconds = Math.max(0, Math.floor((leftAt.getTime() - joinedAt.getTime()) / 1000));
+            await db.update(liveSessionAttendance)
+              .set({
+                leftAt,
+                totalSeconds: (att.totalSeconds || 0) + seconds,
+                status: 'left',
+                updatedAt: leftAt,
+              })
+              .where(eq(liveSessionAttendance.id, att.id));
+          }
+        } catch (attErr) {
+          logServerError('[Live Streaming] Attendance leave update failed:', attErr, req);
+        }
+      }
       
       const [stream] = await db.select().from(liveStreams).where(eq(liveStreams.id, streamId));
       if (stream && stream.currentViewers && stream.currentViewers > 0) {
@@ -591,6 +685,91 @@ router.post('/streams/:id/chat', csrfProtection, async (req, res) => {
   } catch (error) {
     logServerError('[Live Streaming] Error sending chat:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to send message');
+  }
+});
+
+// 화상수업 출석자 조회 (알림장 작성 화면 자동 표시) - 인증/권한 필요
+type AttendeeRow = {
+  id: number;
+  streamId: number;
+  reservationId: number | null;
+  userId: number;
+  joinedAt: Date | null;
+  leftAt: Date | null;
+  totalSeconds: number | null;
+  status: string | null;
+  userName: string | null;
+  userAvatar: string | null;
+};
+
+router.get('/streams/:id/attendees', async (req, res) => {
+  try {
+    const userId = req.session?.user?.id;
+    const userRole = req.session?.user?.role;
+    if (!userId) {
+      return res.error(ApiErrorCode.AUTHENTICATION_REQUIRED, 'Please log in');
+    }
+
+    const streamId = parseInt(req.params.id);
+    if (isNaN(streamId)) {
+      return res.error(ApiErrorCode.VALIDATION_ERROR, 'Invalid stream ID');
+    }
+
+    const [stream] = await db.select().from(liveStreams).where(eq(liveStreams.id, streamId));
+    if (!stream) {
+      return res.error(ApiErrorCode.RESOURCE_NOT_FOUND, 'Stream not found');
+    }
+
+    // 권한: 호스트(훈련사), 관리자, 또는 해당 수업 출석자 본인
+    const isAdmin = userRole === 'admin';
+    const isHost = stream.hostId === userId;
+    let isParticipant = false;
+    if (!isHost && !isAdmin) {
+      const ownRows = await db.select({ id: liveSessionAttendance.id })
+        .from(liveSessionAttendance)
+        .where(and(
+          eq(liveSessionAttendance.streamId, streamId),
+          eq(liveSessionAttendance.userId, userId),
+        ));
+      isParticipant = ownRows.length > 0;
+    }
+    if (!isHost && !isAdmin && !isParticipant) {
+      return res.error(ApiErrorCode.INSUFFICIENT_PERMISSIONS, 'Not allowed to view attendees');
+    }
+
+    const rows: AttendeeRow[] = await db.select({
+      id: liveSessionAttendance.id,
+      streamId: liveSessionAttendance.streamId,
+      reservationId: liveSessionAttendance.reservationId,
+      userId: liveSessionAttendance.userId,
+      joinedAt: liveSessionAttendance.joinedAt,
+      leftAt: liveSessionAttendance.leftAt,
+      totalSeconds: liveSessionAttendance.totalSeconds,
+      status: liveSessionAttendance.status,
+      userName: users.name,
+      userAvatar: users.avatar,
+    })
+      .from(liveSessionAttendance)
+      .leftJoin(users, eq(liveSessionAttendance.userId, users.id))
+      .where(eq(liveSessionAttendance.streamId, streamId))
+      .orderBy(desc(liveSessionAttendance.joinedAt));
+
+    // 사용자별로 합계 (여러 번 join/leave 가능)
+    const byUser = new Map<number, AttendeeRow>();
+    for (const r of rows) {
+      const existing = byUser.get(r.userId);
+      if (existing) {
+        existing.totalSeconds = (existing.totalSeconds || 0) + (r.totalSeconds || 0);
+        if (!existing.leftAt && r.leftAt) existing.leftAt = r.leftAt;
+      } else {
+        byUser.set(r.userId, { ...r });
+      }
+    }
+
+    return res.success({ attendees: Array.from(byUser.values()), total: byUser.size });
+  } catch (error) {
+    logServerError('[Live Streaming] Error fetching attendees:', error, req);
+    return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to fetch attendees');
   }
 });
 

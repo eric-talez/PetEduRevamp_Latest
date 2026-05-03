@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearch } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,8 @@ import {
   Brain,
   Sparkles,
   Activity,
-  Bot
+  Bot,
+  Users
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -110,6 +112,46 @@ export default function TrainerNotebookPage() {
   const [isCreateJournalOpen, setIsCreateJournalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'activities' | 'media' | 'ai'>('basic');
+  const search = useSearch();
+  const streamId = useMemo(() => {
+    const params = new URLSearchParams(search);
+    const v = params.get('streamId');
+    return v ? parseInt(v, 10) : null;
+  }, [search]);
+
+  useEffect(() => {
+    if (streamId && userRole !== 'institute-admin') {
+      setIsCreateJournalOpen(true);
+    }
+  }, [streamId, userRole]);
+
+  type StreamAttendee = {
+    id: number;
+    streamId: number;
+    reservationId: number | null;
+    userId: number;
+    joinedAt: string | null;
+    leftAt: string | null;
+    totalSeconds: number | null;
+    status: string | null;
+    userName: string | null;
+    userAvatar: string | null;
+  };
+
+  const { data: streamAttendees } = useQuery<{ attendees: StreamAttendee[]; total: number }>({
+    queryKey: ['/api/live-streaming/streams', streamId, 'attendees'],
+    queryFn: async () => {
+      const res = await fetch(`/api/live-streaming/streams/${streamId}/attendees`, { credentials: 'include' });
+      if (!res.ok) throw new Error('출석자 조회 실패');
+      const json = await res.json();
+      return {
+        attendees: (json.data?.attendees || json.attendees || []) as StreamAttendee[],
+        total: json.data?.total ?? json.total ?? 0,
+      };
+    },
+    enabled: !!streamId && isAuthenticated,
+  });
+
   const [notebookForm, setNotebookForm] = useState({
     title: '',
     content: '',
@@ -543,6 +585,42 @@ export default function TrainerNotebookPage() {
                 {/* Basic Information Tab */}
                 {activeTab === 'basic' && (
                   <div className="space-y-4">
+                    {streamId && (
+                      <div className="border border-blue-200 bg-blue-50 rounded-lg p-4" data-testid="stream-attendees-block">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Users className="h-4 w-4 text-blue-700" />
+                          <h3 className="text-sm font-semibold text-blue-900">
+                            화상수업 참여자 ({streamAttendees?.total ?? 0}명)
+                          </h3>
+                          <Badge variant="secondary">스트림 #{streamId}</Badge>
+                        </div>
+                        {(!streamAttendees || streamAttendees.attendees.length === 0) ? (
+                          <p className="text-sm text-gray-600">출석 기록된 참여자가 없습니다.</p>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {streamAttendees.attendees.map((a) => (
+                              <div
+                                key={a.id}
+                                className="flex items-center gap-2 bg-white rounded border border-blue-100 px-3 py-2"
+                                data-testid={`attendee-${a.userId}`}
+                              >
+                                <Avatar className="h-7 w-7">
+                                  <AvatarImage src={a.userAvatar || undefined} />
+                                  <AvatarFallback>{(a.userName || '?').slice(0, 1)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium truncate">{a.userName || `사용자 ${a.userId}`}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {a.totalSeconds ? `${Math.round(a.totalSeconds / 60)}분 참여` : '참여 중'}
+                                    {a.reservationId ? ` · 예약 #${a.reservationId}` : ''}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="student">수강생 선택</Label>
