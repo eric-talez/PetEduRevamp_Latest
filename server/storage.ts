@@ -15,6 +15,7 @@ import {
   orders as ordersTable,
   courses as coursesTable,
   notifications as notificationsTable,
+  notificationPreferences as notificationPreferencesTable,
   coursePurchases as coursePurchasesTable,
   reservations as reservationsTable,
   courseProgress as courseProgressTable,
@@ -1569,141 +1570,223 @@ class Storage {
   }
 
   // 알림 관련 메서드들
-  getNotifications() {
-    return this.notifications || [];
+  private deriveNotificationCategory(type: string): string {
+    if (type === "message") return "message";
+    if (["reservation", "course", "training"].includes(type)) return "reservation";
+    if (type === "payment") return "payment";
+    return "system";
   }
 
-  getNotificationById(id: number) {
-    return this.notifications?.find(notification => notification.id === id) || null;
+  // 알림 CRUD (DB-backed, source-of-truth)
+  async getNotifications() {
+    return await db.select().from(notificationsTable).orderBy(desc(notificationsTable.createdAt));
   }
 
-  getNotificationsByUserId(userId: number, query: any = {}) {
-    if (!this.notifications) return { notifications: [], total: 0, hasMore: false };
+  async getNotificationById(id: number) {
+    const [row] = await db.select().from(notificationsTable).where(eq(notificationsTable.id, id));
+    return row || null;
+  }
 
-    let filteredNotifications = this.notifications.filter(notification => notification.userId === userId);
+  async getNotificationsByUserId(userId: number, query: any = {}) {
+    const conds = [eq(notificationsTable.userId, userId)];
+    if (query.type) conds.push(eq(notificationsTable.type, query.type));
+    if (query.category) conds.push(eq(notificationsTable.category, query.category));
+    if (query.isRead !== undefined) conds.push(eq(notificationsTable.isRead, query.isRead));
 
-    // 타입 필터링
-    if (query.type) {
-      filteredNotifications = filteredNotifications.filter(n => n.type === query.type);
-    }
+    const where = conds.length > 1 ? and(...conds) : conds[0];
 
-    // 읽음 상태 필터링
-    if (query.isRead !== undefined) {
-      filteredNotifications = filteredNotifications.filter(n => n.isRead === query.isRead);
-    }
-
-    // 정렬
-    const sortBy = query.sortBy || 'createdAt';
-    const sortOrder = query.sortOrder || 'desc';
-    filteredNotifications.sort((a, b) => {
-      const aValue = a[sortBy];
-      const bValue = b[sortBy];
-
-      if (sortOrder === 'desc') {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      } else {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      }
-    });
-
-    // 페이지네이션
     const page = query.page || 1;
     const limit = query.limit || 10;
-    const offset = (page - 1) * limit;
-    const total = filteredNotifications.length;
-    const paginatedNotifications = filteredNotifications.slice(offset, offset + limit);
-    const hasMore = offset + limit < total;
+    const offsetVal = (page - 1) * limit;
 
+    // SQL 레벨에서 페이지네이션 + 별도 count 쿼리 (대규모 데이터에서도 효율적)
+    const [paginated, countRows] = await Promise.all([
+      db
+        .select()
+        .from(notificationsTable)
+        .where(where)
+        .orderBy(desc(notificationsTable.createdAt))
+        .limit(limit)
+        .offset(offsetVal),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(notificationsTable)
+        .where(where),
+    ]);
+    const total = countRows[0]?.count ?? 0;
     return {
-      notifications: paginatedNotifications,
+      notifications: paginated,
       total,
       page,
       limit,
-      hasMore
+      hasMore: offsetVal + limit < total,
     };
   }
 
-  createNotification(notificationData: any) {
-    if (!this.notifications) {
-      this.notifications = [];
-    }
-
-    const newNotification = {
-      id: this.notifications.length ? Math.max(...this.notifications.map(n => n.id || 0)) + 1 : 1,
-      ...notificationData,
-      createdAt: new Date().toISOString()
-    };
-
-    this.notifications.push(newNotification);
-    return newNotification;
+  async createNotification(notificationData: any) {
+    const category = notificationData.category || this.deriveNotificationCategory(notificationData.type);
+    const [created] = await db
+      .insert(notificationsTable)
+      .values({
+        userId: notificationData.userId,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
+        category,
+        isRead: notificationData.isRead ?? false,
+        actionUrl: notificationData.actionUrl ?? null,
+        metadata: notificationData.metadata ?? null,
+      })
+      .returning();
+    return created;
   }
 
-  updateNotification(id: number, updates: any) {
-    if (!this.notifications) return null;
-
-    const notificationIndex = this.notifications.findIndex(notification => notification.id === id);
-    if (notificationIndex !== -1) {
-      this.notifications[notificationIndex] = {
-        ...this.notifications[notificationIndex],
-        ...updates,
-        updatedAt: new Date().toISOString()
+  // 알림 수신 설정 메서드들 (DB-backed, errors propagate to caller)
+  async getNotificationPreferences(userId: number): Promise<Array<{
+    userId: number;
+    category: string;
+    inAppEnabled: boolean;
+    pushEnabled: boolean;
+  }>> {
+    const categories = ["message", "reservation", "payment", "system"];
+    const rows = await db
+      .select()
+      .from(notificationPreferencesTable)
+      .where(eq(notificationPreferencesTable.userId, userId));
+    return categories.map(category => {
+      const existing = rows.find(r => r.category === category);
+      return {
+        userId,
+        category,
+        inAppEnabled: existing?.inAppEnabled ?? true,
+        pushEnabled: existing?.pushEnabled ?? true,
       };
-      return this.notifications[notificationIndex];
-    }
-    return null;
+    });
   }
 
-  deleteNotification(id: number) {
-    if (!this.notifications) return false;
-
-    const notificationIndex = this.notifications.findIndex(notification => notification.id === id);
-    if (notificationIndex !== -1) {
-      this.notifications.splice(notificationIndex, 1);
-      return true;
+  async upsertNotificationPreference(
+    userId: number,
+    prefs: { category: string; inAppEnabled: boolean; pushEnabled: boolean }
+  ): Promise<{ userId: number; category: string; inAppEnabled: boolean; pushEnabled: boolean }> {
+    const existing = await db
+      .select()
+      .from(notificationPreferencesTable)
+      .where(and(
+        eq(notificationPreferencesTable.userId, userId),
+        eq(notificationPreferencesTable.category, prefs.category),
+      ));
+    if (existing.length > 0) {
+      const [updated] = await db
+        .update(notificationPreferencesTable)
+        .set({
+          inAppEnabled: prefs.inAppEnabled,
+          pushEnabled: prefs.pushEnabled,
+          updatedAt: new Date(),
+        })
+        .where(eq(notificationPreferencesTable.id, existing[0].id))
+        .returning();
+      return {
+        userId: updated.userId,
+        category: updated.category,
+        inAppEnabled: updated.inAppEnabled ?? true,
+        pushEnabled: updated.pushEnabled ?? true,
+      };
     }
-    return false;
+    const [created] = await db
+      .insert(notificationPreferencesTable)
+      .values({
+        userId,
+        category: prefs.category,
+        inAppEnabled: prefs.inAppEnabled,
+        pushEnabled: prefs.pushEnabled,
+      })
+      .returning();
+    return {
+      userId: created.userId,
+      category: created.category,
+      inAppEnabled: created.inAppEnabled ?? true,
+      pushEnabled: created.pushEnabled ?? true,
+    };
   }
 
-  markNotificationAsRead(id: number) {
+  async isNotificationChannelEnabled(
+    userId: number,
+    category: string,
+    channel: 'inApp' | 'push'
+  ): Promise<boolean> {
+    const [pref] = await db
+      .select()
+      .from(notificationPreferencesTable)
+      .where(and(
+        eq(notificationPreferencesTable.userId, userId),
+        eq(notificationPreferencesTable.category, category),
+      ));
+    if (!pref) return true;
+    return channel === 'inApp' ? pref.inAppEnabled !== false : pref.pushEnabled !== false;
+  }
+
+  async updateNotification(id: number, updates: any) {
+    const allowed: any = {};
+    if (updates.isRead !== undefined) allowed.isRead = updates.isRead;
+    if (updates.title !== undefined) allowed.title = updates.title;
+    if (updates.message !== undefined) allowed.message = updates.message;
+    if (updates.actionUrl !== undefined) allowed.actionUrl = updates.actionUrl;
+    if (updates.metadata !== undefined) allowed.metadata = updates.metadata;
+    if (updates.category !== undefined) allowed.category = updates.category;
+    const [updated] = await db
+      .update(notificationsTable)
+      .set(allowed)
+      .where(eq(notificationsTable.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async deleteNotification(id: number) {
+    const result = await db
+      .delete(notificationsTable)
+      .where(eq(notificationsTable.id, id))
+      .returning({ id: notificationsTable.id });
+    return result.length > 0;
+  }
+
+  async markNotificationAsRead(id: number) {
     return this.updateNotification(id, { isRead: true });
   }
 
-  markAllNotificationsAsRead(userId: number) {
-    if (!this.notifications) return 0;
-
-    let markedCount = 0;
-    this.notifications.forEach(notification => {
-      if (notification.userId === userId && !notification.isRead) {
-        notification.isRead = true;
-        notification.updatedAt = new Date().toISOString();
-        markedCount++;
-      }
-    });
-    return markedCount;
+  async markAllNotificationsAsRead(userId: number) {
+    const result = await db
+      .update(notificationsTable)
+      .set({ isRead: true })
+      .where(and(
+        eq(notificationsTable.userId, userId),
+        eq(notificationsTable.isRead, false),
+      ))
+      .returning({ id: notificationsTable.id });
+    return result.length;
   }
 
-  getUnreadNotificationCount(userId: number) {
-    if (!this.notifications) return 0;
-
-    return this.notifications.filter(notification =>
-      notification.userId === userId && !notification.isRead
-    ).length;
+  async getUnreadNotificationCount(userId: number) {
+    const rows = await db
+      .select({ id: notificationsTable.id })
+      .from(notificationsTable)
+      .where(and(
+        eq(notificationsTable.userId, userId),
+        eq(notificationsTable.isRead, false),
+      ));
+    return rows.length;
   }
 
-  bulkUpdateNotifications(notificationIds: number[], updates: any) {
-    if (!this.notifications || !notificationIds.length) return [];
-
-    const updatedNotifications: any[] = [];
-    const updateTime = new Date().toISOString();
-
-    this.notifications.forEach(notification => {
-      if (notificationIds.includes(notification.id)) {
-        Object.assign(notification, updates, { updatedAt: updateTime });
-        updatedNotifications.push(notification);
-      }
-    });
-
-    return updatedNotifications;
+  async bulkUpdateNotifications(notificationIds: number[], updates: any) {
+    if (!notificationIds.length) return [];
+    const allowed: any = {};
+    if (updates.isRead !== undefined) allowed.isRead = updates.isRead;
+    if (updates.category !== undefined) allowed.category = updates.category;
+    const updated = await db
+      .update(notificationsTable)
+      .set(allowed)
+      .where(sql`${notificationsTable.id} = ANY(${notificationIds})`)
+      .returning();
+    return updated;
   }
 
   // 통계 관련 메서드들

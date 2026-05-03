@@ -524,6 +524,7 @@ export const notifications = pgTable("notifications", {
   title: varchar("title", { length: 200 }).notNull(),
   message: text("message").notNull(),
   type: varchar("type", { length: 50 }).notNull(),
+  category: varchar("category", { length: 30 }),
   isRead: boolean("is_read").default(false),
   actionUrl: text("action_url"),
   metadata: jsonb("metadata"),
@@ -533,6 +534,16 @@ export const notifications = pgTable("notifications", {
   byIsRead: index("idx_notifications_is_read").on(t.isRead),
   byType: index("idx_notifications_type").on(t.type),
 }));
+
+// 사용자별 알림 카테고리 수신 설정 테이블
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  category: varchar("category", { length: 30 }).notNull(),
+  inAppEnabled: boolean("in_app_enabled").default(true),
+  pushEnabled: boolean("push_enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // FCM 기기 토큰 테이블
 export const fcmTokens = pgTable("fcm_tokens", {
@@ -1994,21 +2005,44 @@ export const createNotificationSchema = z.object({
   userId: z.number().int().positive("올바른 사용자 ID가 필요합니다"),
   title: z.string().min(1, "제목은 필수입니다").max(200, "제목은 200자를 초과할 수 없습니다"),
   message: z.string().min(1, "메시지는 필수입니다").max(1000, "메시지는 1000자를 초과할 수 없습니다"),
-  type: z.enum(["info", "success", "warning", "error", "course", "payment", "training", "reservation", "system", "marketing"], {
+  type: z.enum(["info", "success", "warning", "error", "course", "payment", "training", "reservation", "system", "marketing", "message"], {
     errorMap: () => ({ message: "올바른 알림 타입을 선택해주세요" })
   }),
+  category: z.enum(["message", "reservation", "payment", "system"]).optional(),
   isRead: z.boolean().default(false),
   actionUrl: z.string().url("올바른 URL 형식이 아닙니다").nullable().optional(),
   metadata: z.record(z.any()).nullable().optional(),
 });
+
+// 알림 카테고리 정의 (UI용)
+export const NOTIFICATION_CATEGORIES = ["message", "reservation", "payment", "system"] as const;
+export type NotificationCategory = typeof NOTIFICATION_CATEGORIES[number];
+
+// 알림 타입 → 카테고리 매핑
+export function getNotificationCategory(type: string): NotificationCategory {
+  if (type === "message") return "message";
+  if (["reservation", "course", "training"].includes(type)) return "reservation";
+  if (type === "payment") return "payment";
+  return "system";
+}
+
+// 알림 수신 설정 스키마
+export const notificationPreferenceSchema = z.object({
+  category: z.enum(NOTIFICATION_CATEGORIES),
+  inAppEnabled: z.boolean(),
+  pushEnabled: z.boolean(),
+});
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type UpsertNotificationPreference = z.infer<typeof notificationPreferenceSchema>;
 
 export const selectNotificationSchema = createSelectSchema(notifications);
 
 // 알림 조회 쿼리 스키마
 export const notificationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(10),
-  type: z.enum(["info", "success", "warning", "error", "course", "payment", "training", "reservation", "system", "marketing"]).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  type: z.enum(["info", "success", "warning", "error", "course", "payment", "training", "reservation", "system", "marketing", "message"]).optional(),
+  category: z.enum(["message", "reservation", "payment", "system"]).optional(),
   isRead: z.coerce.boolean().optional(),
   sortBy: z.enum(["createdAt", "title", "type"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),

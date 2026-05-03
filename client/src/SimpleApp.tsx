@@ -688,10 +688,15 @@ function AuthenticatedRoutes() {
         </Route>
         <Route path="/notifications">
           {() => {
-            console.log("알림 페이지 리디렉션: /notifications → /alerts");
-            // 이전 코드와의 호환성을 위해 /alerts로 리디렉션
-            window.location.href = '/alerts';
-            return null;
+            const NotificationCenterPage = lazy(() => import('./pages/notifications'));
+            return (
+              <Suspense fallback={<div className="p-8 flex justify-center items-center">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                <SimpleLoadingInline size="sm" />
+              </div>}>
+                <ProtectedRoute component={NotificationCenterPage} />
+              </Suspense>
+            );
           }}
         </Route>
         <Route path="/alerts">

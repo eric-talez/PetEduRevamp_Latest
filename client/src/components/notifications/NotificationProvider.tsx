@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { 
   requestFCMToken, 
@@ -38,25 +38,23 @@ export function NotificationProvider({ children, userId }: NotificationProviderP
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
-  const [unreadCount, setUnreadCount] = useState(0);
   const [fcmEnabled, setFcmEnabled] = useState(false);
   const fcmTokenRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // 읽지 않은 알림 수 조회
-  const fetchUnreadCount = async () => {
+  // 읽지 않은 알림 수: React Query 단일 source-of-truth (목록 mutation 후 invalidate 시 자동 재조회)
+  const { data: unreadCountData } = useQuery<{ unreadCount?: number; count?: number }>({
+    queryKey: ['/api/notifications/unread-count'],
+    enabled: !!userId,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
+  const unreadCount = unreadCountData?.unreadCount ?? unreadCountData?.count ?? 0;
+
+  const refreshUnreadCount = () => {
     if (!userId) return;
-    
-    try {
-      const response = await fetch('/api/notifications/unread-count');
-      if (response.ok) {
-        const data = await response.json();
-        setUnreadCount(data.count);
-      }
-    } catch (error) {
-      console.error('[Notification] 읽지 않은 알림 수 조회 실패:', error);
-    }
+    queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread-count'] });
   };
 
   // 테스트 알림 전송
@@ -137,9 +135,6 @@ export function NotificationProvider({ children, userId }: NotificationProviderP
       return;
     }
 
-    // 초기 읽지 않은 알림 수 조회
-    fetchUnreadCount();
-
     // WebSocket 연결 설정
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -169,29 +164,17 @@ export function NotificationProvider({ children, userId }: NotificationProviderP
         if (data.type === 'auth_success') {
           console.log('[WebSocket] 인증 완료');
         } else if (data.type === 'notification') {
-          // 새 알림 수신
           const notification = data.data;
-          
-          // 읽지 않은 알림 수 업데이트
-          setUnreadCount(prev => prev + 1);
-          
-          // 알림 목록 캐시 무효화
           queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-          
-          // 토스트 알림 표시
+          refreshUnreadCount();
           toast({
             title: notification.title,
             description: notification.message,
             duration: 5000,
           });
-        } else if (data.type === 'notification_read') {
-          // 알림 읽음 처리
-          setUnreadCount(prev => Math.max(0, prev - 1));
+        } else if (data.type === 'notification_read' || data.type === 'all_notifications_read') {
           queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-        } else if (data.type === 'all_notifications_read') {
-          // 모든 알림 읽음 처리
-          setUnreadCount(0);
-          queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+          refreshUnreadCount();
         }
       } catch (error) {
         console.error('[WebSocket] 메시지 파싱 오류:', error);
@@ -239,7 +222,7 @@ export function NotificationProvider({ children, userId }: NotificationProviderP
         
         // 알림 목록 갱신
         queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-        fetchUnreadCount();
+        refreshUnreadCount();
       }
     });
 

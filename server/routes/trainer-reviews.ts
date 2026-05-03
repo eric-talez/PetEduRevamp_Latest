@@ -87,7 +87,7 @@ export function registerTrainerReviewRoutes(app: Express) {
 
       const review = storage.createTrainerReview(parsed.data, user);
       try {
-        storage.createNotification?.({
+        await storage.createNotification?.({
           userId: parsed.data.trainerId,
           title: "새 리뷰가 등록되었습니다",
           message: `${user.name || "보호자"}님이 별점 ${parsed.data.rating}점 리뷰를 남겼습니다.`,
@@ -185,7 +185,7 @@ export function registerTrainerReviewRoutes(app: Express) {
 
       const reply = storage.createTrainerReviewReply(parsed.data);
       try {
-        storage.createNotification?.({
+        await storage.createNotification?.({
           userId: review.authorId,
           title: "트레이너가 답글을 남겼습니다",
           message: parsed.data.content.slice(0, 80),

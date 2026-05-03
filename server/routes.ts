@@ -6712,8 +6712,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const assignedPets = storage.getPetsByTrainerId ? storage.getPetsByTrainerId(userId) : [];
       
       // 알림 개수 조회
-      const notifications = storage.getNotificationsByUserId ? storage.getNotificationsByUserId(userId) : [];
-      const unreadNotifications = notifications.filter((n: any) => !n.isRead);
+      const notifResult = await storage.getNotificationsByUserId(userId, { limit: 1000 });
+      const notifications = notifResult.notifications;
+      const unreadNotifications = notifications.filter(n => !n.isRead);
 
       // 최근 알림장 (3개)
       const recentNotebooks = trainingJournals.slice(0, 3).map((journal: any) => ({
@@ -8434,7 +8435,7 @@ app.get('/api/search', async (req, res) => {
       }
 
       const validatedData = createNotificationSchema.parse(req.body);
-      const notification = storage.createNotification(validatedData);
+      const notification = await storage.createNotification(validatedData);
 
       return res.status(201).json({
         success: true,
@@ -8472,7 +8473,7 @@ app.get('/api/search', async (req, res) => {
       }
 
       const validatedQuery = notificationQuerySchema.parse(req.query);
-      const result = storage.getNotificationsByUserId(userId, validatedQuery);
+      const result = await storage.getNotificationsByUserId(userId, validatedQuery);
 
       return res.json({
         success: true,
@@ -8508,7 +8509,7 @@ app.get('/api/search', async (req, res) => {
         });
       }
 
-      const unreadCount = storage.getUnreadNotificationCount(userId);
+      const unreadCount = await storage.getUnreadNotificationCount(userId);
 
       return res.json({
         success: true,
@@ -8520,6 +8521,102 @@ app.get('/api/search', async (req, res) => {
         success: false,
         error: "읽지 않은 알림 개수 조회 중 오류가 발생했습니다."
       });
+    }
+  });
+
+  // GET /api/notifications/preferences - 사용자 알림 수신 설정 조회
+  app.get("/api/notifications/preferences", async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+      }
+      const preferences = await storage.getNotificationPreferences(userId);
+      return res.json({ success: true, preferences });
+    } catch (error: any) {
+      console.error('알림 설정 조회 오류:', error);
+      return res.status(500).json({ success: false, error: "알림 설정 조회 중 오류가 발생했습니다." });
+    }
+  });
+
+  // PATCH /api/notifications/preferences - 사용자 알림 수신 설정 업데이트
+  app.patch("/api/notifications/preferences", csrfProtection, async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+      }
+      const { category, inAppEnabled, pushEnabled } = req.body || {};
+      if (!category || typeof inAppEnabled !== 'boolean' || typeof pushEnabled !== 'boolean') {
+        return res.status(400).json({ success: false, error: "category, inAppEnabled, pushEnabled가 필요합니다." });
+      }
+      if (!["message", "reservation", "payment", "system"].includes(category)) {
+        return res.status(400).json({ success: false, error: "올바른 카테고리가 아닙니다." });
+      }
+      const preference = await storage.upsertNotificationPreference(userId, {
+        category, inAppEnabled, pushEnabled
+      });
+      return res.json({ success: true, preference });
+    } catch (error: any) {
+      console.error('알림 설정 업데이트 오류:', error);
+      return res.status(500).json({ success: false, error: "알림 설정 업데이트 중 오류가 발생했습니다." });
+    }
+  });
+
+  // PATCH /api/notifications/mark-read - 다중 알림 읽음 처리 (반드시 /:id 이전에 등록)
+  app.patch("/api/notifications/mark-read", csrfProtection, async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+      }
+
+      const validatedData = bulkNotificationUpdateSchema.parse(req.body);
+      const notificationIds = validatedData.notificationIds;
+      for (const id of notificationIds) {
+        const notification = await storage.getNotificationById(id);
+        if (!notification || notification.userId !== userId) {
+          return res.status(403).json({ success: false, error: "일부 알림에 접근할 권한이 없습니다." });
+        }
+      }
+
+      const updates = { ...validatedData.updates, isRead: true };
+      const updatedNotifications = await storage.bulkUpdateNotifications(notificationIds, updates);
+
+      return res.json({
+        success: true,
+        message: `${updatedNotifications.length}개의 알림이 읽음 처리되었습니다.`,
+        updatedCount: updatedNotifications.length,
+      });
+    } catch (error: any) {
+      console.error('다중 알림 읽음 처리 오류:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: "요청 데이터가 올바르지 않습니다.",
+          details: error.errors,
+        });
+      }
+      return res.status(500).json({ success: false, error: "알림 읽음 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // PATCH /api/notifications/mark-all-read - 모든 알림 읽음 처리 (반드시 /:id 이전에 등록)
+  app.patch("/api/notifications/mark-all-read", csrfProtection, async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+      }
+      const markedCount = await storage.markAllNotificationsAsRead(userId);
+      return res.json({
+        success: true,
+        message: `${markedCount}개의 알림이 모두 읽음 처리되었습니다.`,
+        markedCount,
+      });
+    } catch (error: any) {
+      console.error('모든 알림 읽음 처리 오류:', error);
+      return res.status(500).json({ success: false, error: "모든 알림 읽음 처리 중 오류가 발생했습니다." });
     }
   });
 
@@ -8543,7 +8640,7 @@ app.get('/api/search', async (req, res) => {
         });
       }
 
-      const notification = storage.getNotificationById(notificationId);
+      const notification = await storage.getNotificationById(notificationId);
       
       if (!notification) {
         return res.status(404).json({
@@ -8594,7 +8691,7 @@ app.get('/api/search', async (req, res) => {
       }
 
       // 기존 알림 확인
-      const existingNotification = storage.getNotificationById(notificationId);
+      const existingNotification = await storage.getNotificationById(notificationId);
       if (!existingNotification) {
         return res.status(404).json({
           success: false,
@@ -8611,7 +8708,7 @@ app.get('/api/search', async (req, res) => {
       }
 
       const validatedData = updateNotificationSchema.parse(req.body);
-      const updatedNotification = storage.updateNotification(notificationId, validatedData);
+      const updatedNotification = await storage.updateNotification(notificationId, validatedData);
 
       if (!updatedNotification) {
         return res.status(500).json({
@@ -8664,7 +8761,7 @@ app.get('/api/search', async (req, res) => {
       }
 
       // 기존 알림 확인
-      const existingNotification = storage.getNotificationById(notificationId);
+      const existingNotification = await storage.getNotificationById(notificationId);
       if (!existingNotification) {
         return res.status(404).json({
           success: false,
@@ -8680,7 +8777,7 @@ app.get('/api/search', async (req, res) => {
         });
       }
 
-      const success = storage.deleteNotification(notificationId);
+      const success = await storage.deleteNotification(notificationId);
 
       if (!success) {
         return res.status(500).json({
@@ -8698,86 +8795,6 @@ app.get('/api/search', async (req, res) => {
       return res.status(500).json({
         success: false,
         error: "알림 삭제 중 오류가 발생했습니다."
-      });
-    }
-  });
-
-  // PATCH /api/notifications/mark-read - 다중 알림 읽음 처리
-  app.patch("/api/notifications/mark-read", csrfProtection, async (req, res) => {
-    try {
-      const userId = req.session?.user?.id;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: "로그인이 필요합니다."
-        });
-      }
-
-      const validatedData = bulkNotificationUpdateSchema.parse(req.body);
-      
-      // 모든 알림이 현재 사용자의 것인지 확인
-      const notificationIds = validatedData.notificationIds;
-      for (const id of notificationIds) {
-        const notification = storage.getNotificationById(id);
-        if (!notification || notification.userId !== userId) {
-          return res.status(403).json({
-            success: false,
-            error: "일부 알림에 접근할 권한이 없습니다."
-          });
-        }
-      }
-
-      const updates = { ...validatedData.updates, isRead: true };
-      const updatedNotifications = storage.bulkUpdateNotifications(notificationIds, updates);
-
-      return res.json({
-        success: true,
-        message: `${updatedNotifications.length}개의 알림이 읽음 처리되었습니다.`,
-        updatedCount: updatedNotifications.length
-      });
-    } catch (error: any) {
-      console.error('다중 알림 읽음 처리 오류:', error);
-      
-      if (error.name === 'ZodError') {
-        return res.status(400).json({
-          success: false,
-          error: "요청 데이터가 올바르지 않습니다.",
-          details: error.errors
-        });
-      }
-
-      return res.status(500).json({
-        success: false,
-        error: "알림 읽음 처리 중 오류가 발생했습니다."
-      });
-    }
-  });
-
-  // PATCH /api/notifications/mark-all-read - 모든 알림 읽음 처리
-  app.patch("/api/notifications/mark-all-read", csrfProtection, async (req, res) => {
-    try {
-      const userId = req.session?.user?.id;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: "로그인이 필요합니다."
-        });
-      }
-
-      const markedCount = storage.markAllNotificationsAsRead(userId);
-
-      return res.json({
-        success: true,
-        message: `${markedCount}개의 알림이 모두 읽음 처리되었습니다.`,
-        markedCount
-      });
-    } catch (error: any) {
-      console.error('모든 알림 읽음 처리 오류:', error);
-      return res.status(500).json({
-        success: false,
-        error: "모든 알림 읽음 처리 중 오류가 발생했습니다."
       });
     }
   });
@@ -10168,7 +10185,7 @@ app.get('/api/search', async (req, res) => {
       // 인앱 알림 생성 (예정된 약 복용)
       try {
         if (payload.reminderEnabled !== false) {
-          storage.createNotification({
+          await storage.createNotification({
             userId: access.userId,
             type: 'health',
             title: '약 복용 일정 등록',
@@ -19151,7 +19168,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       try {
         const pet = await storage.getPet(newVaccination.petId);
         if (pet && newVaccination.userId) {
-          storage.createNotification({
+          await storage.createNotification({
             userId: newVaccination.userId,
             type: 'health',
             title: '예방접종 일정 등록',

@@ -174,60 +174,95 @@ export class NotificationService {
     console.log(`[Notification] 사용자 ${userId} WebSocket 연결 해제됨`);
   }
 
+  // 알림 타입 → 카테고리 매핑
+  private getCategoryFromType(type: string): string {
+    if (type === 'message') return 'message';
+    if (['reservation', 'course', 'training'].includes(type)) return 'reservation';
+    if (type === 'payment') return 'payment';
+    return 'system';
+  }
+
   // 실시간 알림 발송 (NotificationOrchestrator 패턴)
   async sendNotification(notification: NotificationData): Promise<void> {
     try {
-      // 1. 데이터베이스에 알림 저장 (영속성 보장)
-      const [savedNotification] = await db.insert(notifications).values({
-        userId: notification.userId,
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        actionUrl: notification.actionUrl || null,
-        metadata: notification.data || null,
-        isRead: false
-      }).returning();
+      const category = this.getCategoryFromType(notification.type);
 
-      // 2. WebSocket으로 실시간 전송 (앱이 열려있는 경우)
-      const userConnections = this.connections.get(notification.userId);
-      let webSocketSent = false;
-      
-      if (userConnections && userConnections.length > 0) {
-        const payload = JSON.stringify({
-          type: 'notification',
-          data: savedNotification
+      // 사용자 수신 설정 확인 (인앱/푸시 별도)
+      let inAppEnabled = true;
+      let pushEnabled = true;
+      try {
+        const { storage } = await import('../storage');
+        if (typeof storage.isNotificationChannelEnabled === 'function') {
+          inAppEnabled = await storage.isNotificationChannelEnabled(notification.userId, category, 'inApp');
+          pushEnabled = await storage.isNotificationChannelEnabled(notification.userId, category, 'push');
+        }
+      } catch (e) {
+        // 설정 조회 실패 시 기본값 (모두 활성)
+      }
+
+      // 인앱 알림이 비활성이면 저장도 하지 않음 (유저가 명시적으로 끔)
+      if (!inAppEnabled && !pushEnabled) {
+        console.log(`[Notification] 사용자 ${notification.userId} 카테고리 ${category} 수신 거부 - 발송 스킵`);
+        return;
+      }
+
+      // 1. 인메모리 storage에 알림 저장 (인앱 활성 시) — 사용자 API와 통일된 데이터 소스
+      let savedNotification: { id: number; [k: string]: unknown } | null = null;
+      if (inAppEnabled) {
+        const { storage } = await import('../storage');
+        savedNotification = await storage.createNotification({
+          userId: notification.userId,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          actionUrl: notification.actionUrl || null,
+          metadata: notification.data || null,
+          isRead: false,
         });
 
-        userConnections.forEach(ws => {
-          if (ws.readyState === WebSocket.OPEN) {
-            try {
-              ws.send(payload);
-              webSocketSent = true;
-            } catch (error) {
-              console.error(`[Notification] WebSocket 전송 실패:`, error);
-              this.removeConnection(notification.userId, ws);
+        // 2. WebSocket으로 실시간 전송 (앱이 열려있는 경우)
+        const userConnections = this.connections.get(notification.userId);
+        let webSocketSent = false;
+
+        if (userConnections && userConnections.length > 0) {
+          const payload = JSON.stringify({
+            type: 'notification',
+            data: savedNotification
+          });
+
+          userConnections.forEach(ws => {
+            if (ws.readyState === WebSocket.OPEN) {
+              try {
+                ws.send(payload);
+                webSocketSent = true;
+              } catch (error) {
+                console.error(`[Notification] WebSocket 전송 실패:`, error);
+                this.removeConnection(notification.userId, ws);
+              }
             }
-          }
-        });
+          });
 
-        if (webSocketSent) {
-          console.log(`[Notification] ✓ WebSocket - 사용자 ${notification.userId}: ${notification.title}`);
+          if (webSocketSent) {
+            console.log(`[Notification] ✓ WebSocket - 사용자 ${notification.userId}: ${notification.title}`);
+          }
         }
       }
 
-      // 3. FCM 푸시 알림 전송 (백그라운드/오프라인 경우)
-      // 사용자가 오프라인이거나, 백그라운드에 있을 때를 위해 항상 FCM 전송
-      await this.sendFCMNotification(
-        notification.userId,
-        notification.title,
-        notification.message,
-        {
-          type: notification.type,
-          actionUrl: notification.actionUrl || '',
-          notificationId: savedNotification.id.toString(),
-          ...(notification.data || {})
-        }
-      );
+      // 3. FCM 푸시 알림 전송 (푸시 활성 시)
+      if (pushEnabled) {
+        await this.sendFCMNotification(
+          notification.userId,
+          notification.title,
+          notification.message,
+          {
+            type: notification.type,
+            category,
+            actionUrl: notification.actionUrl || '',
+            notificationId: savedNotification ? savedNotification.id.toString() : '',
+            ...(notification.data || {})
+          }
+        );
+      }
 
     } catch (error) {
       console.error('[Notification] 알림 발송 실패:', error);

@@ -516,7 +516,7 @@ export function Sidebar({
       '/calendar': '교육 일정',
       '/education-schedule': '교육 일정',
       '/alerts': '알림',
-      '/notifications': '알림'  // /notifications를 요청하면 /alerts로 처리
+      '/notifications': '알림 센터'
       // '/shop' 항목은 제거 - 사이드바에서 직접 새 창으로 열기 처리
     };
 
@@ -533,12 +533,7 @@ export function Sidebar({
     };
 
     if (path in specialRoutes) {
-      // /notifications를 /alerts로 리다이렉션
-      if (path === '/notifications') {
-        navigateToPage('/alerts');
-      } else {
-        navigateToPage(path);
-      }
+      navigateToPage(path);
       return;
     }
 

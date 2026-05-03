@@ -1,58 +1,71 @@
 import { useState } from 'react';
-import { Bell, BellRing, Check, X } from 'lucide-react';
+import { Bell, BellRing, Check, X, ArrowRight } from 'lucide-react';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNotification } from './NotificationProvider';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface Notification {
   id: number;
   title: string;
   message: string;
   type: string;
+  category?: string;
   isRead: boolean;
+  actionUrl?: string | null;
   createdAt: string;
+}
+
+interface NotificationListResponse {
+  success: boolean;
+  notifications: Notification[];
+  total: number;
 }
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const { unreadCount, sendTestNotification } = useNotification();
+  const { unreadCount } = useNotification();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
-  // 알림 목록 조회
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['/api/notifications'],
+  // 알림 목록 조회 (드롭다운 미리보기용)
+  const { data, isLoading } = useQuery<NotificationListResponse>({
+    queryKey: ['/api/notifications', { limit: 5 }],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/notifications');
-      return response.json() as Promise<Notification[]>;
+      const response = await apiRequest('GET', '/api/notifications?limit=5');
+      return response.json();
     },
-    refetchInterval: 30000, // 30초마다 새로고침
+    refetchInterval: 30000,
   });
+
+  const notifications = data?.notifications ?? [];
 
   // 알림 읽음 처리
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      const response = await apiRequest('PATCH', `/api/notifications/${notificationId}/read`);
+      const response = await apiRequest('PATCH', `/api/notifications/${notificationId}`, { isRead: true });
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread-count'] });
     },
   });
 
   // 모든 알림 읽음 처리
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('PATCH', '/api/notifications/read-all');
+      const response = await apiRequest('PATCH', '/api/notifications/mark-all-read');
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread-count'] });
       toast({
         title: '모든 알림 읽음',
         description: '모든 알림이 읽음으로 처리되었습니다.',
@@ -68,6 +81,7 @@ export function NotificationBell() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread-count'] });
     },
   });
 
@@ -81,27 +95,33 @@ export function NotificationBell() {
     deleteNotificationMutation.mutate(notificationId);
   };
 
-  const handleTestNotification = () => {
-    sendTestNotification({
-      title: '테스트 알림',
-      message: '실시간 알림 기능이 정상 작동 중입니다!',
-      type: 'info'
-    });
+  const handleNotificationClick = (n: Notification) => {
+    if (!n.isRead) markAsReadMutation.mutate(n.id);
+    if (n.actionUrl) {
+      setIsOpen(false);
+      setLocation(n.actionUrl);
+    }
+  };
+
+  const handleViewAll = () => {
+    setIsOpen(false);
+    setLocation('/notifications');
   };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
+        <Button variant="ghost" size="sm" className="relative" data-testid="button-notification-bell">
           {unreadCount > 0 ? (
             <BellRing className="h-5 w-5" />
           ) : (
             <Bell className="h-5 w-5" />
           )}
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              data-testid="badge-unread-count"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
@@ -113,64 +133,55 @@ export function NotificationBell() {
       </PopoverTrigger>
 
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">알림</h3>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleTestNotification}
-                className="text-xs"
-              >
-                테스트
-              </Button>
-              {unreadCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => markAllAsReadMutation.mutate()}
-                  className="text-xs"
-                >
-                  모두 읽음
-                </Button>
-              )}
-            </div>
-          </div>
+        <div className="p-3 border-b flex items-center justify-between">
+          <h3 className="font-semibold text-sm">알림</h3>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => markAllAsReadMutation.mutate()}
+              className="text-xs h-7"
+              data-testid="button-bell-mark-all-read"
+            >
+              모두 읽음
+            </Button>
+          )}
         </div>
 
-        <ScrollArea className="h-80">
+        <ScrollArea className="h-72">
           {isLoading ? (
-            <div className="p-4 text-center text-muted-foreground">
+            <div className="p-4 text-center text-sm text-muted-foreground">
               알림을 불러오는 중...
             </div>
           ) : notifications.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground">
+            <div className="p-6 text-center text-sm text-muted-foreground">
               알림이 없습니다
             </div>
           ) : (
-            <div className="space-y-1">
+            <ul className="divide-y">
               {notifications.map((notification) => (
-                <div
+                <li
                   key={notification.id}
-                  className={`p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 ${
-                    !notification.isRead ? 'bg-blue-50' : ''
+                  className={`p-3 hover:bg-muted/50 cursor-pointer ${
+                    !notification.isRead ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''
                   }`}
+                  onClick={() => handleNotificationClick(notification)}
+                  data-testid={`bell-notification-${notification.id}`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h4 className={`text-sm font-medium ${!notification.isRead ? 'font-semibold' : ''}`}>
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`text-sm ${!notification.isRead ? 'font-semibold' : 'font-medium'} truncate`}>
                         {notification.title}
                       </h4>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground/70 mt-1">
                         {new Date(notification.createdAt).toLocaleString('ko-KR')}
                       </p>
                     </div>
 
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-shrink-0">
                       {!notification.isRead && (
                         <Button
                           variant="ghost"
@@ -193,11 +204,24 @@ export function NotificationBell() {
                       </Button>
                     </div>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </ScrollArea>
+
+        <div className="p-2 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-between text-sm"
+            onClick={handleViewAll}
+            data-testid="button-view-all-notifications"
+          >
+            전체 알림 보기
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );
