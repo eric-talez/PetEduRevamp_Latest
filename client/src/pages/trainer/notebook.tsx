@@ -294,8 +294,33 @@ export default function TrainerNotebookPage() {
       const res = await fetch('/api/trainer/journals', { credentials: 'include' });
       if (!res.ok) throw new Error('알림장 조회 실패');
       const json = await res.json();
-      const list = json.journals || [];
-      return list.map((j: any) => ({
+      type RawJournal = {
+        id: number;
+        trainerId?: number;
+        trainerName?: string;
+        petId?: number;
+        petOwnerId?: number;
+        title?: string;
+        content?: string;
+        trainingDate?: string;
+        trainingDuration?: number;
+        trainingType?: string;
+        sessionNumber?: number;
+        progressRating?: number;
+        behaviorNotes?: string;
+        homeworkInstructions?: string;
+        nextGoals?: string;
+        attachments?: string[];
+        status?: Journal['status'];
+        createdAt?: string;
+        updatedAt?: string;
+        readAt?: string;
+        replyMessage?: string;
+        pet?: { id: number; name: string; breed?: string; age?: number };
+        owner?: { id: number; name: string; email: string };
+      };
+      const list: RawJournal[] = json.journals || [];
+      return list.map((j) => ({
         id: j.id,
         title: j.title || '훈련 일지',
         content: j.content || '',

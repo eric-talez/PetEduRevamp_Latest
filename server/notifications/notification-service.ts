@@ -7,7 +7,7 @@ import { logServerError } from '../middleware/audit-logger';
 
 export interface NotificationData {
   userId: number;
-  type: 'system' | 'course' | 'event' | 'health' | 'payment' | 'message';
+  type: 'system' | 'course' | 'event' | 'health' | 'payment' | 'message' | 'training' | 'reservation';
   title: string;
   message: string;
   data?: any;

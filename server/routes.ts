@@ -4624,13 +4624,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isRead: false
       });
 
-      // 보호자에게 알림 발송 (인앱 + 이메일) - draft가 아닐 때만
-      if (journalEntry.status !== 'draft' && pet.ownerId) {
+      // 보호자에게 알림 발송 (인앱 + 이메일)
+      if (pet.ownerId) {
         try {
           const { notificationService } = await import('./notifications/notification-service');
           await notificationService.sendNotification({
             userId: pet.ownerId,
-            type: 'message',
+            type: 'training',
             title: `새 알림장이 도착했습니다`,
             message: `${pet.name}의 ${validatedData.title || '훈련 일지'}가 등록되었어요.`,
             actionUrl: `/notebook?entryId=${journalEntry.id}`,
@@ -8211,7 +8211,7 @@ app.get('/api/search', async (req, res) => {
     dest: 'uploads/notebook-stt/',
     limits: { fileSize: 25 * 1024 * 1024 },
   });
-  app.post("/api/notebook/transcribe", requireAuth('trainer'), notebookSttUpload.single('audio'), async (req, res) => {
+  app.post("/api/notebook/transcribe", requireAuth('trainer'), csrfProtection, notebookSttUpload.single('audio'), async (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ success: false, error: '오디오 파일이 필요합니다.' });
       const OpenAI = (await import('openai')).default;
