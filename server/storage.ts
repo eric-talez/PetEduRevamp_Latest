@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, desc, or, and, sql, gte, lte } from "drizzle-orm";
+import { eq, desc, or, and, sql, gte, lte, inArray } from "drizzle-orm";
 import {
   logoSettings as logoSettingsTable,
   users as usersTable,
@@ -20,6 +20,8 @@ import {
   reservations as reservationsTable,
   courseProgress as courseProgressTable,
   contentReports as contentReportsTable,
+  careLogs as careLogsTable,
+  aiAnalyses as aiAnalysesTable,
   type ContentReport,
   type InsertContentReport,
 } from "../shared/schema";
@@ -51,57 +53,8 @@ class Storage {
   pointSettings: any = {};
   logoSettings: any = {};
   banners: any[] = [];
-  // AI 분석 시스템 데이터 저장소 
-  careLogs: any[] = [
-    {
-      id: 1,
-      petId: 1, 
-      userId: 1,
-      date: "2025-09-23",
-      note: "멍멍이가 오늘 아침 식욕이 좋았어요. 산책 중에 다른 강아지들과 잘 지냈습니다.",
-      poopStatus: "normal",
-      mealStatus: "normal", 
-      walkStatus: "normal",
-      mood: "happy",
-      energyLevel: 8,
-      media: [],
-      tags: ["건강", "활발"],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
-      id: 2,
-      petId: 1,
-      userId: 1, 
-      date: "2025-09-22",
-      note: "어제보다 조금 피곤해 보이지만 전반적으로 건강해요. 오후에 간식을 많이 먹었네요.",
-      poopStatus: "normal",
-      mealStatus: "overeaten",
-      walkStatus: "short", 
-      mood: "calm",
-      energyLevel: 6,
-      media: [],
-      tags: ["피곤", "간식"],
-      createdAt: new Date(Date.now() - 24*60*60*1000).toISOString(),
-      updatedAt: new Date(Date.now() - 24*60*60*1000).toISOString()
-    },
-    {
-      id: 3,
-      petId: 2,
-      userId: 2,
-      date: "2025-09-23", 
-      note: "야옹이가 새로운 장난감을 매우 좋아해요. 활동적이고 기분이 좋아보입니다.",
-      poopStatus: "normal",
-      mealStatus: "normal",
-      walkStatus: "normal",
-      mood: "energetic",
-      energyLevel: 9,
-      media: [],
-      tags: ["활발", "장난감", "기분좋음"],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()  
-    }
-  ];
+  // AI 분석 시스템 데이터 저장소 (DB로 이전 — 인메모리 배열은 더 이상 사용되지 않음)
+  careLogs: any[] = [];
   aiAnalyses: any[] = [];
   vaccinations: any[] = []; // 예방접종 스케줄 저장소
   petMedications: any[] = []; // 약 복용 일정 저장소
@@ -5883,54 +5836,103 @@ class HybridStorage extends Storage {
   // =============================================================================
 
   async getCareLogsByPetId(petId: number): Promise<any[]> {
-    return this.careLogs.filter(log => log.petId === petId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    try {
+      const rows = await db.select().from(careLogsTable)
+        .where(eq(careLogsTable.petId, petId))
+        .orderBy(desc(careLogsTable.date));
+      return rows;
+    } catch (err) {
+      logServerError('[CareLogs] getCareLogsByPetId 실패:', err);
+      throw err;
+    }
   }
 
   async getCareLogsByDateRange(petId: number, startDate: string, endDate: string): Promise<any[]> {
-    return this.careLogs.filter(log => 
-      log.petId === petId && 
-      log.date >= startDate && 
-      log.date <= endDate
-    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    try {
+      const rows = await db.select().from(careLogsTable)
+        .where(and(
+          eq(careLogsTable.petId, petId),
+          gte(careLogsTable.date, startDate),
+          lte(careLogsTable.date, endDate),
+        ))
+        .orderBy(desc(careLogsTable.date));
+      return rows;
+    } catch (err) {
+      logServerError('[CareLogs] getCareLogsByDateRange 실패:', err);
+      throw err;
+    }
   }
 
   async getCareLogsByIds(logIds: number[]): Promise<any[]> {
-    return this.careLogs.filter(log => logIds.includes(log.id));
-  }
-
-  async createCareLog(careLogData: any): Promise<any> {
-    const newCareLog = {
-      id: this.careLogs.length + 1,
-      ...careLogData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    this.careLogs.push(newCareLog);
-    return newCareLog;
-  }
-
-  async updateCareLog(id: number, updateData: any): Promise<any> {
-    const index = this.careLogs.findIndex(log => log.id === id);
-    if (index === -1) {
-      throw new Error('Care log not found');
+    if (!logIds || logIds.length === 0) return [];
+    try {
+      const ids = logIds.map(n => Number(n)).filter(n => Number.isFinite(n));
+      if (ids.length === 0) return [];
+      const rows = await db.select().from(careLogsTable)
+        .where(inArray(careLogsTable.id, ids));
+      return rows;
+    } catch (err) {
+      logServerError('[CareLogs] getCareLogsByIds 실패:', err);
+      throw err;
     }
+  }
 
-    this.careLogs[index] = {
-      ...this.careLogs[index],
-      ...updateData,
-      updatedAt: new Date().toISOString()
-    };
-    return this.careLogs[index];
+  async createCareLog(careLogData: Record<string, unknown>): Promise<any> {
+    try {
+      const allowed: (keyof typeof careLogsTable.$inferInsert)[] = [
+        'petId','userId','date','note','poopStatus','mealStatus','walkStatus',
+        'mood','energyLevel','weightKg','exerciseMinutes','mealAmountG',
+        'medications','media','tags',
+      ];
+      const payload: typeof careLogsTable.$inferInsert = { petId: 0, userId: 0, date: '' };
+      for (const k of allowed) {
+        const v = careLogData?.[k as string];
+        if (v !== undefined) (payload as Record<string, unknown>)[k as string] = v;
+      }
+      const [row] = await db.insert(careLogsTable).values(payload).returning();
+      return row;
+    } catch (err) {
+      logServerError('[CareLogs] createCareLog 실패:', err);
+      throw err;
+    }
+  }
+
+  async updateCareLog(id: number, updateData: Record<string, unknown>): Promise<any> {
+    try {
+      const allowed: (keyof typeof careLogsTable.$inferInsert)[] = [
+        'petId','userId','date','note','poopStatus','mealStatus','walkStatus',
+        'mood','energyLevel','weightKg','exerciseMinutes','mealAmountG',
+        'medications','media','tags',
+      ];
+      const updates: Partial<typeof careLogsTable.$inferInsert> & { updatedAt: Date } = {
+        updatedAt: new Date(),
+      };
+      for (const k of allowed) {
+        const v = updateData?.[k as string];
+        if (v !== undefined) (updates as Record<string, unknown>)[k as string] = v;
+      }
+      const [row] = await db.update(careLogsTable)
+        .set(updates)
+        .where(eq(careLogsTable.id, id))
+        .returning();
+      if (!row) throw new Error('Care log not found');
+      return row;
+    } catch (err) {
+      logServerError('[CareLogs] updateCareLog 실패:', err);
+      throw err;
+    }
   }
 
   async deleteCareLog(id: number): Promise<boolean> {
-    const index = this.careLogs.findIndex(log => log.id === id);
-    if (index === -1) {
-      return false;
+    try {
+      const result = await db.delete(careLogsTable)
+        .where(eq(careLogsTable.id, id))
+        .returning({ id: careLogsTable.id });
+      return result.length > 0;
+    } catch (err) {
+      logServerError('[CareLogs] deleteCareLog 실패:', err);
+      throw err;
     }
-    this.careLogs.splice(index, 1);
-    return true;
   }
 
   // =============================================================================
@@ -5994,23 +5996,53 @@ class HybridStorage extends Storage {
   // AI 분석 시스템: AI Analyses 관련 메서드
   // =============================================================================
 
-  async createAiAnalysis(analysisData: any): Promise<any> {
-    const newAnalysis = {
-      id: this.aiAnalyses.length + 1,
-      ...analysisData,
-      createdAt: new Date().toISOString()
-    };
-    this.aiAnalyses.push(newAnalysis);
-    return newAnalysis;
+  async createAiAnalysis(analysisData: Record<string, unknown>): Promise<any> {
+    try {
+      const allowed: (keyof typeof aiAnalysesTable.$inferInsert)[] = [
+        'petId','userId','inputLogIds','selectedSignals','timeRange',
+        'model','resultJson','tokensIn','tokensOut',
+      ];
+      const payload: typeof aiAnalysesTable.$inferInsert = {
+        petId: 0,
+        userId: 0,
+        inputLogIds: [],
+        selectedSignals: {},
+        resultJson: {},
+      };
+      for (const k of allowed) {
+        const v = analysisData?.[k as string];
+        if (v !== undefined) (payload as Record<string, unknown>)[k as string] = v;
+      }
+      const [row] = await db.insert(aiAnalysesTable).values(payload).returning();
+      return row;
+    } catch (err) {
+      logServerError('[AI Analysis] createAiAnalysis 실패:', err);
+      throw err;
+    }
   }
 
   async getAiAnalysesByPetId(petId: number): Promise<any[]> {
-    return this.aiAnalyses.filter(analysis => analysis.petId === petId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    try {
+      const rows = await db.select().from(aiAnalysesTable)
+        .where(eq(aiAnalysesTable.petId, petId))
+        .orderBy(desc(aiAnalysesTable.createdAt));
+      return rows;
+    } catch (err) {
+      logServerError('[AI Analysis] getAiAnalysesByPetId 실패:', err);
+      throw err;
+    }
   }
 
   async getAiAnalysisById(id: number): Promise<any | null> {
-    return this.aiAnalyses.find(analysis => analysis.id === id) || null;
+    try {
+      const [row] = await db.select().from(aiAnalysesTable)
+        .where(eq(aiAnalysesTable.id, id))
+        .limit(1);
+      return row || null;
+    } catch (err) {
+      logServerError('[AI Analysis] getAiAnalysisById 실패:', err);
+      throw err;
+    }
   }
 
   // =============================================================================
@@ -6091,11 +6123,9 @@ class HybridStorage extends Storage {
 
   // Care logs를 날짜별로 그룹화하여 반환
   async getCareLogsGroupedByDate(petId: number, startDate?: string, endDate?: string): Promise<{dates: string[], logsByDate: Record<string, any[]>, counts: Record<string, number>}> {
-    let logs = this.careLogs.filter(log => log.petId === petId);
-
-    if (startDate && endDate) {
-      logs = logs.filter(log => log.date >= startDate && log.date <= endDate);
-    }
+    const logs = (startDate && endDate)
+      ? await this.getCareLogsByDateRange(petId, startDate, endDate)
+      : await this.getCareLogsByPetId(petId);
 
     // 날짜별로 그룹화
     const logsByDate: Record<string, any[]> = {};
