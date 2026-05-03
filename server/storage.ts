@@ -16,6 +16,8 @@ import {
   courses as coursesTable,
   notifications as notificationsTable,
   coursePurchases as coursePurchasesTable,
+  reservations as reservationsTable,
+  courseProgress as courseProgressTable,
 } from "../shared/schema";
 
 class Storage {
@@ -6420,6 +6422,345 @@ class HybridStorage extends Storage {
       activeCourses,
       completedOrders,
       averageOrderValue,
+    };
+  }
+
+  async getAdminDashboardBreakdowns(opts: { startDate?: Date; endDate?: Date } = {}): Promise<{
+    users: {
+      monthlyGrowth: { label: string; newUsers: number; activeUsers: number }[];
+      ageGroups: { label: string; count: number; percentage: number }[];
+      hourlyDistribution: { label: string; count: number; percentage: number }[];
+      engagement: { label: string; value: number }[];
+    };
+    revenue: {
+      monthlyTrend: { month: string; total: number; training: number; shop: number }[];
+      growthRate: number;
+      averageOrderValue: number;
+      customerLifetimeValue: number;
+    };
+    training: {
+      categoryDistribution: { name: string; count: number; percentage: number }[];
+      categoryCompletion: { name: string; completion: number }[];
+      topTrainers: { name: string; sessions: number; rating: number }[];
+    };
+    geography: {
+      regions: { region: string; users: number; revenue: number; percentage: number }[];
+    };
+  }> {
+    const { startDate, endDate } = opts;
+    const periodConds = (col: any) => {
+      const c: any[] = [];
+      if (startDate) c.push(gte(col, startDate));
+      if (endDate) c.push(lte(col, endDate));
+      return c;
+    };
+
+    // ----- Users -----
+    let allUsers: any[] = [];
+    try {
+      allUsers = await db.select().from(usersTable);
+    } catch {
+      allUsers = this.users || [];
+    }
+
+    // Age groups
+    const ageBuckets = [
+      { label: '20세 미만', min: 0, max: 19 },
+      { label: '20-30세', min: 20, max: 30 },
+      { label: '31-40세', min: 31, max: 40 },
+      { label: '41-50세', min: 41, max: 50 },
+      { label: '51-60세', min: 51, max: 60 },
+      { label: '60세 초과', min: 61, max: 200 },
+    ];
+    const ageOf = (u: any): number | null => {
+      if (typeof u.age === 'number' && u.age > 0) return u.age;
+      if (u.birthDate) {
+        const y = parseInt(String(u.birthDate).slice(0, 4), 10);
+        if (!isNaN(y) && y > 1900) return new Date().getFullYear() - y;
+      }
+      return null;
+    };
+    const usersWithAge = allUsers.map(ageOf).filter((a): a is number => a !== null);
+    const ageGroups = ageBuckets.map(b => {
+      const count = usersWithAge.filter(a => a >= b.min && a <= b.max).length;
+      const percentage = usersWithAge.length > 0 ? Math.round((count / usersWithAge.length) * 100) : 0;
+      return { label: b.label, count, percentage };
+    });
+
+    // Monthly user growth (last 7 months, anchored to endDate when provided)
+    const monthlyGrowth: { label: string; newUsers: number; activeUsers: number }[] = [];
+    const now = endDate ? new Date(endDate) : new Date();
+    for (let i = 6; i >= 0; i--) {
+      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const newUsers = allUsers.filter((u: any) => {
+        const d = u.createdAt ? new Date(u.createdAt) : null;
+        return d && d >= start && d < end;
+      }).length;
+      const activeUsers = allUsers.filter((u: any) => {
+        const d = u.lastLoginAt ? new Date(u.lastLoginAt) : null;
+        return d && d >= start && d < end;
+      }).length;
+      monthlyGrowth.push({ label: `${start.getMonth() + 1}월`, newUsers, activeUsers });
+    }
+
+    // Hourly activity distribution from messages.createdAt (fallback to lastLoginAt)
+    const hourBuckets = [
+      { label: '아침 (06-12시)', from: 6, to: 12 },
+      { label: '오후 (12-18시)', from: 12, to: 18 },
+      { label: '저녁 (18-24시)', from: 18, to: 24 },
+      { label: '새벽 (00-06시)', from: 0, to: 6 },
+    ];
+    let hourlyDistribution = hourBuckets.map(b => ({ label: b.label, count: 0, percentage: 0 }));
+    try {
+      const conds = periodConds(messages.createdAt);
+      const rows = await db.select({
+        hour: sql<number>`extract(hour from ${messages.createdAt})::int`,
+        count: sql<number>`count(*)`,
+      }).from(messages).where(conds.length ? and(...conds) : sql`true`).groupBy(sql`extract(hour from ${messages.createdAt})`);
+      const hourCounts = new Array(24).fill(0);
+      for (const r of rows as any[]) {
+        const h = Number(r.hour);
+        if (h >= 0 && h < 24) hourCounts[h] += Number(r.count) || 0;
+      }
+      const total = hourCounts.reduce((s, n) => s + n, 0);
+      if (total === 0) {
+        // fallback: lastLoginAt hours
+        for (const u of allUsers) {
+          if (u.lastLoginAt) {
+            const h = new Date(u.lastLoginAt).getHours();
+            if (h >= 0 && h < 24) hourCounts[h]++;
+          }
+        }
+      }
+      const total2 = hourCounts.reduce((s, n) => s + n, 0);
+      hourlyDistribution = hourBuckets.map(b => {
+        let count = 0;
+        for (let h = b.from; h < b.to; h++) count += hourCounts[h];
+        return { label: b.label, count, percentage: total2 > 0 ? Math.round((count / total2) * 100) : 0 };
+      });
+    } catch {
+      // keep zeroed buckets
+    }
+
+    // Engagement metrics
+    const totalUsersCount = allUsers.length;
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const weeklyActive = allUsers.filter((u: any) => u.lastLoginAt && new Date(u.lastLoginAt) >= weekAgo).length;
+    const monthlyActive = allUsers.filter((u: any) => u.lastLoginAt && new Date(u.lastLoginAt) >= monthAgo).length;
+    const trainingUserIds = new Set<number>();
+    const buyerUserIds = new Set<number>();
+    const purchaseUserIds = new Set<number>();
+    try {
+      const r = await db.selectDistinct({ userId: reservationsTable.userId }).from(reservationsTable);
+      for (const row of r as any[]) if (row.userId != null) trainingUserIds.add(Number(row.userId));
+    } catch {}
+    try {
+      const r = await db.selectDistinct({ userId: courseProgressTable.userId }).from(courseProgressTable);
+      for (const row of r as any[]) if (row.userId != null) trainingUserIds.add(Number(row.userId));
+    } catch {}
+    try {
+      const r = await db.selectDistinct({ userId: ordersTable.userId }).from(ordersTable);
+      for (const row of r as any[]) if (row.userId != null) buyerUserIds.add(Number(row.userId));
+    } catch {}
+    try {
+      const r = await db.selectDistinct({ userId: coursePurchasesTable.userId }).from(coursePurchasesTable);
+      for (const row of r as any[]) {
+        if (row.userId != null) {
+          buyerUserIds.add(Number(row.userId));
+          purchaseUserIds.add(Number(row.userId));
+        }
+      }
+    } catch {}
+    const pct = (n: number, d: number) => d > 0 ? Math.min(100, Math.round((n / d) * 100)) : 0;
+    const engagement = [
+      { label: '주간 활성 사용자', value: pct(weeklyActive, totalUsersCount) },
+      { label: '월간 활성 사용자', value: pct(monthlyActive, totalUsersCount) },
+      { label: '훈련 참여율', value: pct(trainingUserIds.size, totalUsersCount) },
+      { label: '구매 전환율', value: pct(buyerUserIds.size, totalUsersCount) },
+      { label: '강좌 수강율', value: pct(purchaseUserIds.size, totalUsersCount) },
+      { label: '인증 사용자', value: pct(allUsers.filter((u: any) => u.isVerified || u.emailVerified || u.verified).length, totalUsersCount) },
+    ];
+
+    // ----- Revenue: monthly trend last 7 months -----
+    const monthlyTrend: { month: string; total: number; training: number; shop: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      let shop = 0;
+      let training = 0;
+      try {
+        const rows = await db.select({
+          revenue: sql<number>`coalesce(sum(case when ${ordersTable.paymentStatus} = 'completed' or ${ordersTable.status} = 'completed' then ${ordersTable.totalAmount} else 0 end), 0)`,
+        }).from(ordersTable).where(and(gte(ordersTable.createdAt, start), lte(ordersTable.createdAt, end)));
+        shop = Number(rows[0]?.revenue) || 0;
+      } catch {}
+      try {
+        const rows = await db.select({
+          revenue: sql<number>`coalesce(sum(case when ${coursePurchasesTable.paymentStatus} = 'completed' then ${coursePurchasesTable.purchaseAmount} else 0 end), 0)`,
+        }).from(coursePurchasesTable).where(and(gte(coursePurchasesTable.createdAt, start), lte(coursePurchasesTable.createdAt, end)));
+        training = Number(rows[0]?.revenue) || 0;
+      } catch {}
+      monthlyTrend.push({
+        month: `${start.getMonth() + 1}월`,
+        total: Math.round(shop + training),
+        training: Math.round(training),
+        shop: Math.round(shop),
+      });
+    }
+    const lastIdx = monthlyTrend.length - 1;
+    const cur = monthlyTrend[lastIdx]?.total || 0;
+    const prev = monthlyTrend[lastIdx - 1]?.total || 0;
+    const growthRate = prev > 0 ? Math.round(((cur - prev) / prev) * 1000) / 10 : 0;
+
+    // average order value & CLV (period-aware)
+    let totalOrdersCount = 0;
+    let totalRevenue = 0;
+    let uniqueBuyers = 0;
+    try {
+      const conds = periodConds(ordersTable.createdAt);
+      const rows = await db.select({
+        c: sql<number>`count(*)`,
+        rev: sql<number>`coalesce(sum(case when ${ordersTable.paymentStatus} = 'completed' or ${ordersTable.status} = 'completed' then ${ordersTable.totalAmount} else 0 end), 0)`,
+        buyers: sql<number>`count(distinct ${ordersTable.userId})`,
+      }).from(ordersTable).where(conds.length ? and(...conds) : sql`true`);
+      totalOrdersCount += Number(rows[0]?.c) || 0;
+      totalRevenue += Number(rows[0]?.rev) || 0;
+      uniqueBuyers += Number(rows[0]?.buyers) || 0;
+    } catch {}
+    try {
+      const conds = periodConds(coursePurchasesTable.createdAt);
+      const rows = await db.select({
+        c: sql<number>`count(*)`,
+        rev: sql<number>`coalesce(sum(case when ${coursePurchasesTable.paymentStatus} = 'completed' then ${coursePurchasesTable.purchaseAmount} else 0 end), 0)`,
+        buyers: sql<number>`count(distinct ${coursePurchasesTable.userId})`,
+      }).from(coursePurchasesTable).where(conds.length ? and(...conds) : sql`true`);
+      totalOrdersCount += Number(rows[0]?.c) || 0;
+      totalRevenue += Number(rows[0]?.rev) || 0;
+      uniqueBuyers += Number(rows[0]?.buyers) || 0;
+    } catch {}
+    const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
+    const customerLifetimeValue = uniqueBuyers > 0 ? Math.round(totalRevenue / uniqueBuyers) : 0;
+
+    // ----- Training -----
+    let categoryDistribution: { name: string; count: number; percentage: number }[] = [];
+    try {
+      const rows = await db.select({
+        category: coursesTable.category,
+        count: sql<number>`count(*)`,
+      }).from(coursesTable).groupBy(coursesTable.category);
+      const total = rows.reduce((s: number, r: any) => s + Number(r.count), 0);
+      categoryDistribution = rows
+        .map((r: any) => ({
+          name: r.category || '기타',
+          count: Number(r.count) || 0,
+          percentage: total > 0 ? Math.round((Number(r.count) / total) * 100) : 0,
+        }))
+        .sort((a, b) => b.count - a.count);
+    } catch {}
+
+    let categoryCompletion: { name: string; completion: number }[] = [];
+    try {
+      const rows = await db.select({
+        category: coursesTable.category,
+        avgProgress: sql<number>`coalesce(avg(${courseProgressTable.progressPercentage}::numeric), 0)`,
+      })
+        .from(courseProgressTable)
+        .leftJoin(coursesTable, eq(courseProgressTable.courseId, coursesTable.id))
+        .groupBy(coursesTable.category);
+      categoryCompletion = rows
+        .map((r: any) => ({
+          name: r.category || '기타',
+          completion: Math.round(Number(r.avgProgress) || 0),
+        }))
+        .sort((a, b) => b.completion - a.completion);
+    } catch {}
+
+    // Top trainers by completed reservations
+    let topTrainers: { name: string; sessions: number; rating: number }[] = [];
+    try {
+      const rows = await db.select({
+        trainerId: reservationsTable.trainerId,
+        sessions: sql<number>`count(*) filter (where ${reservationsTable.status} = 'completed')`,
+        totalSessions: sql<number>`count(*)`,
+      })
+        .from(reservationsTable)
+        .groupBy(reservationsTable.trainerId)
+        .orderBy(sql`count(*) filter (where ${reservationsTable.status} = 'completed') desc`)
+        .limit(5);
+      const trainerIds = rows.map((r: any) => r.trainerId).filter((x: any) => x != null);
+      let trainerMap: Record<number, { name: string; rating: number }> = {};
+      if (trainerIds.length > 0) {
+        const userRows = await db.select({ id: usersTable.id, name: usersTable.name }).from(usersTable);
+        for (const u of userRows as any[]) trainerMap[u.id] = { name: u.name || `훈련사 #${u.id}`, rating: 0 };
+        try {
+          const tRows = await db.select({ userId: trainers.userId, rating: trainers.rating }).from(trainers);
+          for (const t of tRows as any[]) {
+            if (t.userId && trainerMap[t.userId]) {
+              trainerMap[t.userId].rating = Number(t.rating) || 0;
+            }
+          }
+        } catch {}
+      }
+      topTrainers = rows
+        .filter((r: any) => Number(r.sessions) > 0 || Number(r.totalSessions) > 0)
+        .map((r: any) => ({
+          name: trainerMap[r.trainerId]?.name || `훈련사 #${r.trainerId}`,
+          sessions: Number(r.sessions) || Number(r.totalSessions) || 0,
+          rating: trainerMap[r.trainerId]?.rating || 0,
+        }));
+    } catch {}
+
+    // ----- Geography -----
+    const regionKeys = ['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
+    const regionUserCount: Record<string, number> = {};
+    const regionUserIds: Record<string, Set<number>> = {};
+    for (const u of allUsers) {
+      const text = `${u.address || ''} ${u.location || ''} ${u.workingArea || ''}`;
+      const matched = regionKeys.find(k => text.includes(k));
+      const key = matched || (text.trim() ? '기타' : null);
+      if (!key) continue;
+      regionUserCount[key] = (regionUserCount[key] || 0) + 1;
+      if (!regionUserIds[key]) regionUserIds[key] = new Set();
+      if (u.id) regionUserIds[key].add(u.id);
+    }
+    // Compute revenue per region by summing orders/purchases of those user ids
+    const allUserIds = Object.values(regionUserIds).reduce<number[]>((a, s) => a.concat(Array.from(s)), []);
+    let userRevenue: Record<number, number> = {};
+    if (allUserIds.length > 0) {
+      try {
+        const rows = await db.select({
+          userId: ordersTable.userId,
+          rev: sql<number>`coalesce(sum(case when ${ordersTable.paymentStatus} = 'completed' or ${ordersTable.status} = 'completed' then ${ordersTable.totalAmount} else 0 end), 0)`,
+        }).from(ordersTable).groupBy(ordersTable.userId);
+        for (const r of rows as any[]) {
+          if (r.userId != null) userRevenue[r.userId] = (userRevenue[r.userId] || 0) + (Number(r.rev) || 0);
+        }
+      } catch {}
+      try {
+        const rows = await db.select({
+          userId: coursePurchasesTable.userId,
+          rev: sql<number>`coalesce(sum(case when ${coursePurchasesTable.paymentStatus} = 'completed' then ${coursePurchasesTable.purchaseAmount} else 0 end), 0)`,
+        }).from(coursePurchasesTable).groupBy(coursePurchasesTable.userId);
+        for (const r of rows as any[]) {
+          if (r.userId != null) userRevenue[r.userId] = (userRevenue[r.userId] || 0) + (Number(r.rev) || 0);
+        }
+      } catch {}
+    }
+    const totalRegionUsers = Object.values(regionUserCount).reduce((s, n) => s + n, 0);
+    const regionsArr = Object.entries(regionUserCount).map(([region, users]) => {
+      const ids = Array.from(regionUserIds[region] || []);
+      const revenue = ids.reduce((s, id) => s + (userRevenue[id] || 0), 0);
+      const percentage = totalRegionUsers > 0 ? Math.round((users / totalRegionUsers) * 100) : 0;
+      return { region, users, revenue: Math.round(revenue), percentage };
+    }).sort((a, b) => b.users - a.users);
+
+    return {
+      users: { monthlyGrowth, ageGroups, hourlyDistribution, engagement },
+      revenue: { monthlyTrend, growthRate, averageOrderValue, customerLifetimeValue },
+      training: { categoryDistribution, categoryCompletion, topTrainers },
+      geography: { regions: regionsArr },
     };
   }
 }

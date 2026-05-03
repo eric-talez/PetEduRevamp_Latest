@@ -246,6 +246,40 @@ export function registerDashboardRoutes(app: Express) {
     }
   }));
 
+  // 관리자 대시보드 세부 분석(breakdowns) - admin 전용
+  const adminBreakdownsCache = new Map<string, { ts: number; data: any }>();
+  app.get('/api/admin/dashboard/breakdowns', asyncHandler(async (req: any, res: any) => {
+    if (!req.user) {
+      return res.status(401).json({ error: '인증이 필요합니다' });
+    }
+    if (req.user.role !== 'admin' && req.user.role !== 'super-admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다' });
+    }
+
+    try {
+      const { startDate, endDate, key, label } = resolvePeriod(req);
+      const cached = adminBreakdownsCache.get(key);
+      const now = Date.now();
+      let data;
+      if (cached && (now - cached.ts) < ADMIN_AGG_CACHE_DURATION) {
+        data = cached.data;
+      } else {
+        data = await storage.getAdminDashboardBreakdowns({ startDate, endDate });
+        adminBreakdownsCache.set(key, { ts: now, data });
+      }
+
+      res.json({
+        period: label,
+        startDate: startDate?.toISOString() || null,
+        endDate: endDate?.toISOString() || null,
+        ...data,
+      });
+    } catch (error) {
+      console.error('[Dashboard] 관리자 대시보드 breakdowns 오류:', error);
+      res.status(500).json({ error: '관리자 대시보드 세부 분석 조회 중 오류가 발생했습니다' });
+    }
+  }));
+
   // 캐시 저장소
   let systemStatusCache: any = null;
   let cacheTimestamp = 0;
