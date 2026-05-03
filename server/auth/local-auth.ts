@@ -7,6 +7,7 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcrypt';
 import { storage } from '../storage';
 import { User as SelectUser } from '@shared/schema';
+import { logServerError } from '../middleware/audit-logger';
 
 export async function hashPassword(password: string) {
   const saltRounds = 10;
@@ -72,7 +73,7 @@ export function setupLocalAuth() {
         console.log(`로그인 성공: '${username}'`);
         return done(null, user);
       } catch (error) {
-        console.error('로컬 인증 오류:', error);
+        logServerError('로컬 인증 오류:', error);
         return done(error as Error);
       }
     })

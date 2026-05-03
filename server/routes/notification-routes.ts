@@ -6,6 +6,7 @@ import { notificationService } from '../notifications/notification-service';
 import { db } from '../db';
 import { notifications } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerNotificationRoutes(app: Express, server: Server) {
   console.log('[NotificationRoutes] Registering notification routes');
@@ -37,7 +38,7 @@ export function registerNotificationRoutes(app: Express, server: Server) {
           console.log(`[WebSocket] 사용자 ${userId} 인증 완료`);
         }
       } catch (error) {
-        console.error('[WebSocket] 메시지 파싱 오류:', error);
+        logServerError('[WebSocket] 메시지 파싱 오류:', error, req);
       }
     });
 
@@ -49,7 +50,7 @@ export function registerNotificationRoutes(app: Express, server: Server) {
     });
 
     ws.on('error', (error) => {
-      console.error('[WebSocket] 연결 오류:', error);
+      logServerError('[WebSocket] 연결 오류:', error, req);
       if (userId) {
         notificationService.removeConnection(userId, ws);
       }
@@ -74,7 +75,7 @@ export function registerNotificationRoutes(app: Express, server: Server) {
       
       res.json(userNotifications);
     } catch (error) {
-      console.error('[Notifications] 알림 목록 조회 실패:', error);
+      logServerError('[Notifications] 알림 목록 조회 실패:', error, req);
       res.status(500).json({ error: '알림을 불러올 수 없습니다' });
     }
   });
@@ -92,7 +93,7 @@ export function registerNotificationRoutes(app: Express, server: Server) {
       const count = await notificationService.getUnreadCount(user.id);
       res.json({ count });
     } catch (error) {
-      console.error('[Notifications] 읽지 않은 알림 수 조회 실패:', error);
+      logServerError('[Notifications] 읽지 않은 알림 수 조회 실패:', error, req);
       res.status(500).json({ error: '알림 정보를 불러올 수 없습니다' });
     }
   });
@@ -112,7 +113,7 @@ export function registerNotificationRoutes(app: Express, server: Server) {
       
       res.json({ success: true });
     } catch (error) {
-      console.error('[Notifications] 알림 읽음 처리 실패:', error);
+      logServerError('[Notifications] 알림 읽음 처리 실패:', error, req);
       res.status(500).json({ error: '알림 상태를 업데이트할 수 없습니다' });
     }
   });
@@ -130,7 +131,7 @@ export function registerNotificationRoutes(app: Express, server: Server) {
       await notificationService.markAllAsRead(user.id);
       res.json({ success: true });
     } catch (error) {
-      console.error('[Notifications] 모든 알림 읽음 처리 실패:', error);
+      logServerError('[Notifications] 모든 알림 읽음 처리 실패:', error, req);
       res.status(500).json({ error: '알림 상태를 업데이트할 수 없습니다' });
     }
   });
@@ -155,7 +156,7 @@ export function registerNotificationRoutes(app: Express, server: Server) {
       
       res.json({ success: true });
     } catch (error) {
-      console.error('[Notifications] 알림 삭제 실패:', error);
+      logServerError('[Notifications] 알림 삭제 실패:', error, req);
       res.status(500).json({ error: '알림을 삭제할 수 없습니다' });
     }
   });
@@ -178,7 +179,7 @@ export function registerNotificationRoutes(app: Express, server: Server) {
 
         res.json({ success: true, message: '테스트 알림이 전송되었습니다.' });
       } catch (error) {
-        console.error('[Notifications] 테스트 알림 전송 실패:', error);
+        logServerError('[Notifications] 테스트 알림 전송 실패:', error, req);
         res.status(500).json({ error: '알림 전송에 실패했습니다' });
       }
     });

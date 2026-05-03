@@ -3,6 +3,7 @@ import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as fs from "fs";
 import * as path from "path";
+import { logServerError } from '../middleware/audit-logger';
 
 // Multer 설정 - 영상 파일 업로드용
 const storage = multer.memoryStorage();
@@ -113,7 +114,7 @@ export function registerExperienceRoutes(app: Express) {
           fs.unlinkSync(tempFilePath);
         }
         
-        console.error('GenAI 분석 오류:', error);
+        logServerError('GenAI 분석 오류:', error, req);
         
         // 대체 분석 제공
         res.json({
@@ -126,7 +127,7 @@ export function registerExperienceRoutes(app: Express) {
       }
 
     } catch (error) {
-      console.error('영상 분석 오류:', error);
+      logServerError('영상 분석 오류:', error, req);
       res.status(500).json({ 
         error: "영상 분석 중 오류가 발생했습니다.",
         fallback: getFallbackAnalysis()
@@ -158,7 +159,7 @@ export function registerExperienceRoutes(app: Express) {
       });
 
     } catch (error) {
-      console.error('상담 요청 오류:', error);
+      logServerError('상담 요청 오류:', error, req);
       res.status(500).json({ error: "상담 요청 중 오류가 발생했습니다." });
     }
   });

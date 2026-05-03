@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { aiProxyService, AIProxyService } from "../ai/ai-proxy";
+import { logServerError } from '../middleware/audit-logger';
 
 // 커스텀 Request 타입 정의
 interface AuthenticatedRequest extends Request {
@@ -34,7 +35,7 @@ export function registerAIProxyRoutes(app: Express) {
       
       next();
     } catch (error) {
-      console.error('할당량 체크 오류:', error);
+      logServerError('할당량 체크 오류:', error, req);
       next();
     }
   };
@@ -63,7 +64,7 @@ export function registerAIProxyRoutes(app: Express) {
       });
 
     } catch (error: any) {
-      console.error("OpenAI 프록시 오류:", error);
+      logServerError("OpenAI 프록시 오류:", error, req);
       
       // 구체적인 오류 처리
       if (error.code === 'invalid_api_key') {
@@ -108,7 +109,7 @@ export function registerAIProxyRoutes(app: Express) {
       });
 
     } catch (error: any) {
-      console.error("Gemini 프록시 오류:", error);
+      logServerError("Gemini 프록시 오류:", error, req);
       res.status(500).json({ 
         error: "AI 분석 중 오류가 발생했습니다.",
         code: 'INTERNAL_ERROR'
@@ -156,7 +157,7 @@ export function registerAIProxyRoutes(app: Express) {
       });
 
     } catch (error: any) {
-      console.error("다중 엔진 분석 오류:", error);
+      logServerError("다중 엔진 분석 오류:", error, req);
       res.status(500).json({ 
         error: error.message || "AI 분석 중 오류가 발생했습니다.",
         code: 'MULTI_ENGINE_ERROR'
@@ -177,7 +178,7 @@ export function registerAIProxyRoutes(app: Express) {
       });
 
     } catch (error) {
-      console.error("서비스 상태 확인 오류:", error);
+      logServerError("서비스 상태 확인 오류:", error, req);
       res.status(500).json({ 
         status: 'error',
         error: '서비스 상태를 확인할 수 없습니다.'
@@ -197,7 +198,7 @@ export function registerAIProxyRoutes(app: Express) {
       });
 
     } catch (error) {
-      console.error("사용량 조회 오류:", error);
+      logServerError("사용량 조회 오류:", error, req);
       res.status(500).json({ 
         error: "사용량 정보를 조회할 수 없습니다."
       });

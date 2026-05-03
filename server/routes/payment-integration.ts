@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
+import { logServerError } from '../middleware/audit-logger';
 
 // 관리자 권한 검사 미들웨어
 const requireAdmin = (req: any, res: Response, next: NextFunction) => {
@@ -44,7 +45,7 @@ async function testTossPayment(amount: number = 1000) {
 
     return response.ok;
   } catch (error) {
-    console.error('Toss 결제 테스트 오류:', error);
+    logServerError('Toss 결제 테스트 오류:', error);
     return false;
   }
 }
@@ -68,7 +69,7 @@ async function cancelTossPayment(paymentKey: string, reason: string = '관리자
 
     return response.ok;
   } catch (error) {
-    console.error('Toss 결제 취소 오류:', error);
+    logServerError('Toss 결제 취소 오류:', error);
     return false;
   }
 }
@@ -87,7 +88,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: '결제 수단 목록을 성공적으로 조회했습니다.'
       });
     } catch (error) {
-      console.error('[Payment] 결제 수단 조회 오류:', error);
+      logServerError('[Payment] 결제 수단 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 수단 조회 중 오류가 발생했습니다.'
@@ -109,7 +110,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: `${methodData.name} 결제 수단이 성공적으로 등록되었습니다.`
       });
     } catch (error) {
-      console.error('[Payment] 결제 수단 등록 오류:', error);
+      logServerError('[Payment] 결제 수단 등록 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 수단 등록 중 오류가 발생했습니다.'
@@ -139,7 +140,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: `${updateData.name || id} 결제 수단이 성공적으로 수정되었습니다.`
       });
     } catch (error) {
-      console.error('[Payment] 결제 수단 수정 오류:', error);
+      logServerError('[Payment] 결제 수단 수정 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 수단 수정 중 오류가 발생했습니다.'
@@ -159,7 +160,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: '사용자 요금제 목록을 성공적으로 조회했습니다.'
       });
     } catch (error) {
-      console.error('[Payment] 사용자 요금제 조회 오류:', error);
+      logServerError('[Payment] 사용자 요금제 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '사용자 요금제 조회 중 오류가 발생했습니다.'
@@ -211,7 +212,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         });
       }
     } catch (error) {
-      console.error('[Payment] 결제 테스트 오류:', error);
+      logServerError('[Payment] 결제 테스트 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 테스트 중 서버 오류가 발생했습니다.',
@@ -236,7 +237,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: `${methodId} 결제 수단이 ${status === 'active' ? '활성화' : '비활성화'}되었습니다.`
       });
     } catch (error) {
-      console.error('[Payment] 결제 수단 상태 변경 오류:', error);
+      logServerError('[Payment] 결제 수단 상태 변경 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 수단 상태 변경 중 오류가 발생했습니다.'
@@ -260,7 +261,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: `${role} 요금제가 업데이트되었습니다.`
       });
     } catch (error) {
-      console.error('[Payment] 요금제 업데이트 오류:', error);
+      logServerError('[Payment] 요금제 업데이트 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '요금제 업데이트 중 오류가 발생했습니다.'
@@ -283,7 +284,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: '결제 내역을 성공적으로 조회했습니다.'
       });
     } catch (error) {
-      console.error('[Payment] 결제 내역 조회 오류:', error);
+      logServerError('[Payment] 결제 내역 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 내역 조회 중 오류가 발생했습니다.'
@@ -305,7 +306,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: '결제 내역이 성공적으로 추가되었습니다.'
       });
     } catch (error) {
-      console.error('[Payment] 결제 내역 추가 오류:', error);
+      logServerError('[Payment] 결제 내역 추가 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 내역 추가 중 오류가 발생했습니다.'
@@ -326,7 +327,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: `${methodId} 결제 수단이 성공적으로 삭제되었습니다.`
       });
     } catch (error) {
-      console.error('[Payment] 결제 수단 삭제 오류:', error);
+      logServerError('[Payment] 결제 수단 삭제 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 수단 삭제 중 오류가 발생했습니다.'
@@ -362,7 +363,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         });
       }
     } catch (error) {
-      console.error('[Payment] 결제 취소 오류:', error);
+      logServerError('[Payment] 결제 취소 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 취소 중 서버 오류가 발생했습니다.'
@@ -402,7 +403,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: '새 결제 수단이 성공적으로 추가되었습니다.'
       });
     } catch (error) {
-      console.error('[Payment] 결제 수단 추가 오류:', error);
+      logServerError('[Payment] 결제 수단 추가 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 수단 추가 중 오류가 발생했습니다.'
@@ -428,7 +429,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         data: securitySettings
       });
     } catch (error) {
-      console.error('[Payment] 보안 설정 조회 오류:', error);
+      logServerError('[Payment] 보안 설정 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '보안 설정 조회 중 오류가 발생했습니다.'
@@ -455,7 +456,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         message: '보안 설정이 성공적으로 업데이트되었습니다.'
       });
     } catch (error) {
-      console.error('[Payment] 보안 설정 업데이트 오류:', error);
+      logServerError('[Payment] 보안 설정 업데이트 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '보안 설정 업데이트 중 오류가 발생했습니다.'
@@ -482,7 +483,7 @@ export function registerPaymentIntegrationRoutes(app: Express) {
         data: stats
       });
     } catch (error) {
-      console.error('[Payment] 결제 통계 조회 오류:', error);
+      logServerError('[Payment] 결제 통계 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '결제 통계 조회 중 오류가 발생했습니다.'

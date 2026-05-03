@@ -11,6 +11,7 @@ import {
 } from '../../shared/schema';
 import { eq, and, inArray, sql, gte, lte, isNull } from 'drizzle-orm';
 import { fcmService } from '../services/fcm-service';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = express.Router();
 
@@ -57,7 +58,7 @@ router.post('/campaigns', async (req, res) => {
       campaign 
     });
   } catch (error) {
-    console.error('[Push Admin] 캠페인 생성 실패:', error);
+    logServerError('[Push Admin] 캠페인 생성 실패:', error, req);
     res.status(500).json({ error: '캠페인 생성에 실패했습니다' });
   }
 });
@@ -95,7 +96,7 @@ router.get('/campaigns', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[Push Admin] 캠페인 목록 조회 실패:', error);
+    logServerError('[Push Admin] 캠페인 목록 조회 실패:', error, req);
     res.status(500).json({ error: '캠페인 목록 조회에 실패했습니다' });
   }
 });
@@ -125,7 +126,7 @@ router.get('/campaigns/:id', async (req, res) => {
 
     res.json({ campaign, logs });
   } catch (error) {
-    console.error('[Push Admin] 캠페인 상세 조회 실패:', error);
+    logServerError('[Push Admin] 캠페인 상세 조회 실패:', error, req);
     res.status(500).json({ error: '캠페인 조회에 실패했습니다' });
   }
 });
@@ -182,7 +183,7 @@ router.post('/campaigns/:id/send', async (req, res) => {
       totalRecipients: targetTokens.length
     });
   } catch (error) {
-    console.error('[Push Admin] 캠페인 발송 실패:', error);
+    logServerError('[Push Admin] 캠페인 발송 실패:', error, req);
     res.status(500).json({ error: '캠페인 발송에 실패했습니다' });
   }
 });
@@ -237,7 +238,7 @@ router.post('/send-now', async (req, res) => {
       totalRecipients: targetTokens.length
     });
   } catch (error) {
-    console.error('[Push Admin] 즉시 발송 실패:', error);
+    logServerError('[Push Admin] 즉시 발송 실패:', error, req);
     res.status(500).json({ error: '즉시 발송에 실패했습니다' });
   }
 });
@@ -295,7 +296,7 @@ router.get('/segments', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[Push Admin] 세그먼트 조회 실패:', error);
+    logServerError('[Push Admin] 세그먼트 조회 실패:', error, req);
     res.status(500).json({ error: '세그먼트 조회에 실패했습니다' });
   }
 });
@@ -327,7 +328,7 @@ router.delete('/campaigns/:id', async (req, res) => {
 
     res.json({ message: '캠페인이 삭제되었습니다' });
   } catch (error) {
-    console.error('[Push Admin] 캠페인 삭제 실패:', error);
+    logServerError('[Push Admin] 캠페인 삭제 실패:', error, req);
     res.status(500).json({ error: '캠페인 삭제에 실패했습니다' });
   }
 });

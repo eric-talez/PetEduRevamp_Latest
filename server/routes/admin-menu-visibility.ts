@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { storage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -86,7 +87,7 @@ router.get('/menu-visibility', async (req, res) => {
     
     res.json(settings);
   } catch (error) {
-    console.error('[Menu Visibility] 조회 오류:', error);
+    logServerError('[Menu Visibility] 조회 오류:', error, req);
     res.status(500).json({ 
       error: '메뉴 설정 조회 중 오류가 발생했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -142,7 +143,7 @@ router.post('/menu-visibility', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Menu Visibility] 저장 오류:', error);
+    logServerError('[Menu Visibility] 저장 오류:', error, req);
     res.status(500).json({ 
       error: '메뉴 설정 저장 중 오류가 발생했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -174,7 +175,7 @@ router.get('/menu-visibility/:role', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Menu Visibility] 역할별 조회 오류:', error);
+    logServerError('[Menu Visibility] 역할별 조회 오류:', error, req);
     res.status(500).json({ 
       error: '메뉴 설정 조회 중 오류가 발생했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -208,7 +209,7 @@ router.post('/menu-visibility/reset/:role', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Menu Visibility] 초기화 오류:', error);
+    logServerError('[Menu Visibility] 초기화 오류:', error, req);
     res.status(500).json({ 
       error: '메뉴 설정 초기화 중 오류가 발생했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'

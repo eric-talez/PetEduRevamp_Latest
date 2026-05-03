@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { logServerError } from './middleware/audit-logger';
 
 const router = Router();
 
@@ -85,7 +86,7 @@ const checkContent = (content: string, title?: string): { flagged: boolean; keyw
         }
       }
     } catch (error) {
-      console.error(`[Content Check] 키워드 검사 오류: ${filter.keyword}`, error);
+      logServerError(`[Content Check] 키워드 검사 오류: ${filter.keyword}`, error);
     }
   }
   
@@ -138,7 +139,7 @@ router.get('/keywords', (req, res) => {
   try {
     res.json(filterKeywords);
   } catch (error) {
-    console.error('키워드 조회 오류:', error);
+    logServerError('키워드 조회 오류:', error, req);
     res.status(500).json({ error: '키워드 조회에 실패했습니다.' });
   }
 });
@@ -160,7 +161,7 @@ router.post('/keywords', (req, res) => {
     console.log(`[Content Moderation] 새 키워드 추가: ${newKeyword.keyword} (${newKeyword.category})`);
     res.status(201).json(newKeyword);
   } catch (error) {
-    console.error('키워드 추가 오류:', error);
+    logServerError('키워드 추가 오류:', error, req);
     if (error instanceof z.ZodError) {
       res.status(400).json({ error: '입력 데이터가 올바르지 않습니다.', details: error.errors });
     } else {
@@ -189,7 +190,7 @@ router.put('/keywords/:id', (req, res) => {
     console.log(`[Content Moderation] 키워드 수정: ${filterKeywords[keywordIndex].keyword}`);
     res.json(filterKeywords[keywordIndex]);
   } catch (error) {
-    console.error('키워드 수정 오류:', error);
+    logServerError('키워드 수정 오류:', error, req);
     if (error instanceof z.ZodError) {
       res.status(400).json({ error: '입력 데이터가 올바르지 않습니다.', details: error.errors });
     } else {
@@ -213,7 +214,7 @@ router.delete('/keywords/:id', (req, res) => {
     
     res.json({ message: '키워드가 삭제되었습니다.' });
   } catch (error) {
-    console.error('키워드 삭제 오류:', error);
+    logServerError('키워드 삭제 오류:', error, req);
     res.status(500).json({ error: '키워드 삭제에 실패했습니다.' });
   }
 });
@@ -223,7 +224,7 @@ router.get('/pending', (req, res) => {
   try {
     res.json(pendingPosts);
   } catch (error) {
-    console.error('대기 게시글 조회 오류:', error);
+    logServerError('대기 게시글 조회 오류:', error, req);
     res.status(500).json({ error: '대기 게시글 조회에 실패했습니다.' });
   }
 });
@@ -271,7 +272,7 @@ router.post('/moderate', (req, res) => {
     res.json({ message: '검열 처리가 완료되었습니다.', action });
     
   } catch (error) {
-    console.error('게시글 검열 오류:', error);
+    logServerError('게시글 검열 오류:', error, req);
     if (error instanceof z.ZodError) {
       res.status(400).json({ error: '입력 데이터가 올바르지 않습니다.', details: error.errors });
     } else {
@@ -287,7 +288,7 @@ router.get('/logs', (req, res) => {
     const recentLogs = moderationLogs.slice(0, 100);
     res.json(recentLogs);
   } catch (error) {
-    console.error('검열 로그 조회 오류:', error);
+    logServerError('검열 로그 조회 오류:', error, req);
     res.status(500).json({ error: '검열 로그 조회에 실패했습니다.' });
   }
 });
@@ -323,7 +324,7 @@ router.post('/initialize-defaults', (req, res) => {
     });
     
   } catch (error) {
-    console.error('기본 키워드 초기화 오류:', error);
+    logServerError('기본 키워드 초기화 오류:', error, req);
     res.status(500).json({ error: '기본 키워드 초기화에 실패했습니다.' });
   }
 });
@@ -341,7 +342,7 @@ router.post('/check', (req, res) => {
     res.json(result);
     
   } catch (error) {
-    console.error('콘텐츠 검사 오류:', error);
+    logServerError('콘텐츠 검사 오류:', error, req);
     res.status(500).json({ error: '콘텐츠 검사에 실패했습니다.' });
   }
 });

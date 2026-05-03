@@ -1,6 +1,7 @@
 
 import OpenAI from 'openai';
 import { JSDOM } from 'jsdom';
+import { logServerError } from '../middleware/audit-logger';
 
 interface LocationInfo {
   name: string;
@@ -73,7 +74,7 @@ export class AILocationCrawler {
 
       return locations;
     } catch (error) {
-      console.error('장소 검색 오류:', error);
+      logServerError('장소 검색 오류:', error);
       return [];
     }
   }
@@ -115,7 +116,7 @@ export class AILocationCrawler {
         rating: aiData.rating || location.rating
       };
     } catch (error) {
-      console.error('AI 정보 보강 오류:', error);
+      logServerError('AI 정보 보강 오류:', error);
       return location;
     }
   }
@@ -201,7 +202,7 @@ export class AILocationCrawler {
       const data = await response.json();
       return data.items || [];
     } catch (error) {
-      console.error('네이버 블로그 수집 오류:', error);
+      logServerError('네이버 블로그 수집 오류:', error);
       return [];
     }
   }

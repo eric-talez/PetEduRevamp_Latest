@@ -4,6 +4,7 @@ import { WebSocketServer } from 'ws';
 import { MessagingService } from '../messaging/service';
 import { storage } from '../storage';
 import { asyncHandler, AppError } from '../middleware/error-handler';
+import { logServerError } from '../middleware/audit-logger';
 
 let messagingService: MessagingService;
 
@@ -29,7 +30,7 @@ export function registerMessagingRoutes(app: Express, server: Server) {
     });
 
     ws.on('error', error => {
-      console.error('WebSocket error:', error);
+      logServerError('WebSocket error:', error);
     });
 
     ws.on('close', (code, reason) => {

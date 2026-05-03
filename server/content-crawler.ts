@@ -1,4 +1,6 @@
 import { JSDOM } from 'jsdom';
+import { logger } from './monitoring/logger';
+import { logServerError } from './middleware/audit-logger';
 
 interface CrawledContent {
   title: string;
@@ -56,7 +58,7 @@ export class ContentCrawler {
           await new Promise(resolve => setTimeout(resolve, 1000));
           
         } catch (error) {
-          console.error(`기사 확인 실패: ${articleUrl}`, error);
+          logServerError(`기사 확인 실패: ${articleUrl}`, error);
         }
       }
 
@@ -64,7 +66,7 @@ export class ContentCrawler {
       return petArticleUrls;
       
     } catch (error) {
-      console.error('언론사 페이지 크롤링 오류:', error);
+      logServerError('언론사 페이지 크롤링 오류:', error);
       return [];
     }
   }
@@ -215,7 +217,7 @@ export class ContentCrawler {
       return result;
 
     } catch (error) {
-      console.error('크롤링 오류:', error);
+      logServerError('크롤링 오류:', error);
       return null;
     }
   }
@@ -290,7 +292,7 @@ export class ContentCrawler {
     const getNextPostId = (global as any).getNextPostId;
     
     if (!posts || !getNextPostId) {
-      console.error('[커뮤니티 등록] 전역 posts 배열이 초기화되지 않았습니다.');
+      logger.error('[커뮤니티 등록] 전역 posts 배열이 초기화되지 않았습니다.');
       return null;
     }
     

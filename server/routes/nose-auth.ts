@@ -6,6 +6,7 @@ import { evaluateNoseImageQuality, compareNoseImages } from "../ai/openai";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { logServerError } from '../middleware/audit-logger';
 
 const verifyNoseRateLimit = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -178,7 +179,7 @@ async function ensureNoseAuthTables() {
     `);
     console.log("[코 인증] 테이블 마이그레이션 완료");
   } catch (error) {
-    console.error("[코 인증] 테이블 마이그레이션 오류:", error);
+    logServerError("[코 인증] 테이블 마이그레이션 오류:", error);
   }
 }
 
@@ -314,7 +315,7 @@ export function registerNoseAuthRoutes(app: Express) {
         },
       });
     } catch (error) {
-      console.error("[코 등록] 오류:", error);
+      logServerError("[코 등록] 오류:", error, req);
       res.status(500).json({ error: "코 등록 중 오류가 발생했습니다." });
     }
   });
@@ -337,7 +338,7 @@ export function registerNoseAuthRoutes(app: Express) {
 
       res.json({ success: true, profile });
     } catch (error) {
-      console.error("[코 프로필 조회] 오류:", error);
+      logServerError("[코 프로필 조회] 오류:", error, req);
       res.status(500).json({ error: "코 프로필 조회 중 오류가 발생했습니다." });
     }
   });
@@ -436,7 +437,7 @@ export function registerNoseAuthRoutes(app: Express) {
         failReason: !isApproved ? comparison.failReason : undefined,
       });
     } catch (error) {
-      console.error("[코 인증] 오류:", error);
+      logServerError("[코 인증] 오류:", error, req);
       if (savedPath) {
         try { fs.unlinkSync(savedPath); } catch {}
       }
@@ -483,7 +484,7 @@ export function registerNoseAuthRoutes(app: Express) {
 
       res.json({ success: true, message: "수동 승인이 완료되었습니다." });
     } catch (error) {
-      console.error("[수동 승인] 오류:", error);
+      logServerError("[수동 승인] 오류:", error, req);
       res.status(500).json({ error: "수동 승인 중 오류가 발생했습니다." });
     }
   });
@@ -527,7 +528,7 @@ export function registerNoseAuthRoutes(app: Express) {
 
       res.json({ success: true, message: "수동 승인이 완료되었습니다." });
     } catch (error) {
-      console.error("[수동 승인(토큰)] 오류:", error);
+      logServerError("[수동 승인(토큰)] 오류:", error, req);
       res.status(500).json({ error: "수동 승인 중 오류가 발생했습니다." });
     }
   });
@@ -603,7 +604,7 @@ export function registerNoseAuthRoutes(app: Express) {
         },
       });
     } catch (error) {
-      console.error("[코 인증 로그] 오류:", error);
+      logServerError("[코 인증 로그] 오류:", error, req);
       res.status(500).json({ error: "인증 로그 조회 중 오류가 발생했습니다." });
     }
   });

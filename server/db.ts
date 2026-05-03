@@ -4,6 +4,8 @@ import { drizzle as drizzleMaria } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import ws from "ws";
 import * as schema from "../shared/schema";
+import { logger } from './monitoring/logger';
+import { logServerError } from './middleware/audit-logger';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isReplit = process.env.REPLIT_DEV_DOMAIN !== undefined;
@@ -75,7 +77,7 @@ function attachPoolErrorHandlers() {
   try {
     if (typeof pool?.on === 'function') {
       pool.on('error', (err: any) => {
-        console.error('❌ DB pool error:', err?.message || err);
+        logServerError('❌ DB pool error:', err?.message || err);
         // 풀 차원의 connection error 발생 시 적극적 재연결 시도
         scheduleReconnect('pool-error');
       });
@@ -112,7 +114,7 @@ async function recreatePool(reason: string) {
     attachPoolErrorHandlers();
     console.log('✅ DB 풀 재생성 완료');
   } catch (err) {
-    console.error('❌ DB 풀 재생성 실패:', err);
+    logServerError('❌ DB 풀 재생성 실패:', err);
   }
   // 이전 풀은 백그라운드에서 정리 (in-flight 쿼리 끝나길 기다리지 않음)
   if (old && typeof old.end === 'function') {
@@ -137,7 +139,7 @@ function scheduleReconnect(reason: string) {
       consecutiveFailures = 0;
     } else {
       consecutiveFailures += 1;
-      console.error(`❌ DB 재연결 실패 (연속 ${consecutiveFailures}회)`);
+      logger.error(`❌ DB 재연결 실패 (연속 ${consecutiveFailures}회)`);
       if (consecutiveFailures >= RECREATE_THRESHOLD) {
         consecutiveFailures = 0;
         await recreatePool('persistent-failure');
@@ -169,7 +171,7 @@ export async function checkDatabaseConnection() {
       await connection.ping();
       return true;
     } catch (error) {
-      console.error('❌ MariaDB 연결 실패:', error);
+      logServerError('❌ MariaDB 연결 실패:', error);
       return false;
     } finally {
       if (connection) {
@@ -185,7 +187,7 @@ export async function checkDatabaseConnection() {
       await client.query('SELECT 1');
       return true;
     } catch (error) {
-      console.error('❌ PostgreSQL 연결 실패:', error);
+      logServerError('❌ PostgreSQL 연결 실패:', error);
       return false;
     } finally {
       if (client) {
@@ -205,7 +207,7 @@ export async function closeDatabasePool(): Promise<void> {
       console.log('✅ DB pool closed');
     }
   } catch (err) {
-    console.error('❌ DB pool close 중 오류:', err);
+    logServerError('❌ DB pool close 중 오류:', err);
   }
 }
 

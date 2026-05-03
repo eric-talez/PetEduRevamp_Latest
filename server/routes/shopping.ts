@@ -3,6 +3,7 @@ import { db } from "../db";
 import { products, shopCategories, cartItems } from "../../shared/schema";
 import { eq, and, or, like, gte, lte, desc, count } from "drizzle-orm";
 import type { IStorage } from "../storage";
+import { logServerError } from '../middleware/audit-logger';
 
 // 관리자 권한 검사 미들웨어
 const requireAdmin = (req: any, res: Response, next: NextFunction) => {
@@ -34,7 +35,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
       console.log(`[ShoppingRoutes] 상품 ${productList?.length || 0}개 조회됨`);
       res.json({ success: true, products: productList || [] });
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logServerError('Error fetching products:', error, req);
       res.status(500).json({ error: '상품 목록을 불러올 수 없습니다' });
     }
   });
@@ -48,7 +49,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
       // res.json(courses || []);
       res.status(501).json({ message: 'Not Implemented' });
     } catch (error) {
-      console.error('Error fetching courses:', error);
+      logServerError('Error fetching courses:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -129,7 +130,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
         totalPages: Math.ceil(total / Number(limit))
       });
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logServerError('Error fetching products:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -151,7 +152,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
 
       res.json(product[0]);
     } catch (error) {
-      console.error('Error fetching product details:', error);
+      logServerError('Error fetching product details:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -167,7 +168,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
 
       res.json(categories);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      logServerError('Error fetching categories:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -235,7 +236,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
         res.status(201).json(newItem[0]);
       }
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      logServerError('Error adding to cart:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -270,7 +271,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
 
       res.json(cartList);
     } catch (error) {
-      console.error('Error fetching cart:', error);
+      logServerError('Error fetching cart:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -308,7 +309,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
 
       res.json(updatedItem[0]);
     } catch (error) {
-      console.error('Error updating cart item:', error);
+      logServerError('Error updating cart item:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -337,7 +338,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
 
       res.json({ message: 'Item removed from cart' });
     } catch (error) {
-      console.error('Error removing cart item:', error);
+      logServerError('Error removing cart item:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -390,7 +391,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
 
       res.status(201).json(newItem[0]);
     } catch (error) {
-      console.error('Error adding to wishlist:', error);
+      logServerError('Error adding to wishlist:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -420,7 +421,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
 
       res.json({ message: 'Item removed from wishlist' });
     } catch (error) {
-      console.error('Error removing from wishlist:', error);
+      logServerError('Error removing from wishlist:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -493,7 +494,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
         product: newProduct[0]
       });
     } catch (error) {
-      console.error('Error creating product:', error);
+      logServerError('Error creating product:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -531,7 +532,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
         product: updatedProduct[0]
       });
     } catch (error) {
-      console.error('Error updating product:', error);
+      logServerError('Error updating product:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -572,7 +573,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
         product: deactivatedProduct[0]
       });
     } catch (error) {
-      console.error('Error deactivating product:', error);
+      logServerError('Error deactivating product:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -646,7 +647,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
         totalPages: Math.ceil(total / Number(limit))
       });
     } catch (error) {
-      console.error('Error fetching admin products:', error);
+      logServerError('Error fetching admin products:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -692,7 +693,7 @@ export function registerShoppingRoutes(app: Express, storage: IStorage) {
         message: '추천인 코드가 유효합니다.'
       });
     } catch (error) {
-      console.error('Error validating referral code:', error);
+      logServerError('Error validating referral code:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });

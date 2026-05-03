@@ -1,5 +1,6 @@
 import type { Express } from 'express';
 import type { IStorage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerHealthRoutes(app: Express, storage: IStorage) {
   // 반려동물 예방접종 기록 조회
@@ -14,7 +15,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
 
       res.json(vaccinations);
     } catch (error) {
-      console.error('Error fetching vaccinations:', error);
+      logServerError('Error fetching vaccinations:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -37,7 +38,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
       const vaccination = await storage.createVaccination(vaccinationData);
       res.status(201).json(vaccination);
     } catch (error) {
-      console.error('Error creating vaccination:', error);
+      logServerError('Error creating vaccination:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -54,7 +55,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
 
       res.json(checkups);
     } catch (error) {
-      console.error('Error fetching checkups:', error);
+      logServerError('Error fetching checkups:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -77,7 +78,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
       const checkup = await storage.createCheckup(checkupData);
       res.status(201).json(checkup);
     } catch (error) {
-      console.error('Error creating checkup:', error);
+      logServerError('Error creating checkup:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -94,7 +95,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
 
       res.json(weightRecords);
     } catch (error) {
-      console.error('Error fetching weight records:', error);
+      logServerError('Error fetching weight records:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -116,7 +117,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
       const weightRecord = await storage.createWeightRecord(weightData);
       res.status(201).json(weightRecord);
     } catch (error) {
-      console.error('Error creating weight record:', error);
+      logServerError('Error creating weight record:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -133,7 +134,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
 
       res.json(medications);
     } catch (error) {
-      console.error('Error fetching medications:', error);
+      logServerError('Error fetching medications:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -155,7 +156,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
       const medication = await storage.createMedication(medicationData);
       res.status(201).json(medication);
     } catch (error) {
-      console.error('Error creating medication:', error);
+      logServerError('Error creating medication:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -172,7 +173,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
 
       res.json(nutritionPlans);
     } catch (error) {
-      console.error('Error fetching nutrition plans:', error);
+      logServerError('Error fetching nutrition plans:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -194,7 +195,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
       const nutritionPlan = await storage.createNutritionPlan(nutritionData);
       res.status(201).json(nutritionPlan);
     } catch (error) {
-      console.error('Error creating nutrition plan:', error);
+      logServerError('Error creating nutrition plan:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -211,7 +212,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
 
       res.json(reminders);
     } catch (error) {
-      console.error('Error fetching health reminders:', error);
+      logServerError('Error fetching health reminders:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -233,7 +234,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
       const reminder = await storage.createHealthReminder(reminderData);
       res.status(201).json(reminder);
     } catch (error) {
-      console.error('Error creating health reminder:', error);
+      logServerError('Error creating health reminder:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -296,7 +297,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
         healthSummary
       });
     } catch (error) {
-      console.error('Error fetching health dashboard:', error);
+      logServerError('Error fetching health dashboard:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -373,7 +374,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
 
       res.json(stats);
     } catch (error) {
-      console.error('Error fetching health stats:', error);
+      logServerError('Error fetching health stats:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });

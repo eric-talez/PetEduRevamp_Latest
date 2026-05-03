@@ -3,6 +3,7 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { csrfProtection } from '../middleware/csrf';
 import { notificationService } from '../notifications/notification-service';
+import { logServerError } from '../middleware/audit-logger';
 
 // 이벤트 스키마 정의
 const eventSchema = z.object({
@@ -46,7 +47,7 @@ export function registerEventRoutes(app: Express) {
         }
       });
     } catch (error) {
-      console.error("이벤트 조회 오류:", error);
+      logServerError("이벤트 조회 오류:", error, req);
       return res.status(500).json({ 
         message: "이벤트를 불러오는 중 오류가 발생했습니다", 
         code: "EVENT_FETCH_ERROR" 
@@ -69,7 +70,7 @@ export function registerEventRoutes(app: Express) {
       
       return res.status(200).json(event);
     } catch (error) {
-      console.error("이벤트 상세 조회 오류:", error);
+      logServerError("이벤트 상세 조회 오류:", error, req);
       return res.status(500).json({ 
         message: "이벤트 상세 정보를 불러오는 중 오류가 발생했습니다", 
         code: "EVENT_DETAIL_FETCH_ERROR" 
@@ -115,7 +116,7 @@ export function registerEventRoutes(app: Express) {
         });
       }
       
-      console.error("이벤트 생성 오류:", error);
+      logServerError("이벤트 생성 오류:", error, req);
       return res.status(500).json({ 
         message: "이벤트 생성 중 오류가 발생했습니다", 
         code: "EVENT_CREATE_ERROR" 
@@ -177,12 +178,12 @@ export function registerEventRoutes(app: Express) {
           data: { eventId, eventTitle: event.title }
         });
       } catch (notifyError) {
-        console.error('[이벤트] 알림 발송 실패:', notifyError);
+        logServerError('[이벤트] 알림 발송 실패:', notifyError, req);
       }
       
       return res.status(201).json(attendance);
     } catch (error) {
-      console.error("이벤트 참가 신청 오류:", error);
+      logServerError("이벤트 참가 신청 오류:", error, req);
       return res.status(500).json({ 
         message: "이벤트 참가 신청 중 오류가 발생했습니다", 
         code: "EVENT_ATTEND_ERROR" 
@@ -206,7 +207,7 @@ export function registerEventRoutes(app: Express) {
       
       return res.status(200).json(events);
     } catch (error) {
-      console.error("지역별 이벤트 조회 오류:", error);
+      logServerError("지역별 이벤트 조회 오류:", error, req);
       return res.status(500).json({ 
         message: "지역별 이벤트를 불러오는 중 오류가 발생했습니다", 
         code: "REGION_EVENTS_FETCH_ERROR" 
@@ -230,7 +231,7 @@ export function registerEventRoutes(app: Express) {
       
       return res.status(200).json(events);
     } catch (error) {
-      console.error("카테고리별 이벤트 조회 오류:", error);
+      logServerError("카테고리별 이벤트 조회 오류:", error, req);
       return res.status(500).json({ 
         message: "카테고리별 이벤트를 불러오는 중 오류가 발생했습니다", 
         code: "CATEGORY_EVENTS_FETCH_ERROR" 

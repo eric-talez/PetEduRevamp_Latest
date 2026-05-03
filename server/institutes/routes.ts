@@ -1,6 +1,7 @@
 import { Express } from "express";
 import { storage as storageInstance } from "../storage";
 import { csrfProtection } from '../middleware/csrf';
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerInstituteRoutes(app: Express, storage: any) {
   // 기관 목록 조회
@@ -9,7 +10,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       const institutes = await storage.getAllInstitutes();
       res.json(institutes || []);
     } catch (error) {
-      console.error('Error fetching institutes:', error);
+      logServerError('Error fetching institutes:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -30,7 +31,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
 
       res.json(institute);
     } catch (error) {
-      console.error('Error fetching institute:', error);
+      logServerError('Error fetching institute:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -76,7 +77,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
 
       res.json(formattedTrainers);
     } catch (error) {
-      console.error('Error fetching institute trainers:', error);
+      logServerError('Error fetching institute trainers:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -93,7 +94,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
 
       res.json(students);
     } catch (error) {
-      console.error('Error fetching institute students:', error);
+      logServerError('Error fetching institute students:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -111,7 +112,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
 
       res.json(stats);
     } catch (error) {
-      console.error('Error fetching institute stats:', error);
+      logServerError('Error fetching institute stats:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -150,7 +151,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('Error creating reservation:', error);
+      logServerError('Error creating reservation:', error, req);
       res.status(500).json({ 
         success: false,
         message: 'Internal server error',
@@ -186,7 +187,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('Error fetching inquiries:', error);
+      logServerError('Error fetching inquiries:', error, req);
       res.status(500).json({ 
         success: false,
         message: 'Internal server error',
@@ -235,7 +236,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('Error creating inquiry:', error);
+      logServerError('Error creating inquiry:', error, req);
       res.status(500).json({ 
         success: false,
         message: 'Internal server error',
@@ -286,7 +287,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('Error updating inquiry:', error);
+      logServerError('Error updating inquiry:', error, req);
       res.status(500).json({ 
         success: false,
         message: 'Internal server error',
@@ -342,7 +343,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('Error creating review:', error);
+      logServerError('Error creating review:', error, req);
       res.status(500).json({ 
         success: false,
         message: 'Internal server error',
@@ -404,7 +405,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('Error fetching reviews:', error);
+      logServerError('Error fetching reviews:', error, req);
       res.status(500).json({ 
         success: false,
         message: 'Internal server error' 
@@ -471,7 +472,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
             institute.code = generatedCode;
           }
         } catch (updateError) {
-          console.error('[MyInstitute] 기관 코드 업데이트 오류:', updateError);
+          logServerError('[MyInstitute] 기관 코드 업데이트 오류:', updateError, req);
           // 업데이트 실패해도 임시 코드 반환
           institute.code = generatedCode;
         }
@@ -495,7 +496,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       res.json(response);
 
     } catch (error) {
-      console.error('[MyInstitute] 기관 정보 조회 오류:', error);
+      logServerError('[MyInstitute] 기관 정보 조회 오류:', error, req);
       res.status(500).json({ message: '기관 정보 조회 중 오류가 발생했습니다.' });
     }
   });
@@ -524,7 +525,7 @@ export function registerInstituteRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('Error logging call inquiry:', error);
+      logServerError('Error logging call inquiry:', error, req);
       res.status(500).json({ 
         success: false,
         message: 'Internal server error' 

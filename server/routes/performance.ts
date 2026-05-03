@@ -1,4 +1,5 @@
 import express from 'express';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.post('/metrics', (req, res) => {
 
     res.status(200).json({ success: true, message: 'Metrics received' });
   } catch (error) {
-    console.error('Performance metrics processing failed:', error);
+    logServerError('Performance metrics processing failed:', error, req);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });

@@ -1,6 +1,7 @@
 import { aiUsageLog, aiDailySummary, aiUsageLimits, users } from "../../shared/schema";
 import { db } from "../db";
 import { eq, gte, lte, and, desc, sql } from "drizzle-orm";
+import { logServerError } from '../middleware/audit-logger';
 
 interface UsageTrackingData {
   userId?: number;
@@ -61,7 +62,7 @@ class AIUsageService {
       
       console.log(`[AI Usage] ${data.provider} ${data.model} - ${data.requestType} logged`);
     } catch (error) {
-      console.error('AI 사용량 로깅 오류:', error);
+      logServerError('AI 사용량 로깅 오류:', error);
     }
   }
 
@@ -103,7 +104,7 @@ class AIUsageService {
         });
       }
     } catch (error) {
-      console.error('일일 집계 업데이트 오류:', error);
+      logServerError('일일 집계 업데이트 오류:', error);
     }
   }
 
@@ -126,7 +127,7 @@ class AIUsageService {
 
       return this.calculateStats(logs);
     } catch (error) {
-      console.error('사용자 사용량 조회 오류:', error);
+      logServerError('사용자 사용량 조회 오류:', error);
       return this.getEmptyStats();
     }
   }
@@ -184,7 +185,7 @@ class AIUsageService {
         }))
       };
     } catch (error) {
-      console.error('전체 사용량 조회 오류:', error);
+      logServerError('전체 사용량 조회 오류:', error);
       return {
         ...this.getEmptyStats(),
         topUsers: []
@@ -211,7 +212,7 @@ class AIUsageService {
 
       return null;
     } catch (error) {
-      console.error('사용자 제한 조회 오류:', error);
+      logServerError('사용자 제한 조회 오류:', error);
       return null;
     }
   }
@@ -254,7 +255,7 @@ class AIUsageService {
         limits
       };
     } catch (error) {
-      console.error('사용량 제한 확인 오류:', error);
+      logServerError('사용량 제한 확인 오류:', error);
       return {
         canMakeRequest: true,
         dailyUsage: { requests: 0, cost: 0 },

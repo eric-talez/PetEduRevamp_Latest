@@ -6,13 +6,14 @@ import {
   processUploadedFiles, 
   deleteFile 
 } from "../middleware/upload";
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerUploadRoutes(app: Express) {
   // 단일 파일 업로드
   app.post("/api/upload/single", (req: Request, res: Response) => {
     uploadSingle(req, res, (err) => {
       if (err) {
-        console.error('업로드 오류:', err);
+        logServerError('업로드 오류:', err, req);
         return res.status(400).json({ 
           success: false, 
           message: err.message 
@@ -39,7 +40,7 @@ export function registerUploadRoutes(app: Express) {
   app.post("/api/upload/multiple", (req: Request, res: Response) => {
     uploadMultiple(req, res, (err) => {
       if (err) {
-        console.error('업로드 오류:', err);
+        logServerError('업로드 오류:', err, req);
         return res.status(400).json({ 
           success: false, 
           message: err.message 
@@ -66,7 +67,7 @@ export function registerUploadRoutes(app: Express) {
   app.post("/api/upload/notebook", (req: Request, res: Response) => {
     uploadFields(req, res, (err) => {
       if (err) {
-        console.error('업로드 오류:', err);
+        logServerError('업로드 오류:', err, req);
         return res.status(400).json({ 
           success: false, 
           message: err.message 
@@ -93,7 +94,7 @@ export function registerUploadRoutes(app: Express) {
 
     uploadSingle(req, res, async (err) => {
       if (err) {
-        console.error('프로필 사진 업로드 오류:', err);
+        logServerError('프로필 사진 업로드 오류:', err, req);
         return res.status(400).json({ 
           success: false, 
           message: err.message 
@@ -123,7 +124,7 @@ export function registerUploadRoutes(app: Express) {
           message: '프로필 사진이 성공적으로 업데이트되었습니다.'
         });
       } catch (error) {
-        console.error('프로필 업데이트 오류:', error);
+        logServerError('프로필 업데이트 오류:', error, req);
 
         // 파일 업로드는 성공했지만 DB 업데이트 실패 시에도 파일 정보 반환
         const fileInfo = processUploadedFiles(req.file);
@@ -140,7 +141,7 @@ export function registerUploadRoutes(app: Express) {
   app.post("/api/upload/image", (req: Request, res: Response) => {
     uploadSingle(req, res, (err) => {
       if (err) {
-        console.error('업로드 오류:', err);
+        logServerError('업로드 오류:', err, req);
         return res.status(400).json({ 
           success: false, 
           message: err.message 
@@ -172,7 +173,7 @@ export function registerUploadRoutes(app: Express) {
   app.post("/api/upload/video", (req: Request, res: Response) => {
     uploadSingle(req, res, (err) => {
       if (err) {
-        console.error('동영상 업로드 오류:', err);
+        logServerError('동영상 업로드 오류:', err, req);
         return res.status(400).json({ 
           success: false, 
           message: err.message 

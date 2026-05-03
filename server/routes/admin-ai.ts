@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { aiProxyService } from "../ai/ai-proxy";
+import { logServerError } from '../middleware/audit-logger';
 
 interface AIConfiguration {
   openaiApiKey?: string;
@@ -79,7 +80,7 @@ export function registerAdminAIRoutes(app: Express) {
 
       res.json(safeConfig);
     } catch (error) {
-      console.error('AI 설정 조회 오류:', error);
+      logServerError('AI 설정 조회 오류:', error, req);
       res.status(500).json({ error: 'AI 설정을 조회할 수 없습니다.' });
     }
   });
@@ -150,7 +151,7 @@ export function registerAdminAIRoutes(app: Express) {
       });
 
     } catch (error) {
-      console.error('AI 설정 업데이트 오류:', error);
+      logServerError('AI 설정 업데이트 오류:', error, req);
       res.status(500).json({ error: 'AI 설정을 업데이트할 수 없습니다.' });
     }
   });
@@ -172,7 +173,7 @@ export function registerAdminAIRoutes(app: Express) {
       res.json(stats);
 
     } catch (error) {
-      console.error('AI 사용량 통계 조회 오류:', error);
+      logServerError('AI 사용량 통계 조회 오류:', error, req);
       res.status(500).json({ error: '사용량 통계를 조회할 수 없습니다.' });
     }
   });
@@ -195,7 +196,7 @@ export function registerAdminAIRoutes(app: Express) {
       });
 
     } catch (error) {
-      console.error('AI 서비스 재시작 오류:', error);
+      logServerError('AI 서비스 재시작 오류:', error, req);
       res.status(500).json({ error: 'AI 서비스를 재시작할 수 없습니다.' });
     }
   });
@@ -226,7 +227,7 @@ export function registerAdminAIRoutes(app: Express) {
       res.json(detailedStatus);
 
     } catch (error) {
-      console.error('AI 서비스 상태 조회 오류:', error);
+      logServerError('AI 서비스 상태 조회 오류:', error, req);
       res.status(500).json({ error: 'AI 서비스 상태를 조회할 수 없습니다.' });
     }
   });
@@ -252,7 +253,7 @@ export function registerAdminAIRoutes(app: Express) {
       res.json(realtimeData);
 
     } catch (error) {
-      console.error('실시간 사용량 조회 오류:', error);
+      logServerError('실시간 사용량 조회 오류:', error, req);
       res.status(500).json({ error: '실시간 사용량을 조회할 수 없습니다.' });
     }
   });
@@ -296,7 +297,7 @@ export function registerAdminAIRoutes(app: Express) {
       res.json(performanceData);
 
     } catch (error) {
-      console.error('AI 모델 성능 데이터 조회 오류:', error);
+      logServerError('AI 모델 성능 데이터 조회 오류:', error, req);
       res.status(500).json({ error: '성능 데이터를 조회할 수 없습니다.' });
     }
   });

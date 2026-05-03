@@ -78,10 +78,16 @@ export function requestContextMiddleware(req: any, res: Response, next: NextFunc
  * 통합 에러 로깅 helper. console.error 대용.
  */
 export function logServerError(message: string, error: unknown, req?: Request) {
-  const err: any = error instanceof Error ? error : new Error(String(error));
+  const isErrorInstance = error instanceof Error;
+  const err: any = isErrorInstance ? error : new Error(typeof error === 'string' ? error : 'Non-Error thrown');
+  // 비-Error 객체/원시값은 details 필드로 마스킹 후 함께 기록하여 정보 손실 방지
+  const details = !isErrorInstance && error != null && typeof error !== 'string'
+    ? maskSensitive(error)
+    : undefined;
   logger.error(message, {
     err: err.message,
     stack: err.stack,
+    details,
     requestId: (req as any)?.requestId,
     userId: (req as any)?.user?.id,
     role: (req as any)?.user?.role,

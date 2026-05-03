@@ -4,6 +4,7 @@
 
 import { adaptiveAIManager } from './adaptive-ai-manager';
 import { aiProxyService } from './ai-proxy';
+import { logServerError } from '../middleware/audit-logger';
 
 interface PetServiceOptimization {
   serviceType: string;
@@ -255,7 +256,7 @@ class TalezAIOptimizer {
       });
       
     } catch (error) {
-      console.error('❌ 최적화 분석 실패:', error);
+      logServerError('❌ 최적화 분석 실패:', error);
     }
   }
 

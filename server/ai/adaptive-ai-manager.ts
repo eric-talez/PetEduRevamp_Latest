@@ -4,6 +4,7 @@
 
 import EventEmitter from 'events';
 import { aiProxyService } from './ai-proxy';
+import { logServerError } from '../middleware/audit-logger';
 
 // ==========================================
 // 사용자 패턴 분석기
@@ -702,7 +703,7 @@ class AdaptiveAIManager extends EventEmitter {
       };
       
     } catch (error) {
-      console.error('Enhanced analysis failed:', error);
+      logServerError('Enhanced analysis failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

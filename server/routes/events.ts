@@ -3,6 +3,7 @@ import { storage } from '../storage';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -109,7 +110,7 @@ router.get('/events', async (req, res) => {
     
     res.json(events);
   } catch (error) {
-    console.error('이벤트 조회 오류:', error);
+    logServerError('이벤트 조회 오류:', error, req);
     res.status(500).json({ error: '이벤트 데이터를 불러오는데 실패했습니다.' });
   }
 });
@@ -138,7 +139,7 @@ router.post('/events/:id/thumbnail', eventUpload.single('thumbnail'), async (req
       message: '썸네일이 성공적으로 업로드되었습니다.'
     });
   } catch (error) {
-    console.error('썸네일 업로드 오류:', error);
+    logServerError('썸네일 업로드 오류:', error, req);
     res.status(500).json({ error: '썸네일 업로드에 실패했습니다.' });
   }
 });
@@ -170,7 +171,7 @@ router.delete('/events/:id/thumbnail', async (req, res) => {
     
     res.json({ success: true, message: '썸네일이 삭제되었습니다.' });
   } catch (error) {
-    console.error('썸네일 삭제 오류:', error);
+    logServerError('썸네일 삭제 오류:', error, req);
     res.status(500).json({ error: '썸네일 삭제에 실패했습니다.' });
   }
 });
@@ -187,7 +188,7 @@ router.get('/events/:id', async (req, res) => {
     
     res.json(event);
   } catch (error) {
-    console.error('이벤트 조회 오류:', error);
+    logServerError('이벤트 조회 오류:', error, req);
     res.status(500).json({ error: '이벤트 데이터를 불러오는데 실패했습니다.' });
   }
 });
@@ -206,7 +207,7 @@ router.post('/events', async (req, res) => {
     
     res.status(201).json(newEvent);
   } catch (error) {
-    console.error('이벤트 생성 오류:', error);
+    logServerError('이벤트 생성 오류:', error, req);
     res.status(500).json({ error: '이벤트 생성에 실패했습니다.' });
   }
 });
@@ -230,7 +231,7 @@ router.put('/events/:id', async (req, res) => {
     
     res.json(updatedEvent);
   } catch (error) {
-    console.error('이벤트 업데이트 오류:', error);
+    logServerError('이벤트 업데이트 오류:', error, req);
     res.status(500).json({ error: '이벤트 업데이트에 실패했습니다.' });
   }
 });
@@ -251,7 +252,7 @@ router.delete('/events/:id', async (req, res) => {
     
     res.json({ message: '이벤트가 삭제되었습니다.' });
   } catch (error) {
-    console.error('이벤트 삭제 오류:', error);
+    logServerError('이벤트 삭제 오류:', error, req);
     res.status(500).json({ error: '이벤트 삭제에 실패했습니다.' });
   }
 });
@@ -294,7 +295,7 @@ router.post('/events/auto-update', async (req, res) => {
           results.push({ action: 'created', event: newEvent });
         }
       } catch (error) {
-        console.error(`이벤트 처리 오류 (${eventData.name}):`, error);
+        logServerError(`이벤트 처리 오류 (${eventData.name}):`, error, req);
         results.push({ action: 'error', eventName: eventData.name, error: error.message });
       }
     }
@@ -308,7 +309,7 @@ router.post('/events/auto-update', async (req, res) => {
       errors: results.filter(r => r.action === 'error').length
     });
   } catch (error) {
-    console.error('이벤트 자동 업데이트 오류:', error);
+    logServerError('이벤트 자동 업데이트 오류:', error, req);
     res.status(500).json({ error: '이벤트 자동 업데이트에 실패했습니다.' });
   }
 });
@@ -342,7 +343,7 @@ router.get('/events/stats', async (req, res) => {
     
     res.json(stats);
   } catch (error) {
-    console.error('이벤트 통계 조회 오류:', error);
+    logServerError('이벤트 통계 조회 오류:', error, req);
     res.status(500).json({ error: '이벤트 통계를 불러오는데 실패했습니다.' });
   }
 });

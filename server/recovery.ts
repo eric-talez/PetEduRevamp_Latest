@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from './storage';
 import crypto from 'crypto';
+import { logServerError } from './middleware/audit-logger';
 
 // 비밀번호 재설정 토큰 저장소 (실제 프로덕션에서는 DB에 저장해야 함)
 const resetTokens: Record<string, { email: string, username: string, expires: Date }> = {};
@@ -56,7 +57,7 @@ export async function requestPasswordReset(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('비밀번호 재설정 요청 오류:', error);
+    logServerError('비밀번호 재설정 요청 오류:', error, req);
     return res.status(500).json({ message: '서버 오류가 발생했습니다. 나중에 다시 시도해주세요.' });
   }
 }
@@ -85,7 +86,7 @@ export async function verifyResetToken(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('토큰 확인 오류:', error);
+    logServerError('토큰 확인 오류:', error, req);
     return res.status(500).json({ message: '서버 오류가 발생했습니다. 나중에 다시 시도해주세요.' });
   }
 }
@@ -129,7 +130,7 @@ export async function resetPassword(req: Request, res: Response) {
     return res.status(200).json({ message: '비밀번호가 성공적으로 재설정되었습니다.' });
     
   } catch (error) {
-    console.error('비밀번호 재설정 오류:', error);
+    logServerError('비밀번호 재설정 오류:', error, req);
     return res.status(500).json({ message: '서버 오류가 발생했습니다. 나중에 다시 시도해주세요.' });
   }
 }

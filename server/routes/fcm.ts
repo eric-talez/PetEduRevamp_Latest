@@ -2,6 +2,7 @@ import express from 'express';
 import { db } from '../db';
 import { fcmTokens, insertFcmTokenSchema, InsertFcmToken } from '../../shared/schema';
 import { eq, and } from 'drizzle-orm';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = express.Router();
 
@@ -79,7 +80,7 @@ router.post('/register-token', async (req, res) => {
       tokenId: newToken.id 
     });
   } catch (error: any) {
-    console.error('[FCM] 토큰 등록 실패:', error);
+    logServerError('[FCM] 토큰 등록 실패:', error, req);
     
     // 중복 토큰 에러 처리
     if (error.code === '23505') { // PostgreSQL unique violation
@@ -128,7 +129,7 @@ router.post('/unregister-token', async (req, res) => {
 
     res.json({ message: '토큰이 비활성화되었습니다' });
   } catch (error) {
-    console.error('[FCM] 토큰 제거 실패:', error);
+    logServerError('[FCM] 토큰 제거 실패:', error, req);
     res.status(500).json({ error: '토큰 제거에 실패했습니다' });
   }
 });
@@ -158,7 +159,7 @@ router.get('/tokens', async (req, res) => {
 
     res.json({ tokens });
   } catch (error) {
-    console.error('[FCM] 토큰 목록 조회 실패:', error);
+    logServerError('[FCM] 토큰 목록 조회 실패:', error, req);
     res.status(500).json({ error: '토큰 목록 조회에 실패했습니다' });
   }
 });

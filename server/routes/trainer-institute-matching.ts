@@ -1,6 +1,7 @@
 
 import { Express } from "express";
 import { csrfProtection } from '../middleware/csrf';
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerTrainerInstituteMatchingRoutes(app: Express, storage: any) {
   // 기관에 훈련사 추가
@@ -61,7 +62,7 @@ export function registerTrainerInstituteMatchingRoutes(app: Express, storage: an
       });
 
     } catch (error) {
-      console.error('[TrainerMatching] 매칭 실패:', error);
+      logServerError('[TrainerMatching] 매칭 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '훈련사 추가 중 오류가 발생했습니다.' 
@@ -84,7 +85,7 @@ export function registerTrainerInstituteMatchingRoutes(app: Express, storage: an
       });
 
     } catch (error) {
-      console.error('[TrainerMatching] 제거 실패:', error);
+      logServerError('[TrainerMatching] 제거 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '훈련사 제거 중 오류가 발생했습니다.' 
@@ -127,7 +128,7 @@ export function registerTrainerInstituteMatchingRoutes(app: Express, storage: an
       });
 
     } catch (error) {
-      console.error('[TrainerMatching] 소속 현황 조회 실패:', error);
+      logServerError('[TrainerMatching] 소속 현황 조회 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '소속 현황 조회 중 오류가 발생했습니다.' 
@@ -160,7 +161,7 @@ export function registerTrainerInstituteMatchingRoutes(app: Express, storage: an
       });
 
     } catch (error) {
-      console.error('[TrainerMatching] 업데이트 실패:', error);
+      logServerError('[TrainerMatching] 업데이트 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '매칭 정보 업데이트 중 오류가 발생했습니다.' 

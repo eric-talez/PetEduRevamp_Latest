@@ -2,6 +2,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { Server } from 'http';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessage, Notification } from '../../shared/realtime-schema';
+import { logServerError } from '../middleware/audit-logger';
 
 interface Client {
   id: string;
@@ -36,7 +37,7 @@ export class RealtimeService {
         const message = JSON.parse(data.toString());
         this.handleMessage(clientId, message);
       } catch (error) {
-        console.error('[WebSocket] 메시지 파싱 오류:', error);
+        logServerError('[WebSocket] 메시지 파싱 오류:', error);
         this.sendError(ws, '잘못된 메시지 형식입니다.');
       }
     });
@@ -46,7 +47,7 @@ export class RealtimeService {
     });
 
     ws.on('error', (error) => {
-      console.error(`[WebSocket] 연결 오류 ${clientId}:`, error);
+      logServerError(`[WebSocket] 연결 오류 ${clientId}:`, error);
       this.handleDisconnection(clientId);
     });
 

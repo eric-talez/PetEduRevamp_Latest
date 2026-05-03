@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { users, courses, institutes, pets } from '../../shared/schema';
 import { eq, sql, count } from 'drizzle-orm';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.get('/database-test', async (req, res) => {
       console.log('[Database Test] ✅ 데이터베이스 연결 성공');
     } catch (error) {
       testResults.errors.push(`Connection Error: ${error}`);
-      console.error('[Database Test] ❌ 데이터베이스 연결 실패:', error);
+      logServerError('[Database Test] ❌ 데이터베이스 연결 실패:', error, req);
     }
 
     // 2. 스키마 및 테이블 존재 확인
@@ -52,14 +53,14 @@ router.get('/database-test', async (req, res) => {
             error: error.message
           };
           testResults.errors.push(`Table ${table.name} Error: ${error.message}`);
-          console.error(`[Database Test] ❌ ${table.name} 테이블 오류:`, error.message);
+          logServerError(`[Database Test] ❌ ${table.name} 테이블 오류:`, error.message, req);
         }
       }
 
       testResults.schemaTest = Object.values(testResults.tables).some(t => t.exists);
     } catch (error) {
       testResults.errors.push(`Schema Error: ${error}`);
-      console.error('[Database Test] ❌ 스키마 테스트 실패:', error);
+      logServerError('[Database Test] ❌ 스키마 테스트 실패:', error, req);
     }
 
     // 3. 실제 데이터 조회 테스트
@@ -108,7 +109,7 @@ router.get('/database-test', async (req, res) => {
 
     } catch (error) {
       testResults.errors.push(`Data Query Error: ${error}`);
-      console.error('[Database Test] ❌ 데이터 조회 실패:', error);
+      logServerError('[Database Test] ❌ 데이터 조회 실패:', error, req);
     }
 
     // 4. 환경 정보
@@ -145,7 +146,7 @@ router.get('/database-test', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Database Test] ❌ 테스트 실행 중 심각한 오류:', error);
+    logServerError('[Database Test] ❌ 테스트 실행 중 심각한 오류:', error, req);
     res.status(500).json({
       success: false,
       message: '데이터베이스 테스트 실행 중 오류가 발생했습니다.',
@@ -207,7 +208,7 @@ router.get('/menu-visibility-db-test', async (req, res) => {
       console.log('[Menu Visibility DB Test] ✅ 데이터베이스 테이블 생성 및 데이터 삽입 성공');
 
     } catch (error) {
-      console.error('[Menu Visibility DB Test] ❌ 데이터베이스 테이블 테스트 실패:', error);
+      logServerError('[Menu Visibility DB Test] ❌ 데이터베이스 테이블 테스트 실패:', error, req);
       testMenuSettings.can_create = false;
     }
 
@@ -228,7 +229,7 @@ router.get('/menu-visibility-db-test', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Menu Visibility DB Test] ❌ 메뉴 표시 설정 DB 테스트 오류:', error);
+    logServerError('[Menu Visibility DB Test] ❌ 메뉴 표시 설정 DB 테스트 오류:', error, req);
     res.status(500).json({
       success: false,
       message: '메뉴 표시 설정 데이터베이스 테스트 중 오류가 발생했습니다.',

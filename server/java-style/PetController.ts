@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { petService } from './PetService';
 import { createPetSchema } from '@shared/schema';
 import { z } from 'zod';
+import { logServerError } from '../middleware/audit-logger';
 
 export class PetController {
 
@@ -25,7 +26,7 @@ export class PetController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[PetController] findAll 오류:', error);
+      logServerError('[PetController] findAll 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '반려동물 목록 조회 중 오류가 발생했습니다.',
@@ -68,7 +69,7 @@ export class PetController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[PetController] findById 오류:', error);
+      logServerError('[PetController] findById 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '반려동물 조회 중 오류가 발생했습니다.',
@@ -103,7 +104,7 @@ export class PetController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[PetController] findByUserId 오류:', error);
+      logServerError('[PetController] findByUserId 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '사용자 반려동물 조회 중 오류가 발생했습니다.',
@@ -132,7 +133,7 @@ export class PetController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[PetController] save 오류:', error);
+      logServerError('[PetController] save 오류:', error, req);
       
       if (error instanceof z.ZodError) {
         res.status(400).json({

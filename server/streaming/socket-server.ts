@@ -8,6 +8,7 @@ import {
   users 
 } from '../../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
+import { logServerError } from '../middleware/audit-logger';
 
 interface PeerInfo {
   peerId: string;
@@ -124,7 +125,7 @@ export function setupStreamingSocket(httpServer: HttpServer): SocketServer {
 
         console.log(`[Streaming] ${role} ${socket.id} joined stream ${streamId}`);
       } catch (error) {
-        console.error('[Streaming] Error joining stream:', error);
+        logServerError('[Streaming] Error joining stream:', error);
         socket.emit('error', { message: '스트림 참가 중 오류가 발생했습니다.' });
       }
     });
@@ -177,7 +178,7 @@ export function setupStreamingSocket(httpServer: HttpServer): SocketServer {
           createdAt: chatMessage.createdAt
         });
       } catch (error) {
-        console.error('[Streaming] Error sending chat message:', error);
+        logServerError('[Streaming] Error sending chat message:', error);
       }
     });
 
@@ -231,7 +232,7 @@ export function setupStreamingSocket(httpServer: HttpServer): SocketServer {
 
         console.log(`[Streaming] Stream ${data.streamId} ended by host`);
       } catch (error) {
-        console.error('[Streaming] Error ending stream:', error);
+        logServerError('[Streaming] Error ending stream:', error);
         socket.emit('error', { message: '스트림 종료 중 오류가 발생했습니다.' });
       }
     });
@@ -273,7 +274,7 @@ export function setupStreamingSocket(httpServer: HttpServer): SocketServer {
 
       connectedPeers.delete(socketId);
     } catch (error) {
-      console.error('[Streaming] Error leaving stream:', error);
+      logServerError('[Streaming] Error leaving stream:', error);
     }
   }
 

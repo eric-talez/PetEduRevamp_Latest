@@ -5,6 +5,7 @@
  */
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import { logServerError } from './audit-logger';
 
 // CSRF 토큰 생성
 export function generateCSRFToken(): string {
@@ -31,7 +32,7 @@ export function verifyCSRFToken(token: string, sessionToken: string): boolean {
     
     return crypto.timingSafeEqual(tokenBuffer, sessionBuffer);
   } catch (error) {
-    console.error('CSRF 토큰 검증 오류:', error);
+    logServerError('CSRF 토큰 검증 오류:', error);
     return false;
   }
 }

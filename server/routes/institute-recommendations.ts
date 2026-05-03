@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { storage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -84,7 +85,7 @@ router.get('/list', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('기관 추천 상품 목록 조회 오류:', error);
+    logServerError('기관 추천 상품 목록 조회 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -136,7 +137,7 @@ router.post('/add', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('기관 추천 상품 추가 오류:', error);
+    logServerError('기관 추천 상품 추가 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -161,7 +162,7 @@ router.put('/:id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('기관 추천 상품 수정 오류:', error);
+    logServerError('기관 추천 상품 수정 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -187,7 +188,7 @@ router.post('/:id/track-click', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('추천 상품 클릭 추적 오류:', error);
+    logServerError('추천 상품 클릭 추적 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -214,7 +215,7 @@ router.post('/:id/track-purchase', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('추천 상품 구매 추적 오류:', error);
+    logServerError('추천 상품 구매 추적 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -263,7 +264,7 @@ router.get('/analytics/:instituteId', async (req, res) => {
     res.json(analytics);
 
   } catch (error) {
-    console.error('기관 추천 상품 성과 분석 오류:', error);
+    logServerError('기관 추천 상품 성과 분석 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -305,7 +306,7 @@ router.get('/institutes', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('기관 목록 조회 오류:', error);
+    logServerError('기관 목록 조회 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });

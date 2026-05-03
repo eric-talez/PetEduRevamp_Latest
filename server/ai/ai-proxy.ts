@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Anthropic } from '@anthropic-ai/sdk';
 import fetch from 'node-fetch';
+import { logServerError } from '../middleware/audit-logger';
 // import { aiUsageService } from "../services/ai-usage-service";
 
 // AI 프록시 서버 - 개선된 AI 분석 기능
@@ -293,7 +294,7 @@ export class AIProxyService {
         };
       }
     } catch (error) {
-      console.error('멀티모델 분석 실패:', error);
+      logServerError('멀티모델 분석 실패:', error);
       throw new Error('AI 분석 서비스를 일시적으로 사용할 수 없습니다.');
     }
   }

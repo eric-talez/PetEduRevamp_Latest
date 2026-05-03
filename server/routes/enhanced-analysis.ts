@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { adaptiveAIManager } from "../ai/adaptive-ai-manager";
 import { aiProxyService } from "../ai/ai-proxy";
 import { talezAIOptimizer } from "../ai/talez-ai-optimizer";
+import { logServerError } from '../middleware/audit-logger';
 
 // 확장된 요청 인터페이스
 interface AnalysisRequest extends Request {
@@ -73,7 +74,7 @@ export function registerEnhancedAnalysisRoutes(app: Express) {
       });
 
     } catch (error) {
-      console.error('Enhanced analysis error:', error);
+      logServerError('Enhanced analysis error:', error, req);
       res.status(500).json({
         error: '분석 중 오류가 발생했습니다.',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -140,7 +141,7 @@ ${prompt}
       });
 
     } catch (error) {
-      console.error('Dog behavior analysis error:', error);
+      logServerError('Dog behavior analysis error:', error, req);
       res.status(500).json({
         error: '반려견 행동 분석 중 오류가 발생했습니다.',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -222,7 +223,7 @@ ${prompt}
       });
 
     } catch (error) {
-      console.error('Dog health analysis error:', error);
+      logServerError('Dog health analysis error:', error, req);
       res.status(500).json({
         error: '반려견 건강 분석 중 오류가 발생했습니다.',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -308,7 +309,7 @@ ${prompt}
       });
 
     } catch (error) {
-      console.error('Training plan generation error:', error);
+      logServerError('Training plan generation error:', error, req);
       res.status(500).json({
         error: '훈련 계획 생성 중 오류가 발생했습니다.',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -333,7 +334,7 @@ ${prompt}
       });
 
     } catch (error) {
-      console.error('User analytics error:', error);
+      logServerError('User analytics error:', error, req);
       res.status(500).json({
         error: '사용자 분석 현황 조회 중 오류가 발생했습니다.'
       });
@@ -357,7 +358,7 @@ ${prompt}
       });
 
     } catch (error) {
-      console.error('System stats error:', error);
+      logServerError('System stats error:', error, req);
       res.status(500).json({
         error: '시스템 통계 조회 중 오류가 발생했습니다.'
       });
@@ -380,7 +381,7 @@ ${prompt}
       });
 
     } catch (error) {
-      console.error('Optimization history error:', error);
+      logServerError('Optimization history error:', error, req);
       res.status(500).json({
         error: '최적화 이력 조회 중 오류가 발생했습니다.'
       });
@@ -399,7 +400,7 @@ ${prompt}
       });
 
     } catch (error) {
-      console.error('Force optimization error:', error);
+      logServerError('Force optimization error:', error, req);
       res.status(500).json({
         error: '강제 최적화 실행 중 오류가 발생했습니다.'
       });
@@ -421,7 +422,7 @@ ${prompt}
       });
 
     } catch (error) {
-      console.error('Service status error:', error);
+      logServerError('Service status error:', error, req);
       res.status(500).json({
         error: 'AI 서비스 상태 조회 중 오류가 발생했습니다.'
       });

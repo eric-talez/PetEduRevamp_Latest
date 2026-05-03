@@ -5,6 +5,7 @@
 
 import { Request, Response } from 'express';
 import { storage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 export class WebController {
     
@@ -40,7 +41,7 @@ export class WebController {
             // Thymeleaf 템플릿 렌더링 시뮬레이션
             res.send(this.renderTemplate('index', model));
         } catch (error) {
-            console.error('[WebController] 홈페이지 렌더링 오류:', error);
+            logServerError('[WebController] 홈페이지 렌더링 오류:', error, req);
             res.status(500).send('Internal Server Error');
         }
     }
@@ -59,7 +60,7 @@ export class WebController {
             
             res.send(this.renderTemplate('layout/main', model));
         } catch (error) {
-            console.error('[WebController] 대시보드 렌더링 오류:', error);
+            logServerError('[WebController] 대시보드 렌더링 오류:', error, req);
             res.status(500).send('Internal Server Error');
         }
     }
@@ -81,7 +82,7 @@ export class WebController {
             
             res.send(this.renderTemplate('layout/main', model));
         } catch (error) {
-            console.error('[WebController] 강좌 페이지 렌더링 오류:', error);
+            logServerError('[WebController] 강좌 페이지 렌더링 오류:', error, req);
             res.status(500).send('Internal Server Error');
         }
     }
@@ -103,7 +104,7 @@ export class WebController {
             
             res.send(this.renderTemplate('layout/main', model));
         } catch (error) {
-            console.error('[WebController] 반려동물 페이지 렌더링 오류:', error);
+            logServerError('[WebController] 반려동물 페이지 렌더링 오류:', error, req);
             res.status(500).send('Internal Server Error');
         }
     }
@@ -125,7 +126,7 @@ export class WebController {
             
             res.send(this.renderTemplate('layout/main', model));
         } catch (error) {
-            console.error('[WebController] 훈련사 페이지 렌더링 오류:', error);
+            logServerError('[WebController] 훈련사 페이지 렌더링 오류:', error, req);
             res.status(500).send('Internal Server Error');
         }
     }
@@ -145,7 +146,7 @@ export class WebController {
             
             res.send(this.renderTemplate('layout/main', model));
         } catch (error) {
-            console.error('[WebController] 관리자 페이지 렌더링 오류:', error);
+            logServerError('[WebController] 관리자 페이지 렌더링 오류:', error, req);
             res.status(500).send('Internal Server Error');
         }
     }

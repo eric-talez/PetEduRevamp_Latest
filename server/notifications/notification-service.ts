@@ -3,6 +3,7 @@ import { db } from '../db';
 import { notifications, fcmTokens } from '../../shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { fcmService } from '../services/fcm-service';
+import { logServerError } from '../middleware/audit-logger';
 
 export interface NotificationData {
   userId: number;
@@ -42,7 +43,7 @@ export class NotificationService {
       });
 
       ws.on('error', (error) => {
-        console.error(`[알림] WebSocket 오류:`, error);
+        logServerError(`[알림] WebSocket 오류:`, error, req);
         this.removeClient(userId);
       });
 
@@ -81,7 +82,7 @@ export class NotificationService {
         console.log(`[알림] 사용자 ${userId}에게 실시간 알림 발송됨`);
         return true;
       } catch (error) {
-        console.error(`[알림] 실시간 알림 발송 실패:`, error);
+        logServerError(`[알림] 실시간 알림 발송 실패:`, error);
         this.removeClient(userId);
         return false;
       }
@@ -152,7 +153,7 @@ export class NotificationService {
     });
 
     ws.on('error', (error) => {
-      console.error(`[Notification] WebSocket error for user ${userId}:`, error);
+      logServerError(`[Notification] WebSocket error for user ${userId}:`, error);
       this.removeConnection(userId, ws);
     });
 
@@ -236,7 +237,7 @@ export class NotificationService {
                 ws.send(payload);
                 webSocketSent = true;
               } catch (error) {
-                console.error(`[Notification] WebSocket 전송 실패:`, error);
+                logServerError(`[Notification] WebSocket 전송 실패:`, error);
                 this.removeConnection(notification.userId, ws);
               }
             }
@@ -265,7 +266,7 @@ export class NotificationService {
       }
 
     } catch (error) {
-      console.error('[Notification] 알림 발송 실패:', error);
+      logServerError('[Notification] 알림 발송 실패:', error);
       throw error;
     }
   }
@@ -330,7 +331,7 @@ export class NotificationService {
         console.log(`[FCM] ${result.invalidTokens.length}개의 무효한 토큰 비활성화됨`);
       }
     } catch (error) {
-      console.error('[FCM] 푸시 알림 전송 실패:', error);
+      logServerError('[FCM] 푸시 알림 전송 실패:', error);
       // FCM 실패는 전체 알림 발송을 막지 않음 (graceful degradation)
     }
   }

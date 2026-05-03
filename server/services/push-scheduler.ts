@@ -8,6 +8,7 @@ import {
 } from '../../shared/schema';
 import { eq, and, lte, inArray, sql } from 'drizzle-orm';
 import { fcmService } from './fcm-service';
+import { logServerError } from '../middleware/audit-logger';
 
 class PushSchedulerService {
   private static instance: PushSchedulerService;
@@ -75,7 +76,7 @@ class PushSchedulerService {
         await this.sendCampaign(campaign);
       }
     } catch (error) {
-      console.error('[Push Scheduler] 예약 캠페인 처리 오류:', error);
+      logServerError('[Push Scheduler] 예약 캠페인 처리 오류:', error);
     }
   }
 
@@ -100,7 +101,7 @@ class PushSchedulerService {
         await this.sendScheduledNotification(notif);
       }
     } catch (error) {
-      console.error('[Push Scheduler] 예약 알림 처리 오류:', error);
+      logServerError('[Push Scheduler] 예약 알림 처리 오류:', error);
     }
   }
 
@@ -201,7 +202,7 @@ class PushSchedulerService {
 
       console.log(`[Push Scheduler] 캠페인 ${campaign.id} 완료 - 성공: ${successCount}, 실패: ${failureCount}`);
     } catch (error) {
-      console.error(`[Push Scheduler] 캠페인 ${campaign.id} 발송 실패:`, error);
+      logServerError(`[Push Scheduler] 캠페인 ${campaign.id} 발송 실패:`, error);
       
       await db
         .update(pushCampaigns)
@@ -278,7 +279,7 @@ class PushSchedulerService {
         .where(eq(scheduledPushNotifications.id, notif.id));
 
     } catch (error: any) {
-      console.error(`[Push Scheduler] 알림 ${notif.id} 발송 실패:`, error);
+      logServerError(`[Push Scheduler] 알림 ${notif.id} 발송 실패:`, error);
       
       await db
         .update(scheduledPushNotifications)

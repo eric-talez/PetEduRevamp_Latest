@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -75,7 +76,7 @@ router.get('/api/sso/token', (req, res) => {
       expiresIn: 3600
     });
   } catch (error) {
-    console.error('[SSO] 토큰 생성 오류:', error);
+    logServerError('[SSO] 토큰 생성 오류:', error, req);
     res.status(500).json({ error: 'SSO 토큰 생성 실패' });
   }
 });
@@ -111,7 +112,7 @@ router.post('/api/sso/verify', corsMiddleware, (req, res) => {
       }
     });
   } catch (error: any) {
-    console.error('[SSO] 토큰 검증 오류:', error.message);
+    logServerError('[SSO] 토큰 검증 오류:', error.message, req);
     
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ error: '토큰이 만료되었습니다.' });

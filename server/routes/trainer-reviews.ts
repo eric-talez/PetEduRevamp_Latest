@@ -5,6 +5,7 @@ import {
   insertTrainerReviewReplySchema,
   insertTrainerReviewReportSchema,
 } from "../../shared/schema";
+import { logServerError } from '../middleware/audit-logger';
 
 type SessionUser = {
   id: number;
@@ -97,7 +98,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       } catch { /* noop */ }
       res.json({ success: true, review });
     } catch (error) {
-      console.error("[trainerReviews] create 오류:", error);
+      logServerError("[trainerReviews] create 오류:", error, req);
       res.status(500).json({ success: false, error: "리뷰 작성 중 오류가 발생했습니다." });
     }
   });
@@ -133,7 +134,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       });
       res.json({ success: true, reviews, total: reviews.length });
     } catch (error) {
-      console.error("[trainerReviews] list 오류:", error);
+      logServerError("[trainerReviews] list 오류:", error, req);
       res.status(500).json({ success: false, error: "리뷰 목록 조회 중 오류가 발생했습니다." });
     }
   });
@@ -146,7 +147,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       const summary = storage.getTrainerReviewSummary(trainerId);
       res.json({ success: true, ...summary });
     } catch (error) {
-      console.error("[trainerReviews] summary 오류:", error);
+      logServerError("[trainerReviews] summary 오류:", error, req);
       res.status(500).json({ success: false, error: "평점 조회 중 오류가 발생했습니다." });
     }
   });
@@ -158,7 +159,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       const eligible = storage.getEligibleReviewTargets(user.id);
       res.json({ success: true, eligible });
     } catch (error) {
-      console.error("[trainerReviews] eligible 오류:", error);
+      logServerError("[trainerReviews] eligible 오류:", error, req);
       res.status(500).json({ success: false, error: "수업 정보 조회 중 오류가 발생했습니다." });
     }
   });
@@ -195,7 +196,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       } catch { /* noop */ }
       res.json({ success: true, reply });
     } catch (error) {
-      console.error("[trainerReviews] reply 오류:", error);
+      logServerError("[trainerReviews] reply 오류:", error, req);
       res.status(500).json({ success: false, error: "답글 작성 중 오류가 발생했습니다." });
     }
   });
@@ -219,7 +220,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       const report = storage.createTrainerReviewReport(parsed.data);
       res.json({ success: true, report });
     } catch (error) {
-      console.error("[trainerReviews] report 오류:", error);
+      logServerError("[trainerReviews] report 오류:", error, req);
       res.status(500).json({ success: false, error: "신고 중 오류가 발생했습니다." });
     }
   });
@@ -231,7 +232,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       const result = storage.adminListTrainerReviews({ status });
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error("[trainerReviews] admin list 오류:", error);
+      logServerError("[trainerReviews] admin list 오류:", error, req);
       res.status(500).json({ success: false, error: "관리자 리뷰 조회 중 오류가 발생했습니다." });
     }
   });
@@ -249,7 +250,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       if (!updated) return res.status(404).json({ success: false, error: "리뷰를 찾을 수 없습니다." });
       res.json({ success: true, review: updated });
     } catch (error) {
-      console.error("[trainerReviews] moderate 오류:", error);
+      logServerError("[trainerReviews] moderate 오류:", error, req);
       res.status(500).json({ success: false, error: "처리 중 오류가 발생했습니다." });
     }
   });
@@ -267,7 +268,7 @@ export function registerTrainerReviewRoutes(app: Express) {
       if (!updated) return res.status(404).json({ success: false, error: "신고를 찾을 수 없습니다." });
       res.json({ success: true, report: updated });
     } catch (error) {
-      console.error("[trainerReviews] report update 오류:", error);
+      logServerError("[trainerReviews] report update 오류:", error, req);
       res.status(500).json({ success: false, error: "처리 중 오류가 발생했습니다." });
     }
   });

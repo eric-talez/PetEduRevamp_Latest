@@ -5,6 +5,7 @@
  */
 
 import axios from 'axios';
+import { logServerError } from '../middleware/audit-logger';
 
 const TOSS_API_BASE_URL = 'https://api.tosspayments.com/v1';
 
@@ -109,7 +110,7 @@ export const confirmTossPayment = async (
     
     return response.data;
   } catch (error: any) {
-    console.error('토스페이먼츠 결제 승인 오류:', error.response?.data || error.message);
+    logServerError('토스페이먼츠 결제 승인 오류:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -130,7 +131,7 @@ export const getTossPayment = async (paymentKey: string): Promise<TossPaymentCon
     
     return response.data;
   } catch (error: any) {
-    console.error('토스페이먼츠 결제 조회 오류:', error.response?.data || error.message);
+    logServerError('토스페이먼츠 결제 조회 오류:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -162,7 +163,7 @@ export const cancelTossPayment = async (data: TossCancelRequest): Promise<any> =
     
     return response.data;
   } catch (error: any) {
-    console.error('토스페이먼츠 결제 취소 오류:', error.response?.data || error.message);
+    logServerError('토스페이먼츠 결제 취소 오류:', error.response?.data || error.message);
     throw error;
   }
 };

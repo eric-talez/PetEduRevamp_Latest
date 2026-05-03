@@ -4,6 +4,7 @@
  */
 import { Request, Response, NextFunction } from 'express';
 import { ZodError, ZodSchema } from 'zod';
+import { logServerError } from './audit-logger';
 
 // =============================================================================
 // 1. 표준 응답 형식 타입 정의
@@ -422,7 +423,7 @@ export function standardErrorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error('API Error:', {
+  logServerError('API Error:', {
     message: error.message,
     stack: error.stack,
     url: req.url,
@@ -430,7 +431,7 @@ export function standardErrorHandler(
     body: req.body,
     query: req.query,
     params: req.params,
-  });
+  }, req);
 
   // 표준 API 에러인 경우
   if (error instanceof StandardApiError) {

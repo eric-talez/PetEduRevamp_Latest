@@ -1,6 +1,7 @@
 import { Express } from "express";
 import { Router } from 'express';
 import OpenAI from "openai";
+import { logServerError } from '../middleware/audit-logger';
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const DEFAULT_MODEL = "gpt-4o";
@@ -72,7 +73,7 @@ export function registerAiRoutes(app: Express) {
       });
       
     } catch (error: any) {
-      console.error('AI API 오류:', error);
+      logServerError('AI API 오류:', error, req);
       
       // 오류 유형에 따른 응답
       if (error.status === 401) {
@@ -136,7 +137,7 @@ export function registerAiRoutes(app: Express) {
         const analysisResult = JSON.parse(response.choices[0].message.content || '{}');
         return res.json(analysisResult);
       } catch (parseError) {
-        console.error('JSON 파싱 오류:', parseError);
+        logServerError('JSON 파싱 오류:', parseError, req);
         return res.status(500).json({ 
           error: 'AI 응답을 처리하는 중 오류가 발생했습니다.',
           rawResponse: response.choices[0].message.content
@@ -144,7 +145,7 @@ export function registerAiRoutes(app: Express) {
       }
       
     } catch (error: any) {
-      console.error('행동 분석 API 오류:', error);
+      logServerError('행동 분석 API 오류:', error, req);
       return res.status(500).json({ error: '분석 중 오류가 발생했습니다: ' + error.message });
     }
   });
@@ -232,7 +233,7 @@ export function registerAiRoutes(app: Express) {
         const trainingPlan = JSON.parse(response.choices[0].message.content || '{}');
         return res.json(trainingPlan);
       } catch (parseError) {
-        console.error('JSON 파싱 오류:', parseError);
+        logServerError('JSON 파싱 오류:', parseError, req);
         return res.status(500).json({ 
           error: 'AI 응답을 처리하는 중 오류가 발생했습니다.',
           rawResponse: response.choices[0].message.content
@@ -240,7 +241,7 @@ export function registerAiRoutes(app: Express) {
       }
       
     } catch (error: any) {
-      console.error('훈련 계획 생성 API 오류:', error);
+      logServerError('훈련 계획 생성 API 오류:', error, req);
       return res.status(500).json({ error: '훈련 계획 생성 중 오류가 발생했습니다: ' + error.message });
     }
   });

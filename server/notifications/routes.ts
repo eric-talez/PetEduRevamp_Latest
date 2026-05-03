@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { storage } from '../storage';
 import { NotificationService } from './service';
 import { csrfProtection } from '../middleware/csrf';
+import { logServerError } from '../middleware/audit-logger';
 
 // 알림 관련 API 라우트 등록
 export function registerNotificationRoutes(app: Express, notificationService: NotificationService) {
@@ -78,7 +79,7 @@ export function registerNotificationRoutes(app: Express, notificationService: No
       // Frontend expects array directly, not wrapped in notifications property
       return res.status(200).json(paginatedNotifications);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      logServerError('Error fetching notifications:', error, req);
       return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   });
@@ -112,7 +113,7 @@ export function registerNotificationRoutes(app: Express, notificationService: No
       
       return res.status(200).json(notification);
     } catch (error) {
-      console.error('Error fetching notification:', error);
+      logServerError('Error fetching notification:', error, req);
       return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   });
@@ -134,7 +135,7 @@ export function registerNotificationRoutes(app: Express, notificationService: No
       
       return res.status(200).json({ message: '알림이 읽음으로 표시되었습니다.' });
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      logServerError('Error marking notification as read:', error, req);
       return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   });
@@ -150,7 +151,7 @@ export function registerNotificationRoutes(app: Express, notificationService: No
       
       return res.status(200).json({ message: '모든 알림이 읽음으로 표시되었습니다.' });
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      logServerError('Error marking all notifications as read:', error, req);
       return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   });
@@ -168,7 +169,7 @@ export function registerNotificationRoutes(app: Express, notificationService: No
       
       return res.status(200).json({ message: '알림이 삭제되었습니다.' });
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      logServerError('Error deleting notification:', error, req);
       return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   });
@@ -184,7 +185,7 @@ export function registerNotificationRoutes(app: Express, notificationService: No
       
       return res.status(200).json({ message: '모든 알림이 삭제되었습니다.' });
     } catch (error) {
-      console.error('Error deleting all notifications:', error);
+      logServerError('Error deleting all notifications:', error, req);
       return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   });
@@ -219,7 +220,7 @@ export function registerNotificationRoutes(app: Express, notificationService: No
         
         return res.status(201).json({ message: '테스트 알림이 발송되었습니다.', notification });
       } catch (error) {
-        console.error('Error sending test notification:', error);
+        logServerError('Error sending test notification:', error, req);
         return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
       }
     });

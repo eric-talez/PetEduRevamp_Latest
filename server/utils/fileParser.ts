@@ -3,6 +3,7 @@ import mammoth from 'mammoth';
 import JSZip from 'jszip';
 import fs from 'fs';
 import path from 'path';
+import { logServerError } from '../middleware/audit-logger';
 
 export interface ParsedFileContent {
   text: string;
@@ -51,7 +52,7 @@ export async function extractTextAndTables(filePath: string, originalName: strin
         throw new Error(`지원되지 않는 파일 형식입니다: ${fileExtension}`);
     }
   } catch (error) {
-    console.error(`[파일파서] ${originalName} 파싱 실패:`, error);
+    logServerError(`[파일파서] ${originalName} 파싱 실패:`, error);
     throw error;
   }
 }

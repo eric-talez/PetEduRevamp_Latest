@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { userService } from './UserService';
 import { createUserSchema } from '@shared/schema';
 import { z } from 'zod';
+import { logServerError } from '../middleware/audit-logger';
 
 export class UserController {
 
@@ -25,7 +26,7 @@ export class UserController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[UserController] findAll 오류:', error);
+      logServerError('[UserController] findAll 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '사용자 목록 조회 중 오류가 발생했습니다.',
@@ -68,7 +69,7 @@ export class UserController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[UserController] findById 오류:', error);
+      logServerError('[UserController] findById 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '사용자 조회 중 오류가 발생했습니다.',
@@ -97,7 +98,7 @@ export class UserController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[UserController] save 오류:', error);
+      logServerError('[UserController] save 오류:', error, req);
       
       if (error instanceof z.ZodError) {
         res.status(400).json({
@@ -142,7 +143,7 @@ export class UserController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[UserController] findByUsername 오류:', error);
+      logServerError('[UserController] findByUsername 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '사용자 조회 중 오류가 발생했습니다.',

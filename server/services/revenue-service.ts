@@ -1,4 +1,5 @@
 import { storage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 interface RevenueData {
   courseId: string;
@@ -28,7 +29,7 @@ export class RevenueService {
       const revenues = await storage.getRevenueByTrainer(trainerId, dateRange);
       return revenues;
     } catch (error) {
-      console.error('수익 내역 조회 오류:', error);
+      logServerError('수익 내역 조회 오류:', error);
       throw new Error('수익 내역을 조회할 수 없습니다.');
     }
   }
@@ -39,7 +40,7 @@ export class RevenueService {
       const summary = await storage.getMonthlyRevenueSummary(trainerId);
       return summary;
     } catch (error) {
-      console.error('월별 수익 요약 조회 오류:', error);
+      logServerError('월별 수익 요약 조회 오류:', error);
       throw new Error('월별 수익 요약을 조회할 수 없습니다.');
     }
   }
@@ -56,7 +57,7 @@ export class RevenueService {
       const stats = await storage.getPlatformRevenueStats();
       return stats;
     } catch (error) {
-      console.error('플랫폼 수익 통계 조회 오류:', error);
+      logServerError('플랫폼 수익 통계 조회 오류:', error);
       throw new Error('플랫폼 수익 통계를 조회할 수 없습니다.');
     }
   }
@@ -66,7 +67,7 @@ export class RevenueService {
     try {
       await storage.processRevenueSettlement(trainerId, month);
     } catch (error) {
-      console.error('수익 정산 처리 오류:', error);
+      logServerError('수익 정산 처리 오류:', error);
       throw new Error('수익 정산을 처리할 수 없습니다.');
     }
   }
@@ -83,7 +84,7 @@ export class RevenueService {
       const analysis = await storage.getCurriculumRevenueAnalysis(curriculumId);
       return analysis;
     } catch (error) {
-      console.error('커리큘럼 수익 분석 오류:', error);
+      logServerError('커리큘럼 수익 분석 오류:', error);
       throw new Error('커리큘럼 수익 분석을 조회할 수 없습니다.');
     }
   }

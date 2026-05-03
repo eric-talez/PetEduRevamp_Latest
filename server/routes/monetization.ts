@@ -11,6 +11,7 @@ import {
   courses
 } from '../../shared/schema';
 import { eq, sql, and, desc, count } from 'drizzle-orm';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -119,7 +120,7 @@ router.post('/events', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Event record error:', error);
+    logServerError('Event record error:', error, req);
     res.status(500).json({ error: 'Failed to record event' });
   }
 });
@@ -268,7 +269,7 @@ async function recalcUserScore(userId: number) {
     
     return { ownerScore, trainerScore, followerCount, eligibility };
   } catch (error) {
-    console.error('Score recalc error:', error);
+    logServerError('Score recalc error:', error);
     return null;
   }
 }
@@ -306,7 +307,7 @@ router.get('/users/:id/score', async (req, res) => {
       eligibility,
     });
   } catch (error) {
-    console.error('User score fetch error:', error);
+    logServerError('User score fetch error:', error, req);
     res.status(500).json({ error: 'Failed to fetch user score' });
   }
 });
@@ -344,7 +345,7 @@ router.post('/follow', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Follow error:', error);
+    logServerError('Follow error:', error, req);
     res.status(500).json({ error: 'Failed to follow' });
   }
 });
@@ -361,7 +362,7 @@ router.delete('/follow', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Unfollow error:', error);
+    logServerError('Unfollow error:', error, req);
     res.status(500).json({ error: 'Failed to unfollow' });
   }
 });
@@ -388,7 +389,7 @@ router.post('/users/:id/monetization', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Monetization toggle error:', error);
+    logServerError('Monetization toggle error:', error, req);
     res.status(500).json({ error: 'Failed to toggle monetization' });
   }
 });
@@ -446,7 +447,7 @@ router.get('/admin/overview', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Admin overview error:', error);
+    logServerError('Admin overview error:', error, req);
     res.status(500).json({ error: 'Failed to fetch overview' });
   }
 });
@@ -473,7 +474,7 @@ router.post('/admin/revenue', async (req, res) => {
     
     res.json(result);
   } catch (error) {
-    console.error('Revenue record error:', error);
+    logServerError('Revenue record error:', error, req);
     res.status(500).json({ error: 'Failed to record revenue' });
   }
 });
@@ -484,7 +485,7 @@ router.get('/admin/revenue', async (req, res) => {
     const revenues = await db.select().from(monthlyRevenue).orderBy(desc(monthlyRevenue.month)).limit(12);
     res.json(revenues);
   } catch (error) {
-    console.error('Revenue fetch error:', error);
+    logServerError('Revenue fetch error:', error, req);
     res.status(500).json({ error: 'Failed to fetch revenue' });
   }
 });
@@ -555,7 +556,7 @@ router.post('/admin/settle/:revenueId', async (req, res) => {
     
     res.json({ success: true, payouts: payoutResults });
   } catch (error) {
-    console.error('Settlement error:', error);
+    logServerError('Settlement error:', error, req);
     res.status(500).json({ error: 'Failed to settle' });
   }
 });
@@ -583,7 +584,7 @@ router.get('/admin/payouts', async (req, res) => {
     
     res.json(results);
   } catch (error) {
-    console.error('Payouts fetch error:', error);
+    logServerError('Payouts fetch error:', error, req);
     res.status(500).json({ error: 'Failed to fetch payouts' });
   }
 });
@@ -620,7 +621,7 @@ router.get('/trainer/earnings', async (req, res) => {
       totalEarnings,
     });
   } catch (error) {
-    console.error('Trainer earnings error:', error);
+    logServerError('Trainer earnings error:', error, req);
     res.status(500).json({ error: 'Failed to fetch earnings' });
   }
 });
@@ -635,7 +636,7 @@ router.get('/settings', async (req, res) => {
     });
     res.json(settingsMap);
   } catch (error) {
-    console.error('Settings fetch error:', error);
+    logServerError('Settings fetch error:', error, req);
     res.status(500).json({ error: 'Failed to fetch settings' });
   }
 });
@@ -668,7 +669,7 @@ router.get('/my-score', async (req, res) => {
       totalWatchTime: Math.floor((cache?.watchSeconds || 0) / 60),
     });
   } catch (error) {
-    console.error('My score error:', error);
+    logServerError('My score error:', error, req);
     res.status(500).json({ error: 'Failed to fetch score' });
   }
 });
@@ -726,7 +727,7 @@ router.get('/my-eligibility', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('My eligibility error:', error);
+    logServerError('My eligibility error:', error, req);
     res.status(500).json({ error: 'Failed to fetch eligibility' });
   }
 });
@@ -772,7 +773,7 @@ router.get('/admin/trainers', async (req, res) => {
     
     res.json({ trainers: enrichedTrainers });
   } catch (error) {
-    console.error('Admin trainers error:', error);
+    logServerError('Admin trainers error:', error, req);
     res.status(500).json({ error: 'Failed to fetch trainers' });
   }
 });
@@ -800,7 +801,7 @@ router.get('/admin/revenue/monthly', async (req, res) => {
     
     res.json({ monthly });
   } catch (error) {
-    console.error('Monthly revenue error:', error);
+    logServerError('Monthly revenue error:', error, req);
     res.status(500).json({ error: 'Failed to fetch monthly revenue' });
   }
 });
@@ -826,7 +827,7 @@ router.post('/admin/process-payout', async (req, res) => {
     
     res.json({ success: true, processedCount: pendingPayouts.length });
   } catch (error) {
-    console.error('Process payout error:', error);
+    logServerError('Process payout error:', error, req);
     res.status(500).json({ error: 'Failed to process payout' });
   }
 });
@@ -847,7 +848,7 @@ router.put('/admin/settings', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Settings update error:', error);
+    logServerError('Settings update error:', error, req);
     res.status(500).json({ error: 'Failed to update settings' });
   }
 });

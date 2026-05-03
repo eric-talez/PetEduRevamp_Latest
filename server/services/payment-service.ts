@@ -7,6 +7,7 @@ import {
   InsertSettlement,
   InsertSettlementItem 
 } from '../../shared/payment-schema';
+import { logServerError } from '../middleware/audit-logger';
 
 export interface PaymentProcessingResult {
   success: boolean;
@@ -86,7 +87,7 @@ export class PaymentService {
       };
 
     } catch (error) {
-      console.error('수수료 계산 오류:', error);
+      logServerError('수수료 계산 오류:', error);
       // 오류 시 기본 수수료 적용
       const defaultFeeAmount = Math.round(amount * 0.1);
       return {
@@ -184,7 +185,7 @@ export class PaymentService {
 
       // 매출 통계 업데이트 (비동기)
       this.updateRevenueStats(targetType, paymentData.payeeId, paymentData.grossAmount, feeCalculation.feeAmount)
-        .catch(error => console.error('매출 통계 업데이트 오류:', error));
+        .catch(error => logServerError('매출 통계 업데이트 오류:', error));
 
       return {
         success: true,
@@ -194,7 +195,7 @@ export class PaymentService {
       };
 
     } catch (error) {
-      console.error('결제 처리 오류:', error);
+      logServerError('결제 처리 오류:', error);
       return {
         success: false,
         errorMessage: `결제 처리 중 오류가 발생했습니다: ${error}`,
@@ -295,7 +296,7 @@ export class PaymentService {
       };
 
     } catch (error) {
-      console.error('정산 생성 오류:', error);
+      logServerError('정산 생성 오류:', error);
       return {
         success: false,
         errorMessage: `정산 생성 중 오류가 발생했습니다: ${error}`,
@@ -327,13 +328,13 @@ export class PaymentService {
           });
           console.log(`정산 ${settlementId} 지급 완료`);
         } catch (error) {
-          console.error(`정산 ${settlementId} 지급 실패:`, error);
+          logServerError(`정산 ${settlementId} 지급 실패:`, error);
         }
       }, 5000);
 
       return true;
     } catch (error) {
-      console.error('정산 승인 오류:', error);
+      logServerError('정산 승인 오류:', error);
       return false;
     }
   }
@@ -348,7 +349,7 @@ export class PaymentService {
     try {
       return await this.storage.getFeePolicies(targetType, targetId);
     } catch (error) {
-      console.error('수수료 정책 조회 오류:', error);
+      logServerError('수수료 정책 조회 오류:', error);
       return [];
     }
   }
@@ -376,7 +377,7 @@ export class PaymentService {
         transactionCount: 1
       });
     } catch (error) {
-      console.error('매출 통계 업데이트 오류:', error);
+      logServerError('매출 통계 업데이트 오류:', error);
     }
   }
 
@@ -411,7 +412,7 @@ export class PaymentService {
 
       return true;
     } catch (error) {
-      console.error('환불 처리 오류:', error);
+      logServerError('환불 처리 오류:', error);
       return false;
     }
   }

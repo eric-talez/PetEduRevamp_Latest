@@ -1,6 +1,7 @@
 import { Express, Request, Response } from 'express';
 import OpenAI from 'openai';
 import config from '../config';
+import { logServerError } from '../middleware/audit-logger';
 
 const openai = config.OPENAI_API_KEY || config.OPENAI_API_TALEZ 
   ? new OpenAI({ apiKey: config.OPENAI_API_KEY || config.OPENAI_API_TALEZ }) 
@@ -110,7 +111,7 @@ JSON 형식:
           analysis = JSON.parse(content);
         }
       } catch (parseError) {
-        console.error('[Media Analysis] JSON 파싱 실패:', content);
+        logServerError('[Media Analysis] JSON 파싱 실패:', content, req);
         analysis = {
           summary: content,
           posture: {
@@ -152,7 +153,7 @@ JSON 형식:
       });
 
     } catch (error: any) {
-      console.error('[Media Analysis] 오류:', error);
+      logServerError('[Media Analysis] 오류:', error, req);
       
       // OpenAI API 할당량 초과 시 데모 모드로 전환
       if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('429')) {

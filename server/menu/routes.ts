@@ -3,6 +3,7 @@ import { db } from "../db";
 import { menuConfigurations } from "@shared/schema";
 import { eq, isNull, and } from "drizzle-orm";
 import { DEFAULT_MENU_CONFIGURATION } from "@shared/menu-config";
+import { logServerError } from '../middleware/audit-logger';
 
 // Express 타입 확장 및 세션 타입 확장
 declare module 'express-session' {
@@ -59,7 +60,7 @@ export function registerMenuRoutes(app: Express) {
         updatedBy: DEFAULT_MENU_CONFIGURATION.updatedBy
       });
     } catch (error) {
-      console.error('❌ 메뉴 설정 조회 오류:', error);
+      logServerError('❌ 메뉴 설정 조회 오류:', error, req);
       res.status(500).json({ error: '메뉴 설정을 가져오는데 실패했습니다.' });
     }
   });
@@ -86,7 +87,7 @@ export function registerMenuRoutes(app: Express) {
         }
       });
     } catch (error) {
-      console.error('메뉴 설정 저장 오류:', error);
+      logServerError('메뉴 설정 저장 오류:', error, req);
       res.status(500).json({ error: '메뉴 설정 저장에 실패했습니다.' });
     }
   });
@@ -102,7 +103,7 @@ export function registerMenuRoutes(app: Express) {
       // 임시 빈 배열 응답 반환
       return res.json([]);
     } catch (error) {
-      console.error('메뉴 설정 목록 조회 오류:', error);
+      logServerError('메뉴 설정 목록 조회 오류:', error, req);
       res.status(500).json({ error: '메뉴 설정 목록을 가져오는데 실패했습니다.' });
     }
   });
@@ -120,7 +121,7 @@ export function registerMenuRoutes(app: Express) {
       // 임시 성공 응답 반환
       return res.json({ success: true });
     } catch (error) {
-      console.error('메뉴 설정 삭제 오류:', error);
+      logServerError('메뉴 설정 삭제 오류:', error, req);
       res.status(500).json({ error: '메뉴 설정 삭제에 실패했습니다.' });
     }
   });

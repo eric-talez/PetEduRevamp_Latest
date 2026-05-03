@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import OpenAI from 'openai';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = express.Router();
 
@@ -197,7 +198,7 @@ If a dog IS visible, provide COMPREHENSIVE analysis including:
     };
 
   } catch (error) {
-    console.error('Image analysis error:', error);
+    logServerError('Image analysis error:', error);
     return {
       timestamp,
       behavior: "분석 실패",
@@ -288,7 +289,7 @@ Analyze dog vocalizations for:
     };
 
   } catch (error) {
-    console.error('Audio analysis error:', error);
+    logServerError('Audio analysis error:', error);
     return {
       timestamp,
       behavior: "음성 분석 오류",
@@ -331,7 +332,7 @@ router.post('/analyze-frame', upload.single('frame'), async (req, res) => {
     res.json(analysis);
 
   } catch (error) {
-    console.error('Frame analysis error:', error);
+    logServerError('Frame analysis error:', error, req);
     res.status(500).json({ error: '프레임 분석 중 오류가 발생했습니다' });
   }
 });
@@ -353,7 +354,7 @@ router.post('/analyze-audio', upload.single('audio'), async (req, res) => {
     res.json(analysis);
 
   } catch (error) {
-    console.error('Audio analysis error:', error);
+    logServerError('Audio analysis error:', error, req);
     res.status(500).json({ error: '오디오 분석 중 오류가 발생했습니다' });
   }
 });
@@ -382,7 +383,7 @@ router.post('/analyze-metadata', express.json(), async (req, res) => {
     res.json(analysis);
 
   } catch (error) {
-    console.error('Metadata analysis error:', error);
+    logServerError('Metadata analysis error:', error, req);
     res.status(500).json({ error: '메타데이터 분석 중 오류가 발생했습니다' });
   }
 });
@@ -413,7 +414,7 @@ router.post('/calculate-metrics', express.json(), async (req, res) => {
     res.json(metrics);
 
   } catch (error) {
-    console.error('Metrics calculation error:', error);
+    logServerError('Metrics calculation error:', error, req);
     res.status(500).json({ error: '메트릭스 계산 중 오류가 발생했습니다' });
   }
 });
@@ -464,7 +465,7 @@ router.post('/generate', express.json(), async (req, res) => {
     res.json(report);
 
   } catch (error) {
-    console.error('Report generation error:', error);
+    logServerError('Report generation error:', error, req);
     res.status(500).json({ 
       error: '리포트 생성 중 오류가 발생했습니다',
       executiveSummary: "리포트 생성에 실패했습니다. 다시 시도해주세요.",

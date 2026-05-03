@@ -1,5 +1,6 @@
 import { Express } from "express";
 import { storage } from "../storage";
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerCourseRoutes(app: Express) {
   // ===== Course Routes =====
@@ -10,7 +11,7 @@ export function registerCourseRoutes(app: Express) {
       const courses = await storage.getAllCourses();
       return res.status(200).json(courses);
     } catch (error: any) {
-      console.error("Get courses error:", error);
+      logServerError("Get courses error:", error, req);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -27,7 +28,7 @@ export function registerCourseRoutes(app: Express) {
       
       return res.status(200).json(course);
     } catch (error: any) {
-      console.error("Get course error:", error);
+      logServerError("Get course error:", error, req);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -45,7 +46,7 @@ export function registerCourseRoutes(app: Express) {
       const courses = await storage.getCoursesByUserId(userId);
       return res.status(200).json(courses);
     } catch (error: any) {
-      console.error("Get user courses error:", error);
+      logServerError("Get user courses error:", error, req);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -59,7 +60,7 @@ export function registerCourseRoutes(app: Express) {
       const enrollment = await storage.enrollUserInCourse(userId, courseId);
       return res.status(201).json(enrollment);
     } catch (error: any) {
-      console.error("Enroll user error:", error);
+      logServerError("Enroll user error:", error, req);
       return res.status(500).json({ message: error.message || "Internal server error" });
     }
   });

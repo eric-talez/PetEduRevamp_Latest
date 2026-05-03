@@ -4,6 +4,7 @@ import { csrfProtection } from '../middleware/csrf';
 import { db } from '../db';
 import { posts as postsTable, users, comments as commentsTable } from '../../shared/schema';
 import { eq, desc, sql, and, isNull } from 'drizzle-orm';
+import { logServerError } from '../middleware/audit-logger';
 
 export function setupSocialRoutes(app: Express) {
   // Helper function to fetch comments from database with author info
@@ -195,7 +196,7 @@ export function setupSocialRoutes(app: Express) {
         }
       });
     } catch (error) {
-      console.error('게시글 목록 조회 오류:', error);
+      logServerError('게시글 목록 조회 오류:', error, req);
       res.status(500).json({ error: '게시글을 불러오는데 실패했습니다.' });
     }
   });
@@ -270,7 +271,7 @@ export function setupSocialRoutes(app: Express) {
 
       res.json({ post: transformedPost });
     } catch (error) {
-      console.error('게시글 상세 조회 오류:', error);
+      logServerError('게시글 상세 조회 오류:', error, req);
       res.status(500).json({ error: '게시글을 불러오는데 실패했습니다.' });
     }
   });
@@ -348,7 +349,7 @@ export function setupSocialRoutes(app: Express) {
         post: transformedPost 
       });
     } catch (error) {
-      console.error('게시글 작성 오류:', error);
+      logServerError('게시글 작성 오류:', error, req);
       res.status(500).json({ error: '게시글 작성에 실패했습니다.' });
     }
   });
@@ -371,7 +372,7 @@ export function setupSocialRoutes(app: Express) {
 
       res.json({ message: '게시글이 삭제되었습니다.' });
     } catch (error) {
-      console.error('게시글 삭제 오류:', error);
+      logServerError('게시글 삭제 오류:', error, req);
       res.status(500).json({ error: '게시글 삭제에 실패했습니다.' });
     }
   });
@@ -405,7 +406,7 @@ export function setupSocialRoutes(app: Express) {
             data: { postId: post.id }
           });
         } catch (notifyError) {
-          console.error('[좋아요] 알림 발송 실패:', notifyError);
+          logServerError('[좋아요] 알림 발송 실패:', notifyError, req);
         }
       }
 
@@ -415,7 +416,7 @@ export function setupSocialRoutes(app: Express) {
         postId: post.id
       });
     } catch (error) {
-      console.error('좋아요 처리 오류:', error);
+      logServerError('좋아요 처리 오류:', error, req);
       res.status(500).json({ error: '좋아요 처리에 실패했습니다.' });
     }
   });
@@ -484,7 +485,7 @@ export function setupSocialRoutes(app: Express) {
         post: transformedPost
       });
     } catch (error) {
-      console.error('게시글 수정 오류:', error);
+      logServerError('게시글 수정 오류:', error, req);
       res.status(500).json({ error: '게시글 수정에 실패했습니다.' });
     }
   });
@@ -508,7 +509,7 @@ export function setupSocialRoutes(app: Express) {
         total: comments.length
       });
     } catch (error) {
-      console.error('댓글 조회 오류:', error);
+      logServerError('댓글 조회 오류:', error, req);
       res.status(500).json({ error: '댓글을 불러오는데 실패했습니다.' });
     }
   });
@@ -605,7 +606,7 @@ export function setupSocialRoutes(app: Express) {
             data: { postId: post.id, commentId: insertedComment.id }
           });
         } catch (notifyError) {
-          console.error('[댓글] 알림 발송 실패:', notifyError);
+          logServerError('[댓글] 알림 발송 실패:', notifyError, req);
         }
       }
 
@@ -614,7 +615,7 @@ export function setupSocialRoutes(app: Express) {
         comment: newComment 
       });
     } catch (error) {
-      console.error('댓글 작성 오류:', error);
+      logServerError('댓글 작성 오류:', error, req);
       res.status(500).json({ error: '댓글 작성에 실패했습니다.' });
     }
   });
@@ -666,7 +667,7 @@ export function setupSocialRoutes(app: Express) {
       const message = comment.parentId ? '답글이 삭제되었습니다.' : '댓글이 삭제되었습니다.';
       return res.json({ message });
     } catch (error) {
-      console.error('댓글 삭제 오류:', error);
+      logServerError('댓글 삭제 오류:', error, req);
       res.status(500).json({ error: '댓글 삭제에 실패했습니다.' });
     }
   });
@@ -701,7 +702,7 @@ export function setupSocialRoutes(app: Express) {
       const message = comment.parentId ? '답글에 좋아요가 추가되었습니다.' : '댓글에 좋아요가 추가되었습니다.';
       return res.json({ message, likes: updatedComment.likes });
     } catch (error) {
-      console.error('댓글 좋아요 오류:', error);
+      logServerError('댓글 좋아요 오류:', error, req);
       res.status(500).json({ error: '좋아요 처리에 실패했습니다.' });
     }
   });

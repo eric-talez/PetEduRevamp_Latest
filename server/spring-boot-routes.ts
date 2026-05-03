@@ -1,6 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { storage } from './storage';
 import path from 'path';
+import { logServerError } from './middleware/audit-logger';
 
 /**
  * Spring Boot 스타일의 웹 라우트 (Thymeleaf 템플릿 렌더링)
@@ -47,7 +48,7 @@ export function registerSpringBootRoutes(app: Express) {
         res.status(404).send('템플릿을 찾을 수 없습니다.');
       }
     } catch (error) {
-      console.error('[SpringBoot] 홈 페이지 렌더링 오류:', error);
+      logServerError('[SpringBoot] 홈 페이지 렌더링 오류:', error, req);
       res.status(500).send('서버 오류가 발생했습니다.');
     }
   });
@@ -73,7 +74,7 @@ export function registerSpringBootRoutes(app: Express) {
         res.status(404).send('템플릿을 찾을 수 없습니다.');
       }
     } catch (error) {
-      console.error('[SpringBoot] 대시보드 페이지 렌더링 오류:', error);
+      logServerError('[SpringBoot] 대시보드 페이지 렌더링 오류:', error, req);
       res.status(500).send('서버 오류가 발생했습니다.');
     }
   });
@@ -99,7 +100,7 @@ export function registerSpringBootRoutes(app: Express) {
         res.status(404).send('템플릿을 찾을 수 없습니다.');
       }
     } catch (error) {
-      console.error('[SpringBoot] 강좌 페이지 렌더링 오류:', error);
+      logServerError('[SpringBoot] 강좌 페이지 렌더링 오류:', error, req);
       res.status(500).send('서버 오류가 발생했습니다.');
     }
   });
@@ -138,7 +139,7 @@ export function registerSpringBootAPI(app: Express) {
         trainers: trainers.length
       });
     } catch (error) {
-      console.error('[SpringBoot] 통계 API 오류:', error);
+      logServerError('[SpringBoot] 통계 API 오류:', error, req);
       res.status(500).json({ error: '통계 데이터를 가져올 수 없습니다.' });
     }
   });
@@ -149,7 +150,7 @@ export function registerSpringBootAPI(app: Express) {
       const users = await storage.getAllUsers();
       res.json(users);
     } catch (error) {
-      console.error('[SpringBoot] 사용자 목록 API 오류:', error);
+      logServerError('[SpringBoot] 사용자 목록 API 오류:', error, req);
       res.status(500).json({ error: '사용자 데이터를 가져올 수 없습니다.' });
     }
   });
@@ -165,7 +166,7 @@ export function registerSpringBootAPI(app: Express) {
       
       res.json(user);
     } catch (error) {
-      console.error('[SpringBoot] 사용자 조회 API 오류:', error);
+      logServerError('[SpringBoot] 사용자 조회 API 오류:', error, req);
       res.status(500).json({ error: '사용자 데이터를 가져올 수 없습니다.' });
     }
   });
@@ -176,7 +177,7 @@ export function registerSpringBootAPI(app: Express) {
       const courses = await storage.getAllCourses();
       res.json(courses);
     } catch (error) {
-      console.error('[SpringBoot] 강좌 목록 API 오류:', error);
+      logServerError('[SpringBoot] 강좌 목록 API 오류:', error, req);
       res.status(500).json({ error: '강좌 데이터를 가져올 수 없습니다.' });
     }
   });
@@ -192,7 +193,7 @@ export function registerSpringBootAPI(app: Express) {
       
       res.json(course);
     } catch (error) {
-      console.error('[SpringBoot] 강좌 조회 API 오류:', error);
+      logServerError('[SpringBoot] 강좌 조회 API 오류:', error, req);
       res.status(500).json({ error: '강좌 데이터를 가져올 수 없습니다.' });
     }
   });
@@ -203,7 +204,7 @@ export function registerSpringBootAPI(app: Express) {
       const pets = await storage.getAllPets();
       res.json(pets);
     } catch (error) {
-      console.error('[SpringBoot] 반려동물 목록 API 오류:', error);
+      logServerError('[SpringBoot] 반려동물 목록 API 오류:', error, req);
       res.status(500).json({ error: '반려동물 데이터를 가져올 수 없습니다.' });
     }
   });

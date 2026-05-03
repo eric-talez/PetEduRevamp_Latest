@@ -1,4 +1,5 @@
 import { storage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 interface CourseData {
   id: string;
@@ -25,7 +26,7 @@ export class CourseService {
       const courses = await storage.getCoursesByTrainer(trainerId);
       return courses;
     } catch (error) {
-      console.error('강좌 조회 오류:', error);
+      logServerError('강좌 조회 오류:', error);
       throw new Error('강좌 목록을 불러올 수 없습니다.');
     }
   }
@@ -53,7 +54,7 @@ export class CourseService {
         enrollmentCount
       };
     } catch (error) {
-      console.error('수익 계산 오류:', error);
+      logServerError('수익 계산 오류:', error);
       throw new Error('수익 정보를 계산할 수 없습니다.');
     }
   }
@@ -63,7 +64,7 @@ export class CourseService {
     try {
       await storage.updateCourseStatus(courseId, status, adminId);
     } catch (error) {
-      console.error('강좌 상태 업데이트 오류:', error);
+      logServerError('강좌 상태 업데이트 오류:', error);
       throw new Error('강좌 상태를 업데이트할 수 없습니다.');
     }
   }
@@ -74,7 +75,7 @@ export class CourseService {
       const courseId = await storage.createCourse(courseData);
       return courseId;
     } catch (error) {
-      console.error('강좌 등록 오류:', error);
+      logServerError('강좌 등록 오류:', error);
       throw new Error('강좌를 등록할 수 없습니다.');
     }
   }
@@ -84,7 +85,7 @@ export class CourseService {
     try {
       await storage.updateCourse(courseId, courseData);
     } catch (error) {
-      console.error('강좌 수정 오류:', error);
+      logServerError('강좌 수정 오류:', error);
       throw new Error('강좌를 수정할 수 없습니다.');
     }
   }

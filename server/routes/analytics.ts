@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { db } from "../db";
 import { pets, users, courses, events } from "../../shared/schema";
 import { eq, desc, and, gte, lte, count, avg, sum, inArray, isNotNull } from "drizzle-orm";
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerAnalyticsRoutes(app: Express) {
   // 훈련 진행도 데이터 가져오기
@@ -109,7 +110,7 @@ export function registerAnalyticsRoutes(app: Express) {
       
       res.json(trainingProgress);
     } catch (error) {
-      console.error('Error fetching training progress:', error);
+      logServerError('Error fetching training progress:', error, req);
       res.status(500).json({ error: 'Failed to fetch training progress' });
     }
   });
@@ -187,7 +188,7 @@ export function registerAnalyticsRoutes(app: Express) {
       
       res.json(stats);
     } catch (error) {
-      console.error('Error fetching learning stats:', error);
+      logServerError('Error fetching learning stats:', error, req);
       res.status(500).json({ error: 'Failed to fetch learning stats' });
     }
   });
@@ -221,7 +222,7 @@ export function registerAnalyticsRoutes(app: Express) {
       
       res.json(monthlyProgress);
     } catch (error) {
-      console.error('Error fetching monthly progress:', error);
+      logServerError('Error fetching monthly progress:', error, req);
       res.status(500).json({ error: 'Failed to fetch monthly progress' });
     }
   });
@@ -247,7 +248,7 @@ export function registerAnalyticsRoutes(app: Express) {
       
       res.json(petProgress);
     } catch (error) {
-      console.error('Error fetching pet progress:', error);
+      logServerError('Error fetching pet progress:', error, req);
       res.status(500).json({ error: 'Failed to fetch pet progress' });
     }
   });
@@ -283,7 +284,7 @@ export function registerAnalyticsRoutes(app: Express) {
       
       res.status(201).json(newSession[0]);
     } catch (error) {
-      console.error('Error creating training session:', error);
+      logServerError('Error creating training session:', error, req);
       res.status(500).json({ error: 'Failed to create training session' });
     }
   });
@@ -404,7 +405,7 @@ export function registerAnalyticsRoutes(app: Express) {
 
       res.json(analyticsData);
     } catch (error) {
-      console.error('Dashboard analytics error:', error);
+      logServerError('Dashboard analytics error:', error, req);
       res.status(500).json({ message: '분석 데이터를 가져오는 중 오류가 발생했습니다.' });
     }
   });
@@ -496,7 +497,7 @@ export function registerAnalyticsRoutes(app: Express) {
 
       res.json(myCoursesData);
     } catch (error) {
-      console.error('My courses error:', error);
+      logServerError('My courses error:', error, req);
       res.status(500).json({ message: '강의 데이터를 가져오는 중 오류가 발생했습니다.' });
     }
   });

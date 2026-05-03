@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { storage } from '../storage';
+import { logger } from '../monitoring/logger';
+import { logServerError } from '../middleware/audit-logger';
 
 /**
  * Toss 본인확인 API를 통해 본인인증 완료 후 받은 코드를 검증하고
@@ -20,7 +22,7 @@ export async function verifyIdentity(req: Request, res: Response) {
     const REDIRECT_URI = `${process.env.APP_URL || 'http://localhost:3000'}/auth/verify/callback`;
     
     if (!TOSS_CLIENT_ID || !TOSS_CLIENT_SECRET) {
-      console.error('Toss 인증 정보가 설정되지 않았습니다.');
+      logger.error('Toss 인증 정보가 설정되지 않았습니다.');
       return res.status(500).json({ message: '서버 설정 오류가 발생했습니다.' });
     }
     
@@ -93,7 +95,7 @@ export async function verifyIdentity(req: Request, res: Response) {
     return res.status(200).json(userInfo);
     
   } catch (error: any) {
-    console.error('본인인증 처리 오류:', error);
+    logServerError('본인인증 처리 오류:', error, req);
     
     // 오류 응답 정제
     const errorMessage = error.response?.data?.error_description || 

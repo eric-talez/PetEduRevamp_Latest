@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import { logServerError } from '../middleware/audit-logger';
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_TALEZ || process.env.OPENAI_API_KEY });
@@ -113,7 +114,7 @@ ${fileContent}
 
     return validatedCurriculum;
   } catch (error) {
-    console.error('[AI 커리큘럼] 분석 실패:', error);
+    logServerError('[AI 커리큘럼] 분석 실패:', error);
     throw new Error(`AI 커리큘럼 분석에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -191,7 +192,7 @@ ${marketContext ? `시장 컨텍스트: ${marketContext}` : ''}
 
     return validatedPricing;
   } catch (error) {
-    console.error('[AI 가격책정] 분석 실패:', error);
+    logServerError('[AI 가격책정] 분석 실패:', error);
     
     // 폴백 가격 계산
     const fallbackPrice = calculateFallbackPrice(curriculum);
@@ -302,7 +303,7 @@ export async function evaluateNoseImageQuality(
     const result = JSON.parse(response.choices[0].message.content || '{}');
     return NoseQualitySchema.parse(result);
   } catch (error) {
-    console.error('[코 품질 평가] 실패:', error);
+    logServerError('[코 품질 평가] 실패:', error);
     return {
       overallScore: 50,
       isNoseVisible: true,
@@ -383,7 +384,7 @@ export async function compareNoseImages(
     const result = JSON.parse(response.choices[0].message.content || '{}');
     return NoseSimilaritySchema.parse(result);
   } catch (error) {
-    console.error('[코 비교] 실패:', error);
+    logServerError('[코 비교] 실패:', error);
     return {
       similarityScore: 0,
       matched: false,

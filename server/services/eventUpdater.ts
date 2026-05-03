@@ -1,5 +1,6 @@
 import { storage } from '../storage';
 import * as cheerio from 'cheerio';
+import { logServerError } from '../middleware/audit-logger';
 
 /**
  * 이벤트 자동 업데이트 서비스
@@ -83,7 +84,7 @@ export class EventUpdaterService {
             }
           }
         } catch (error) {
-          console.error(`소스 ${source}에서 이벤트 수집 오류:`, error);
+          logServerError(`소스 ${source}에서 이벤트 수집 오류:`, error);
         }
       }
 
@@ -93,7 +94,7 @@ export class EventUpdaterService {
       await this.logUpdateResult(totalCreated, totalUpdated);
       
     } catch (error) {
-      console.error('❌ 이벤트 자동 업데이트 오류:', error);
+      logServerError('❌ 이벤트 자동 업데이트 오류:', error);
     }
   }
 
@@ -156,7 +157,7 @@ export class EventUpdaterService {
       }
       
     } catch (error) {
-      console.error(`소스 ${sourceUrl}에서 데이터 수집 오류:`, error);
+      logServerError(`소스 ${sourceUrl}에서 데이터 수집 오류:`, error);
     }
     
     return events;

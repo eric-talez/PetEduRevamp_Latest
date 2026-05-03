@@ -6,6 +6,7 @@ import {
   insertSubscriptionPlanSchema,
   updateSubscriptionPlanSchema,
 } from "../../shared/schema";
+import { logServerError } from '../middleware/audit-logger';
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -13,7 +14,7 @@ function getStripe(): Stripe | null {
   try {
     return new Stripe(key, { apiVersion: "2023-10-16" });
   } catch (e) {
-    console.error("Stripe init failed", e);
+    logServerError("Stripe init failed", e);
     return null;
   }
 }
@@ -149,7 +150,7 @@ function syncUserEntitlement(userId: number, sub: any | null, plan: any | null) 
     }
     (storage as any).updateUser?.(userId, updates);
   } catch (e) {
-    console.error("Entitlement sync 실패:", e);
+    logServerError("Entitlement sync 실패:", e);
   }
 }
 
@@ -246,7 +247,7 @@ export function registerSubscriptionRoutes(app: Express) {
         const rawBody = (req as any).rawBody || req.body;
         event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
       } catch (err: any) {
-        console.error("Webhook signature verification failed:", err.message);
+        logServerError("Webhook signature verification failed:", err.message, req);
         return res.status(400).send(`Webhook Error: ${err.message}`);
       }
 
@@ -311,7 +312,7 @@ export function registerSubscriptionRoutes(app: Express) {
         }
         res.json({ received: true });
       } catch (err: any) {
-        console.error("Webhook handler error", err);
+        logServerError("Webhook handler error", err, req);
         res.status(500).send(`Webhook handler error: ${err.message}`);
       }
     }
@@ -346,7 +347,7 @@ export function registerSubscriptionRoutes(app: Express) {
         try {
           plan = await ensureStripeProductForPlan(stripe, plan);
         } catch (e) {
-          console.error("Stripe product create failed", e);
+          logServerError("Stripe product create failed", e, req);
         }
       }
       res.json({ plan: serializePlan(plan) });
@@ -381,7 +382,7 @@ export function registerSubscriptionRoutes(app: Express) {
           }
           updated = await ensureStripeProductForPlan(stripe, updated!);
         } catch (e) {
-          console.error("Stripe price update failed", e);
+          logServerError("Stripe price update failed", e, req);
         }
       }
       res.json({ plan: serializePlan(updated) });
@@ -461,7 +462,7 @@ export function registerSubscriptionRoutes(app: Express) {
             subscription: serializeSubscription(local, planForResp),
           });
         } catch (err: any) {
-          console.error("Plan change failed", err);
+          logServerError("Plan change failed", err, req);
           return res.status(500).json({ error: err.message || "플랜 변경에 실패했습니다." });
         }
       }
@@ -498,7 +499,7 @@ export function registerSubscriptionRoutes(app: Express) {
 
       res.json({ url: session.url, sessionId: session.id });
     } catch (err: any) {
-      console.error("Checkout session create failed", err);
+      logServerError("Checkout session create failed", err, req);
       res.status(500).json({ error: err.message || "체크아웃 세션 생성에 실패했습니다." });
     }
   });
@@ -519,7 +520,7 @@ export function registerSubscriptionRoutes(app: Express) {
       const plan = local ? storage.getSubscriptionPlanById(local.planId) : null;
       res.json({ subscription: serializeSubscription(local, plan) });
     } catch (err: any) {
-      console.error("Subscription cancel failed", err);
+      logServerError("Subscription cancel failed", err, req);
       res.status(500).json({ error: err.message || "구독 해지에 실패했습니다." });
     }
   });

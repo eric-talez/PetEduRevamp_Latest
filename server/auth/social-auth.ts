@@ -6,6 +6,7 @@ import { storage } from '../storage';
 import { Express, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import { generateOAuthState, verifyOAuthState } from './oauth-state';
+import { logServerError } from '../middleware/audit-logger';
 
 /**
  * 운영 환경에서 사용해야 하는 공식 콜백 도메인.
@@ -129,7 +130,7 @@ export function setupSocialAuth(app: Express) {
               return done(null, user);
             }
           } catch (error) {
-            console.error('카카오 로그인 오류:', error);
+            logServerError('카카오 로그인 오류:', error);
             return done(error as Error);
           }
         }
@@ -143,7 +144,7 @@ export function setupSocialAuth(app: Express) {
       req.session.oauthState = { ...(req.session.oauthState || {}), kakao: state };
       req.session.save((err) => {
         if (err) {
-          console.error('[SocialAuth] kakao state 세션 저장 실패:', err);
+          logServerError('[SocialAuth] kakao state 세션 저장 실패:', err, req);
           return res.redirect('/auth?error=session-error');
         }
         passport.authenticate('kakao', { callbackURL, state } as any)(req, res, next);
@@ -234,7 +235,7 @@ export function setupSocialAuth(app: Express) {
               return done(null, user);
             }
           } catch (error) {
-            console.error('네이버 로그인 오류:', error);
+            logServerError('네이버 로그인 오류:', error);
             return done(error as Error);
           }
         }
@@ -248,7 +249,7 @@ export function setupSocialAuth(app: Express) {
       req.session.oauthState = { ...(req.session.oauthState || {}), naver: state };
       req.session.save((err) => {
         if (err) {
-          console.error('[SocialAuth] naver state 세션 저장 실패:', err);
+          logServerError('[SocialAuth] naver state 세션 저장 실패:', err, req);
           return res.redirect('/auth?error=session-error');
         }
         passport.authenticate('naver', { callbackURL, state } as any)(req, res, next);
@@ -335,7 +336,7 @@ export function setupSocialAuth(app: Express) {
               return done(null, user);
             }
           } catch (error) {
-            console.error('구글 로그인 오류:', error);
+            logServerError('구글 로그인 오류:', error);
             return done(error as Error);
           }
         }

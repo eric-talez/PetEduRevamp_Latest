@@ -1,5 +1,6 @@
 // 환경 변수 먼저 로드
 import dotenv from 'dotenv';
+import { logger } from './monitoring/logger';
 dotenv.config();
 
 import express, { type Request, Response, NextFunction } from "express";
@@ -26,7 +27,7 @@ import { setupAuth } from "./auth";
 import { activitySessionMiddleware, ensureUserSessionsSchema, startUserSessionCleanupScheduler } from "./auth/session-manager";
 import { extendResponse } from "./middleware/api-standards";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
-import { requestContextMiddleware } from "./middleware/audit-logger";
+import { requestContextMiddleware, logServerError } from './middleware/audit-logger';
 import { closeDatabasePool } from "./db";
 import path from 'path'; // path 모듈 추가
 import locationRoutes from './location/routes';
@@ -45,9 +46,9 @@ const requiredEnvVars = isProductionEnv
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
-  console.error('❌ 필수 환경 변수 누락:', missingEnvVars.join(', '));
-  console.error('Replit Secrets에서 다음 변수들을 설정해주세요:');
-  missingEnvVars.forEach(varName => console.error(`  - ${varName}`));
+  logServerError('❌ 필수 환경 변수 누락:', missingEnvVars.join(', '));
+  logger.error('Replit Secrets에서 다음 변수들을 설정해주세요:');
+  missingEnvVars.forEach(varName => logger.error(`  - ${varName}`));
   process.exit(1);
 }
 
@@ -320,7 +321,7 @@ app.get('/attached_assets/:filename', (req, res) => {
 
     res.sendFile(filename, { root: 'attached_assets' });
   } catch (error) {
-    console.error('첨부 파일 제공 오류:', error);
+    logServerError('첨부 파일 제공 오류:', error, req);
     res.status(404).send('File not found');
   }
 });
@@ -373,7 +374,7 @@ app.use((req: any, res: any, next: any) => {
     }
     next();
   } catch (error) {
-    console.error('Session middleware error:', error);
+    logServerError('Session middleware error:', error, req);
     next();
   }
 });
@@ -398,7 +399,7 @@ ensureUserSessionsSchema()
     });
   })
   .catch((err) => {
-    console.error('[Startup] user_sessions 스키마 보장 실패:', err);
+    logServerError('[Startup] user_sessions 스키마 보장 실패:', err);
     process.exit(1);
   });
 
@@ -430,7 +431,7 @@ async function gracefulShutdown(signal: string, exitCode: number = 0) {
 
   // 강제 종료 안전장치 (25초) — close 가 멈춰도 반드시 종료
   const forceExit = setTimeout(() => {
-    console.error('⛔ Graceful shutdown timeout, forcing exit');
+    logger.error('⛔ Graceful shutdown timeout, forcing exit');
     process.exit(exitCode === 0 ? 1 : exitCode);
   }, 25_000);
   forceExit.unref();
@@ -439,20 +440,20 @@ async function gracefulShutdown(signal: string, exitCode: number = 0) {
     if (httpServerRef) {
       await new Promise<void>((resolve) => {
         httpServerRef!.close((err) => {
-          if (err) console.error('HTTP server close error:', err);
+          if (err) logServerError('HTTP server close error:', err);
           else console.log('✅ HTTP server closed (no new connections)');
           resolve();
         });
       });
     }
   } catch (err) {
-    console.error('HTTP shutdown 에러:', err);
+    logServerError('HTTP shutdown 에러:', err);
   }
 
   try {
     await closeDatabasePool();
   } catch (err) {
-    console.error('DB pool 종료 에러:', err);
+    logServerError('DB pool 종료 에러:', err);
   }
 
   clearTimeout(forceExit);
@@ -467,14 +468,14 @@ process.on('SIGINT', () => { void gracefulShutdown('SIGINT'); });
 // 로깅 후 graceful shutdown 을 트리거하고 exit(1) 로 종료한다.
 // 외부 프로세스 매니저(systemd/PM2/Replit 워크플로)가 재시작하도록 fail-fast.
 process.on('uncaughtException', (err) => {
-  console.error('🚨 Uncaught Exception:', err);
+  logServerError('🚨 Uncaught Exception:', err);
   void gracefulShutdown('uncaughtException', 1);
 });
 
 // unhandledRejection: 기본은 fail-fast(1) 로 종료. 운영 정책에 따라
 // UNHANDLED_REJECTION_POLICY=log 로 설정하면 로깅만 하고 유지한다.
 process.on('unhandledRejection', (reason) => {
-  console.error('🚨 Unhandled Promise Rejection:', reason);
+  logServerError('🚨 Unhandled Promise Rejection:', reason);
   if ((process.env.UNHANDLED_REJECTION_POLICY || 'shutdown') === 'shutdown') {
     void gracefulShutdown('unhandledRejection', 1);
   }
@@ -782,7 +783,7 @@ async function startServer() {
     });
 
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+    logServerError("❌ Failed to start server:", error);
     process.exit(1);
   }
 }

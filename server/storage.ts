@@ -23,6 +23,7 @@ import {
   type ContentReport,
   type InsertContentReport,
 } from "../shared/schema";
+import { logServerError } from './middleware/audit-logger';
 
 class Storage {
   users: any[] = [];
@@ -1342,7 +1343,7 @@ class Storage {
         return user;
       }
     } catch (error) {
-      console.error('[DB] getUserByUsername 오류:', error);
+      logServerError('[DB] getUserByUsername 오류:', error);
     }
     
     // 데이터베이스에서 찾지 못하면 메모리에서 검색 (fallback)
@@ -1377,7 +1378,7 @@ class Storage {
       console.log('[DB] 사용자 생성됨:', { id: newUser.id, username: newUser.username, approvalStatus: newUser.approvalStatus });
       return newUser;
     } catch (error) {
-      console.error('[DB] createUser 오류:', error);
+      logServerError('[DB] createUser 오류:', error);
       
       const newUser = {
         id: (this.users?.length || 0) + 1,
@@ -1434,7 +1435,7 @@ class Storage {
       }).from(usersTable).where(eq(usersTable.id, id)).limit(1);
       return user || null;
     } catch (error) {
-      console.error('[DB] getUserFromDB 오류:', error);
+      logServerError('[DB] getUserFromDB 오류:', error);
       return null;
     }
   }
@@ -1454,7 +1455,7 @@ class Storage {
       // 업데이트된 사용자 반환
       return await this.getUserFromDB(id);
     } catch (error) {
-      console.error('[DB] updateUserInDB 오류:', error);
+      logServerError('[DB] updateUserInDB 오류:', error);
       return null;
     }
   }
@@ -1465,7 +1466,7 @@ class Storage {
       await db.delete(usersTable).where(eq(usersTable.id, id));
       return true;
     } catch (error) {
-      console.error('[DB] deleteUserFromDB 오류:', error);
+      logServerError('[DB] deleteUserFromDB 오류:', error);
       return false;
     }
   }
@@ -1490,7 +1491,7 @@ class Storage {
         return !!user;
       }
     } catch (error) {
-      console.error('[DB] checkEmailExistsInDB 오류:', error);
+      logServerError('[DB] checkEmailExistsInDB 오류:', error);
       return false;
     }
   }
@@ -1836,7 +1837,7 @@ class Storage {
       
       return trainers;
     } catch (error) {
-      console.error('[Storage] getAllTrainers error:', error);
+      logServerError('[Storage] getAllTrainers error:', error);
       // fallback to memory storage
       return this.users?.filter(user => user.role === 'trainer') || [];
     }
@@ -2360,7 +2361,7 @@ class Storage {
       console.log('[Storage] 기관 삭제 완료:', instituteId);
       return true;
     } catch (error) {
-      console.error('[Storage] 기관 삭제 오류:', error);
+      logServerError('[Storage] 기관 삭제 오류:', error);
       return false;
     }
   }
@@ -2555,7 +2556,7 @@ class Storage {
       console.log(`[Storage] ${transformedProducts.length}개 상품 변환 완료`);
       return transformedProducts || [];
     } catch (error) {
-      console.error('[Storage] getAllProducts 에러:', error);
+      logServerError('[Storage] getAllProducts 에러:', error);
       return [];
     }
   }
@@ -2694,7 +2695,7 @@ class Storage {
         petIds.includes(journal.petId)
       );
     } catch (error) {
-      console.error('getTrainingJournalsByOwner 오류:', error);
+      logServerError('getTrainingJournalsByOwner 오류:', error);
       return [];
     }
   }
@@ -2711,7 +2712,7 @@ class Storage {
         trainerIds.includes(journal.trainerId)
       );
     } catch (error) {
-      console.error('getTrainingJournalsByInstitute 오류:', error);
+      logServerError('getTrainingJournalsByInstitute 오류:', error);
       return [];
     }
   }
@@ -3745,7 +3746,7 @@ class Storage {
         console.log('[Storage] 훈련사 정보 업데이트 완료 (DB):', updatedTrainer.name);
       }
     } catch (error) {
-      console.error('[Storage] 훈련사 정보 업데이트 실패:', error);
+      logServerError('[Storage] 훈련사 정보 업데이트 실패:', error);
     }
   }
 
@@ -3783,7 +3784,7 @@ class Storage {
       console.log('[Storage] 새 강의 생성:', newCourse.title);
       return newCourse;
     } catch (error) {
-      console.error('[Storage] 강의 생성 실패:', error);
+      logServerError('[Storage] 강의 생성 실패:', error);
       throw error;
     }
   }
@@ -3800,7 +3801,7 @@ class Storage {
       console.log(`[Storage] 강의 수정 실패: ${id} 찾을 수 없음`);
       return null;
     } catch (error) {
-      console.error('[Storage] 강의 수정 실패:', error);
+      logServerError('[Storage] 강의 수정 실패:', error);
       throw error;
     }
   }
@@ -3836,7 +3837,7 @@ class Storage {
       console.log(`[Storage] 강의 수정 완료: ${id}`);
       return course;
     } catch (error) {
-      console.error('[Storage] 강의 수정 실패:', error);
+      logServerError('[Storage] 강의 수정 실패:', error);
       throw error;
     }
   }
@@ -3853,7 +3854,7 @@ class Storage {
       console.log(`[Storage] 강의 삭제 실패: ${id} 찾을 수 없음`);
       return false;
     } catch (error) {
-      console.error('[Storage] 강의 삭제 실패:', error);
+      logServerError('[Storage] 강의 삭제 실패:', error);
       throw error;
     }
   }
@@ -3884,7 +3885,7 @@ class Storage {
       console.log(`[Storage] 강의 삭제 완료: ${id}`);
       return { success: true };
     } catch (error) {
-      console.error('[Storage] 강의 삭제 실패:', error);
+      logServerError('[Storage] 강의 삭제 실패:', error);
       throw error;
     }
   }
@@ -3902,7 +3903,7 @@ class Storage {
       console.log(`[Storage] 강의 게시 실패: ${id} 찾을 수 없음`);
       return null;
     } catch (error) {
-      console.error('[Storage] 강의 게시 실패:', error);
+      logServerError('[Storage] 강의 게시 실패:', error);
       throw error;
     }
   }
@@ -3945,7 +3946,7 @@ class Storage {
       console.log('[Storage] 새 훈련사 생성 (DB):', savedTrainer.name);
       return savedTrainer;
     } catch (error) {
-      console.error('[Storage] 훈련사 생성 실패:', error);
+      logServerError('[Storage] 훈련사 생성 실패:', error);
       throw error;
     }
   }
@@ -3967,7 +3968,7 @@ class Storage {
       console.log(`[Storage] 훈련사 목록 조회 (DB): ${result.length}명`);
       return result;
     } catch (error) {
-      console.error('[Storage] 훈련사 목록 조회 실패:', error);
+      logServerError('[Storage] 훈련사 목록 조회 실패:', error);
       return [];
     }
   }
@@ -3978,7 +3979,7 @@ class Storage {
       const [trainer] = await db.select().from(trainers).where(eq(trainers.id, trainerId));
       return trainer || null;
     } catch (error) {
-      console.error('[Storage] 훈련사 조회 실패:', error);
+      logServerError('[Storage] 훈련사 조회 실패:', error);
       return null;
     }
   }
@@ -3993,7 +3994,7 @@ class Storage {
       console.log('[Storage] 훈련사 정보 업데이트 (DB):', updatedTrainer?.name);
       return updatedTrainer;
     } catch (error) {
-      console.error('[Storage] 훈련사 업데이트 실패:', error);
+      logServerError('[Storage] 훈련사 업데이트 실패:', error);
       throw error;
     }
   }
@@ -4042,7 +4043,7 @@ class Storage {
       console.log('[Storage] 상품 목록 조회');
       return this.products || [];
     } catch (error) {
-      console.error('[Storage] 상품 목록 조회 실패:', error);
+      logServerError('[Storage] 상품 목록 조회 실패:', error);
       return [];
     }
   }
@@ -4086,7 +4087,7 @@ class Storage {
 
       return { purchase, progress };
     } catch (error) {
-      console.error('[Storage] 강의 구매 실패:', error);
+      logServerError('[Storage] 강의 구매 실패:', error);
       throw error;
     }
   }
@@ -4108,7 +4109,7 @@ class Storage {
 
       return this.courseProgress[progressIndex];
     } catch (error) {
-      console.error('[Storage] 강의 진행 상황 업데이트 실패:', error);
+      logServerError('[Storage] 강의 진행 상황 업데이트 실패:', error);
       throw error;
     }
   }
@@ -4137,7 +4138,7 @@ class Storage {
       this.progressSharing.push(sharing);
       return sharing;
     } catch (error) {
-      console.error('[Storage] 진행 상황 공유 실패:', error);
+      logServerError('[Storage] 진행 상황 공유 실패:', error);
       throw error;
     }
   }
@@ -4147,7 +4148,7 @@ class Storage {
     try {
       return this.coursePurchases.filter(purchase => purchase.userId === userId);
     } catch (error) {
-      console.error('[Storage] 사용자 강의 구매 목록 조회 실패:', error);
+      logServerError('[Storage] 사용자 강의 구매 목록 조회 실패:', error);
       return [];
     }
   }
@@ -4157,7 +4158,7 @@ class Storage {
     try {
       return this.courseProgress.filter(progress => progress.userId === userId);
     } catch (error) {
-      console.error('[Storage] 사용자 강의 진행 상황 조회 실패:', error);
+      logServerError('[Storage] 사용자 강의 진행 상황 조회 실패:', error);
       return [];
     }
   }
@@ -4186,7 +4187,7 @@ class Storage {
 
       return progressWithDetails;
     } catch (error) {
-      console.error('[Storage] 훈련사별 공유 진행 상황 조회 실패:', error);
+      logServerError('[Storage] 훈련사별 공유 진행 상황 조회 실패:', error);
       return [];
     }
   }
@@ -4215,7 +4216,7 @@ class Storage {
 
       return progressWithDetails;
     } catch (error) {
-      console.error('[Storage] 기관별 공유 진행 상황 조회 실패:', error);
+      logServerError('[Storage] 기관별 공유 진행 상황 조회 실패:', error);
       return [];
     }
   }
@@ -4234,7 +4235,7 @@ class Storage {
       this.lessonSessions.push(session);
       return session;
     } catch (error) {
-      console.error('[Storage] 강의 세션 기록 실패:', error);
+      logServerError('[Storage] 강의 세션 기록 실패:', error);
       throw error;
     }
   }
@@ -4759,7 +4760,7 @@ class Storage {
         console.log('[Storage] 훈련사 데이터가 이미 존재함:', existingTrainers.length, '명');
       }
     } catch (error) {
-      console.error('[Storage] 훈련사 초기 데이터 시드 실패:', error);
+      logServerError('[Storage] 훈련사 초기 데이터 시드 실패:', error);
     }
 
     // 샘플 대체 훈련사 게시글 데이터
@@ -5215,7 +5216,7 @@ class HybridStorage extends Storage {
       const [application] = await db.select().from(trainerApplications).where(eq(trainerApplications.id, id));
       return application || undefined;
     } catch (error) {
-      console.error('[DB] 훈련사 신청 조회 오류:', error);
+      logServerError('[DB] 훈련사 신청 조회 오류:', error);
       return undefined;
     }
   }
@@ -5224,7 +5225,7 @@ class HybridStorage extends Storage {
     try {
       return await db.select().from(trainerApplications);
     } catch (error) {
-      console.error('[DB] 모든 훈련사 신청 조회 오류:', error);
+      logServerError('[DB] 모든 훈련사 신청 조회 오류:', error);
       return []; // 빈 배열 반환
     }
   }
@@ -5247,7 +5248,7 @@ class HybridStorage extends Storage {
       }).returning();
       return application;
     } catch (error) {
-      console.error('[DB] 훈련사 신청 생성 오류:', error);
+      logServerError('[DB] 훈련사 신청 생성 오류:', error);
       throw error;
     }
   }
@@ -5266,7 +5267,7 @@ class HybridStorage extends Storage {
         .returning();
       return updated;
     } catch (error) {
-      console.error('[DB] 훈련사 신청 상태 업데이트 오류:', error);
+      logServerError('[DB] 훈련사 신청 상태 업데이트 오류:', error);
       throw error;
     }
   }
@@ -5286,7 +5287,7 @@ class HybridStorage extends Storage {
       }).returning();
       return approval;
     } catch (error) {
-      console.error('[DB] 컨텐츠 승인 생성 오류:', error);
+      logServerError('[DB] 컨텐츠 승인 생성 오류:', error);
       throw error;
     }
   }
@@ -5295,7 +5296,7 @@ class HybridStorage extends Storage {
     try {
       return await db.select().from(contentApprovals);
     } catch (error) {
-      console.error('[DB] 컨텐츠 승인 조회 오류:', error);
+      logServerError('[DB] 컨텐츠 승인 조회 오류:', error);
       return [];
     }
   }
@@ -5320,7 +5321,7 @@ class HybridStorage extends Storage {
       }).returning();
       return curriculum;
     } catch (error) {
-      console.error('[DB] 커리큘럼 생성 오류:', error);
+      logServerError('[DB] 커리큘럼 생성 오류:', error);
       throw error;
     }
   }
@@ -5330,7 +5331,7 @@ class HybridStorage extends Storage {
       // 기본 Storage 클래스의 샘플 데이터 사용 (동기 호환)
       return super.getAllCurriculums();
     } catch (error) {
-      console.error('[DB] 커리큘럼 조회 오류:', error);
+      logServerError('[DB] 커리큘럼 조회 오류:', error);
       return [];
     }
   }
@@ -5342,7 +5343,7 @@ class HybridStorage extends Storage {
       console.log('[DB] 기관 조회:', result.length + '개');
       return result;
     } catch (error) {
-      console.error('[DB] 기관 조회 오류:', error);
+      logServerError('[DB] 기관 조회 오류:', error);
       return [];
     }
   }
@@ -5358,7 +5359,7 @@ class HybridStorage extends Storage {
       console.log('[DB] 기관 코드 없음:', code);
       return null;
     } catch (error) {
-      console.error('[DB] 기관 코드 검증 오류:', error);
+      logServerError('[DB] 기관 코드 검증 오류:', error);
       return null;
     }
   }
@@ -5374,7 +5375,7 @@ class HybridStorage extends Storage {
       console.log('[DB] 훈련사-기관 연결 완료:', { trainerId, instituteId });
       return true;
     } catch (error) {
-      console.error('[DB] 훈련사-기관 연결 오류:', error);
+      logServerError('[DB] 훈련사-기관 연결 오류:', error);
       return false;
     }
   }
@@ -5396,7 +5397,7 @@ class HybridStorage extends Storage {
         .where(eq(trainerInstitutes.trainerId, trainerId));
       return result;
     } catch (error) {
-      console.error('[DB] 훈련사 기관 조회 오류:', error);
+      logServerError('[DB] 훈련사 기관 조회 오류:', error);
       return [];
     }
   }
@@ -5415,7 +5416,7 @@ class HybridStorage extends Storage {
         createdAt: new Date()
       };
     } catch (error) {
-      console.error('[DB] 훈련사 인증 생성 오류:', error);
+      logServerError('[DB] 훈련사 인증 생성 오류:', error);
       throw error;
     }
   }
@@ -5450,7 +5451,7 @@ class HybridStorage extends Storage {
         return 0;
       });
     } catch (error) {
-      console.error('수수료 정책 조회 오류:', error);
+      logServerError('수수료 정책 조회 오류:', error);
       return [];
     }
   }
@@ -5463,7 +5464,7 @@ class HybridStorage extends Storage {
       console.log(`[DB] 거래 내역 생성: ID ${result.id}`);
       return result.id;
     } catch (error) {
-      console.error('거래 내역 생성 오류:', error);
+      logServerError('거래 내역 생성 오류:', error);
       throw error;
     }
   }
@@ -5476,7 +5477,7 @@ class HybridStorage extends Storage {
       const [transaction] = await db.select().from(transactions).where(eq(transactions.id, transactionId));
       return transaction;
     } catch (error) {
-      console.error('거래 내역 조회 오류:', error);
+      logServerError('거래 내역 조회 오류:', error);
       return null;
     }
   }
@@ -5497,7 +5498,7 @@ class HybridStorage extends Storage {
 
       return results;
     } catch (error) {
-      console.error('기간별 거래 내역 조회 오류:', error);
+      logServerError('기간별 거래 내역 조회 오류:', error);
       return [];
     }
   }
@@ -5510,7 +5511,7 @@ class HybridStorage extends Storage {
       console.log(`[DB] 정산 내역 생성: ID ${result.id}`);
       return result.id;
     } catch (error) {
-      console.error('정산 내역 생성 오류:', error);
+      logServerError('정산 내역 생성 오류:', error);
       throw error;
     }
   }
@@ -5522,7 +5523,7 @@ class HybridStorage extends Storage {
       const [result] = await db.insert(settlementItems).values(itemData).returning({ id: settlementItems.id });
       return result.id;
     } catch (error) {
-      console.error('정산 항목 생성 오류:', error);
+      logServerError('정산 항목 생성 오류:', error);
       throw error;
     }
   }
@@ -5535,7 +5536,7 @@ class HybridStorage extends Storage {
       await db.update(settlements).set(updates).where(eq(settlements.id, settlementId));
       return true;
     } catch (error) {
-      console.error('정산 내역 수정 오류:', error);
+      logServerError('정산 내역 수정 오류:', error);
       return false;
     }
   }
@@ -5546,7 +5547,7 @@ class HybridStorage extends Storage {
       console.log('매출 통계 업데이트:', statsData);
       return true;
     } catch (error) {
-      console.error('매출 통계 업데이트 오류:', error);
+      logServerError('매출 통계 업데이트 오류:', error);
       return false;
     }
   }
@@ -5557,7 +5558,7 @@ class HybridStorage extends Storage {
       console.log('환불 내역 생성:', refundData);
       return true;
     } catch (error) {
-      console.error('환불 내역 생성 오류:', error);
+      logServerError('환불 내역 생성 오류:', error);
       return false;
     }
   }
@@ -6019,7 +6020,7 @@ class HybridStorage extends Storage {
       }).returning();
       return row;
     } catch (err) {
-      console.error('[Share Token] DB 저장 실패:', err);
+      logServerError('[Share Token] DB 저장 실패:', err);
       throw err;
     }
   }
@@ -6034,7 +6035,7 @@ class HybridStorage extends Storage {
       if (record.expiresAt && new Date(record.expiresAt).getTime() < Date.now()) return null;
       return record;
     } catch (err) {
-      console.error('[Share Token] DB 조회 실패:', err);
+      logServerError('[Share Token] DB 조회 실패:', err);
       return null;
     }
   }
@@ -6045,7 +6046,7 @@ class HybridStorage extends Storage {
       await db.update(aiAnalysisShareTokens).set({ revokedAt: new Date() }).where(eq(aiAnalysisShareTokens.token, token));
       return true;
     } catch (err) {
-      console.error('[Share Token] DB 철회 실패:', err);
+      logServerError('[Share Token] DB 철회 실패:', err);
       return false;
     }
   }
@@ -6171,7 +6172,7 @@ class HybridStorage extends Storage {
 
       return newConversation[0];
     } catch (error) {
-      console.error('[Storage] getOrCreateConversation 오류:', error);
+      logServerError('[Storage] getOrCreateConversation 오류:', error);
       throw error;
     }
   }
@@ -6226,7 +6227,7 @@ class HybridStorage extends Storage {
 
       return conversationsWithDetails;
     } catch (error) {
-      console.error('[Storage] getConversationsForUser 오류:', error);
+      logServerError('[Storage] getConversationsForUser 오류:', error);
       return [];
     }
   }
@@ -6273,7 +6274,7 @@ class HybridStorage extends Storage {
         }
       };
     } catch (error) {
-      console.error('[Storage] getMessagesForConversation 오류:', error);
+      logServerError('[Storage] getMessagesForConversation 오류:', error);
       return { messages: [], pagination: { page, limit, total: 0, hasMore: false } };
     }
   }
@@ -6309,7 +6310,7 @@ class HybridStorage extends Storage {
         conversationId: conversation.id
       };
     } catch (error) {
-      console.error('[Storage] createMessage 오류:', error);
+      logServerError('[Storage] createMessage 오류:', error);
       throw error;
     }
   }
@@ -6326,7 +6327,7 @@ class HybridStorage extends Storage {
         );
       return true;
     } catch (error) {
-      console.error('[Storage] markMessageAsRead 오류:', error);
+      logServerError('[Storage] markMessageAsRead 오류:', error);
       return false;
     }
   }
@@ -6343,7 +6344,7 @@ class HybridStorage extends Storage {
         );
       return true;
     } catch (error) {
-      console.error('[Storage] markAllMessagesAsRead 오류:', error);
+      logServerError('[Storage] markAllMessagesAsRead 오류:', error);
       return false;
     }
   }
@@ -6360,7 +6361,7 @@ class HybridStorage extends Storage {
       );
       return Number(result[0]?.count) || 0;
     } catch (error) {
-      console.error('[Storage] getUnreadMessageCount 오류:', error);
+      logServerError('[Storage] getUnreadMessageCount 오류:', error);
       return 0;
     }
   }

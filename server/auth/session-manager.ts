@@ -10,6 +10,7 @@ import type { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { userSessions, type UserSession, type User } from "../../shared/schema";
 import { and, eq, isNull, desc, ne, gt, lt, or, isNotNull, sql as drizzleSql } from "drizzle-orm";
+import { logServerError } from '../middleware/audit-logger';
 
 type AuthedUser = Pick<User, "id">;
 function getUserId(req: Request): number | undefined {
@@ -151,7 +152,7 @@ export async function registerLoginSession(req: Request, userId: number): Promis
     }
     recentActivityTouch.set(req.sessionID, now.getTime());
   } catch (error) {
-    console.error("[SessionManager] 로그인 세션 등록 오류:", error);
+    logServerError("[SessionManager] 로그인 세션 등록 오류:", error, req);
   }
 }
 
@@ -217,7 +218,7 @@ export function activitySessionMiddleware(
 
       next();
     } catch (error) {
-      console.error("[SessionManager] activitySessionMiddleware 오류:", error);
+      logServerError("[SessionManager] activitySessionMiddleware 오류:", error, req);
       next();
     }
   })();
@@ -256,7 +257,7 @@ async function markRevoked(id: number, reason: string) {
       .set({ revokedAt: new Date(), revokedReason: reason })
       .where(eq(userSessions.id, id));
   } catch (error) {
-    console.error("[SessionManager] markRevoked 오류:", error);
+    logServerError("[SessionManager] markRevoked 오류:", error);
   }
 }
 
@@ -320,7 +321,7 @@ export async function revokeCurrentSession(sessionId: string | undefined, reason
       .set({ revokedAt: new Date(), revokedReason: reason })
       .where(eq(userSessions.sessionId, sessionId));
   } catch (error) {
-    console.error("[SessionManager] revokeCurrentSession 오류:", error);
+    logServerError("[SessionManager] revokeCurrentSession 오류:", error);
   }
 }
 
@@ -355,7 +356,7 @@ export async function cleanupExpiredUserSessions(retentionDays: number = 7): Pro
     }
     return deleted;
   } catch (error) {
-    console.error("[SessionManager] cleanupExpiredUserSessions 오류:", error);
+    logServerError("[SessionManager] cleanupExpiredUserSessions 오류:", error);
     return 0;
   }
 }
@@ -417,6 +418,6 @@ export async function touchSessionActivity(sessionId: string | undefined) {
       })
       .where(eq(userSessions.sessionId, sessionId));
   } catch (error) {
-    console.error("[SessionManager] touchSessionActivity 오류:", error);
+    logServerError("[SessionManager] touchSessionActivity 오류:", error);
   }
 }

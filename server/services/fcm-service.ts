@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { logServerError } from '../middleware/audit-logger';
 
 /**
  * Firebase Cloud Messaging 서비스
@@ -51,7 +52,7 @@ class FCMService {
         console.log('[FCM] Firebase Admin SDK가 이미 초기화되어 있습니다.');
       }
     } catch (error) {
-      console.error('[FCM] Firebase Admin SDK 초기화 실패:', error);
+      logServerError('[FCM] Firebase Admin SDK 초기화 실패:', error);
       this.isInitialized = false;
     }
   }
@@ -118,7 +119,7 @@ class FCMService {
         messageId: response 
       };
     } catch (error: any) {
-      console.error('[FCM] 푸시 알림 전송 실패:', error);
+      logServerError('[FCM] 푸시 알림 전송 실패:', error);
       
       // 토큰 무효화 에러 처리
       if (error.code === 'messaging/invalid-registration-token' ||
@@ -198,7 +199,7 @@ class FCMService {
         invalidTokens,
       };
     } catch (error) {
-      console.error('[FCM] 배치 푸시 알림 전송 실패:', error);
+      logServerError('[FCM] 배치 푸시 알림 전송 실패:', error);
       return {
         successCount: 0,
         failureCount: deviceTokens.length,
@@ -246,7 +247,7 @@ class FCMService {
         messageId: response 
       };
     } catch (error: any) {
-      console.error(`[FCM] 토픽 '${topic}' 푸시 알림 전송 실패:`, error);
+      logServerError(`[FCM] 토픽 '${topic}' 푸시 알림 전송 실패:`, error);
       return { 
         success: false, 
         error: error.message 
@@ -274,7 +275,7 @@ class FCMService {
         failureCount: response.failureCount,
       };
     } catch (error) {
-      console.error(`[FCM] 토픽 '${topic}' 구독 실패:`, error);
+      logServerError(`[FCM] 토픽 '${topic}' 구독 실패:`, error);
       return {
         successCount: 0,
         failureCount: deviceTokens.length,

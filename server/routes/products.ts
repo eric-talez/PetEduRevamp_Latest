@@ -4,6 +4,7 @@ import { products, productExposures, shoppingCarts, orders, orderItems } from '.
 import { eq, and, or, desc, asc, ilike, gte, lte, count } from 'drizzle-orm';
 import { z } from 'zod';
 import { storage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -71,7 +72,7 @@ router.get('/products', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('상품 목록 조회 오류:', error);
+    logServerError('상품 목록 조회 오류:', error, req);
     res.status(500).json({ error: '상품 목록을 불러오는 중 오류가 발생했습니다.' });
   }
 });
@@ -95,7 +96,7 @@ router.get('/products/:id', async (req, res) => {
 
     res.json(product[0]);
   } catch (error) {
-    console.error('상품 상세 조회 오류:', error);
+    logServerError('상품 상세 조회 오류:', error, req);
     res.status(500).json({ error: '상품 정보를 불러오는 중 오류가 발생했습니다.' });
   }
 });
@@ -113,7 +114,7 @@ router.get('/categories/count', async (req, res) => {
 
     res.json(categoryCounts);
   } catch (error) {
-    console.error('카테고리별 상품 개수 조회 오류:', error);
+    logServerError('카테고리별 상품 개수 조회 오류:', error, req);
     res.status(500).json({ error: '카테고리 정보를 불러오는 중 오류가 발생했습니다.' });
   }
 });
@@ -131,7 +132,7 @@ router.get('/products/featured/popular', async (req, res) => {
 
     res.json(popularProducts);
   } catch (error) {
-    console.error('인기 상품 조회 오류:', error);
+    logServerError('인기 상품 조회 오류:', error, req);
     res.status(500).json({ error: '인기 상품을 불러오는 중 오류가 발생했습니다.' });
   }
 });
@@ -149,7 +150,7 @@ router.get('/products/featured/recommended', async (req, res) => {
 
     res.json(recommendedProducts);
   } catch (error) {
-    console.error('추천 상품 조회 오류:', error);
+    logServerError('추천 상품 조회 오류:', error, req);
     res.status(500).json({ error: '추천 상품을 불러오는 중 오류가 발생했습니다.' });
   }
 });
@@ -168,7 +169,7 @@ router.post('/admin/products', async (req, res) => {
     
     res.status(201).json(newProduct);
   } catch (error) {
-    console.error('상품 생성 오류:', error);
+    logServerError('상품 생성 오류:', error, req);
     res.status(500).json({ error: '상품 생성 중 오류가 발생했습니다.' });
   }
 });
@@ -195,7 +196,7 @@ router.put('/admin/products/:id', async (req, res) => {
 
     res.json(updatedProduct);
   } catch (error) {
-    console.error('상품 수정 오류:', error);
+    logServerError('상품 수정 오류:', error, req);
     res.status(500).json({ error: '상품 수정 중 오류가 발생했습니다.' });
   }
 });
@@ -220,7 +221,7 @@ router.delete('/admin/products/:id', async (req, res) => {
 
     res.json({ message: '상품이 성공적으로 삭제되었습니다.' });
   } catch (error) {
-    console.error('상품 삭제 오류:', error);
+    logServerError('상품 삭제 오류:', error, req);
     res.status(500).json({ error: '상품 삭제 중 오류가 발생했습니다.' });
   }
 });
@@ -266,7 +267,7 @@ router.get('/admin/product-exposures', async (req, res) => {
     
     res.json(exposures);
   } catch (error) {
-    console.error('상품 노출 연결 조회 오류:', error);
+    logServerError('상품 노출 연결 조회 오류:', error, req);
     res.status(500).json({ error: '상품 노출 연결 정보를 불러오는 중 오류가 발생했습니다.' });
   }
 });
@@ -283,7 +284,7 @@ router.post('/admin/product-exposures', async (req, res) => {
     
     res.status(201).json(newExposure);
   } catch (error) {
-    console.error('상품 노출 연결 생성 오류:', error);
+    logServerError('상품 노출 연결 생성 오류:', error, req);
     res.status(500).json({ error: '상품 노출 연결 생성 중 오류가 발생했습니다.' });
   }
 });
@@ -310,7 +311,7 @@ router.put('/admin/product-exposures/:id', async (req, res) => {
 
     res.json(updatedExposure);
   } catch (error) {
-    console.error('상품 노출 연결 수정 오류:', error);
+    logServerError('상품 노출 연결 수정 오류:', error, req);
     res.status(500).json({ error: '상품 노출 연결 수정 중 오류가 발생했습니다.' });
   }
 });
@@ -335,7 +336,7 @@ router.delete('/admin/product-exposures/:id', async (req, res) => {
 
     res.json({ message: '상품 노출 연결이 성공적으로 삭제되었습니다.' });
   } catch (error) {
-    console.error('상품 노출 연결 삭제 오류:', error);
+    logServerError('상품 노출 연결 삭제 오류:', error, req);
     res.status(500).json({ error: '상품 노출 연결 삭제 중 오류가 발생했습니다.' });
   }
 });

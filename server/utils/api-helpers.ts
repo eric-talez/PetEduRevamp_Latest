@@ -11,6 +11,7 @@ import {
   validateBody,
   validateQuery
 } from '../middleware/api-standards';
+import { logServerError } from '../middleware/audit-logger';
 
 // =============================================================================
 // 권한 체크 헬퍼
@@ -140,7 +141,7 @@ export function serviceWrapper<T extends any[], R>(
     try {
       return await serviceFn(...args);
     } catch (error) {
-      console.error(`Service Error: ${errorMessage}`, error);
+      logServerError(`Service Error: ${errorMessage}`, error);
       throw new Error(errorMessage);
     }
   };
@@ -266,7 +267,7 @@ export function logApiRequest(req: Request, message: string, data?: any) {
  * 에러 로그 with context
  */
 export function logApiError(req: Request, error: Error, context?: string) {
-  console.error(`[API Error] ${req.method} ${req.path}`, {
+  logServerError(`[API Error] ${req.method} ${req.path}`, {
     message: error.message,
     stack: error.stack,
     context,
@@ -275,5 +276,5 @@ export function logApiError(req: Request, error: Error, context?: string) {
     body: req.body,
     query: req.query,
     params: req.params
-  });
+  }, req);
 }

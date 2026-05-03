@@ -4,6 +4,7 @@ import { csrfProtection } from '../middleware/csrf';
 import { db } from '../db';
 import { matchingRequests } from '../../shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerMatchingSystemRoutes(app: Express, storage: any) {
   // 전체 매칭 현황 조회 (관리자용)
@@ -50,7 +51,7 @@ export function registerMatchingSystemRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('[MatchingSystem] 매칭 현황 조회 실패:', error);
+      logServerError('[MatchingSystem] 매칭 현황 조회 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '매칭 현황 조회 중 오류가 발생했습니다.' 
@@ -115,7 +116,7 @@ export function registerMatchingSystemRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('[MatchingSystem] 매칭 요청 실패:', error);
+      logServerError('[MatchingSystem] 매칭 요청 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '매칭 요청 중 오류가 발생했습니다.' 
@@ -142,7 +143,7 @@ export function registerMatchingSystemRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('[MatchingSystem] 요청 조회 실패:', error);
+      logServerError('[MatchingSystem] 요청 조회 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '매칭 요청 조회 중 오류가 발생했습니다.' 
@@ -208,7 +209,7 @@ export function registerMatchingSystemRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('[MatchingSystem] 요청 처리 실패:', error);
+      logServerError('[MatchingSystem] 요청 처리 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '매칭 요청 처리 중 오류가 발생했습니다.' 
@@ -265,7 +266,7 @@ export function registerMatchingSystemRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('[MatchingSystem] 사용자 현황 조회 실패:', error);
+      logServerError('[MatchingSystem] 사용자 현황 조회 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '매칭 현황 조회 중 오류가 발생했습니다.' 
@@ -288,7 +289,7 @@ export function registerMatchingSystemRoutes(app: Express, storage: any) {
       });
 
     } catch (error) {
-      console.error('[MatchingSystem] 전체 요청 조회 실패:', error);
+      logServerError('[MatchingSystem] 전체 요청 조회 실패:', error, req);
       res.status(500).json({ 
         success: false, 
         message: '매칭 요청 조회 중 오류가 발생했습니다.' 

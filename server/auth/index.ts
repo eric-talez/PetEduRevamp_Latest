@@ -29,6 +29,8 @@ import {
   HTTP_STATUS,
   extendResponse
 } from '../middleware/api-standards';
+import { logger } from '../monitoring/logger';
+import { logServerError } from '../middleware/audit-logger';
 
 // JWT 설정 - 프로덕션에서 반드시 환경 변수 필요
 const isProduction = process.env.NODE_ENV === 'production';
@@ -36,8 +38,8 @@ const JWT_SECRET: string = process.env.JWT_SECRET || (isProduction ? '' : 'dev-o
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 if (isProduction && !process.env.JWT_SECRET) {
-  console.error('❌ [프로덕션] JWT_SECRET 환경 변수가 설정되지 않았습니다.');
-  console.error('   Replit Secrets에서 JWT_SECRET을 설정해주세요.');
+  logger.error('❌ [프로덕션] JWT_SECRET 환경 변수가 설정되지 않았습니다.');
+  logger.error('   Replit Secrets에서 JWT_SECRET을 설정해주세요.');
   process.exit(1);
 }
 
@@ -212,7 +214,7 @@ function setupAuthRoutes(app: Express) {
   router.post('/login', csrfProtection, (req, res, next) => {
     passport.authenticate('local', (err: Error, user: any, info: { message?: string }) => {
       if (err) {
-        console.error('로그인 오류:', err);
+        logServerError('로그인 오류:', err, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '로그인 처리 중 오류가 발생했습니다'
@@ -248,7 +250,7 @@ function setupAuthRoutes(app: Express) {
       
       req.login(user, (loginErr) => {
         if (loginErr) {
-          console.error('로그인 세션 생성 오류:', loginErr);
+          logServerError('로그인 세션 생성 오류:', loginErr, req);
           return res.error(
             ApiErrorCode.INTERNAL_SERVER_ERROR,
             '로그인 세션 생성 중 오류가 발생했습니다'
@@ -268,7 +270,7 @@ function setupAuthRoutes(app: Express) {
         // 세션 명시적 저장
         req.session.save(async (saveErr) => {
           if (saveErr) {
-            console.error('세션 저장 오류:', saveErr);
+            logServerError('세션 저장 오류:', saveErr, req);
             return res.error(
               ApiErrorCode.INTERNAL_SERVER_ERROR,
               '세션 저장 중 오류가 발생했습니다'
@@ -306,7 +308,7 @@ function setupAuthRoutes(app: Express) {
 
     req.logout((err) => {
       if (err) {
-        console.error('로그아웃 오류:', err);
+        logServerError('로그아웃 오류:', err, req);
         return res.error(
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '로그아웃 처리 중 오류가 발생했습니다'
@@ -337,7 +339,7 @@ function setupAuthRoutes(app: Express) {
       const sessions = await listActiveSessions(userId, req.sessionID);
       return res.success(sessions, '활성 세션 목록을 조회했습니다.');
     } catch (error) {
-      console.error('[Auth] 세션 목록 조회 오류:', error);
+      logServerError('[Auth] 세션 목록 조회 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '세션 목록을 조회할 수 없습니다.'
@@ -372,7 +374,7 @@ function setupAuthRoutes(app: Express) {
       // 현재 세션을 끊은 경우, 즉시 세션을 파기
       if (revoked.sessionId === req.sessionID) {
         return req.logout((err) => {
-          if (err) console.error('[Auth] sessions DELETE logout 오류:', err);
+          if (err) logServerError('[Auth] sessions DELETE logout 오류:', err, req);
           req.session?.destroy(() => {
             res.clearCookie('talez.sid');
             return res.success({ revokedCurrent: true }, '현재 세션을 종료했습니다.');
@@ -381,7 +383,7 @@ function setupAuthRoutes(app: Express) {
       }
       return res.success({ revokedCurrent: false }, '세션을 강제 종료했습니다.');
     } catch (error) {
-      console.error('[Auth] 세션 강제 종료 오류:', error);
+      logServerError('[Auth] 세션 강제 종료 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '세션을 종료할 수 없습니다.'
@@ -438,7 +440,7 @@ function setupAuthRoutes(app: Express) {
       // 세션 생성
       req.login(user, (loginErr) => {
         if (loginErr) {
-          console.error('[QuickLogin] 세션 생성 오류:', loginErr);
+          logServerError('[QuickLogin] 세션 생성 오류:', loginErr, req);
           return res.error(
             ApiErrorCode.INTERNAL_SERVER_ERROR,
             '로그인 세션 생성 중 오류가 발생했습니다'
@@ -458,7 +460,7 @@ function setupAuthRoutes(app: Express) {
         // 세션 명시적 저장
         req.session.save(async (saveErr) => {
           if (saveErr) {
-            console.error('[QuickLogin] 세션 저장 오류:', saveErr);
+            logServerError('[QuickLogin] 세션 저장 오류:', saveErr, req);
             return res.error(
               ApiErrorCode.INTERNAL_SERVER_ERROR,
               '세션 저장 중 오류가 발생했습니다'
@@ -486,7 +488,7 @@ function setupAuthRoutes(app: Express) {
         });
       });
     } catch (error) {
-      console.error('[QuickLogin] 퀵로그인 오류:', error);
+      logServerError('[QuickLogin] 퀵로그인 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '퀵로그인 처리 중 오류가 발생했습니다'
@@ -628,7 +630,7 @@ function setupAuthRoutes(app: Express) {
             }
           }
         } catch (inviteError) {
-          console.error('[Invite] 초대 코드 처리 오류:', inviteError);
+          logServerError('[Invite] 초대 코드 처리 오류:', inviteError, req);
           // 초대 코드 처리 실패는 회원가입 성공에 영향을 주지 않음
         }
       }
@@ -637,7 +639,7 @@ function setupAuthRoutes(app: Express) {
       if (socialSignup) {
         req.login(user, (err) => {
           if (err) {
-            console.error('회원가입 후 자동 로그인 오류:', err);
+            logServerError('회원가입 후 자동 로그인 오류:', err, req);
             return res.error(
               ApiErrorCode.INTERNAL_SERVER_ERROR,
               '회원가입은 완료되었으나 자동 로그인 중 오류가 발생했습니다'
@@ -656,7 +658,7 @@ function setupAuthRoutes(app: Express) {
         );
       }
     } catch (error) {
-      console.error('회원가입 오류:', error);
+      logServerError('회원가입 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '회원가입 처리 중 오류가 발생했습니다'
@@ -675,7 +677,7 @@ function setupAuthRoutes(app: Express) {
       
       return res.success(socialSignup, '소셜 로그인 가입 정보를 성공적으로 조회했습니다.');
     } catch (error) {
-      console.error('소셜 가입 정보 조회 오류:', error);
+      logServerError('소셜 가입 정보 조회 오류:', error, req);
       return res.error(
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '소셜 가입 정보 조회 중 오류가 발생했습니다'
@@ -688,7 +690,7 @@ function setupAuthRoutes(app: Express) {
     try {
       getCSRFToken(req, res);
     } catch (error) {
-      console.error('CSRF 토큰 조회 오류:', error);
+      logServerError('CSRF 토큰 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: 'CSRF 토큰 조회 중 오류가 발생했습니다.'

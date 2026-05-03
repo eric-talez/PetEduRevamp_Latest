@@ -2,6 +2,7 @@
 import type { Express } from "express";
 import { IStorage } from "../storage";
 import crypto from 'crypto';
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
   console.log('[PaymentAdminRoutes] 관리자 결제 관리 라우트 등록 시작');
@@ -33,7 +34,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json(providers);
     } catch (error) {
-      console.error('결제 제공업체 조회 오류:', error);
+      logServerError('결제 제공업체 조회 오류:', error, req);
       res.status(500).json({ error: '서버 오류가 발생했습니다' });
     }
   });
@@ -55,7 +56,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json({ success: true, message: '설정이 저장되었습니다' });
     } catch (error) {
-      console.error('결제 제공업체 설정 저장 오류:', error);
+      logServerError('결제 제공업체 설정 저장 오류:', error, req);
       res.status(500).json({ error: '설정 저장에 실패했습니다' });
     }
   });
@@ -94,7 +95,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json(transactions);
     } catch (error) {
-      console.error('결제 거래 내역 조회 오류:', error);
+      logServerError('결제 거래 내역 조회 오류:', error, req);
       res.status(500).json({ error: '서버 오류가 발생했습니다' });
     }
   });
@@ -124,7 +125,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json(testResult);
     } catch (error) {
-      console.error('토스 테스트 결제 오류:', error);
+      logServerError('토스 테스트 결제 오류:', error, req);
       res.status(500).json({ 
         success: false, 
         error: '테스트 결제에 실패했습니다' 
@@ -152,7 +153,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json(testResult);
     } catch (error) {
-      console.error('다날 테스트 인증 오류:', error);
+      logServerError('다날 테스트 인증 오류:', error, req);
       res.status(500).json({ 
         success: false, 
         error: '인증 테스트에 실패했습니다' 
@@ -183,7 +184,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json(cancelResult);
     } catch (error) {
-      console.error('결제 취소 오류:', error);
+      logServerError('결제 취소 오류:', error, req);
       res.status(500).json({ error: '결제 취소에 실패했습니다' });
     }
   });
@@ -225,7 +226,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json(webhookLogs);
     } catch (error) {
-      console.error('웹훅 로그 조회 오류:', error);
+      logServerError('웹훅 로그 조회 오류:', error, req);
       res.status(500).json({ error: '서버 오류가 발생했습니다' });
     }
   });
@@ -240,7 +241,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json({ success: true, message: 'Webhook received' });
     } catch (error) {
-      console.error('토스 웹훅 처리 오류:', error);
+      logServerError('토스 웹훅 처리 오류:', error, req);
       res.status(500).json({ error: '웹훅 처리에 실패했습니다' });
     }
   });
@@ -255,7 +256,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json({ success: true, message: 'Webhook received' });
     } catch (error) {
-      console.error('다날 웹훅 처리 오류:', error);
+      logServerError('다날 웹훅 처리 오류:', error, req);
       res.status(500).json({ error: '웹훅 처리에 실패했습니다' });
     }
   });
@@ -288,7 +289,7 @@ export function registerPaymentAdminRoutes(app: Express, storage: IStorage) {
 
       res.json(stats);
     } catch (error) {
-      console.error('권한별 결제 통계 조회 오류:', error);
+      logServerError('권한별 결제 통계 조회 오류:', error, req);
       res.status(500).json({ error: '서버 오류가 발생했습니다' });
     }
   });

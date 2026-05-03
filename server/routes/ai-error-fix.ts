@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { spawn } from "child_process";
 import fs from "fs/promises";
 import path from "path";
+import { logServerError } from '../middleware/audit-logger';
 
 interface ErrorFixLog {
   id: string;
@@ -111,7 +112,7 @@ class AIErrorFixService {
       
       return errors;
     } catch (error) {
-      console.error('[AI-Fix] 에러 검사 실패:', error);
+      logServerError('[AI-Fix] 에러 검사 실패:', error);
       return [];
     }
   }
@@ -137,7 +138,7 @@ class AIErrorFixService {
           try {
             tsc.kill('SIGTERM');
           } catch (killError) {
-            console.error('[AI-Fix] 프로세스 종료 실패:', killError);
+            logServerError('[AI-Fix] 프로세스 종료 실패:', killError);
           }
           isResolved = true;
           resolve('검사 시간이 초과되었습니다. (타임아웃 10초)');
@@ -165,7 +166,7 @@ class AIErrorFixService {
         if (!isResolved) {
           clearTimeout(timeoutId);
           isResolved = true;
-          console.error('[AI-Fix] TypeScript 검사 프로세스 에러:', error);
+          logServerError('[AI-Fix] TypeScript 검사 프로세스 에러:', error);
           resolve(`TypeScript 검사 중 에러가 발생했습니다: ${error.message}`);
         }
       });
@@ -267,7 +268,7 @@ class AIErrorFixService {
 
       return { success, fix };
     } catch (err) {
-      console.error('[AI-Fix] 에러 수정 실패:', err);
+      logServerError('[AI-Fix] 에러 수정 실패:', err);
       return { success: false, fix: '' };
     }
   }
@@ -419,7 +420,7 @@ export function registerAIErrorFixRoutes(app: Express) {
             ...result
           });
         } catch (fixError) {
-          console.error(`[AI-Fix] 개별 에러 수정 실패:`, fixError);
+          logServerError(`[AI-Fix] 개별 에러 수정 실패:`, fixError, req);
           fixResults.push({
             error,
             success: false,
@@ -442,13 +443,13 @@ export function registerAIErrorFixRoutes(app: Express) {
       console.log('[AI-Fix] 응답 전송:', JSON.stringify(response, null, 2));
       res.json(response);
     } catch (error) {
-      console.error('[AI-Fix] 검사 실행 실패:', error);
+      logServerError('[AI-Fix] 검사 실행 실패:', error, req);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('[AI-Fix] 검사 실행 상세 오류:', {
+      logServerError('[AI-Fix] 검사 실행 상세 오류:', {
         error,
         message: errorMessage,
         stack: error instanceof Error ? error.stack : undefined
-      });
+      }, req);
       
       res.status(500).json({ 
         success: false,
@@ -504,7 +505,7 @@ export function registerAIErrorFixRoutes(app: Express) {
       
       res.json(health);
     } catch (error) {
-      console.error('[AI-Fix] 헬스체크 실패:', error);
+      logServerError('[AI-Fix] 헬스체크 실패:', error, req);
       res.status(500).json({
         status: 'unhealthy',
         error: error instanceof Error ? error.message : String(error),

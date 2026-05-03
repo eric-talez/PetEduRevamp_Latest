@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../storage";
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerCourseManagementRoutes(app: Express) {
   // 강의 구매
@@ -18,7 +19,7 @@ export function registerCourseManagementRoutes(app: Express) {
         data: result
       });
     } catch (error) {
-      console.error('[Course] 강의 구매 오류:', error);
+      logServerError('[Course] 강의 구매 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "강의 구매 중 오류가 발생했습니다."
@@ -42,7 +43,7 @@ export function registerCourseManagementRoutes(app: Express) {
         data: result
       });
     } catch (error) {
-      console.error('[Course] 진행 상황 업데이트 오류:', error);
+      logServerError('[Course] 진행 상황 업데이트 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "진행 상황 업데이트 중 오류가 발생했습니다."
@@ -66,7 +67,7 @@ export function registerCourseManagementRoutes(app: Express) {
         data: result
       });
     } catch (error) {
-      console.error('[Course] 진행 상황 공유 오류:', error);
+      logServerError('[Course] 진행 상황 공유 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "진행 상황 공유 중 오류가 발생했습니다."
@@ -99,7 +100,7 @@ export function registerCourseManagementRoutes(app: Express) {
         data: coursesWithProgress
       });
     } catch (error) {
-      console.error('[Course] 구매 강의 목록 조회 오류:', error);
+      logServerError('[Course] 구매 강의 목록 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "구매 강의 목록 조회 중 오류가 발생했습니다."
@@ -119,7 +120,7 @@ export function registerCourseManagementRoutes(app: Express) {
         data: sharedProgress
       });
     } catch (error) {
-      console.error('[Course] 훈련사별 공유 진행 상황 조회 오류:', error);
+      logServerError('[Course] 훈련사별 공유 진행 상황 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "공유 진행 상황 조회 중 오류가 발생했습니다."
@@ -139,7 +140,7 @@ export function registerCourseManagementRoutes(app: Express) {
         data: sharedProgress
       });
     } catch (error) {
-      console.error('[Course] 기관별 공유 진행 상황 조회 오류:', error);
+      logServerError('[Course] 기관별 공유 진행 상황 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "공유 진행 상황 조회 중 오류가 발생했습니다."
@@ -161,7 +162,7 @@ export function registerCourseManagementRoutes(app: Express) {
         data: result
       });
     } catch (error) {
-      console.error('[Course] 강의 세션 기록 오류:', error);
+      logServerError('[Course] 강의 세션 기록 오류:', error, req);
       res.status(500).json({
         success: false,
         message: "강의 세션 기록 중 오류가 발생했습니다."

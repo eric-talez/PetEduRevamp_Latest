@@ -11,6 +11,7 @@ import {
   type EmailTemplate,
   type EmailLog,
 } from "../../shared/schema";
+import { logServerError } from '../middleware/audit-logger';
 
 const SENDGRID_KEY = process.env.SENDGRID_API_KEY;
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "no-reply@talez.app";
@@ -133,7 +134,7 @@ export async function ensureEmailSystemInitialized(): Promise<void> {
     if (!queueTimer) {
       queueTimer = setInterval(() => {
         processRetryQueue().catch((err) =>
-          console.error("[email] retry queue error", err)
+          logServerError("[email] retry queue error", err)
         );
       }, RETRY_DELAY_MS);
     }
@@ -239,7 +240,7 @@ export async function queueEmail(opts: SendEmailOptions): Promise<EmailLog> {
 
   if (status === "queued" && (!opts.scheduledFor || opts.scheduledFor <= new Date())) {
     await deliver(log.id).catch((err) =>
-      console.error("[email] immediate deliver failed", err)
+      logServerError("[email] immediate deliver failed", err)
     );
   }
   return log;
@@ -314,7 +315,7 @@ async function deliver(logId: number): Promise<void> {
         updatedAt: new Date(),
       })
       .where(eq(emailLogs.id, logId));
-    console.error(`[email] 발송 실패 (logId=${logId}, attempts=${attempts}):`, err?.message);
+    logServerError(`[email] 발송 실패 (logId=${logId}, attempts=${attempts}):`, err?.message);
   }
 }
 

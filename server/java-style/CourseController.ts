@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { courseService } from './CourseService';
 import { createCourseSchema } from '@shared/schema';
 import { z } from 'zod';
+import { logServerError } from '../middleware/audit-logger';
 
 export class CourseController {
 
@@ -25,7 +26,7 @@ export class CourseController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[CourseController] findAll 오류:', error);
+      logServerError('[CourseController] findAll 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '강좌 목록 조회 중 오류가 발생했습니다.',
@@ -68,7 +69,7 @@ export class CourseController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[CourseController] findById 오류:', error);
+      logServerError('[CourseController] findById 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '강좌 조회 중 오류가 발생했습니다.',
@@ -97,7 +98,7 @@ export class CourseController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[CourseController] save 오류:', error);
+      logServerError('[CourseController] save 오류:', error, req);
       
       if (error instanceof z.ZodError) {
         res.status(400).json({
@@ -142,7 +143,7 @@ export class CourseController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[CourseController] findByUserId 오류:', error);
+      logServerError('[CourseController] findByUserId 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '사용자 강좌 조회 중 오류가 발생했습니다.',
@@ -179,7 +180,7 @@ export class CourseController {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('[CourseController] enrollUser 오류:', error);
+      logServerError('[CourseController] enrollUser 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '강좌 등록 중 오류가 발생했습니다.',

@@ -1,6 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import { logServerError } from './middleware/audit-logger';
 
 export class JavaBridge {
   private javaProcess: ChildProcess | null = null;
@@ -55,7 +56,7 @@ export class JavaBridge {
       });
 
     } catch (error) {
-      console.error('[JavaBridge] Java 서비스 시작 실패:', error);
+      logServerError('[JavaBridge] Java 서비스 시작 실패:', error);
     }
   }
 
@@ -81,7 +82,7 @@ export class JavaBridge {
 
       return await response.text();
     } catch (error) {
-      console.error('[JavaBridge] Java 서비스 호출 실패:', error);
+      logServerError('[JavaBridge] Java 서비스 호출 실패:', error);
       throw error;
     }
   }

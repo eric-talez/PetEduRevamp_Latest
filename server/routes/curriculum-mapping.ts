@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { storage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -95,7 +96,7 @@ router.get('/search', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('커리큘럼 매핑 검색 오류:', error);
+    logServerError('커리큘럼 매핑 검색 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -154,7 +155,7 @@ router.get('/list', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('커리큘럼 매핑 목록 조회 오류:', error);
+    logServerError('커리큘럼 매핑 목록 조회 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -184,7 +185,7 @@ router.post('/auto-order', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('자동 주문 생성 오류:', error);
+    logServerError('자동 주문 생성 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -220,7 +221,7 @@ router.get('/low-stock-alerts', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('재고 부족 알림 조회 오류:', error);
+    logServerError('재고 부족 알림 조회 오류:', error, req);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });

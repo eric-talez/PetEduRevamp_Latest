@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { aiLocationCrawler } from '../ai/location-crawler';
 import { storage } from '../storage';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -44,7 +45,7 @@ router.post('/api/admin/ai-crawler/start', requireAdmin, async (req, res) => {
       locations: locations.slice(0, 10) // 미리보기용 10개만
     });
   } catch (error) {
-    console.error('AI 크롤링 오류:', error);
+    logServerError('AI 크롤링 오류:', error, req);
     res.status(500).json({ 
       error: 'AI 크롤링 중 오류가 발생했습니다.',
       details: error instanceof Error ? error.message : String(error)
@@ -64,7 +65,7 @@ router.get('/api/admin/ai-crawler/results/:crawlId', requireAdmin, async (req, r
 
     res.json(result);
   } catch (error) {
-    console.error('크롤링 결과 조회 오류:', error);
+    logServerError('크롤링 결과 조회 오류:', error, req);
     res.status(500).json({ error: '결과 조회 중 오류가 발생했습니다.' });
   }
 });
@@ -122,7 +123,7 @@ router.post('/api/admin/ai-crawler/approve/:crawlId', requireAdmin, async (req, 
       totalLocations: locations.length
     });
   } catch (error) {
-    console.error('크롤링 결과 승인 오류:', error);
+    logServerError('크롤링 결과 승인 오류:', error, req);
     res.status(500).json({ error: '승인 중 오류가 발생했습니다.' });
   }
 });
@@ -147,7 +148,7 @@ router.get('/api/locations/approved', async (req, res) => {
       locations
     });
   } catch (error) {
-    console.error('장소 목록 조회 오류:', error);
+    logServerError('장소 목록 조회 오류:', error, req);
     res.status(500).json({ error: '장소 목록 조회 중 오류가 발생했습니다.' });
   }
 });
@@ -175,7 +176,7 @@ router.post('/api/admin/locations/manual', requireAdmin, async (req, res) => {
       location: newLocation
     });
   } catch (error) {
-    console.error('장소 수동 추가 오류:', error);
+    logServerError('장소 수동 추가 오류:', error, req);
     res.status(500).json({ error: '장소 추가 중 오류가 발생했습니다.' });
   }
 });
@@ -194,7 +195,7 @@ router.delete('/api/admin/locations/:id', requireAdmin, async (req, res) => {
       message: '장소가 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('장소 삭제 오류:', error);
+    logServerError('장소 삭제 오류:', error, req);
     res.status(500).json({ error: '장소 삭제 중 오류가 발생했습니다.' });
   }
 });

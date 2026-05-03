@@ -1,5 +1,6 @@
 import { Express } from "express";
 import type { IStorage } from "../storage";
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerTrainerRoutes(app: Express, storage: IStorage) {
   // 훈련사 목록 조회
@@ -8,7 +9,7 @@ export function registerTrainerRoutes(app: Express, storage: IStorage) {
       const trainers = await storage.getTrainers();
       res.json(trainers || []);
     } catch (error) {
-      console.error('Error fetching trainers:', error);
+      logServerError('Error fetching trainers:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -26,7 +27,7 @@ export function registerTrainerRoutes(app: Express, storage: IStorage) {
 
       res.json(trainer);
     } catch (error) {
-      console.error('Error fetching trainer:', error);
+      logServerError('Error fetching trainer:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -44,7 +45,7 @@ export function registerTrainerRoutes(app: Express, storage: IStorage) {
 
       res.json(earnings);
     } catch (error) {
-      console.error('Error fetching trainer earnings:', error);
+      logServerError('Error fetching trainer earnings:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -70,7 +71,7 @@ export function registerTrainerRoutes(app: Express, storage: IStorage) {
         message: '상담 예약이 완료되었습니다.'
       });
     } catch (error) {
-      console.error('Error creating consultation:', error);
+      logServerError('Error creating consultation:', error, req);
       res.status(500).json({ message: 'Internal server error' });
     }
   });

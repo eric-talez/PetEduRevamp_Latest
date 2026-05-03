@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { aiUsageService } from "../services/ai-usage-service";
+import { logServerError } from '../middleware/audit-logger';
 
 export function registerAIUsageRoutes(app: Express) {
   // 관리자 권한 체크 미들웨어
@@ -45,7 +46,7 @@ export function registerAIUsageRoutes(app: Express) {
         data: stats
       });
     } catch (error) {
-      console.error('AI 사용량 통계 조회 오류:', error);
+      logServerError('AI 사용량 통계 조회 오류:', error, req);
       res.status(500).json({ 
         error: 'AI 사용량 통계를 조회할 수 없습니다.' 
       });
@@ -83,7 +84,7 @@ export function registerAIUsageRoutes(app: Express) {
         }
       });
     } catch (error) {
-      console.error('사용자 AI 사용량 조회 오류:', error);
+      logServerError('사용자 AI 사용량 조회 오류:', error, req);
       res.status(500).json({ 
         error: 'AI 사용량을 조회할 수 없습니다.' 
       });
@@ -106,7 +107,7 @@ export function registerAIUsageRoutes(app: Express) {
         data: limitCheck
       });
     } catch (error) {
-      console.error('사용량 제한 확인 오류:', error);
+      logServerError('사용량 제한 확인 오류:', error, req);
       res.status(500).json({ 
         error: '사용량 제한을 확인할 수 없습니다.' 
       });
@@ -153,7 +154,7 @@ export function registerAIUsageRoutes(app: Express) {
         message: 'AI 사용량이 기록되었습니다.'
       });
     } catch (error) {
-      console.error('AI 사용량 로깅 오류:', error);
+      logServerError('AI 사용량 로깅 오류:', error, req);
       res.status(500).json({ 
         error: 'AI 사용량을 기록할 수 없습니다.' 
       });
@@ -211,7 +212,7 @@ export function registerAIUsageRoutes(app: Express) {
         data: report
       });
     } catch (error) {
-      console.error('AI 사용량 보고서 생성 오류:', error);
+      logServerError('AI 사용량 보고서 생성 오류:', error, req);
       res.status(500).json({ 
         error: 'AI 사용량 보고서를 생성할 수 없습니다.' 
       });
@@ -268,7 +269,7 @@ export function registerAIUsageRoutes(app: Express) {
         }
       });
     } catch (error) {
-      console.error('AI 최적화 제안 생성 오류:', error);
+      logServerError('AI 최적화 제안 생성 오류:', error, req);
       res.status(500).json({ 
         error: 'AI 최적화 제안을 생성할 수 없습니다.' 
       });

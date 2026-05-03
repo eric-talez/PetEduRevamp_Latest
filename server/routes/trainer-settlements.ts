@@ -12,6 +12,7 @@ import {
   type TrainerSettlementItem,
 } from "../../shared/schema";
 import { z } from "zod";
+import { logServerError } from '../middleware/audit-logger';
 
 interface AuthedRequest extends Request {
   user?: { id: number; role: string; name?: string; email?: string };
@@ -273,7 +274,7 @@ export function registerTrainerSettlementRoutes(app: Express) {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[정산] 요약 오류:", e);
+      logServerError("[정산] 요약 오류:", e, req);
       res.status(500).json({ success: false, message: msg });
     }
   });
@@ -357,7 +358,7 @@ export function registerTrainerSettlementRoutes(app: Express) {
       res.json({ success: true, data: { month: target, rows } });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[정산 월별 집계] 오류:", e);
+      logServerError("[정산 월별 집계] 오류:", e, req);
       res.status(500).json({ success: false, message: msg });
     }
   });
@@ -433,7 +434,7 @@ export function registerTrainerSettlementRoutes(app: Express) {
     } catch (e) {
       if (e instanceof z.ZodError) return res.status(400).json({ success: false, errors: e.errors });
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[정산 마감] 오류:", e);
+      logServerError("[정산 마감] 오류:", e, req);
       res.status(500).json({ success: false, message: msg });
     }
   });
@@ -767,7 +768,7 @@ export function registerTrainerSettlementRoutes(app: Express) {
         res.json({ success: true, data: item });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        console.error("[정산 동기화] 강의 오류:", e);
+        logServerError("[정산 동기화] 강의 오류:", e, req);
         res.status(500).json({ success: false, message: msg });
       }
     }
@@ -832,7 +833,7 @@ export function registerTrainerSettlementRoutes(app: Express) {
       res.json({ success: true, data: { created } });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[정산 백필] 오류:", e);
+      logServerError("[정산 백필] 오류:", e);
       res.status(500).json({ success: false, message: msg });
     }
   });

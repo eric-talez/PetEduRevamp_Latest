@@ -7,6 +7,7 @@ import {
 } from "./gemini";
 
 import OpenAI from "openai";
+import { logServerError } from './middleware/audit-logger';
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_TALEZ || process.env.OPENAI_API_KEY });
@@ -53,7 +54,7 @@ export async function fusedBehaviorAnalysis(description: string): Promise<Analys
       consensusLevel: fusedAnalysis.consensusLevel
     };
   } catch (error) {
-    console.error('멀티모델 행동 분석 오류:', error);
+    logServerError('멀티모델 행동 분석 오류:', error);
     throw new Error('멀티모델 분석 중 오류가 발생했습니다.');
   }
 }
@@ -88,7 +89,7 @@ export async function fusedTrainingPlan(petInfo: {
       consensusLevel: fusedPlan.consensusLevel
     };
   } catch (error) {
-    console.error('멀티모델 훈련 계획 오류:', error);
+    logServerError('멀티모델 훈련 계획 오류:', error);
     throw new Error('멀티모델 훈련 계획 생성 중 오류가 발생했습니다.');
   }
 }
@@ -118,7 +119,7 @@ export async function fusedHealthAnalysis(symptoms: string): Promise<AnalysisRes
       consensusLevel: fusedHealth.consensusLevel
     };
   } catch (error) {
-    console.error('멀티모델 건강 분석 오류:', error);
+    logServerError('멀티모델 건강 분석 오류:', error);
     throw new Error('멀티모델 건강 분석 중 오류가 발생했습니다.');
   }
 }
@@ -169,7 +170,7 @@ export async function fusedSentimentAnalysis(text: string): Promise<SentimentFus
       }
     };
   } catch (error) {
-    console.error('멀티모델 감정 분석 오류:', error);
+    logServerError('멀티모델 감정 분석 오류:', error);
     throw new Error('멀티모델 감정 분석 중 오류가 발생했습니다.');
   }
 }

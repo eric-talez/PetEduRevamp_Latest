@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { logServerError } from '../middleware/audit-logger';
 
 // OpenAI 클라이언트 초기화
 const openai = new OpenAI({
@@ -79,7 +80,7 @@ export function registerAIRoutes(app: Express) {
       });
 
     } catch (error: any) {
-      console.error('OpenAI API 오류:', error);
+      logServerError('OpenAI API 오류:', error, req);
       
       // API 키 관련 오류 처리
       if (error.code === 'invalid_api_key') {
@@ -130,7 +131,7 @@ export function registerAIRoutes(app: Express) {
       });
 
     } catch (error: any) {
-      console.error('AI 상태 확인 오류:', error);
+      logServerError('AI 상태 확인 오류:', error, req);
       res.json({ 
         available: false, 
         reason: error.message 
@@ -195,7 +196,7 @@ export function registerAIRoutes(app: Express) {
       });
 
     } catch (error) {
-      console.error('자막 생성 오류:', error);
+      logServerError('자막 생성 오류:', error, req);
       
       // 임시 파일이 있다면 삭제
       if (req.file && fs.existsSync(req.file.path)) {
@@ -271,7 +272,7 @@ export function registerAIRoutes(app: Express) {
       });
 
     } catch (error) {
-      console.error('비디오 자막 생성 오류:', error);
+      logServerError('비디오 자막 생성 오류:', error, req);
       
       // 임시 파일 정리
       if (req.file && require('fs').existsSync(req.file.path)) {

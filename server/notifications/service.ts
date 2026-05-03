@@ -1,6 +1,8 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { IStorage } from '../storage';
 import { UserRole } from '@shared/schema';
+import { logger } from '../monitoring/logger';
+import { logServerError } from '../middleware/audit-logger';
 
 // 알림 타입 정의
 export interface Notification {
@@ -48,7 +50,7 @@ export class NotificationService {
               userClients.push(ws);
               this.clients.set(userId, userClients);
             } else {
-              console.error('[NotificationService] Invalid userId in authentication');
+              logger.error('[NotificationService] Invalid userId in authentication');
               ws.send(JSON.stringify({
                 type: 'authentication_error',
                 message: '유효하지 않은 사용자 ID입니다.'
@@ -78,7 +80,7 @@ export class NotificationService {
             }
           }
         } catch (error) {
-          console.error('[NotificationService] Error processing message:', error);
+          logServerError('[NotificationService] Error processing message:', error);
         }
       });
       
@@ -137,7 +139,7 @@ export class NotificationService {
       return notification;
       
     } catch (error) {
-      console.error('[NotificationService] Error sending notification:', error);
+      logServerError('[NotificationService] Error sending notification:', error);
       throw error;
     }
   }
@@ -164,7 +166,7 @@ export class NotificationService {
       
       return notifications;
     } catch (error) {
-      console.error('[NotificationService] Error sending group notification:', error);
+      logServerError('[NotificationService] Error sending group notification:', error);
       throw error;
     }
   }
@@ -189,7 +191,7 @@ export class NotificationService {
       });
       
     } catch (error) {
-      console.error('[NotificationService] Error sending unread notifications:', error);
+      logServerError('[NotificationService] Error sending unread notifications:', error);
     }
   }
   
@@ -213,7 +215,7 @@ export class NotificationService {
       });
       
     } catch (error) {
-      console.error('[NotificationService] Error marking notification as read:', error);
+      logServerError('[NotificationService] Error marking notification as read:', error);
     }
   }
   
@@ -236,7 +238,7 @@ export class NotificationService {
       });
       
     } catch (error) {
-      console.error('[NotificationService] Error marking all notifications as read:', error);
+      logServerError('[NotificationService] Error marking all notifications as read:', error);
     }
   }
 }

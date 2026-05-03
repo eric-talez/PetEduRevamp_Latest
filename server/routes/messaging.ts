@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from '../storage';
 import { asyncHandler, AppError } from '../middleware/error-handler';
 import { notificationService } from '../notifications/notification-service';
+import { logServerError } from '../middleware/audit-logger';
 
 // WebSocket 클라이언트 관리
 interface AuthenticatedWebSocket extends WebSocket {
@@ -75,7 +76,7 @@ export function registerMessagingRoutes(app: Express, server: Server) {
                   }));
                 }
               } catch (error) {
-                console.error('[WS] Message creation error:', error);
+                logServerError('[WS] Message creation error:', error);
                 ws.send(JSON.stringify({
                   type: 'error',
                   message: '메시지 전송에 실패했습니다.'
@@ -118,7 +119,7 @@ export function registerMessagingRoutes(app: Express, server: Server) {
             console.log('[WS] Unknown message type:', message.type);
         }
       } catch (error) {
-        console.error('[WS] Message parsing error:', error);
+        logServerError('[WS] Message parsing error:', error);
       }
     });
 
@@ -130,7 +131,7 @@ export function registerMessagingRoutes(app: Express, server: Server) {
     });
 
     ws.on('error', (error) => {
-      console.error('[WS] WebSocket error:', error);
+      logServerError('[WS] WebSocket error:', error);
     });
   });
 
@@ -263,7 +264,7 @@ export function registerMessagingRoutes(app: Express, server: Server) {
         data: { senderId: userId, senderName }
       });
     } catch (notifyError) {
-      console.error('[메시지] 알림 발송 실패:', notifyError);
+      logServerError('[메시지] 알림 발송 실패:', notifyError, req);
     }
 
     return res.status(201).json({ 

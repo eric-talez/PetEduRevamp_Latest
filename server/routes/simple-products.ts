@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { products } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ router.get('/simple-products', async (req, res) => {
       total: allProducts.length
     });
   } catch (error) {
-    console.error('상품 목록 조회 오류:', error);
+    logServerError('상품 목록 조회 오류:', error, req);
     res.status(500).json({ 
       success: false, 
       error: '상품 목록을 불러오는 중 오류가 발생했습니다.',
@@ -39,7 +40,7 @@ router.get('/simple-products/:id', async (req, res) => {
       product: product[0]
     });
   } catch (error) {
-    console.error('상품 상세 조회 오류:', error);
+    logServerError('상품 상세 조회 오류:', error, req);
     res.status(500).json({ 
       success: false, 
       error: '상품 정보를 불러오는 중 오류가 발생했습니다.',

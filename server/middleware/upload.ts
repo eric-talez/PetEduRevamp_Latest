@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { Request } from 'express';
+import { logServerError } from './audit-logger';
 
 // 업로드 디렉토리 생성
 const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
@@ -171,7 +172,7 @@ export const deleteFile = (filePath: string): boolean => {
     }
     return false;
   } catch (error) {
-    console.error('파일 삭제 오류:', error);
+    logServerError('파일 삭제 오류:', error);
     return false;
   }
 };

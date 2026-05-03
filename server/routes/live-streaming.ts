@@ -8,6 +8,7 @@ import {
   extendResponse
 } from '../middleware/api-standards';
 import crypto from 'crypto';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 router.use(extendResponse);
@@ -66,7 +67,7 @@ router.get('/streams', async (req, res) => {
     
     return res.success({ streams: filteredStreams });
   } catch (error) {
-    console.error('[Live Streaming] Error fetching streams:', error);
+    logServerError('[Live Streaming] Error fetching streams:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to fetch streams');
   }
 });
@@ -98,7 +99,7 @@ router.get('/streams/live', async (req, res) => {
     
     return res.success({ streams: liveStreamsList });
   } catch (error) {
-    console.error('[Live Streaming] Error fetching live streams:', error);
+    logServerError('[Live Streaming] Error fetching live streams:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to fetch live streams');
   }
 });
@@ -151,7 +152,7 @@ router.get('/streams/:id', async (req, res) => {
     
     return res.success({ stream });
   } catch (error) {
-    console.error('[Live Streaming] Error fetching stream:', error);
+    logServerError('[Live Streaming] Error fetching stream:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to fetch stream');
   }
 });
@@ -193,7 +194,7 @@ router.post('/streams', csrfProtection, async (req, res) => {
     
     return res.success({ stream: newStream }, 'Stream created successfully');
   } catch (error) {
-    console.error('[Live Streaming] Error creating stream:', error);
+    logServerError('[Live Streaming] Error creating stream:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to create stream');
   }
 });
@@ -241,7 +242,7 @@ router.patch('/streams/:id/start', csrfProtection, async (req, res) => {
     
     return res.success({ stream: updatedStream }, 'Stream started');
   } catch (error) {
-    console.error('[Live Streaming] Error starting stream:', error);
+    logServerError('[Live Streaming] Error starting stream:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to start stream');
   }
 });
@@ -302,7 +303,7 @@ router.patch('/streams/:id/end', csrfProtection, async (req, res) => {
     
     return res.success({ stream: updatedStream }, 'Stream ended');
   } catch (error) {
-    console.error('[Live Streaming] Error ending stream:', error);
+    logServerError('[Live Streaming] Error ending stream:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to end stream');
   }
 });
@@ -340,7 +341,7 @@ router.delete('/streams/:id', csrfProtection, async (req, res) => {
     
     return res.success({ deleted: true }, 'Stream deleted');
   } catch (error) {
-    console.error('[Live Streaming] Error deleting stream:', error);
+    logServerError('[Live Streaming] Error deleting stream:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to delete stream');
   }
 });
@@ -395,7 +396,7 @@ router.post('/streams/:id/join', csrfProtection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[Live Streaming] Error joining stream:', error);
+    logServerError('[Live Streaming] Error joining stream:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to join stream');
   }
 });
@@ -458,7 +459,7 @@ router.post('/streams/:id/leave', csrfProtection, async (req, res) => {
     
     return res.success({ message: 'Left stream' });
   } catch (error) {
-    console.error('[Live Streaming] Error leaving stream:', error);
+    logServerError('[Live Streaming] Error leaving stream:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to leave stream');
   }
 });
@@ -497,7 +498,7 @@ router.get('/streams/:id/chat', async (req, res) => {
     
     return res.success({ messages: messages.reverse() });
   } catch (error) {
-    console.error('[Live Streaming] Error fetching chat:', error);
+    logServerError('[Live Streaming] Error fetching chat:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to fetch chat messages');
   }
 });
@@ -548,7 +549,7 @@ router.post('/streams/:id/chat', csrfProtection, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[Live Streaming] Error sending chat:', error);
+    logServerError('[Live Streaming] Error sending chat:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to send message');
   }
 });
@@ -568,7 +569,7 @@ router.get('/my-streams', async (req, res) => {
     
     return res.success({ streams: myStreams });
   } catch (error) {
-    console.error('[Live Streaming] Error fetching my streams:', error);
+    logServerError('[Live Streaming] Error fetching my streams:', error, req);
     return res.error(ApiErrorCode.INTERNAL_SERVER_ERROR, 'Failed to fetch streams');
   }
 });

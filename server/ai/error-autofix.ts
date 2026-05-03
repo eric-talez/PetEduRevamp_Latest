@@ -2,6 +2,7 @@ import { Express } from "express";
 import { Router } from 'express';
 import OpenAI from "openai";
 import { logger } from '../monitoring/logger';
+import { logServerError } from '../middleware/audit-logger';
 
 const DEFAULT_MODEL = "gpt-4o";
 
@@ -350,7 +351,7 @@ async function autoFixMenuSystem() {
 
     console.log('[AI 자동수정] 메뉴 시스템 검사 완료');
   } catch (error) {
-    console.error('[AI 자동수정] 메뉴 시스템 수정 실패:', error);
+    logServerError('[AI 자동수정] 메뉴 시스템 수정 실패:', error);
   }
 }
 
@@ -376,7 +377,7 @@ export function registerAIErrorAutoFixRoutes(app: Express) {
         message: `AI 에러 자동수정이 ${enabled ? '활성화' : '비활성화'}되었습니다.`
       });
     } catch (error) {
-      console.error('AI 자동수정 설정 오류:', error);
+      logServerError('AI 자동수정 설정 오류:', error, req);
       res.status(500).json({
         success: false,
         message: 'AI 자동수정 설정 중 오류가 발생했습니다.'
@@ -394,7 +395,7 @@ export function registerAIErrorAutoFixRoutes(app: Express) {
         fixCount: totalFixCount
       });
     } catch (error) {
-      console.error('자동수정 상태 조회 오류:', error);
+      logServerError('자동수정 상태 조회 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '자동수정 상태 조회 중 오류가 발생했습니다.'
@@ -411,7 +412,7 @@ export function registerAIErrorAutoFixRoutes(app: Express) {
         message: '메뉴 시스템이 수정되었습니다.'
       });
     } catch (error) {
-      console.error('메뉴 시스템 수정 오류:', error);
+      logServerError('메뉴 시스템 수정 오류:', error, req);
       res.status(500).json({
         success: false,
         message: '메뉴 시스템 수정 중 오류가 발생했습니다.'

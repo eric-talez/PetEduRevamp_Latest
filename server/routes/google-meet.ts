@@ -7,6 +7,7 @@ import {
   HTTP_STATUS,
   extendResponse
 } from '../middleware/api-standards';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 router.use(extendResponse);
@@ -60,7 +61,7 @@ router.post('/create', csrfProtection, async (req, res) => {
     }, 'Google Meet link created successfully');
 
   } catch (error) {
-    console.error('[Google Meet] 미팅 생성 오류:', error);
+    logServerError('[Google Meet] 미팅 생성 오류:', error, req);
     return res.error(
       ApiErrorCode.INTERNAL_SERVER_ERROR,
       'Failed to create Google Meet link'
@@ -95,7 +96,7 @@ router.get('/auth-url', (req, res) => {
     }, 'Google OAuth URL generated');
 
   } catch (error) {
-    console.error('[Google Meet] Auth URL 생성 오류:', error);
+    logServerError('[Google Meet] Auth URL 생성 오류:', error, req);
     return res.error(
       ApiErrorCode.INTERNAL_SERVER_ERROR,
       'Failed to generate auth URL'
@@ -138,7 +139,7 @@ router.get('/oauth2callback', async (req, res) => {
     `);
 
   } catch (error) {
-    console.error('[Google Meet] OAuth 콜백 오류:', error);
+    logServerError('[Google Meet] OAuth 콜백 오류:', error, req);
     return res.status(500).send('Authentication failed');
   }
 });
@@ -217,7 +218,7 @@ router.post('/create-with-calendar', csrfProtection, async (req, res) => {
     }, 'Google Meet created via Calendar API');
 
   } catch (error: any) {
-    console.error('[Google Meet] Calendar 이벤트 생성 오류:', error);
+    logServerError('[Google Meet] Calendar 이벤트 생성 오류:', error, req);
     
     if (error.message?.includes('invalid_grant')) {
       return res.error(

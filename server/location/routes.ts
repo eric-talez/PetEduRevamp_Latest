@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { logger } from '../monitoring/logger';
+import { logServerError } from '../middleware/audit-logger';
 
 const router = Router();
 
@@ -14,7 +16,7 @@ router.get('/locations', async (req, res) => {
   }
 
   if (!GOOGLE_MAPS_API_KEY) {
-    console.error('GOOGLE_MAPS_API_KEY가 설정되지 않음');
+    logger.error('GOOGLE_MAPS_API_KEY가 설정되지 않음');
     return res.status(500).json({ error: 'Google Maps API 키가 설정되지 않았습니다.' });
   }
 
@@ -56,7 +58,7 @@ router.get('/locations', async (req, res) => {
     res.json(places);
     
   } catch (error) {
-    console.error('장소 검색 오류:', error);
+    logServerError('장소 검색 오류:', error, req);
     res.status(500).json({ 
       error: '장소 검색에 실패했습니다.',
       details: error instanceof Error ? error.message : String(error)
@@ -73,7 +75,7 @@ router.get('/locations/search', async (req, res) => {
   }
 
   if (!GOOGLE_MAPS_API_KEY) {
-    console.error('GOOGLE_MAPS_API_KEY가 설정되지 않음');
+    logger.error('GOOGLE_MAPS_API_KEY가 설정되지 않음');
     return res.status(500).json({ error: 'Google Maps API 키가 설정되지 않았습니다.' });
   }
 
@@ -120,7 +122,7 @@ router.get('/locations/search', async (req, res) => {
     res.json(places);
     
   } catch (error) {
-    console.error('장소 검색 오류:', error);
+    logServerError('장소 검색 오류:', error, req);
     res.status(500).json({ 
       error: '장소 검색에 실패했습니다.',
       details: error instanceof Error ? error.message : String(error)
@@ -195,7 +197,7 @@ router.get('/locations/nearby', async (req, res) => {
     res.json(places);
     
   } catch (error) {
-    console.error('근처 장소 검색 오류:', error);
+    logServerError('근처 장소 검색 오류:', error, req);
     res.status(500).json({ 
       error: '근처 장소 검색에 실패했습니다.',
       details: error instanceof Error ? error.message : String(error)

@@ -4,6 +4,7 @@
 
 import type { Express } from "express";
 import { storage } from "../storage";
+import { logServerError } from '../middleware/audit-logger';
 
 // 임시 에러 핸들러 (middleware/error-handler.ts가 없는 경우)
 const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
@@ -115,7 +116,7 @@ export function registerDashboardRoutes(app: Express) {
       console.log('[Dashboard] 대시보드 통계 응답:', stats);
       res.json(stats);
     } catch (error) {
-      console.error('[Dashboard] 대시보드 통계 오류:', error);
+      logServerError('[Dashboard] 대시보드 통계 오류:', error, req);
       res.status(500).json({ error: '대시보드 통계 조회 중 오류가 발생했습니다' });
     }
   }));
@@ -241,7 +242,7 @@ export function registerDashboardRoutes(app: Express) {
       });
       res.json(stats);
     } catch (error) {
-      console.error('[Dashboard] 관리자 대시보드 통계 오류:', error);
+      logServerError('[Dashboard] 관리자 대시보드 통계 오류:', error, req);
       res.status(500).json({ error: '관리자 대시보드 통계 조회 중 오류가 발생했습니다' });
     }
   }));
@@ -275,7 +276,7 @@ export function registerDashboardRoutes(app: Express) {
         ...data,
       });
     } catch (error) {
-      console.error('[Dashboard] 관리자 대시보드 breakdowns 오류:', error);
+      logServerError('[Dashboard] 관리자 대시보드 breakdowns 오류:', error, req);
       res.status(500).json({ error: '관리자 대시보드 세부 분석 조회 중 오류가 발생했습니다' });
     }
   }));
@@ -351,7 +352,7 @@ export function registerDashboardRoutes(app: Express) {
 
       res.json(successResponse(stats));
     } catch (error: any) {
-      console.error('[Dashboard] 시스템 상태 조회 실패:', error);
+      logServerError('[Dashboard] 시스템 상태 조회 실패:', error, req);
       res.status(500).json({
         success: false,
         error: '시스템 상태를 가져오는데 실패했습니다.',
@@ -424,7 +425,7 @@ export function registerDashboardRoutes(app: Express) {
 
       res.json(successResponse(stats));
     } catch (error) {
-      console.error('관리자 대시보드 통계 조회 오류:', error);
+      logServerError('관리자 대시보드 통계 조회 오류:', error, req);
       throw ApiError.internal('통계 데이터를 불러올 수 없습니다');
     }
   }));
@@ -497,7 +498,7 @@ export function registerDashboardRoutes(app: Express) {
 
       res.json(successResponse(stats));
     } catch (error) {
-      console.error('훈련사 대시보드 통계 조회 오류:', error);
+      logServerError('훈련사 대시보드 통계 조회 오류:', error, req);
       throw ApiError.internal('통계 데이터를 불러올 수 없습니다');
     }
   }));
@@ -568,7 +569,7 @@ export function registerDashboardRoutes(app: Express) {
 
       res.json(successResponse(stats));
     } catch (error) {
-      console.error('기관 관리자 대시보드 통계 조회 오류:', error);
+      logServerError('기관 관리자 대시보드 통계 조회 오류:', error, req);
       throw ApiError.internal('통계 데이터를 불러올 수 없습니다');
     }
   }));
@@ -627,7 +628,7 @@ export function registerDashboardRoutes(app: Express) {
             new Date(c.nextCheckup) > new Date()
           ).length;
         } catch (error) {
-          console.error(`반려동물 ${pet.id} 건강 데이터 조회 오류:`, error);
+          logServerError(`반려동물 ${pet.id} 건강 데이터 조회 오류:`, error, req);
         }
       }
 
@@ -659,7 +660,7 @@ export function registerDashboardRoutes(app: Express) {
 
       res.json(successResponse(stats));
     } catch (error) {
-      console.error('반려인 대시보드 통계 조회 오류:', error);
+      logServerError('반려인 대시보드 통계 조회 오류:', error, req);
       throw ApiError.internal('통계 데이터를 불러올 수 없습니다');
     }
   }));
@@ -710,7 +711,7 @@ export function registerDashboardRoutes(app: Express) {
 
       res.json(successResponse(platformStats));
     } catch (error) {
-      console.error('대시보드 요약 통계 조회 오류:', error);
+      logServerError('대시보드 요약 통계 조회 오류:', error, req);
       throw ApiError.internal('요약 통계를 불러올 수 없습니다');
     }
   }));

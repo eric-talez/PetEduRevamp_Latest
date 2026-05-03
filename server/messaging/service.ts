@@ -1,6 +1,8 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { IStorage } from '../storage';
 import { UserRole } from '@shared/schema';
+import { logger } from '../monitoring/logger';
+import { logServerError } from '../middleware/audit-logger';
 
 // 메시지 타입 정의
 export interface Message {
@@ -77,7 +79,7 @@ export class MessagingService {
             }));
           }
         } catch (error) {
-          console.error('Error processing message:', error);
+          logServerError('Error processing message:', error, req);
           ws.send(JSON.stringify({
             type: 'error',
             message: 'Invalid message format'
@@ -123,7 +125,7 @@ export class MessagingService {
           console.log(`Closing previous connection for user ${userId}`);
           existingClient.connection.close();
         } catch (e) {
-          console.error(`Error closing previous connection for user ${userId}:`, e);
+          logServerError(`Error closing previous connection for user ${userId}:`, e);
         }
       }
       
@@ -160,7 +162,7 @@ export class MessagingService {
       
       console.log(`Client ${userId} (${user.name}) ${reconnect ? 're-' : ''}authenticated`);
     } catch (error) {
-      console.error('Authentication error:', error);
+      logServerError('Authentication error:', error);
       ws.send(JSON.stringify({
         type: 'error',
         message: 'Authentication failed'
@@ -196,7 +198,7 @@ export class MessagingService {
         console.log(`Sent conversation history to user ${userId} (${Object.keys(userConversations).length} conversations)`);
       }
     } catch (error) {
-      console.error('Error sending conversation history:', error);
+      logServerError('Error sending conversation history:', error);
     }
   }
 
@@ -216,7 +218,7 @@ export class MessagingService {
     try {
       const sender = this.clients.get(senderId);
       if (!sender) {
-        console.error(`Sender ${senderId} not found`);
+        logger.error(`Sender ${senderId} not found`);
         return;
       }
       
@@ -274,7 +276,7 @@ export class MessagingService {
       
       console.log(`Message from ${senderId} to ${receiverId} delivered`);
     } catch (error) {
-      console.error('Error processing message:', error);
+      logServerError('Error processing message:', error);
     }
   }
 
@@ -306,7 +308,7 @@ export class MessagingService {
         }
       }
     } catch (error) {
-      console.error('Error processing read receipt:', error);
+      logServerError('Error processing read receipt:', error);
     }
   }
 
@@ -325,7 +327,7 @@ export class MessagingService {
         }));
       }
     } catch (error) {
-      console.error('Error processing typing indicator:', error);
+      logServerError('Error processing typing indicator:', error);
     }
   }
 
@@ -373,7 +375,7 @@ export class MessagingService {
         console.log(`Sent ${unreadMessages.length} unread messages to user ${userId}`);
       }
     } catch (error) {
-      console.error('Error sending unread messages:', error);
+      logServerError('Error sending unread messages:', error);
     }
   }
 
