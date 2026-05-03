@@ -10641,7 +10641,18 @@ app.get('/api/search', async (req, res) => {
     const role = session?.user?.role;
     const isOwner = pet.ownerId === userId;
     const isAdmin = role === 'admin';
-    const isAssignedTrainer = role === 'trainer' && pet.assignedTrainerId === userId && !!pet.diaryShareWithTrainer;
+    let shareEnabled = !!pet.diaryShareWithTrainer;
+    if (role === 'trainer') {
+      const diaryStorage = storage as unknown as { getPetDiaryShareEnabled?: (id: number) => Promise<boolean> };
+      if (typeof diaryStorage.getPetDiaryShareEnabled === 'function') {
+        try {
+          shareEnabled = await diaryStorage.getPetDiaryShareEnabled(petId);
+        } catch (err) {
+          console.error('[Diary] getPetDiaryShareEnabled DB lookup failed, falling back to memory:', err);
+        }
+      }
+    }
+    const isAssignedTrainer = role === 'trainer' && pet.assignedTrainerId === userId && shareEnabled;
     if (!isOwner && !isAdmin && !isAssignedTrainer) {
       res.status(403).json({ success: false, error: '권한이 없습니다' });
       return null;

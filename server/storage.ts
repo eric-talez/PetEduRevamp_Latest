@@ -5170,6 +5170,404 @@ class Storage {
 class HybridStorage extends Storage {
   // 데이터베이스 연동 메서드들 추가
 
+  constructor() {
+    super();
+    // 다이어리 영구 저장 테이블 초기화 (비동기)
+    this.initDiaryTables().catch(err => logServerError('[DB] 다이어리 테이블 초기화 오류:', err));
+  }
+
+  // =============================================================================
+  // 다이어리(반려견 건강 다이어리) DB 영속화 - 마이그레이션 + CRUD
+  // =============================================================================
+
+  private diaryTablesReady: Promise<void> | null = null;
+
+  private async initDiaryTables(): Promise<void> {
+    if (this.diaryTablesReady) return this.diaryTablesReady;
+    this.diaryTablesReady = (async () => {
+      try {
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS diary_care_logs (
+            id SERIAL PRIMARY KEY,
+            pet_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            date DATE NOT NULL,
+            note TEXT,
+            poop_status VARCHAR(20),
+            meal_status VARCHAR(20),
+            walk_status VARCHAR(20),
+            mood VARCHAR(20),
+            energy_level INTEGER,
+            weight_kg NUMERIC(5,2),
+            exercise_minutes INTEGER,
+            meal_amount_g INTEGER,
+            medications JSONB,
+            media JSONB,
+            tags JSONB,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_diary_care_logs_pet_date ON diary_care_logs(pet_id, date)`);
+
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS pet_medications (
+            id SERIAL PRIMARY KEY,
+            pet_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            name VARCHAR(200) NOT NULL,
+            dosage VARCHAR(100),
+            frequency VARCHAR(100),
+            due_date DATE NOT NULL,
+            status VARCHAR(20) DEFAULT 'scheduled',
+            notes TEXT,
+            reminder_enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_medications_pet ON pet_medications(pet_id)`);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_medications_user_due ON pet_medications(user_id, due_date)`);
+
+        await db.execute(sql`ALTER TABLE pets ADD COLUMN IF NOT EXISTS diary_share_with_trainer BOOLEAN DEFAULT FALSE`);
+
+        // 메모리 캐시 하이드레이션
+        await this.hydrateDiaryCache();
+        console.log('[DB] 다이어리 테이블 초기화 및 캐시 로드 완료');
+      } catch (err) {
+        logServerError('[DB] 다이어리 테이블 마이그레이션 실패:', err);
+      }
+    })();
+    return this.diaryTablesReady;
+  }
+
+  private async hydrateDiaryCache(): Promise<void> {
+    try {
+      const logsRes: any = await db.execute(sql`SELECT * FROM diary_care_logs ORDER BY id`);
+      const logRows = logsRes.rows || logsRes;
+      if (Array.isArray(logRows) && logRows.length > 0) {
+        this.careLogs = logRows.map((r: any) => this.mapCareLogRow(r));
+      }
+    } catch (e) { /* noop */ }
+    try {
+      const medsRes: any = await db.execute(sql`SELECT * FROM pet_medications ORDER BY id`);
+      const medRows = medsRes.rows || medsRes;
+      if (Array.isArray(medRows)) {
+        this.petMedications = medRows.map((r: any) => this.mapMedicationRow(r));
+      }
+    } catch (e) { /* noop */ }
+    try {
+      const petsRes: any = await db.execute(sql`SELECT id, diary_share_with_trainer FROM pets`);
+      const petRows = petsRes.rows || petsRes;
+      if (Array.isArray(petRows)) {
+        for (const r of petRows) {
+          const idx = this.pets.findIndex(p => p.id === r.id);
+          if (idx !== -1) {
+            this.pets[idx].diaryShareWithTrainer = !!r.diary_share_with_trainer;
+          }
+        }
+      }
+    } catch (e) { /* noop */ }
+  }
+
+  private mapCareLogRow(r: any): any {
+    return {
+      id: r.id,
+      petId: r.pet_id,
+      userId: r.user_id,
+      date: typeof r.date === 'string' ? r.date : (r.date instanceof Date ? r.date.toISOString().slice(0,10) : r.date),
+      note: r.note,
+      poopStatus: r.poop_status,
+      mealStatus: r.meal_status,
+      walkStatus: r.walk_status,
+      mood: r.mood,
+      energyLevel: r.energy_level,
+      weightKg: r.weight_kg,
+      exerciseMinutes: r.exercise_minutes,
+      mealAmountG: r.meal_amount_g,
+      medications: r.medications,
+      media: r.media,
+      tags: r.tags,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    };
+  }
+
+  private mapMedicationRow(r: any): any {
+    return {
+      id: r.id,
+      petId: r.pet_id,
+      userId: r.user_id,
+      name: r.name,
+      dosage: r.dosage,
+      frequency: r.frequency,
+      dueDate: typeof r.due_date === 'string' ? r.due_date : (r.due_date instanceof Date ? r.due_date.toISOString().slice(0,10) : r.due_date),
+      status: r.status,
+      notes: r.notes,
+      reminderEnabled: r.reminder_enabled,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    };
+  }
+
+  // ---- Care Logs (DB 영속화) ----
+  async getCareLogsByPetId(petId: number): Promise<any[]> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`SELECT * FROM diary_care_logs WHERE pet_id = ${petId} ORDER BY date DESC, id DESC`);
+      const rows = res.rows || res;
+      return (rows as any[]).map(r => this.mapCareLogRow(r));
+    } catch (e) {
+      logServerError('[DB] care logs 조회 실패, 메모리 폴백:', e);
+      return super.getCareLogsByPetId(petId);
+    }
+  }
+
+  async getCareLogsByDateRange(petId: number, startDate: string, endDate: string): Promise<any[]> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`
+        SELECT * FROM diary_care_logs
+        WHERE pet_id = ${petId} AND date >= ${startDate} AND date <= ${endDate}
+        ORDER BY date DESC, id DESC
+      `);
+      const rows = res.rows || res;
+      return (rows as any[]).map(r => this.mapCareLogRow(r));
+    } catch (e) {
+      logServerError('[DB] care logs 범위 조회 실패, 메모리 폴백:', e);
+      return super.getCareLogsByDateRange(petId, startDate, endDate);
+    }
+  }
+
+  async getCareLogsByIds(logIds: number[]): Promise<any[]> {
+    await this.initDiaryTables();
+    if (!logIds || logIds.length === 0) return [];
+    try {
+      const res: any = await db.execute(sql`SELECT * FROM diary_care_logs WHERE id = ANY(${logIds})`);
+      const rows = res.rows || res;
+      return (rows as any[]).map(r => this.mapCareLogRow(r));
+    } catch (e) {
+      logServerError('[DB] care logs id 조회 실패, 메모리 폴백:', e);
+      return super.getCareLogsByIds(logIds);
+    }
+  }
+
+  async createCareLog(data: any): Promise<any> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`
+        INSERT INTO diary_care_logs
+          (pet_id, user_id, date, note, poop_status, meal_status, walk_status, mood, energy_level,
+           weight_kg, exercise_minutes, meal_amount_g, medications, media, tags)
+        VALUES
+          (${data.petId}, ${data.userId}, ${data.date}, ${data.note ?? null}, ${data.poopStatus ?? null},
+           ${data.mealStatus ?? null}, ${data.walkStatus ?? null}, ${data.mood ?? null}, ${data.energyLevel ?? null},
+           ${data.weightKg ?? null}, ${data.exerciseMinutes ?? null}, ${data.mealAmountG ?? null},
+           ${data.medications ? JSON.stringify(data.medications) : null}::jsonb,
+           ${data.media ? JSON.stringify(data.media) : null}::jsonb,
+           ${data.tags ? JSON.stringify(data.tags) : null}::jsonb)
+        RETURNING *
+      `);
+      const rows = res.rows || res;
+      const row = (rows as any[])[0];
+      const mapped = this.mapCareLogRow(row);
+      // 메모리 캐시 갱신 (AI 분석 등 다른 경로 호환)
+      this.careLogs.push(mapped);
+      return mapped;
+    } catch (e) {
+      logServerError('[DB] care log 생성 실패, 메모리 폴백:', e);
+      return super.createCareLog(data);
+    }
+  }
+
+  async updateCareLog(id: number, updates: any): Promise<any> {
+    await this.initDiaryTables();
+    try {
+      // 부분 업데이트: COALESCE 사용
+      const res: any = await db.execute(sql`
+        UPDATE diary_care_logs SET
+          date = COALESCE(${updates.date ?? null}, date),
+          note = COALESCE(${updates.note ?? null}, note),
+          poop_status = COALESCE(${updates.poopStatus ?? null}, poop_status),
+          meal_status = COALESCE(${updates.mealStatus ?? null}, meal_status),
+          walk_status = COALESCE(${updates.walkStatus ?? null}, walk_status),
+          mood = COALESCE(${updates.mood ?? null}, mood),
+          energy_level = COALESCE(${updates.energyLevel ?? null}, energy_level),
+          weight_kg = COALESCE(${updates.weightKg ?? null}, weight_kg),
+          exercise_minutes = COALESCE(${updates.exerciseMinutes ?? null}, exercise_minutes),
+          meal_amount_g = COALESCE(${updates.mealAmountG ?? null}, meal_amount_g),
+          medications = COALESCE(${updates.medications ? JSON.stringify(updates.medications) : null}::jsonb, medications),
+          media = COALESCE(${updates.media ? JSON.stringify(updates.media) : null}::jsonb, media),
+          tags = COALESCE(${updates.tags ? JSON.stringify(updates.tags) : null}::jsonb, tags),
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `);
+      const rows = res.rows || res;
+      if (!rows || rows.length === 0) throw new Error('Care log not found');
+      const mapped = this.mapCareLogRow(rows[0]);
+      const idx = this.careLogs.findIndex((l: any) => l.id === id);
+      if (idx !== -1) this.careLogs[idx] = mapped;
+      return mapped;
+    } catch (e) {
+      logServerError('[DB] care log 수정 실패, 메모리 폴백:', e);
+      return super.updateCareLog(id, updates);
+    }
+  }
+
+  async deleteCareLog(id: number): Promise<boolean> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`DELETE FROM diary_care_logs WHERE id = ${id} RETURNING id`);
+      const rows = res.rows || res;
+      const ok = Array.isArray(rows) && rows.length > 0;
+      const idx = this.careLogs.findIndex((l: any) => l.id === id);
+      if (idx !== -1) this.careLogs.splice(idx, 1);
+      return ok;
+    } catch (e) {
+      logServerError('[DB] care log 삭제 실패, 메모리 폴백:', e);
+      return super.deleteCareLog(id);
+    }
+  }
+
+  // ---- Pet Medications (DB 영속화) ----
+  async getMedicationsByPetId(petId: number): Promise<any[]> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`SELECT * FROM pet_medications WHERE pet_id = ${petId} ORDER BY due_date ASC`);
+      const rows = res.rows || res;
+      return (rows as any[]).map(r => this.mapMedicationRow(r));
+    } catch (e) {
+      logServerError('[DB] medications 조회 실패, 메모리 폴백:', e);
+      return super.getMedicationsByPetId(petId);
+    }
+  }
+
+  async getMedicationById(id: number): Promise<any | null> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`SELECT * FROM pet_medications WHERE id = ${id} LIMIT 1`);
+      const rows = res.rows || res;
+      if (!rows || rows.length === 0) return null;
+      return this.mapMedicationRow(rows[0]);
+    } catch (e) {
+      logServerError('[DB] medication 단건 조회 실패, 메모리 폴백:', e);
+      return super.getMedicationById(id);
+    }
+  }
+
+  async getUpcomingMedications(userId: number, days: number = 30): Promise<any[]> {
+    await this.initDiaryTables();
+    try {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const future = new Date(); future.setDate(today.getDate() + days);
+      const todayStr = today.toISOString().slice(0,10);
+      const futureStr = future.toISOString().slice(0,10);
+      const res: any = await db.execute(sql`
+        SELECT * FROM pet_medications
+        WHERE user_id = ${userId}
+          AND status NOT IN ('completed','cancelled')
+          AND due_date >= ${todayStr} AND due_date <= ${futureStr}
+        ORDER BY due_date ASC
+      `);
+      const rows = res.rows || res;
+      return (rows as any[]).map(r => this.mapMedicationRow(r));
+    } catch (e) {
+      logServerError('[DB] upcoming medications 조회 실패, 메모리 폴백:', e);
+      return super.getUpcomingMedications(userId, days);
+    }
+  }
+
+  async createMedication(data: any): Promise<any> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`
+        INSERT INTO pet_medications
+          (pet_id, user_id, name, dosage, frequency, due_date, status, notes, reminder_enabled)
+        VALUES
+          (${data.petId}, ${data.userId}, ${data.name}, ${data.dosage ?? null}, ${data.frequency ?? null},
+           ${data.dueDate}, ${data.status ?? 'scheduled'}, ${data.notes ?? null},
+           ${data.reminderEnabled !== false})
+        RETURNING *
+      `);
+      const rows = res.rows || res;
+      const mapped = this.mapMedicationRow(rows[0]);
+      this.petMedications.push(mapped);
+      return mapped;
+    } catch (e) {
+      logServerError('[DB] medication 생성 실패, 메모리 폴백:', e);
+      return super.createMedication(data);
+    }
+  }
+
+  async updateMedication(id: number, updates: any): Promise<any> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`
+        UPDATE pet_medications SET
+          name = COALESCE(${updates.name ?? null}, name),
+          dosage = COALESCE(${updates.dosage ?? null}, dosage),
+          frequency = COALESCE(${updates.frequency ?? null}, frequency),
+          due_date = COALESCE(${updates.dueDate ?? null}, due_date),
+          status = COALESCE(${updates.status ?? null}, status),
+          notes = COALESCE(${updates.notes ?? null}, notes),
+          reminder_enabled = COALESCE(${updates.reminderEnabled ?? null}, reminder_enabled),
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `);
+      const rows = res.rows || res;
+      if (!rows || rows.length === 0) throw new Error('Medication not found');
+      const mapped = this.mapMedicationRow(rows[0]);
+      const idx = this.petMedications.findIndex((m: any) => m.id === id);
+      if (idx !== -1) this.petMedications[idx] = mapped;
+      return mapped;
+    } catch (e) {
+      logServerError('[DB] medication 수정 실패, 메모리 폴백:', e);
+      return super.updateMedication(id, updates);
+    }
+  }
+
+  async deleteMedication(id: number): Promise<boolean> {
+    await this.initDiaryTables();
+    try {
+      const res: any = await db.execute(sql`DELETE FROM pet_medications WHERE id = ${id} RETURNING id`);
+      const rows = res.rows || res;
+      const ok = Array.isArray(rows) && rows.length > 0;
+      const idx = this.petMedications.findIndex((m: any) => m.id === id);
+      if (idx !== -1) this.petMedications.splice(idx, 1);
+      return ok;
+    } catch (e) {
+      logServerError('[DB] medication 삭제 실패, 메모리 폴백:', e);
+      return super.deleteMedication(id);
+    }
+  }
+
+  // ---- Pet diary share flag (DB 영속화) ----
+  updatePet(id: number, updates: any): any {
+    const result = super.updatePet(id, updates);
+    if (updates && Object.prototype.hasOwnProperty.call(updates, 'diaryShareWithTrainer')) {
+      // DB에도 영속화 (비동기, 실패 시 로깅만)
+      const enabled = !!updates.diaryShareWithTrainer;
+      this.initDiaryTables()
+        .then(() => db.execute(sql`UPDATE pets SET diary_share_with_trainer = ${enabled} WHERE id = ${id}`))
+        .catch((e: any) => logServerError('[DB] diary_share_with_trainer 저장 실패:', e));
+    }
+    return result;
+  }
+
+  // 훈련사 공유 권한 검증 시 DB 진실값 조회
+  async getPetDiaryShareEnabled(petId: number): Promise<boolean> {
+    try {
+      await this.initDiaryTables();
+      const res: any = await db.execute(sql`SELECT diary_share_with_trainer FROM pets WHERE id = ${petId} LIMIT 1`);
+      const rows = res.rows || res;
+      if (rows && rows.length > 0) return !!rows[0].diary_share_with_trainer;
+    } catch (e) { /* noop */ }
+    const memPet = super.getPet(petId);
+    return !!(memPet && memPet.diaryShareWithTrainer);
+  }
+
   // 훈련사 신청 관련
   async getTrainerApplication(id: number): Promise<any> {
     try {
@@ -5832,169 +6230,9 @@ class HybridStorage extends Storage {
   }
 
   // =============================================================================
-  // AI 분석 시스템: Care Logs 관련 메서드
-  // =============================================================================
-
-  async getCareLogsByPetId(petId: number): Promise<any[]> {
-    try {
-      const rows = await db.select().from(careLogsTable)
-        .where(eq(careLogsTable.petId, petId))
-        .orderBy(desc(careLogsTable.date));
-      return rows;
-    } catch (err) {
-      logServerError('[CareLogs] getCareLogsByPetId 실패:', err);
-      throw err;
-    }
-  }
-
-  async getCareLogsByDateRange(petId: number, startDate: string, endDate: string): Promise<any[]> {
-    try {
-      const rows = await db.select().from(careLogsTable)
-        .where(and(
-          eq(careLogsTable.petId, petId),
-          gte(careLogsTable.date, startDate),
-          lte(careLogsTable.date, endDate),
-        ))
-        .orderBy(desc(careLogsTable.date));
-      return rows;
-    } catch (err) {
-      logServerError('[CareLogs] getCareLogsByDateRange 실패:', err);
-      throw err;
-    }
-  }
-
-  async getCareLogsByIds(logIds: number[]): Promise<any[]> {
-    if (!logIds || logIds.length === 0) return [];
-    try {
-      const ids = logIds.map(n => Number(n)).filter(n => Number.isFinite(n));
-      if (ids.length === 0) return [];
-      const rows = await db.select().from(careLogsTable)
-        .where(inArray(careLogsTable.id, ids));
-      return rows;
-    } catch (err) {
-      logServerError('[CareLogs] getCareLogsByIds 실패:', err);
-      throw err;
-    }
-  }
-
-  async createCareLog(careLogData: Record<string, unknown>): Promise<any> {
-    try {
-      const allowed: (keyof typeof careLogsTable.$inferInsert)[] = [
-        'petId','userId','date','note','poopStatus','mealStatus','walkStatus',
-        'mood','energyLevel','weightKg','exerciseMinutes','mealAmountG',
-        'medications','media','tags',
-      ];
-      const payload: typeof careLogsTable.$inferInsert = { petId: 0, userId: 0, date: '' };
-      for (const k of allowed) {
-        const v = careLogData?.[k as string];
-        if (v !== undefined) (payload as Record<string, unknown>)[k as string] = v;
-      }
-      const [row] = await db.insert(careLogsTable).values(payload).returning();
-      return row;
-    } catch (err) {
-      logServerError('[CareLogs] createCareLog 실패:', err);
-      throw err;
-    }
-  }
-
-  async updateCareLog(id: number, updateData: Record<string, unknown>): Promise<any> {
-    try {
-      const allowed: (keyof typeof careLogsTable.$inferInsert)[] = [
-        'petId','userId','date','note','poopStatus','mealStatus','walkStatus',
-        'mood','energyLevel','weightKg','exerciseMinutes','mealAmountG',
-        'medications','media','tags',
-      ];
-      const updates: Partial<typeof careLogsTable.$inferInsert> & { updatedAt: Date } = {
-        updatedAt: new Date(),
-      };
-      for (const k of allowed) {
-        const v = updateData?.[k as string];
-        if (v !== undefined) (updates as Record<string, unknown>)[k as string] = v;
-      }
-      const [row] = await db.update(careLogsTable)
-        .set(updates)
-        .where(eq(careLogsTable.id, id))
-        .returning();
-      if (!row) throw new Error('Care log not found');
-      return row;
-    } catch (err) {
-      logServerError('[CareLogs] updateCareLog 실패:', err);
-      throw err;
-    }
-  }
-
-  async deleteCareLog(id: number): Promise<boolean> {
-    try {
-      const result = await db.delete(careLogsTable)
-        .where(eq(careLogsTable.id, id))
-        .returning({ id: careLogsTable.id });
-      return result.length > 0;
-    } catch (err) {
-      logServerError('[CareLogs] deleteCareLog 실패:', err);
-      throw err;
-    }
-  }
-
-  // =============================================================================
-  // 반려견 건강 다이어리: 약 복용 일정 (Medications)
-  // =============================================================================
-
-  async getMedicationsByPetId(petId: number): Promise<any[]> {
-    return this.petMedications.filter(m => m.petId === petId)
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-  }
-
-  async getMedicationById(id: number): Promise<any | null> {
-    return this.petMedications.find(m => m.id === id) || null;
-  }
-
-  async getUpcomingMedications(userId: number, days: number = 30): Promise<any[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const futureDate = new Date();
-    futureDate.setDate(today.getDate() + days);
-    return this.petMedications.filter(m => {
-      if (m.userId !== userId) return false;
-      if (m.status === 'completed' || m.status === 'cancelled') return false;
-      const due = new Date(m.dueDate);
-      return due >= today && due <= futureDate;
-    }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-  }
-
-  async createMedication(data: any): Promise<any> {
-    const newMed = {
-      id: this.petMedications.length ? Math.max(...this.petMedications.map(m => m.id || 0)) + 1 : 1,
-      status: 'scheduled',
-      reminderEnabled: true,
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    this.petMedications.push(newMed);
-    return newMed;
-  }
-
-  async updateMedication(id: number, updates: any): Promise<any> {
-    const idx = this.petMedications.findIndex(m => m.id === id);
-    if (idx === -1) throw new Error('Medication not found');
-    this.petMedications[idx] = {
-      ...this.petMedications[idx],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-    return this.petMedications[idx];
-  }
-
-  async deleteMedication(id: number): Promise<boolean> {
-    const idx = this.petMedications.findIndex(m => m.id === id);
-    if (idx === -1) return false;
-    this.petMedications.splice(idx, 1);
-    return true;
-  }
-
-  // =============================================================================
   // AI 분석 시스템: AI Analyses 관련 메서드
   // =============================================================================
+  // (Care Logs / Pet Medications CRUD는 HybridStorage 상단의 DB 영속화 구현 사용)
 
   async createAiAnalysis(analysisData: Record<string, unknown>): Promise<any> {
     try {
