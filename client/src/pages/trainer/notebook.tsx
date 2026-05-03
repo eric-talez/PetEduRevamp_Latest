@@ -154,6 +154,11 @@ export default function TrainerNotebookPage() {
     enabled: !!streamId && isAuthenticated,
   });
 
+  const [aiKeywords, setAiKeywords] = useState('');
+  const [aiTone, setAiTone] = useState<'friendly' | 'formal' | 'short' | 'detailed'>('friendly');
+  const [aiUsageInfo, setAiUsageInfo] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const [isAiDraftFlag, setIsAiDraftFlag] = useState(false);
+
   const [notebookForm, setNotebookForm] = useState({
     title: '',
     content: '',
@@ -239,6 +244,51 @@ export default function TrainerNotebookPage() {
     generateAIContentMutation.mutate();
   };
 
+  // AI 초안 생성 mutation (POST /api/notebook/draft)
+  const generateDraftMutation = useMutation({
+    mutationFn: async () => {
+      const { secureRequest } = await import('@/lib/csrf');
+      const res = await secureRequest('/api/notebook/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keywords: aiKeywords,
+          tone: aiTone,
+          petId: notebookForm.petId ? Number(notebookForm.petId) : undefined,
+          streamId: streamId || undefined,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || `요청 실패 (${res.status})`);
+      return json;
+    },
+    onSuccess: (data) => {
+      const d = data?.draft || {};
+      setNotebookForm(prev => ({
+        ...prev,
+        title: d.title || prev.title,
+        content: d.content || prev.content,
+        behaviorNotes: d.behaviorNotes || prev.behaviorNotes,
+        homeworkInstructions: d.homeworkInstructions || prev.homeworkInstructions,
+        nextGoals: d.nextGoals || prev.nextGoals,
+      }));
+      setIsAiDraftFlag(true);
+      if (data?.usage) setAiUsageInfo(data.usage);
+      toast({
+        title: 'AI 초안 생성 완료',
+        description: '내용을 검토하고 자유롭게 편집해 주세요.',
+      });
+      setActiveTab('basic');
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'AI 초안 생성 실패',
+        description: err?.message || '잠시 후 다시 시도해 주세요.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // 알림장 생성 mutation
   const createNotebookMutation = useMutation({
     mutationFn: async (notebookData: any) => {
@@ -254,6 +304,7 @@ export default function TrainerNotebookPage() {
         homeworkInstructions: notebookData.homeworkInstructions,
         nextGoals: notebookData.nextGoals,
         attachments: notebookData.attachments || [],
+        isAiDraft: isAiDraftFlag,
       };
       const response = await secureRequest('/api/notebook/entries', {
         method: 'POST',
@@ -292,6 +343,9 @@ export default function TrainerNotebookPage() {
         }
       });
       queryClient.invalidateQueries({ queryKey: ['/api/trainer/journals'] });
+      setIsAiDraftFlag(false);
+      setAiKeywords('');
+      setAiUsageInfo(null);
     },
     onError: (error) => {
       toast({
@@ -981,33 +1035,65 @@ export default function TrainerNotebookPage() {
                 {/* AI Helper Tab */}
                 {activeTab === 'ai' && (
                   <div className="space-y-4">
-                    <div className="p-4 border border-primary/30 rounded-lg bg-primary/10">
+                    <div className="p-4 border border-primary/30 rounded-lg bg-primary/5">
                       <div className="flex items-center mb-2">
                         <Brain className="h-5 w-5 text-primary mr-2" />
-                        <h3 className="font-medium text-primary">AI 알림장 도우미</h3>
+                        <h3 className="font-medium text-primary">AI 초안 생성 도우미</h3>
                       </div>
-                      <p className="text-sm text-primary mb-4">
-                        AI가 입력된 정보를 바탕으로 알림장 내용을 자동으로 생성해드립니다.
+                      <p className="text-sm text-muted-foreground mb-4">
+                        키워드만 입력하면 AI가 자연스러운 알림장 초안(제목/본문/관찰/숙제/다음 목표)을 자동으로 채워드립니다. 자유롭게 편집할 수 있어요.
                       </p>
-                      <Button 
-                        className="w-full" 
-                        variant="outline"
-                        onClick={handleGenerateAIContent}
-                        disabled={generateAIContentMutation.isPending}
-                        data-testid="button-generate-ai-content"
-                      >
-                        {generateAIContentMutation.isPending ? (
-                          <>
-                            <Clock className="h-4 w-4 mr-2 animate-spin" />
-                            AI 생성 중...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            AI로 내용 생성하기
-                          </>
+
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="ai-keywords">오늘의 키워드·메모</Label>
+                          <Textarea
+                            id="ai-keywords"
+                            value={aiKeywords}
+                            onChange={(e) => setAiKeywords(e.target.value)}
+                            placeholder='예: "앉아 90% 성공, 산만함, 다음 숙제: 노즈워크 5분 x 3회"'
+                            rows={4}
+                            data-testid="textarea-ai-keywords"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="ai-tone">톤</Label>
+                          <Select value={aiTone} onValueChange={(v) => setAiTone(v as any)}>
+                            <SelectTrigger id="ai-tone" data-testid="select-ai-tone">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="friendly">친근하게</SelectItem>
+                              <SelectItem value="formal">공식적으로</SelectItem>
+                              <SelectItem value="short">짧게</SelectItem>
+                              <SelectItem value="detailed">상세하게</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button
+                          className="w-full"
+                          onClick={() => generateDraftMutation.mutate()}
+                          disabled={generateDraftMutation.isPending || aiKeywords.trim().length < 2}
+                          data-testid="button-generate-ai-draft"
+                        >
+                          {generateDraftMutation.isPending ? (
+                            <>
+                              <Clock className="h-4 w-4 mr-2 animate-spin" />
+                              AI 초안 생성 중…
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4 mr-2" />
+                              AI 초안 생성
+                            </>
+                          )}
+                        </Button>
+                        {aiUsageInfo && (
+                          <p className="text-xs text-muted-foreground text-right">
+                            오늘 사용: {aiUsageInfo.used} / {aiUsageInfo.limit} (남은 횟수 {aiUsageInfo.remaining}회)
+                          </p>
                         )}
-                      </Button>
+                      </div>
                     </div>
                   </div>
                 )}

@@ -4645,7 +4645,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ 훈련 일지 (알림장) API ============
   
-  // AI 알림장 내용 생성
+  // ============ AI 알림장 작성 도우미 ============
+  // POST /api/notebook/draft — 키워드 기반 알림장 초안 생성 (트레이너당 30회/일)
+  const NOTEBOOK_AI_DAILY_LIMIT = 30;
+  const notebookDraftDailyCounter = new Map<string, number>(); // `${userId}:${YYYY-MM-DD}` → count
+
+  // 결과 텍스트의 흔한 개인정보(휴대폰/이메일/주민번호 일부) 마스킹
+  const maskPersonalInfo = (text: string): string => {
+    if (!text) return text;
+    return text
+      .replace(/\b(\d{2,3})-?\d{3,4}-?\d{4}\b/g, '$1-****-****')
+      .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '***@***')
+      .replace(/\b\d{6}-?\d{7}\b/g, '******-*******');
+  };
+
+  app.post('/api/notebook/draft', requireAuth('trainer'), csrfProtection, async (req, res) => {
+    try {
+      const { notebookDraftRequestSchema } = await import('@shared/schema');
+      const parsed = notebookDraftRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: '입력값이 올바르지 않습니다.', details: parsed.error.errors });
+      }
+      const { keywords, tone, petId, streamId } = parsed.data;
+      const currentUser = req.session.user!;
+
+      // 일일 호출 제한 (in-memory; 재시작에 의존하지 않도록 키에 날짜 포함)
+      const today = new Date().toISOString().slice(0, 10);
+      const counterKey = `${currentUser.id}:${today}`;
+      // Atomic check-and-increment to prevent race conditions during the long OpenAI call.
+      const before = notebookDraftDailyCounter.get(counterKey) || 0;
+      if (before >= NOTEBOOK_AI_DAILY_LIMIT) {
+        return res.status(429).json({
+          error: `오늘 AI 초안 생성 한도(${NOTEBOOK_AI_DAILY_LIMIT}회)를 모두 사용했습니다. 내일 다시 시도해 주세요.`,
+          remaining: 0, limit: NOTEBOOK_AI_DAILY_LIMIT,
+        });
+      }
+      const reservedCount = before + 1;
+      notebookDraftDailyCounter.set(counterKey, reservedCount);
+      let quotaCommitted = false;
+      const refundQuota = () => {
+        if (quotaCommitted) return;
+        const cur = notebookDraftDailyCounter.get(counterKey) || 0;
+        if (cur > 0) notebookDraftDailyCounter.set(counterKey, cur - 1);
+      };
+
+      // 컨텍스트 빌더
+      let petName = '반려동물';
+      let petBreed = '';
+      let courseTitle = '';
+      let lastJournalSummary = '';
+      try {
+        if (petId) {
+          const pet = storage.getPet(petId);
+          if (pet) {
+            // 권한: 트레이너가 해당 pet 의 일지를 작성할 수 있는지
+            if (!storage.canUserCreateTrainingJournal(currentUser.id, currentUser.role, petId)) {
+              refundQuota();
+              return res.status(403).json({ error: '해당 반려동물의 컨텍스트 사용 권한이 없습니다.' });
+            }
+            petName = pet.name || petName;
+            petBreed = pet.breed || '';
+            const recent = (storage.trainingJournals || [])
+              .filter((j: any) => j.petId === petId)
+              .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+            if (recent) {
+              lastJournalSummary = `직전 알림장 제목: "${recent.title}". 직전 다음 목표: "${(recent.nextGoals || '').slice(0, 200)}".`;
+            }
+          }
+        }
+        // streamId 컨텍스트: 호스트(현재 트레이너)가 소유한 스트림에 한해 제목 사용 (IDOR 방지)
+        if (streamId && (storage as any).getLiveStream) {
+          const stream = (storage as any).getLiveStream(streamId);
+          if (stream?.title && Number(stream.hostId) === Number(currentUser.id)) {
+            courseTitle = stream.title;
+          }
+        }
+      } catch (ctxErr) {
+        logServerError('AI 초안 컨텍스트 빌더 경고:', ctxErr, req);
+      }
+
+      const toneGuide: Record<string, string> = {
+        friendly: '따뜻하고 친근한 보호자에게 말하듯 한국어 존댓말 사용. 이모지는 절제해서 0~1개.',
+        formal: '공식적이고 전문적인 한국어 존댓말. 이모지 사용 금지.',
+        short: '핵심만 담아 짧고 간결하게. 각 항목 2~3문장 이내.',
+        detailed: '관찰·근거·다음 단계까지 상세히. 각 항목 4~6문장.',
+      };
+
+      const systemPrompt = `당신은 반려동물 전문 훈련사이며, 보호자에게 보낼 "알림장" 초안을 작성합니다.
+- 출력 언어: 한국어
+- 톤: ${toneGuide[tone]}
+- 반드시 다음 JSON 스키마로만 응답하세요(설명·마크다운 없이):
+{
+  "title": "오늘의 알림장 제목 (40자 이내)",
+  "content": "본문 (훈련 내용 중심, 200~600자)",
+  "behaviorNotes": "오늘 관찰된 행동/특이사항",
+  "homeworkInstructions": "보호자 숙제(집에서 할 것)",
+  "nextGoals": "다음 수업 목표"
+}
+- 개인정보(전화번호/이메일/실명 풀네임)는 출력하지 말 것
+- 사실을 지어내지 말고, 키워드에서 명시되지 않은 수치는 사용하지 말 것`;
+
+      const userPrompt = `반려동물: ${petName}${petBreed ? ` (${petBreed})` : ''}
+${courseTitle ? `수업/스트림: ${courseTitle}` : ''}
+${lastJournalSummary}
+훈련사가 입력한 오늘의 키워드/메모:
+"""
+${keywords}
+"""`;
+
+      const startedAt = Date.now();
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_TALEZ || process.env.OPENAI_API_KEY });
+      const model = 'gpt-4o-mini';
+      const completion = await openai.chat.completions.create({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.6,
+        response_format: { type: 'json_object' },
+      });
+      const responseTime = Date.now() - startedAt;
+      const raw = completion.choices?.[0]?.message?.content || '{}';
+      let draft: any = {};
+      try { draft = JSON.parse(raw); } catch {
+        refundQuota();
+        return res.status(502).json({ error: 'AI 응답을 해석하지 못했습니다. 다시 시도해 주세요.' });
+      }
+
+      // 마스킹
+      const safeDraft = {
+        title: maskPersonalInfo(String(draft.title || '').slice(0, 200)),
+        content: maskPersonalInfo(String(draft.content || '').slice(0, 5000)),
+        behaviorNotes: maskPersonalInfo(String(draft.behaviorNotes || '').slice(0, 2000)),
+        homeworkInstructions: maskPersonalInfo(String(draft.homeworkInstructions || '').slice(0, 2000)),
+        nextGoals: maskPersonalInfo(String(draft.nextGoals || '').slice(0, 2000)),
+      };
+
+      // 사용량 로깅(베스트에포트, 실패시 무시) — 카운터는 이미 reservedCount로 commit
+      quotaCommitted = true;
+      try {
+        const { aiUsageService } = await import('./services/ai-usage-service');
+        const u: any = completion.usage || {};
+        await aiUsageService.logUsage({
+          userId: currentUser.id,
+          provider: 'openai',
+          model,
+          requestType: 'notebook_draft',
+          inputTokens: u.prompt_tokens || 0,
+          outputTokens: u.completion_tokens || 0,
+          responseTime,
+          requestData: { tone, hasPet: !!petId, hasStream: !!streamId, kwLen: keywords.length },
+        });
+      } catch (logErr) {
+        // ai-usage-service가 export 형태가 다를 수 있으므로 안전하게 무시
+      }
+
+      return res.json({
+        success: true,
+        draft: safeDraft,
+        usage: { used: reservedCount, limit: NOTEBOOK_AI_DAILY_LIMIT, remaining: NOTEBOOK_AI_DAILY_LIMIT - reservedCount },
+      });
+    } catch (error: any) {
+      // OpenAI 호출 실패 → 예약된 quota 환불
+      try { refundQuota(); } catch {}
+      logServerError('AI 알림장 초안 생성 오류:', error, req);
+      const status = error?.status === 429 ? 429 : 500;
+      return res.status(status).json({ error: 'AI 초안 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' });
+    }
+  });
+
+  // (legacy) AI 알림장 내용 생성 — 하위호환
   app.post("/api/notebook/ai-generate", requireAuth('trainer'), async (req, res) => {
     try {
       const { petName, petBreed, activities, additionalContext } = req.body;

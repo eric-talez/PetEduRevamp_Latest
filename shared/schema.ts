@@ -1063,6 +1063,7 @@ export const trainingJournals = pgTable("training_journals", {
   isRead: boolean("is_read").default(false), // 견주 읽음 여부
   readAt: timestamp("read_at"),
   status: varchar("status", { length: 20 }).default("sent"), // sent, read, replied
+  isAiDraft: boolean("is_ai_draft").default(false), // AI 초안에서 시작했는지 여부
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2226,8 +2227,18 @@ export const insertTrainingJournalSchema = createInsertSchema(trainingJournals).
   behaviorNotes: z.string().max(2000, "행동 관찰 노트는 2000자를 초과할 수 없습니다").optional().nullable(),
   homeworkInstructions: z.string().max(2000, "숙제 내용은 2000자를 초과할 수 없습니다").optional().nullable(),
   nextGoals: z.string().max(2000, "다음 목표는 2000자를 초과할 수 없습니다").optional().nullable(),
-  attachments: z.array(z.string().url("올바른 URL 형식이 아닙니다")).optional().nullable().default([])
+  attachments: z.array(z.string().url("올바른 URL 형식이 아닙니다")).optional().nullable().default([]),
+  isAiDraft: z.boolean().optional(),
 });
+
+// AI 초안 생성 요청 스키마
+export const notebookDraftRequestSchema = z.object({
+  keywords: z.string().trim().min(2, "키워드는 2자 이상 입력해주세요").max(500, "키워드는 500자를 초과할 수 없습니다"),
+  tone: z.enum(["friendly", "formal", "short", "detailed"]).default("friendly"),
+  petId: z.coerce.number().int().positive().optional(),
+  streamId: z.coerce.number().int().positive().optional(),
+});
+export type NotebookDraftRequest = z.infer<typeof notebookDraftRequestSchema>;
 
 export const updateTrainingJournalSchema = z.object({
   title: z.string().min(1, "제목은 필수입니다").max(200, "제목은 200자를 초과할 수 없습니다").optional(),
