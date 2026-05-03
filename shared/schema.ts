@@ -1122,6 +1122,29 @@ export const insertJournalCommentReportSchema = createInsertSchema(journalCommen
 
 export type JournalCommentReport = typeof journalCommentReports.$inferSelect;
 
+// 알림장 사진/영상 첨부
+export const notebookAttachments = pgTable("notebook_attachments", {
+  id: serial("id").primaryKey(),
+  journalId: integer("journal_id").references(() => trainingJournals.id).notNull(),
+  kind: varchar("kind", { length: 16 }).notNull(), // 'image' | 'video'
+  storageKey: text("storage_key").notNull(),
+  thumbnailKey: text("thumbnail_key"),
+  sizeBytes: integer("size_bytes").notNull(),
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => ({
+  byJournal: index("idx_notebook_attachments_journal").on(t.journalId),
+}));
+
+export const insertNotebookAttachmentSchema = createInsertSchema(notebookAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+export type NotebookAttachment = typeof notebookAttachments.$inferSelect;
+export type InsertNotebookAttachment = z.infer<typeof insertNotebookAttachmentSchema>;
+
 export const insertJournalCommentSchema = createInsertSchema(journalComments).omit({
   id: true,
   authorId: true,

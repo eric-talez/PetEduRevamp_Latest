@@ -44,6 +44,7 @@ class Storage {
   notebookShareTokens: any[] = [];
   journalComments: any[] = [];
   journalReactions: any[] = [];
+  notebookAttachments: any[] = [];
   posts: any[] = [];
   coursePurchases: any[] = [];
   courseProgress: any[] = [];
@@ -2843,6 +2844,56 @@ class Storage {
     if (idx === -1) return { removed: false };
     this.journalReactions.splice(idx, 1);
     return { removed: true };
+  }
+
+  // ====== 알림장 사진/영상 첨부 ======
+  getNotebookAttachmentsByJournal(journalId: number): any[] {
+    return (this.notebookAttachments || [])
+      .filter(a => a.journalId === journalId)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id);
+  }
+
+  getNotebookAttachmentById(id: number): any | null {
+    return (this.notebookAttachments || []).find(a => a.id === id) || null;
+  }
+
+  countNotebookAttachmentsByJournal(journalId: number, kind?: 'image' | 'video'): number {
+    return (this.notebookAttachments || []).filter(a => a.journalId === journalId && (!kind || a.kind === kind)).length;
+  }
+
+  createNotebookAttachment(data: {
+    journalId: number;
+    kind: 'image' | 'video';
+    storageKey: string;
+    thumbnailKey?: string | null;
+    sizeBytes: number;
+    mimeType: string;
+    uploadedBy: number;
+  }): any {
+    if (!this.notebookAttachments) this.notebookAttachments = [];
+    const id = (this.notebookAttachments.reduce((m, a) => Math.max(m, a.id || 0), 0) || 0) + 1;
+    const sortOrder = this.countNotebookAttachmentsByJournal(data.journalId);
+    const att = {
+      id,
+      journalId: data.journalId,
+      kind: data.kind,
+      storageKey: data.storageKey,
+      thumbnailKey: data.thumbnailKey || null,
+      sizeBytes: data.sizeBytes,
+      mimeType: data.mimeType,
+      sortOrder,
+      uploadedBy: data.uploadedBy,
+      createdAt: new Date().toISOString(),
+    };
+    this.notebookAttachments.push(att);
+    return att;
+  }
+
+  deleteNotebookAttachment(id: number): any | null {
+    const idx = (this.notebookAttachments || []).findIndex(a => a.id === id);
+    if (idx === -1) return null;
+    const [removed] = this.notebookAttachments.splice(idx, 1);
+    return removed;
   }
 
   // 페이지네이션과 필터링을 지원하는 훈련 일지 조회

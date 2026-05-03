@@ -42,6 +42,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
+import { JournalAttachmentManager } from '@/components/notebook/JournalAttachmentManager';
 
 interface Journal {
   id: number;
@@ -1507,6 +1508,9 @@ export default function TrainerNotebookPage() {
                     </div>
                   </div>
                 )}
+
+                {/* 사진·영상 첨부 (트레이너 편집) */}
+                <JournalAttachmentManager journalId={selectedJournal.id} canEdit={true} />
 
                 {/* 댓글 & 이모지 반응 */}
                 <JournalCommentSection journalId={selectedJournal.id} />

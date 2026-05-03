@@ -24,6 +24,7 @@ export interface NotebookPdfData {
   pet?: any;
   trainer?: any;
   owner?: any;
+  photoBuffers?: Buffer[]; // 첫 1~2장 사진 임베드용
 }
 
 function safeText(value: any): string {
@@ -141,6 +142,26 @@ export function generateNotebookPdf(data: NotebookPdfData): Promise<Buffer> {
       drawSection("행동 관찰", journal.behaviorNotes, "#EFF6FF");
       drawSection("집에서 할 숙제", journal.homeworkInstructions, "#FEF3C7");
       drawSection("다음 목표", journal.nextGoals, "#ECFDF5");
+
+      // 사진 첨부 (첫 1~2장)
+      const photoBuffers = (data.photoBuffers || []).slice(0, 2);
+      if (photoBuffers.length > 0) {
+        if (doc.y + 200 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+        doc.fillColor("#111827").fontSize(13).text("훈련 사진");
+        doc.moveDown(0.3);
+        const colWidth = (doc.page.width - doc.page.margins.left - doc.page.margins.right - (photoBuffers.length > 1 ? 12 : 0)) / photoBuffers.length;
+        const photoHeight = 180;
+        const startY = doc.y;
+        photoBuffers.forEach((buf, idx) => {
+          try {
+            const x = doc.page.margins.left + idx * (colWidth + 12);
+            doc.image(buf, x, startY, { fit: [colWidth, photoHeight], align: "center", valign: "center" });
+          } catch (err) {
+            console.warn("[Notebook PDF] 사진 임베드 실패:", err);
+          }
+        });
+        doc.y = startY + photoHeight + 12;
+      }
 
       // 첨부파일 목록
       const attachments: string[] = Array.isArray(journal.attachments) ? journal.attachments.filter(Boolean) : [];

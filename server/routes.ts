@@ -5000,6 +5000,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PDF 임베드용 사진 버퍼 로더 (첫 1~2장)
+  async function loadNotebookPhotoBuffers(journalId: number): Promise<Buffer[]> {
+    try {
+      const atts = storage.getNotebookAttachmentsByJournal(journalId)
+        .filter((a: any) => a.kind === 'image')
+        .slice(0, 2);
+      if (atts.length === 0) return [];
+      const { ObjectStorageService } = await import('./objectStorage');
+      const svc = new ObjectStorageService();
+      const buffers: Buffer[] = [];
+      for (const a of atts) {
+        try {
+          const file = svc.getPrivateFileByKey(a.storageKey);
+          const [buf] = await file.download();
+          buffers.push(buf);
+        } catch (e) {
+          logServerError('[알림장 PDF] 사진 다운로드 실패(스킵):', e);
+        }
+      }
+      return buffers;
+    } catch (err) {
+      logServerError('[알림장 PDF] 사진 로드 실패:', err);
+      return [];
+    }
+  }
+
   // 알림장 PDF 내보내기 (인증 필요)
   app.get("/api/notebook/entries/:id/pdf", requireAuth(), async (req, res) => {
     try {
@@ -5019,8 +5045,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pet = journal.petId ? storage.getPetById(journal.petId) : null;
       const trainer = journal.trainerId ? storage.getUser(journal.trainerId) : null;
       const owner = journal.petOwnerId ? storage.getUser(journal.petOwnerId) : null;
+      const photoBuffers = await loadNotebookPhotoBuffers(journalId);
       const { generateNotebookPdf } = await import('./services/notebook-pdf');
-      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner });
+      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner, photoBuffers });
 
       const safeName = (pet?.name || 'pet').toString().replace(/[^a-zA-Z0-9가-힣_-]/g, '_').slice(0, 40) || 'pet';
       const filename = `talez-notebook-${safeName}-${journalId}.pdf`;
@@ -5096,8 +5123,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pet = journal.petId ? storage.getPetById(journal.petId) : null;
       const trainer = journal.trainerId ? storage.getUser(journal.trainerId) : null;
       const owner = journal.petOwnerId ? storage.getUser(journal.petOwnerId) : null;
+      const photoBuffers = await loadNotebookPhotoBuffers(journal.id);
       const { generateNotebookPdf } = await import('./services/notebook-pdf');
-      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner });
+      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner, photoBuffers });
 
       const safeName = (pet?.name || 'pet').toString().replace(/[^a-zA-Z0-9가-힣_-]/g, '_').slice(0, 40) || 'pet';
       const filename = `talez-notebook-${safeName}-${journal.id}.pdf`;
@@ -8941,6 +8969,262 @@ app.get('/api/search', async (req, res) => {
       return res.status(500).json({ success: false, error: '음성 인식 중 오류가 발생했습니다.' });
     }
   });
+
+  // ============ 알림장 사진/영상 첨부 API ============
+  const NOTEBOOK_IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10MB / 장
+  const NOTEBOOK_VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 50MB / 영상
+  const NOTEBOOK_MAX_IMAGES = 5;
+  const NOTEBOOK_MAX_VIDEOS = 1;
+  const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+  const ALLOWED_VIDEO_MIME = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+
+  const notebookAttachmentUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: NOTEBOOK_VIDEO_MAX_BYTES },
+  });
+
+  const buildAttachmentResponse = (a: any) => ({
+    id: a.id,
+    journalId: a.journalId,
+    kind: a.kind,
+    mimeType: a.mimeType,
+    sizeBytes: a.sizeBytes,
+    sortOrder: a.sortOrder,
+    createdAt: a.createdAt,
+    url: `/api/notebook/attachments/${a.id}`,
+    thumbnailUrl: a.thumbnailKey ? `/api/notebook/attachments/${a.id}/thumbnail` : null,
+  });
+
+  // 첨부파일 목록 조회
+  app.get('/api/notebook/entries/:id/attachments', requireAuth(), async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (Number.isNaN(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.' });
+      const currentUser = req.session.user!;
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '접근 권한이 없습니다.' });
+      }
+      const list = storage.getNotebookAttachmentsByJournal(journalId).map(buildAttachmentResponse);
+      return res.json({ success: true, attachments: list });
+    } catch (error) {
+      logServerError('알림장 첨부파일 목록 오류:', error, req);
+      return res.status(500).json({ error: '첨부파일 목록 조회 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // multer 에러 핸들러: LIMIT_FILE_SIZE 등을 4xx JSON 으로 매핑
+  const notebookAttachmentUploadHandler = (req: any, res: any, next: any) => {
+    notebookAttachmentUpload.single('file')(req, res, (err: any) => {
+      if (!err) return next();
+      const isMulter = err && err.name === 'MulterError';
+      const code = isMulter ? err.code : null;
+      if (code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: '파일 크기가 너무 큽니다. 영상은 50MB, 사진은 10MB 까지 업로드 가능합니다.' });
+      }
+      if (code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ error: "예상치 못한 필드입니다. 'file' 필드명으로 업로드해 주세요." });
+      }
+      if (isMulter) {
+        return res.status(400).json({ error: `업로드 오류: ${err.message || code}` });
+      }
+      logServerError('알림장 첨부 multer 오류:', err, req);
+      return res.status(500).json({ error: '업로드 처리 중 오류가 발생했습니다.' });
+    });
+  };
+
+  // 첨부파일 업로드 (트레이너/관리자)
+  app.post(
+    '/api/notebook/entries/:id/attachments',
+    requireAuth(),
+    csrfProtection,
+    notebookAttachmentUploadHandler,
+    async (req, res) => {
+      try {
+        const journalId = parseInt(req.params.id, 10);
+        if (Number.isNaN(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
+        const journal = storage.getTrainingJournalById(journalId);
+        if (!journal) return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.' });
+
+        const currentUser = req.session.user!;
+        if (!storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
+          return res.status(403).json({ error: '첨부파일을 추가할 권한이 없습니다.' });
+        }
+        if (!req.file) return res.status(400).json({ error: '파일이 필요합니다.' });
+
+        const mime = (req.file.mimetype || '').toLowerCase();
+        let kind: 'image' | 'video';
+        if (ALLOWED_IMAGE_MIME.has(mime)) kind = 'image';
+        else if (ALLOWED_VIDEO_MIME.has(mime)) kind = 'video';
+        else return res.status(400).json({ error: '허용되지 않은 파일 형식입니다. (jpeg/png/webp/gif/mp4/webm/mov)' });
+
+        if (kind === 'image' && req.file.size > NOTEBOOK_IMAGE_MAX_BYTES) {
+          return res.status(400).json({ error: `이미지는 최대 ${Math.round(NOTEBOOK_IMAGE_MAX_BYTES / 1024 / 1024)}MB 까지 업로드 가능합니다.` });
+        }
+        if (kind === 'video' && req.file.size > NOTEBOOK_VIDEO_MAX_BYTES) {
+          return res.status(400).json({ error: `영상은 최대 ${Math.round(NOTEBOOK_VIDEO_MAX_BYTES / 1024 / 1024)}MB 까지 업로드 가능합니다.` });
+        }
+
+        const existingImages = storage.countNotebookAttachmentsByJournal(journalId, 'image');
+        const existingVideos = storage.countNotebookAttachmentsByJournal(journalId, 'video');
+        if (kind === 'image' && existingImages >= NOTEBOOK_MAX_IMAGES) {
+          return res.status(400).json({ error: `사진은 최대 ${NOTEBOOK_MAX_IMAGES}장까지 업로드할 수 있습니다.` });
+        }
+        if (kind === 'video' && existingVideos >= NOTEBOOK_MAX_VIDEOS) {
+          return res.status(400).json({ error: `영상은 알림장당 ${NOTEBOOK_MAX_VIDEOS}개만 업로드할 수 있습니다.` });
+        }
+
+        const { ObjectStorageService } = await import('./objectStorage');
+        const objectStorageService = new ObjectStorageService();
+        const extMap: Record<string, string> = {
+          'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+          'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov',
+        };
+        const ext = extMap[mime] || (kind === 'image' ? 'bin' : 'bin');
+        const subdir = `notebook/${journalId}/${kind}s`;
+        const storageKey = await objectStorageService.uploadBufferToPrivate(req.file.buffer, {
+          mimeType: mime, ext, subdir,
+        });
+
+        // 영상 썸네일: ffmpeg로 첫 프레임 추출 (try/finally 로 임시폴더 항상 정리)
+        let thumbnailKey: string | null = null;
+        if (kind === 'video') {
+          const fsMod = await import('fs');
+          const pathMod = await import('path');
+          const osMod = await import('os');
+          const ffmpeg = (await import('fluent-ffmpeg')).default;
+          const tmpDir = fsMod.mkdtempSync(pathMod.join(osMod.tmpdir(), 'notebook-thumb-'));
+          try {
+            const inputPath = pathMod.join(tmpDir, `in.${ext}`);
+            fsMod.writeFileSync(inputPath, req.file.buffer);
+            const thumbPath = pathMod.join(tmpDir, 'thumb.jpg');
+            await new Promise<void>((resolve, reject) => {
+              ffmpeg(inputPath)
+                .on('end', () => resolve())
+                .on('error', (err: any) => reject(err))
+                .screenshots({ timestamps: ['00:00:00.500'], filename: 'thumb.jpg', folder: tmpDir, size: '640x?' });
+            });
+            const thumbBuf = fsMod.readFileSync(thumbPath);
+            thumbnailKey = await objectStorageService.uploadBufferToPrivate(thumbBuf, {
+              mimeType: 'image/jpeg', ext: 'jpg', subdir: `notebook/${journalId}/thumbs`,
+            });
+          } catch (thumbErr) {
+            logServerError('영상 썸네일 생성 실패(스킵):', thumbErr, req);
+          } finally {
+            try { fsMod.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+          }
+        }
+
+        const attachment = storage.createNotebookAttachment({
+          journalId,
+          kind,
+          storageKey,
+          thumbnailKey,
+          sizeBytes: req.file.size,
+          mimeType: mime,
+          uploadedBy: currentUser.id,
+        });
+
+        return res.status(201).json({ success: true, attachment: buildAttachmentResponse(attachment) });
+      } catch (error: any) {
+        logServerError('알림장 첨부파일 업로드 오류:', error, req);
+        return res.status(500).json({ error: '첨부파일 업로드 중 오류가 발생했습니다.' });
+      }
+    },
+  );
+
+  // 첨부파일 삭제
+  app.delete('/api/notebook/attachments/:id', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) return res.status(400).json({ error: '올바른 첨부 ID가 필요합니다.' });
+      const att = storage.getNotebookAttachmentById(id);
+      if (!att) return res.status(404).json({ error: '첨부파일을 찾을 수 없습니다.' });
+      const journal = storage.getTrainingJournalById(att.journalId);
+      const currentUser = req.session.user!;
+      if (!journal || !storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+      }
+      storage.deleteNotebookAttachment(id);
+      try {
+        const { ObjectStorageService } = await import('./objectStorage');
+        const svc = new ObjectStorageService();
+        await svc.deletePrivateByKey(att.storageKey);
+        if (att.thumbnailKey) await svc.deletePrivateByKey(att.thumbnailKey);
+      } catch (e) {
+        logServerError('첨부 객체 삭제 실패(무시):', e, req);
+      }
+      return res.json({ success: true });
+    } catch (error) {
+      logServerError('알림장 첨부파일 삭제 오류:', error, req);
+      return res.status(500).json({ error: '첨부파일 삭제 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 첨부파일 다운로드/스트리밍 (Range 지원)
+  const streamNotebookAsset = async (req: any, res: any, useThumb: boolean) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) return res.status(400).json({ error: '올바른 첨부 ID가 필요합니다.' });
+      const att = storage.getNotebookAttachmentById(id);
+      if (!att) return res.status(404).json({ error: '첨부파일을 찾을 수 없습니다.' });
+      const journal = storage.getTrainingJournalById(att.journalId);
+      const currentUser = req.session.user!;
+      if (!journal || !storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '접근 권한이 없습니다.' });
+      }
+
+      const key = useThumb && att.thumbnailKey ? att.thumbnailKey : att.storageKey;
+      const mime = useThumb && att.thumbnailKey ? 'image/jpeg' : att.mimeType;
+      const { ObjectStorageService } = await import('./objectStorage');
+      const svc = new ObjectStorageService();
+      const file = svc.getPrivateFileByKey(key);
+      const [exists] = await file.exists();
+      if (!exists) return res.status(404).json({ error: '파일이 존재하지 않습니다.' });
+      const [metadata] = await file.getMetadata();
+      const totalSize = Number(metadata.size || 0);
+
+      const range = req.headers.range as string | undefined;
+      if (range && totalSize > 0) {
+        const m = /bytes=(\d*)-(\d*)/.exec(range);
+        if (m) {
+          const start = m[1] ? parseInt(m[1], 10) : 0;
+          const end = m[2] ? parseInt(m[2], 10) : totalSize - 1;
+          if (
+            !Number.isFinite(start) || !Number.isFinite(end) ||
+            start < 0 || end < 0 || start > end ||
+            start >= totalSize || end >= totalSize
+          ) {
+            res.status(416).set({ 'Content-Range': `bytes */${totalSize}` }).end();
+            return;
+          }
+          res.status(206).set({
+            'Content-Type': mime,
+            'Content-Length': String(end - start + 1),
+            'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+            'Accept-Ranges': 'bytes',
+            'Cache-Control': 'private, max-age=300',
+          });
+          file.createReadStream({ start, end }).on('error', () => { if (!res.headersSent) res.status(500).end(); }).pipe(res);
+          return;
+        }
+      }
+
+      res.set({
+        'Content-Type': mime,
+        'Content-Length': String(totalSize),
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'private, max-age=300',
+      });
+      file.createReadStream().on('error', () => { if (!res.headersSent) res.status(500).end(); }).pipe(res);
+    } catch (error) {
+      logServerError('알림장 첨부파일 스트리밍 오류:', error, req);
+      if (!res.headersSent) res.status(500).json({ error: '파일 전송 중 오류가 발생했습니다.' });
+    }
+  };
+  app.get('/api/notebook/attachments/:id', requireAuth(), (req, res) => streamNotebookAsset(req, res, false));
+  app.get('/api/notebook/attachments/:id/thumbnail', requireAuth(), (req, res) => streamNotebookAsset(req, res, true));
 
   // 반려동물 훈련사 할당 API
   app.post("/api/pets/:petId/assign-trainer", async (req, res) => {

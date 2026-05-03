@@ -131,6 +131,44 @@ export class ObjectStorageService {
     }
   }
 
+  // Uploads a buffer directly to a private object key. Returns the storage key
+  // (path relative to PRIVATE_OBJECT_DIR, e.g. "notebook/<uuid>.jpg").
+  async uploadBufferToPrivate(
+    buffer: Buffer,
+    opts: { mimeType: string; ext?: string; subdir?: string },
+  ): Promise<string> {
+    const privateDir = this.getPrivateObjectDir();
+    const subdir = (opts.subdir || "uploads").replace(/^\/+|\/+$/g, "");
+    const ext = opts.ext ? `.${opts.ext.replace(/^\./, "")}` : "";
+    const objectId = randomUUID();
+    const fullPath = `${privateDir}/${subdir}/${objectId}${ext}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const file = objectStorageClient.bucket(bucketName).file(objectName);
+    await file.save(buffer, {
+      contentType: opts.mimeType,
+      resumable: false,
+    });
+    return `${subdir}/${objectId}${ext}`;
+  }
+
+  // Resolves a storage key (relative to PRIVATE_OBJECT_DIR) to a GCS File handle.
+  getPrivateFileByKey(storageKey: string): File {
+    let dir = this.getPrivateObjectDir();
+    if (!dir.endsWith("/")) dir = `${dir}/`;
+    const fullPath = `${dir}${storageKey.replace(/^\/+/, "")}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    return objectStorageClient.bucket(bucketName).file(objectName);
+  }
+
+  async deletePrivateByKey(storageKey: string): Promise<void> {
+    try {
+      const file = this.getPrivateFileByKey(storageKey);
+      await file.delete({ ignoreNotFound: true });
+    } catch (err) {
+      logServerError("[ObjectStorage] delete by key failed", err);
+    }
+  }
+
   // Gets the upload URL for an object entity.
   async getObjectEntityUploadURL(): Promise<string> {
     const privateObjectDir = this.getPrivateObjectDir();
