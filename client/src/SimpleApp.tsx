@@ -28,6 +28,7 @@ import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
 import NotFound from "@/pages/not-found";
 import VideoTrainingPage from "@/pages/VideoTraining";
+import Certificates from "@/pages/Certificates";
 import LocationsPage from "./pages/locations";
 const VideoCallPage = lazy(() => import("./pages/video-call"));
 import MessagesPage from "./pages/messages";
@@ -598,7 +599,9 @@ function AuthenticatedRoutes() {
 
         <Route path="/my-pets" component={MyPets} />
 
-        <Route path="/certificates" component={() => <div className="p-8"><h1 className="text-2xl font-bold mb-4">자격증 및 수료증</h1><p>자격증 및 수료증을 확인할 수 있는 페이지입니다.</p></div>} />
+        <Route path="/certificates" component={() => <ProtectedRoute component={Certificates} />} />
+        <Route path="/payment-success" component={PaymentSuccess} />
+        <Route path="/payment-failed" component={PaymentFailed} />
         <Route path="/video-training" component={VideoTrainingPage} />
         <Route path="/video-call">
           <ErrorBoundary name="영상통화">

@@ -439,6 +439,41 @@ export function registerCourseAttendanceRoutes(app: Express) {
     res.json({ success: true, data });
   });
 
+  // 보호자: 본인의 수료증 목록 (수료한 모든 강의)
+  app.get("/api/my-certificates", requireAuth, (req: Request, res: Response) => {
+    const me = getUser(req)!;
+    const users = storage.users as Array<{ id: number; name?: string }>;
+    const pets = storage.pets as Array<{ id: number; ownerId: number; name?: string }>;
+    const myPurchases = purchases().filter((p) => p.userId === me.id);
+
+    const items = myPurchases
+      .map((p) => {
+        const course = findCourse(p.courseId);
+        if (!course) return null;
+        const result = recomputeProgress(me.id, p.courseId);
+        if (result.progress.status !== "completed") return null;
+        const trainer = course.instructorId ? users.find((u) => u.id === course.instructorId) : null;
+        const pet = pets.find((pt) => pt.ownerId === me.id);
+        const completedTs = result.progress.completedAt
+          ? new Date(result.progress.completedAt).getTime()
+          : Date.now();
+        return {
+          courseId: p.courseId,
+          certificateNo: `WZ-${p.courseId}-${me.id}-${completedTs.toString().slice(-6)}`,
+          courseTitle: course.title || `코스 #${p.courseId}`,
+          trainerName: trainer?.name || "담당 트레이너",
+          instituteName: "왕짱스쿨",
+          petName: pet?.name || null,
+          completedAt: result.progress.completedAt,
+          totalSessions: result.totalSessions,
+          completedSessions: result.completedSessions,
+        };
+      })
+      .filter(Boolean);
+
+    res.json({ success: true, data: items });
+  });
+
   // 보호자: 수료증 데이터
   app.get("/api/courses/:courseId/certificate", requireAuth, (req: Request, res: Response) => {
     const me = getUser(req)!;

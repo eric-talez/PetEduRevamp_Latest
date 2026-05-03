@@ -263,6 +263,27 @@ export default function CheckoutPage() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
+  const ensureTossLoaded = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if ((window as any).TossPayments) {
+        resolve();
+        return;
+      }
+      const existing = document.querySelector('script[src="https://js.tosspayments.com/v1/payment"]') as HTMLScriptElement | null;
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('Toss SDK 로드 실패')), { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://js.tosspayments.com/v1/payment';
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Toss SDK 로드 실패'));
+      document.body.appendChild(script);
+    });
+  };
+
   const handlePayment = async () => {
     if (!paymentInfo.agreeTerms) {
       toast({
@@ -272,80 +293,76 @@ export default function CheckoutPage() {
       });
       return;
     }
-    
-    setIsProcessing(true);
 
-    try {
-      const authState = (window as any).__peteduAuthState;
-      if (!authState?.isAuthenticated) {
-        toast({
-          title: "로그인이 필요합니다",
-          variant: "destructive",
-        });
-        setLocation('/auth/login');
-        return;
-      }
+    const authState = (window as any).__peteduAuthState;
+    if (!authState?.isAuthenticated) {
+      toast({ title: "로그인이 필요합니다", variant: "destructive" });
+      setLocation('/auth/login');
+      return;
+    }
 
-      const paymentData = {
-        userId: authState.userId,
-        type: orderData.type,
-        amount: orderData.totalAmount,
-        shippingInfo,
-        items: orderData.type === 'course' 
-          ? [{ courseId: orderData.courseInfo?.id, type: 'course', title: orderData.courseInfo?.title }]
-          : orderData.items.map((item: any) => ({
-              productId: item.id,
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price,
-              option: item.option
-            })),
-        paymentMethod: paymentInfo.method
-      };
-
-      const response = await fetch('/api/payment/process', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentData),
+    const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY;
+    if (!clientKey) {
+      toast({
+        title: "결제 설정 오류",
+        description: "결제 시스템 설정이 완료되지 않았습니다. 관리자에게 문의하세요.",
+        variant: "destructive",
       });
+      return;
+    }
 
-      const result = await response.json();
+    if (!orderData.totalAmount || orderData.totalAmount <= 0) {
+      toast({
+        title: "결제 금액 오류",
+        description: "결제할 금액이 없습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      if (response.ok) {
-        setCurrentStep(4);
-        
-        toast({
-          title: "결제가 완료되었습니다",
-          description: orderData.type === 'course' 
-            ? "강의 수강이 시작됩니다."
-            : "주문이 접수되었습니다.",
-        });
+    setIsProcessing(true);
+    try {
+      await ensureTossLoaded();
+      const tossPayments = (window as any).TossPayments(clientKey);
 
-        if (orderData.type === 'product') {
-          const currentCart = JSON.parse(localStorage.getItem('petedu_cart') || '[]');
-          const purchasedItemIds = new Set(orderData.items.map((item: any) => item.id));
-          const updatedCart = currentCart.filter((item: any) => !purchasedItemIds.has(item.id));
-          localStorage.setItem('petedu_cart', JSON.stringify(updatedCart));
-          sessionStorage.removeItem('checkout_items');
-          window.dispatchEvent(new CustomEvent('cartUpdated', {
-            detail: { cartItems: updatedCart }
-          }));
-        }
+      const orderId = `SHOP_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      const orderName = orderData.type === 'course'
+        ? `강의: ${orderData.courseInfo?.title || ''}`
+        : orderData.items.length === 1
+          ? orderData.items[0].name
+          : `${orderData.items[0]?.name || '상품'} 외 ${orderData.items.length - 1}건`;
 
-        setTimeout(() => {
-          setLocation(`/shop/order-complete?orderId=${result.orderId || 'demo'}`);
-        }, 2000);
-        
-      } else {
-        throw new Error(result.message || '결제 처리 중 오류가 발생했습니다.');
+      const checkoutContext = {
+        type: orderData.type,
+        items: orderData.items,
+        shippingInfo,
+        courseInfo: orderData.courseInfo,
+      };
+      try {
+        sessionStorage.setItem(`shop_order_${orderId}`, JSON.stringify(checkoutContext));
+      } catch (e) {
+        console.warn('checkout context 저장 실패:', e);
       }
+
+      const methodLabel = paymentInfo.method === 'kakao'
+        ? '간편결제'
+        : paymentInfo.method === 'naver'
+          ? '간편결제'
+          : '카드';
+
+      await tossPayments.requestPayment(methodLabel, {
+        amount: orderData.totalAmount,
+        orderId,
+        orderName,
+        customerName: shippingInfo.name || authState?.userName || '고객',
+        successUrl: `${window.location.origin}/payment-success`,
+        failUrl: `${window.location.origin}/payment-failed`,
+      });
     } catch (error: any) {
       console.error('결제 오류:', error);
       toast({
         title: "결제 실패",
-        description: error.message || "결제 처리 중 오류가 발생했습니다.",
+        description: error?.message || "결제 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {

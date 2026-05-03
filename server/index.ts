@@ -215,6 +215,22 @@ const aiHeavyLimiter = rateLimit({
 // 정적 자산 limiter 후 정적 서빙
 app.use('/uploads', staticAssetLimiter, express.static('uploads'));
 
+// 레거시 정적 쇼핑 HTML → React SPA 리다이렉트 (정적 서빙 이전에 처리)
+const legacyShopRedirects: Record<string, string> = {
+  '/shop.html': '/shop',
+  '/checkout.html': '/shop/checkout',
+  '/product-detail.html': '/shop',
+  '/category.html': '/shop',
+  '/naver-style-shop.html': '/shop',
+  '/price-alert.html': '/shop',
+};
+for (const [from, to] of Object.entries(legacyShopRedirects)) {
+  app.get(from, (req, res) => {
+    const qs = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+    res.redirect(301, `${to}${qs}`);
+  });
+}
+
 // 로고 및 기타 정적 파일 제공
 app.use(express.static('public'));
 
