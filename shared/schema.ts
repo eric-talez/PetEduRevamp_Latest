@@ -82,7 +82,9 @@ export const courses = pgTable("courses", {
   enrollmentCount: integer("enrollment_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  byCreatedAt: index("idx_courses_created_at").on(t.createdAt),
+}));
 
 // 기관 테이블
 export const institutes = pgTable("institutes", {
@@ -500,7 +502,9 @@ export const orders = pgTable("orders", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  byCreatedAt: index("idx_orders_created_at").on(t.createdAt),
+}));
 
 // 주문 아이템 테이블
 export const orderItems = pgTable("order_items", {
@@ -524,7 +528,11 @@ export const notifications = pgTable("notifications", {
   actionUrl: text("action_url"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byCreatedAt: index("idx_notifications_created_at").on(t.createdAt),
+  byIsRead: index("idx_notifications_is_read").on(t.isRead),
+  byType: index("idx_notifications_type").on(t.type),
+}));
 
 // FCM 기기 토큰 테이블
 export const fcmTokens = pgTable("fcm_tokens", {
@@ -866,7 +874,9 @@ export const coursePurchases = pgTable("course_purchases", {
   expiryDate: timestamp("expiry_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  byCreatedAt: index("idx_course_purchases_created_at").on(t.createdAt),
+}));
 
 // 강의 수강 진행 상황 테이블
 export const courseProgress = pgTable("course_progress", {
@@ -1262,7 +1272,9 @@ export const messages = pgTable("messages", {
   messageType: text("message_type").default("text"),
   attachments: text("attachments"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byCreatedAt: index("idx_messages_created_at").on(t.createdAt),
+}));
 
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = typeof conversations.$inferInsert;

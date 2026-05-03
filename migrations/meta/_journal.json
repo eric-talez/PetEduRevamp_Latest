@@ -15,6 +15,13 @@
       "when": 1766409222409,
       "tag": "0001_wandering_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777276800000,
+      "tag": "0002_admin_stats_indexes",
+      "breakpoints": true
     }
   ]
 }
