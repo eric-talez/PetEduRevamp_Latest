@@ -349,13 +349,13 @@ export default function AdminContents() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500">활성</Badge>;
+        return <Badge className="bg-success">활성</Badge>;
       case 'inactive':
         return <Badge variant="outline" className="text-gray-500">비활성</Badge>;
       case 'draft':
-        return <Badge variant="outline" className="text-amber-500 border-amber-500">초안</Badge>;
+        return <Badge variant="outline" className="text-warning border-warning/50">초안</Badge>;
       case 'scheduled':
-        return <Badge className="bg-blue-500">예약됨</Badge>;
+        return <Badge className="bg-primary">예약됨</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -610,7 +610,7 @@ export default function AdminContents() {
                           variant="outline"
                           size="icon"
                           onClick={() => handleEditContent(content)}
-                          className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all duration-200"
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>

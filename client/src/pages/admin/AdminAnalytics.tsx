@@ -157,7 +157,7 @@ export default function AdminAnalytics() {
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
         {change && (
-          <p className={`text-xs flex items-center ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-xs flex items-center ${trend === 'up' ? 'text-success' : 'text-destructive'}`}>
             {trend === 'up' ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
             {change}
           </p>
@@ -174,7 +174,7 @@ export default function AdminAnalytics() {
     }).format(value);
   };
 
-  const CATEGORY_COLORS = ['#2BAA61', '#FFA726', '#29B5F6', '#E74D3C', '#9B59B6', '#34495E', '#16A085'];
+  const CATEGORY_COLORS = ['hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--primary))', 'hsl(var(--destructive))', 'hsl(var(--secondary))', 'hsl(var(--muted-foreground))', 'hsl(var(--success))'];
 
   const BreakdownState = ({ children, isEmpty, emptyText = '표시할 데이터가 없습니다.' }: { children: React.ReactNode; isEmpty: boolean; emptyText?: string }) => {
     if (isBreakdownsLoading) {
@@ -265,9 +265,9 @@ export default function AdminAnalytics() {
 
       {/* 개요 통계 - 실 데이터 */}
       {isCustom && !customDatesValid ? (
-        <Card className="border-amber-300">
+        <Card className="border-warning/40">
           <CardContent className="flex items-center gap-3 py-6">
-            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <AlertCircle className="h-5 w-5 text-warning" />
             <div className="flex-1">
               <p className="font-medium">사용자 지정 기간을 선택해주세요</p>
               <p className="text-sm text-muted-foreground">
@@ -402,7 +402,7 @@ export default function AdminAnalytics() {
                       <div className="relative">
                         <Progress value={(item.total / revenueMonthlyMax) * 100} className="h-3" />
                         <div
-                          className="absolute top-0 left-0 h-3 bg-green-500 rounded-full"
+                          className="absolute top-0 left-0 h-3 bg-success rounded-full"
                           style={{ width: `${(item.training / revenueMonthlyMax) * 100}%` }}
                         />
                       </div>
@@ -506,7 +506,7 @@ export default function AdminAnalytics() {
                       <CardTitle className="text-sm">수익 성장률</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className={`text-2xl font-bold ${(breakdowns?.revenue.growthRate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`text-2xl font-bold ${(breakdowns?.revenue.growthRate || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
                         {(breakdowns?.revenue.growthRate || 0) >= 0 ? '+' : ''}
                         {breakdowns?.revenue.growthRate ?? 0}%
                       </div>
@@ -545,7 +545,7 @@ export default function AdminAnalytics() {
                       <div className="relative">
                         <Progress value={(item.total / revenueMonthlyMax) * 100} className="h-3" />
                         <div
-                          className="absolute top-0 left-0 h-3 bg-green-500 rounded-full"
+                          className="absolute top-0 left-0 h-3 bg-success rounded-full"
                           style={{ width: `${(item.training / revenueMonthlyMax) * 100}%` }}
                         />
                       </div>

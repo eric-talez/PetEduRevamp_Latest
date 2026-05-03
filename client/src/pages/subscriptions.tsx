@@ -137,12 +137,12 @@ export default function SubscriptionsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Star className="w-5 h-5 text-yellow-500" />
+                      <Star className="w-5 h-5 text-warning" />
                       {currentSubscription.planName}
                     </CardTitle>
                     <CardDescription>현재 활성 구독</CardDescription>
                   </div>
-                  <Badge variant="default" className="bg-green-100 text-green-800">
+                  <Badge variant="default" className="bg-success/10 text-success">
                     <CheckCircle className="w-4 h-4 mr-1" />
                     활성
                   </Badge>
@@ -151,7 +151,7 @@ export default function SubscriptionsPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-3">
-                    <DollarSign className="w-5 h-5 text-blue-500" />
+                    <DollarSign className="w-5 h-5 text-primary" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">월 요금</p>
                       <p className="font-semibold">{formatPrice(currentSubscription.price)}원</p>
@@ -171,7 +171,7 @@ export default function SubscriptionsPage() {
                   <div className="grid grid-cols-1 gap-2">
                     {currentSubscription.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-success" />
                         <span className="text-sm">{feature}</span>
                       </div>
                     ))}
@@ -194,7 +194,7 @@ export default function SubscriptionsPage() {
                       <span>무제한</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full w-full"></div>
+                      <div className="bg-success h-2 rounded-full w-full"></div>
                     </div>
                   </div>
                   
@@ -204,7 +204,7 @@ export default function SubscriptionsPage() {
                       <span>12/무제한</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full w-full"></div>
+                      <div className="bg-primary h-2 rounded-full w-full"></div>
                     </div>
                   </div>
                   
@@ -227,10 +227,10 @@ export default function SubscriptionsPage() {
         <TabsContent value="plans" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map((plan) => (
-              <Card key={plan.id} className={`relative ${plan.popular ? 'ring-2 ring-blue-500' : ''}`}>
+              <Card key={plan.id} className={`relative ${plan.popular ? 'ring-2 ring-primary' : ''}`}>
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-blue-500 text-white">인기</Badge>
+                    <Badge className="bg-primary text-white">인기</Badge>
                   </div>
                 )}
                 <CardHeader className="text-center">
@@ -254,7 +254,7 @@ export default function SubscriptionsPage() {
                   <div className="space-y-2">
                     {plan.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-success" />
                         <span className="text-sm">{feature}</span>
                       </div>
                     ))}
@@ -289,7 +289,7 @@ export default function SubscriptionsPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-primary rounded flex items-center justify-center">
+                    <div className="w-12 h-8 bg-gradient-to-r from-primary to-secondary rounded flex items-center justify-center">
                       <CreditCard className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -330,7 +330,7 @@ export default function SubscriptionsPage() {
                         <p className="font-medium">{formatPrice(payment.amount)}원</p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{payment.date}</p>
                       </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <Badge variant="secondary" className="bg-success/10 text-success">
                         완료
                       </Badge>
                     </div>
@@ -390,9 +390,9 @@ export default function SubscriptionsPage() {
             </Card>
 
             {/* 구독 취소 */}
-            <Card className="border-red-200 dark:border-red-800">
+            <Card className="border-destructive/30 dark:border-destructive/50">
               <CardHeader>
-                <CardTitle className="text-red-600 dark:text-red-400">구독 취소</CardTitle>
+                <CardTitle className="text-destructive dark:text-destructive">구독 취소</CardTitle>
                 <CardDescription>구독을 취소하면 다음 결제일에 서비스가 종료됩니다</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -421,15 +421,15 @@ export default function SubscriptionsPage() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <X className="w-4 h-4 text-red-500" />
+                          <X className="w-4 h-4 text-destructive" />
                           <span className="text-sm">무제한 영상 훈련 이용 불가</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <X className="w-4 h-4 text-red-500" />
+                          <X className="w-4 h-4 text-destructive" />
                           <span className="text-sm">1:1 전문가 상담 이용 불가</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <X className="w-4 h-4 text-red-500" />
+                          <X className="w-4 h-4 text-destructive" />
                           <span className="text-sm">AI 분석 리포트 이용 불가</span>
                         </div>
                       </div>

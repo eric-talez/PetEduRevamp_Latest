@@ -285,14 +285,14 @@ export default function ContentCrawler() {
   // 카테고리별 색상 매핑
   const getCategoryColor = (category: string) => {
     const colors = {
-      '건강정보': 'bg-red-100 text-red-800',
-      '훈련교육': 'bg-blue-100 text-blue-800',
+      '건강정보': 'bg-destructive/10 text-destructive',
+      '훈련교육': 'bg-primary/10 text-primary',
       '행동분석': 'bg-primary/10 text-primary',
-      '생활정보': 'bg-green-100 text-green-800',
+      '생활정보': 'bg-success/10 text-success',
       '미용관리': 'bg-secondary/15 text-primary',
-      '법률정보': 'bg-yellow-100 text-yellow-800',
-      '여행정보': 'bg-indigo-100 text-indigo-800',
-      '입양분양': 'bg-orange-100 text-orange-800',
+      '법률정보': 'bg-warning/10 text-warning',
+      '여행정보': 'bg-primary/10 text-primary',
+      '입양분양': 'bg-primary/10 text-primary',
       '품종정보': 'bg-secondary/15 text-secondary-foreground',
       '일반정보': 'bg-gray-100 text-gray-800'
     };
@@ -452,7 +452,7 @@ export default function ContentCrawler() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-success" />
               크롤링 결과 ({results.length}개)
               {foundArticles > 0 && (
                 <Badge variant="secondary" className="ml-2">
@@ -516,7 +516,7 @@ export default function ContentCrawler() {
                         href={content.sourceUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                        className="flex items-center gap-1 text-primary hover:text-primary/90"
                       >
                         <ExternalLink className="h-3 w-3" />
                         원문 보기
@@ -541,8 +541,8 @@ export default function ContentCrawler() {
               
               {/* 발견된 기사 목록 표시 */}
               {allArticleUrls.length > 0 && (
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <div className="mt-6 p-4 bg-primary/10 rounded-lg">
+                  <h4 className="font-semibold text-primary mb-3 flex items-center gap-2">
                     <Globe className="h-4 w-4" />
                     발견된 반려견 관련 기사 ({allArticleUrls.length}개)
                   </h4>
@@ -574,7 +574,7 @@ export default function ContentCrawler() {
                             href={url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                            className="flex items-center gap-1 text-primary hover:text-primary/90 text-sm"
                           >
                             <ExternalLink className="h-3 w-3" />
                             기사 보기
@@ -583,7 +583,7 @@ export default function ContentCrawler() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 text-xs text-blue-700">
+                  <div className="mt-3 text-xs text-primary">
                     💡 언론사 페이지에서 자동으로 발견한 반려견 관련 기사들입니다. 각 기사를 개별적으로 크롤링하려면 단일 URL 탭에서 해당 기사 링크를 입력하세요.
                   </div>
                 </div>

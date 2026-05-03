@@ -151,13 +151,13 @@ export default function AdminCourses() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-blue-100 text-blue-800">진행중</Badge>;
+        return <Badge className="bg-primary/10 text-primary">진행중</Badge>;
       case 'recruiting':
-        return <Badge className="bg-green-100 text-green-800">모집중</Badge>;
+        return <Badge className="bg-success/10 text-success">모집중</Badge>;
       case 'completed':
         return <Badge className="bg-gray-100 text-gray-800">완료</Badge>;
       case 'cancelled':
-        return <Badge className="bg-red-100 text-red-800">취소</Badge>;
+        return <Badge className="bg-destructive/10 text-destructive">취소</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -165,9 +165,9 @@ export default function AdminCourses() {
 
   const getLevelBadge = (level: string) => {
     const colors = {
-      '초급': 'bg-green-50 text-green-700 border-green-200',
-      '중급': 'bg-yellow-50 text-yellow-700 border-yellow-200',
-      '고급': 'bg-red-50 text-red-700 border-red-200'
+      '초급': 'bg-success/10 text-success border-success/30',
+      '중급': 'bg-warning/10 text-warning border-warning/30',
+      '고급': 'bg-destructive/10 text-destructive border-destructive/30'
     };
     return <Badge variant="outline" className={colors[level as keyof typeof colors]}>{level}</Badge>;
   };
@@ -494,7 +494,7 @@ export default function AdminCourses() {
                     onClick={() => {
                       console.log('강좌 편집:', course.title);
                     }}
-                    className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200"
+                    className="hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all duration-200"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -504,7 +504,7 @@ export default function AdminCourses() {
                     onClick={() => {
                       console.log('강좌 삭제:', course.title);
                     }}
-                    className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 hover:border-red-400 transition-all duration-200"
+                    className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive/90 hover:border-destructive/40 transition-all duration-200"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

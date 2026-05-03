@@ -185,10 +185,10 @@ export default function MyPoints() {
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'review': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'consultation': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'review': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/70';
+      case 'consultation': return 'bg-success/10 text-success dark:bg-success/20 dark:text-success/70';
       case 'course': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground';
-      case 'community': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'community': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/70';
       case 'referral': return 'bg-secondary/15 text-primary dark:bg-secondary/20 dark:text-secondary-foreground';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
@@ -196,9 +196,9 @@ export default function MyPoints() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'processing': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'completed': return 'bg-success/10 text-success dark:bg-success/20 dark:text-success/70';
+      case 'pending': return 'bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning/70';
+      case 'processing': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/70';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
@@ -236,7 +236,7 @@ export default function MyPoints() {
           <p className="text-gray-600 dark:text-gray-400">활동 포인트를 확인하고 보상을 받아보세요</p>
         </div>
         {data.ranking.isStarTrainer && (
-          <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+          <Badge className="bg-gradient-to-r from-primary to-secondary text-white">
             <Crown className="w-4 h-4 mr-1" />
             Star Trainer
           </Badge>
@@ -245,14 +245,14 @@ export default function MyPoints() {
 
       {/* 포인트 현황 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-blue-500 to-primary text-white">
+        <Card className="bg-gradient-to-r from-primary to-secondary text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100">현재 포인트</p>
+                <p className="text-primary/70">현재 포인트</p>
                 <p className="text-3xl font-bold">{data.currentPoints.toLocaleString()}</p>
               </div>
-              <Star className="w-8 h-8 text-yellow-300" />
+              <Star className="w-8 h-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -262,9 +262,9 @@ export default function MyPoints() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">총 획득 포인트</p>
-                <p className="text-2xl font-bold text-green-600">{data.totalEarned.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-success">{data.totalEarned.toLocaleString()}</p>
               </div>
-              <TrendingUp className="w-8 h-8 text-green-500" />
+              <TrendingUp className="w-8 h-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -286,10 +286,10 @@ export default function MyPoints() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">전체 순위</p>
-                <p className="text-2xl font-bold text-orange-600">{data.ranking.currentRank}위</p>
+                <p className="text-2xl font-bold text-primary">{data.ranking.currentRank}위</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">상위 {(100 - data.ranking.percentile).toFixed(1)}%</p>
               </div>
-              <Trophy className="w-8 h-8 text-orange-500" />
+              <Trophy className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -365,7 +365,7 @@ export default function MyPoints() {
                         {activity.status === 'completed' && <CheckCircle className="w-3 h-3 mr-1" />}
                         {getStatusText(activity.status)}
                       </Badge>
-                      <span className="font-bold text-blue-600 dark:text-blue-400">
+                      <span className="font-bold text-primary dark:text-primary">
                         +{activity.points}P
                       </span>
                     </div>
@@ -390,7 +390,7 @@ export default function MyPoints() {
                 {data.achievements.map((achievement) => (
                   <div key={achievement.id} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${achievement.isCompleted ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                      <div className={`p-2 rounded-full ${achievement.isCompleted ? 'bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning/70' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
                         <Trophy className="w-4 h-4" />
                       </div>
                       <div className="flex-1">
@@ -407,7 +407,7 @@ export default function MyPoints() {
                     </div>
                     <div className="text-right">
                       {achievement.isCompleted ? (
-                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                        <Badge className="bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning/70">
                           <Crown className="w-3 h-3 mr-1" />
                           달성완료
                         </Badge>
@@ -438,18 +438,18 @@ export default function MyPoints() {
                 {data.rewards.map((reward) => (
                   <div key={reward.id} className="border rounded-lg p-4 dark:border-gray-700">
                     <div className="aspect-video bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 rounded-lg mb-3 flex items-center justify-center">
-                      <Gift className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                      <Gift className="w-8 h-8 text-primary dark:text-primary" />
                     </div>
                     <h3 className="font-medium mb-1">{reward.title}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{reward.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-blue-600 dark:text-blue-400">
+                      <span className="font-bold text-primary dark:text-primary">
                         {reward.pointsCost.toLocaleString()}P
                       </span>
                       <Button 
                         size="sm" 
                         disabled={!reward.available || data.currentPoints < reward.pointsCost}
-                        className="bg-gradient-to-r from-blue-500 to-primary hover:from-blue-600 hover:to-primary/90"
+                        className="bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-primary/90"
                       >
                         {data.currentPoints < reward.pointsCost ? '포인트 부족' : '교환하기'}
                       </Button>
@@ -472,7 +472,7 @@ export default function MyPoints() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-orange-400 to-red-500 rounded-full mb-4">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-primary to-secondary rounded-full mb-4">
                   <span className="text-2xl font-bold text-white">{data.ranking.currentRank}</span>
                 </div>
                 <h3 className="text-2xl font-bold mb-2">전체 {data.ranking.currentRank}위</h3>
@@ -480,22 +480,22 @@ export default function MyPoints() {
                   총 {data.ranking.totalTrainers}명 중 상위 {(100 - data.ranking.percentile).toFixed(1)}%
                 </p>
                 <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <p className="text-sm text-blue-600 dark:text-blue-400">현재 포인트</p>
+                  <div className="p-3 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                    <p className="text-sm text-primary dark:text-primary">현재 포인트</p>
                     <p className="text-lg font-bold">{data.currentPoints.toLocaleString()}</p>
                   </div>
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <p className="text-sm text-green-600 dark:text-green-400">이달 포인트</p>
+                  <div className="p-3 bg-success/10 dark:bg-success/20 rounded-lg">
+                    <p className="text-sm text-success dark:text-success">이달 포인트</p>
                     <p className="text-lg font-bold">{data.monthlyPoints.toLocaleString()}</p>
                   </div>
                 </div>
                 {!data.ranking.isStarTrainer && (
-                  <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <div className="mt-6 p-4 bg-warning/10 dark:bg-warning/20 rounded-lg">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <Crown className="w-5 h-5 text-yellow-600" />
-                      <span className="font-medium text-yellow-800 dark:text-yellow-200">Star Trainer 도전</span>
+                      <Crown className="w-5 h-5 text-warning" />
+                      <span className="font-medium text-warning dark:text-warning/70">Star Trainer 도전</span>
                     </div>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    <p className="text-sm text-warning dark:text-warning">
                       상위 10% 진입으로 Star Trainer가 되어보세요!
                     </p>
                   </div>

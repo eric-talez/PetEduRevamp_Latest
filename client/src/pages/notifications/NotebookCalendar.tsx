@@ -109,7 +109,7 @@ export function NotebookCalendar({
                 Math.floor(dayIdx / 7) === Math.floor(days.length / 7) - 1 && "border-b",
                 !isCurrentMonth && "text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800/50",
                 isSelectedDay && "bg-primary/10 font-semibold",
-                isToday(day) && !isSelectedDay && "bg-amber-50 dark:bg-amber-900/10"
+                isToday(day) && !isSelectedDay && "bg-warning/10 dark:bg-warning/10"
               )}
             >
               <time
@@ -124,12 +124,12 @@ export function NotebookCalendar({
               
               {entryCount > 0 && (
                 <div className="mt-auto flex items-center justify-between">
-                  <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1 rounded">
+                  <span className="text-[10px] bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary px-1 rounded">
                     {entryCount}개
                   </span>
                   
                   {hasImportant && (
-                    <AlertCircle className="h-3 w-3 text-amber-500" />
+                    <AlertCircle className="h-3 w-3 text-warning" />
                   )}
                 </div>
               )}

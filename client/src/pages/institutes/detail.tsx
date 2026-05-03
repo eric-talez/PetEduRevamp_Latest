@@ -721,7 +721,7 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <Star className="h-5 w-5 fill-warning text-warning" />
               <span className="font-medium">{calculateAverageRating()}</span>
               <span className="text-gray-300">({instituteReviews.length})</span>
             </div>
@@ -819,14 +819,14 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
                   
                   <Button 
                     variant="outline" 
-                    className="w-full mt-4 bg-gradient-to-r from-primary/5 to-secondary/5 hover:from-primary/10 hover:to-secondary/10 border-primary/20 hover:border-primary/40 text-primary hover:text-primary font-medium transition-all duration-200"
+                    className="w-full mt-4 bg-gradient-to-r from-primary/5 to-secondary/5 hover:from-primary/10 hover:to-secondary/10 border-primary/20 hover:border-primary/40 text-primary hover:text-primary/90 font-medium transition-all duration-200"
                     onClick={() => setActiveTab('trainers')}
                   >
                     <Users className="h-4 w-4 mr-2" />
                     모든 훈련사 보기
                   </Button>
 
-                  <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800 mt-4">
+                  <div className="bg-primary/10 p-3 rounded-lg text-sm text-primary mt-4">
                     <div className="font-medium mb-1">📍 예약 안내</div>
                     <ul className="space-y-1 text-xs">
                       <li>• 예약 신청 후 24시간 내 훈련사가 직접 연락드립니다</li>
@@ -862,7 +862,7 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
                               <p className="text-gray-600">경력 {trainer.experience}년</p>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                              <Star className="h-4 w-4 fill-warning text-warning" />
                               <span className="font-medium">{trainer.rating}</span>
                               <span className="text-gray-500 text-sm">({trainer.reviewCount})</span>
                             </div>
@@ -987,7 +987,7 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
                                   key={star} 
                                   className={`h-4 w-4 ${
                                     star <= review.rating 
-                                      ? 'fill-yellow-400 text-yellow-400' 
+                                      ? 'fill-warning text-warning' 
                                       : 'text-gray-300'
                                   }`} 
                                 />
@@ -1222,7 +1222,7 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
               />
             </div>
 
-            <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
+            <div className="bg-primary/10 p-3 rounded-lg text-sm text-primary">
               <div className="font-medium mb-1">📍 예약 안내</div>
               <ul className="space-y-1 text-xs">
                 <li>• 예약 신청 후 24시간 내 훈련사가 직접 연락드립니다</li>
@@ -1264,9 +1264,9 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
                 return (
                   <>
                     {/* 자격증 설명 */}
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-blue-900 mb-2">자격증 개요</h4>
-                      <p className="text-blue-800 text-sm leading-relaxed">
+                    <div className="bg-primary/10 p-4 rounded-lg">
+                      <h4 className="font-medium text-primary mb-2">자격증 개요</h4>
+                      <p className="text-primary text-sm leading-relaxed">
                         {certInfo.description}
                       </p>
                     </div>
@@ -1291,15 +1291,15 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
                     </div>
 
                     {/* 취득 요건 */}
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-green-900 mb-3 flex items-center gap-2">
+                    <div className="bg-success/10 p-4 rounded-lg">
+                      <h4 className="font-medium text-success mb-3 flex items-center gap-2">
                         <Award className="h-4 w-4" />
                         취득 요건
                       </h4>
                       <ul className="space-y-2">
                         {certInfo.requirements.map((requirement, index) => (
-                          <li key={index} className="flex items-start gap-2 text-green-800 text-sm">
-                            <span className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                          <li key={index} className="flex items-start gap-2 text-success text-sm">
+                            <span className="w-1.5 h-1.5 bg-success rounded-full mt-2 flex-shrink-0"></span>
                             <span>{requirement}</span>
                           </li>
                         ))}
@@ -1307,8 +1307,8 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
                     </div>
 
                     {/* 신뢰도 지표 */}
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-yellow-900 mb-2 flex items-center gap-2">
+                    <div className="bg-warning/10 p-4 rounded-lg">
+                      <h4 className="font-medium text-warning mb-2 flex items-center gap-2">
                         <Star className="h-4 w-4" />
                         자격증 신뢰도
                       </h4>
@@ -1321,12 +1321,12 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
                                selectedCertification?.includes('KKF') ||
                                selectedCertification?.includes('CCPDT') ||
                                selectedCertification?.includes('FCI')) 
-                                ? 'fill-yellow-400 text-yellow-400' 
-                                : star <= 4 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                ? 'fill-warning text-warning' 
+                                : star <= 4 ? 'fill-warning text-warning' : 'text-gray-300'
                             }`} 
                           />
                         ))}
-                        <span className="text-sm text-yellow-800 ml-2">
+                        <span className="text-sm text-warning ml-2">
                           {(selectedCertification?.includes('국가자격') || 
                             selectedCertification?.includes('KKF') ||
                             selectedCertification?.includes('CCPDT') ||
@@ -1364,7 +1364,7 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <Star className="h-6 w-6 text-yellow-500" />
+              <Star className="h-6 w-6 text-warning" />
               <div>
                 <div className="font-semibold">후기 작성</div>
                 <div className="text-sm text-gray-500 font-normal">{institute?.name}</div>
@@ -1392,8 +1392,8 @@ export default function InstituteDetail({ instituteId }: InstituteDetailProps) {
                     key={star}
                     className={`h-6 w-6 cursor-pointer transition-colors ${
                       star <= reviewForm.rating 
-                        ? 'fill-yellow-400 text-yellow-400' 
-                        : 'text-gray-300 hover:text-yellow-200'
+                        ? 'fill-warning text-warning' 
+                        : 'text-gray-300 hover:text-warning/70'
                     }`}
                     onClick={() => setReviewForm(prev => ({ ...prev, rating: star }))}
                   />

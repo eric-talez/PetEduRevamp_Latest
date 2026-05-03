@@ -309,7 +309,7 @@ export default function Cart() {
           </p>
           <Button 
             onClick={continueShopping}
-            className="bg-[#03c75a] hover:bg-[#02b04a] text-white"
+            className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white"
           >
             <ShoppingBag className="mr-2 h-5 w-5" />
             테일즈 샵 계속하기
@@ -584,7 +584,7 @@ export default function Cart() {
                 {discountTotal > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">할인 금액</span>
-                    <span className="text-red-600">-{discountTotal.toLocaleString()}원</span>
+                    <span className="text-destructive">-{discountTotal.toLocaleString()}원</span>
                   </div>
                 )}
                 
@@ -612,7 +612,7 @@ export default function Cart() {
             
             <CardFooter className="flex-col gap-4">
               <Button 
-                className="w-full bg-[#03c75a] hover:bg-[#02b04a] text-white"
+                className="w-full bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white"
                 onClick={proceedToCheckout}
                 disabled={selectedItems.length === 0}
               >

@@ -88,10 +88,10 @@ export default function NotebookMonitorPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'sent': return 'bg-blue-500';
-      case 'read': return 'bg-green-500';
+      case 'sent': return 'bg-primary';
+      case 'read': return 'bg-success';
       case 'replied': return 'bg-primary/50';
-      case 'draft': return 'bg-yellow-500';
+      case 'draft': return 'bg-warning';
       default: return 'bg-gray-500';
     }
   };
@@ -334,8 +334,8 @@ export default function NotebookMonitorPage() {
               <div key={trainer.trainerId} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5 text-blue-600" />
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold">{trainer.trainerName}</h3>
@@ -354,11 +354,11 @@ export default function NotebookMonitorPage() {
                 
                 <div className="grid grid-cols-3 gap-4 mb-3">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{trainer.totalJournals}</div>
+                    <div className="text-2xl font-bold text-primary">{trainer.totalJournals}</div>
                     <div className="text-sm text-gray-600">총 알림장</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{trainer.sentJournals}</div>
+                    <div className="text-2xl font-bold text-success">{trainer.sentJournals}</div>
                     <div className="text-sm text-gray-600">전송됨</div>
                   </div>
                   <div className="text-center">
@@ -410,7 +410,7 @@ export default function NotebookMonitorPage() {
                     <CardTitle className="text-sm">전송됨</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">{selectedTrainer.sentJournals}</div>
+                    <div className="text-2xl font-bold text-success">{selectedTrainer.sentJournals}</div>
                   </CardContent>
                 </Card>
                 <Card>

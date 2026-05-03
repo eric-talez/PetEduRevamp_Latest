@@ -240,10 +240,10 @@ export default function VaccinationSchedulePage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'overdue': return <AlertCircle className="w-4 h-4 text-red-600" />;
+      case 'completed': return <CheckCircle className="w-4 h-4 text-success" />;
+      case 'overdue': return <AlertCircle className="w-4 h-4 text-destructive" />;
       case 'cancelled': return <Ban className="w-4 h-4 text-gray-600" />;
-      default: return <Clock className="w-4 h-4 text-blue-600" />;
+      default: return <Clock className="w-4 h-4 text-primary" />;
     }
   };
 
@@ -405,11 +405,11 @@ export default function VaccinationSchedulePage() {
                           </div>
                           
                           {selectedHospital && (
-                            <div className="mb-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-                              <p className="font-medium text-green-900 dark:text-green-100">{selectedHospital.name}</p>
-                              <p className="text-sm text-green-700 dark:text-green-300">{selectedHospital.address}</p>
+                            <div className="mb-3 p-3 bg-success/10 dark:bg-success/20 border border-success/30 dark:border-success/50 rounded-lg">
+                              <p className="font-medium text-success dark:text-success/70">{selectedHospital.name}</p>
+                              <p className="text-sm text-success dark:text-success">{selectedHospital.address}</p>
                               {selectedHospital.phone && (
-                                <p className="text-sm text-green-700 dark:text-green-300">{selectedHospital.phone}</p>
+                                <p className="text-sm text-success dark:text-success">{selectedHospital.phone}</p>
                               )}
                             </div>
                           )}
@@ -591,7 +591,7 @@ export default function VaccinationSchedulePage() {
                           <div 
                             key={vaccination.id} 
                             className={`p-4 border rounded-lg ${
-                              daysUntil <= 7 ? 'border-red-300 bg-red-50 dark:bg-red-950' : 'border-yellow-300 bg-yellow-50 dark:bg-yellow-950'
+                              daysUntil <= 7 ? 'border-destructive/40 bg-destructive/10 dark:bg-destructive/20' : 'border-warning/40 bg-warning/10 dark:bg-warning/20'
                             }`}
                             data-testid={`upcoming-vaccination-${vaccination.id}`}
                           >

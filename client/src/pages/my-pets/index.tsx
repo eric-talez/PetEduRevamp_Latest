@@ -13,11 +13,11 @@ import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/ImageUpload';
 
 const TEMPERAMENT_BADGE: Record<string, { label: string; color: string }> = {
-  A: { label: 'A - 사회성 양호', color: 'bg-green-100 text-green-800' },
-  B: { label: 'B - 흥분 조절', color: 'bg-blue-100 text-blue-800' },
-  C: { label: 'C - 짖음/경계', color: 'bg-yellow-100 text-yellow-800' },
-  D: { label: 'D - 공격성 주의', color: 'bg-orange-100 text-orange-800' },
-  E: { label: 'E - 분리불안', color: 'bg-red-100 text-red-800' },
+  A: { label: 'A - 사회성 양호', color: 'bg-success/10 text-success' },
+  B: { label: 'B - 흥분 조절', color: 'bg-primary/10 text-primary' },
+  C: { label: 'C - 짖음/경계', color: 'bg-warning/10 text-warning' },
+  D: { label: 'D - 공격성 주의', color: 'bg-primary/10 text-primary' },
+  E: { label: 'E - 분리불안', color: 'bg-destructive/10 text-destructive' },
 };
 
 interface Pet {
@@ -378,7 +378,7 @@ export default function MyPetsPage() {
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNewPetDialog} variant="outline" className="flex items-center gap-2 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition-all duration-200">
+            <Button onClick={openNewPetDialog} variant="outline" className="flex items-center gap-2 text-success border-success/40 hover:bg-success/10 hover:text-success/90 hover:border-success/40 transition-all duration-200">
               <Plus className="w-4 h-4" />
               반려동물 등록
             </Button>
@@ -457,7 +457,7 @@ export default function MyPetsPage() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-sm text-green-600 font-medium">이미지가 업로드되었습니다</p>
+                        <p className="text-sm text-success font-medium">이미지가 업로드되었습니다</p>
                         <Button
                           type="button"
                           variant="outline"
@@ -654,7 +654,7 @@ export default function MyPetsPage() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   취소
                 </Button>
-                <Button type="submit" variant="outline" className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200">
+                <Button type="submit" variant="outline" className="text-primary border-primary/40 hover:bg-primary/10 hover:text-primary/90 hover:border-primary/40 transition-all duration-200">
                   {editingPet ? '수정' : '등록'}
                 </Button>
               </div>
@@ -669,7 +669,7 @@ export default function MyPetsPage() {
             <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">등록된 반려동물이 없습니다</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">첫 번째 반려동물을 등록해보세요!</p>
-            <Button onClick={openNewPetDialog} variant="outline" className="text-green-600 border-green-300 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition-all duration-200">
+            <Button onClick={openNewPetDialog} variant="outline" className="text-success border-success/40 hover:bg-success/10 hover:text-success/90 hover:border-success/40 transition-all duration-200">
               <Plus className="w-4 h-4 mr-2" />
               반려동물 등록
             </Button>
@@ -680,7 +680,7 @@ export default function MyPetsPage() {
           {pets.map((pet) => (
             <Card key={pet.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               {/* 반려동물 프로필 이미지 - 맨 위로 이동 */}
-              <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-blue-50 to-primary/5 relative">
+              <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-primary to-secondary/5 relative">
                 {pet.imageUrl ? (
                   <img 
                     src={pet.imageUrl} 
@@ -700,10 +700,10 @@ export default function MyPetsPage() {
                 
                 {/* 수정/삭제 버튼을 이미지 위에 오버레이로 배치 */}
                 <div className="absolute top-2 right-2 flex gap-1">
-                  <Button size="sm" variant="outline" className="w-8 h-8 p-0 text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200" onClick={() => handleEdit(pet)}>
+                  <Button size="sm" variant="outline" className="w-8 h-8 p-0 text-primary border-primary/40 hover:bg-primary/10 hover:text-primary/90 hover:border-primary/40 transition-all duration-200" onClick={() => handleEdit(pet)}>
                     <Edit className="w-3 h-3" />
                   </Button>
-                  <Button size="sm" variant="outline" className="w-8 h-8 p-0 text-red-600 border-red-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all duration-200" onClick={() => handleDelete(pet.id)}>
+                  <Button size="sm" variant="outline" className="w-8 h-8 p-0 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive/90 hover:border-destructive/40 transition-all duration-200" onClick={() => handleDelete(pet.id)}>
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>

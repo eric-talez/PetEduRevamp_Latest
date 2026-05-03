@@ -210,15 +210,15 @@ export default function AccountRegisterPage() {
         </CardHeader>
         <CardContent>
           {isVerified ? (
-            <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800">
+            <div className="bg-success/10 dark:bg-success/30 rounded-lg p-4 border border-success/30 dark:border-success/50">
               <div className="flex items-start">
-                <UserCheck className="h-5 w-5 text-green-600 dark:text-green-400 mr-3 mt-0.5" />
+                <UserCheck className="h-5 w-5 text-success dark:text-success mr-3 mt-0.5" />
                 <div>
-                  <p className="font-medium text-green-800 dark:text-green-400">본인인증 완료</p>
-                  <p className="text-sm text-green-700 dark:text-green-500 mt-1">
+                  <p className="font-medium text-success dark:text-success">본인인증 완료</p>
+                  <p className="text-sm text-success dark:text-success mt-1">
                     {verificationData?.name} 님의 본인인증이 완료되었습니다.
                   </p>
-                  <div className="mt-2 text-xs text-green-600 dark:text-green-500 grid grid-cols-2 gap-x-4 gap-y-1">
+                  <div className="mt-2 text-xs text-success dark:text-success grid grid-cols-2 gap-x-4 gap-y-1">
                     <div>생년월일: {verificationData?.birth}</div>
                     <div>휴대폰: {verificationData?.phone}</div>
                   </div>
@@ -374,12 +374,12 @@ export default function AccountRegisterPage() {
                 )}
               />
               
-              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 border border-amber-200 dark:border-amber-800 text-sm space-y-2">
-                <p className="flex items-center text-amber-800 dark:text-amber-500 font-medium">
+              <div className="bg-warning/10 dark:bg-warning/30 rounded-lg p-4 border border-warning/30 dark:border-warning/50 text-sm space-y-2">
+                <p className="flex items-center text-warning dark:text-warning font-medium">
                   <LockIcon className="h-4 w-4 mr-2" />
                   계좌 등록 시 유의사항
                 </p>
-                <ul className="list-disc list-inside text-amber-700 dark:text-amber-500 pl-1 space-y-1">
+                <ul className="list-disc list-inside text-warning dark:text-warning pl-1 space-y-1">
                   <li>본인 명의의 계좌만 등록 가능합니다.</li>
                   <li>정산금은 매월 15일에 등록된 계좌로 지급됩니다.</li>
                   <li>사업자 계좌로 등록 시 세금계산서 발행이 필요합니다.</li>

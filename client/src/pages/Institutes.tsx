@@ -95,7 +95,7 @@ export default function Institutes() {
                     
                     <div className="flex items-center">
                       <div className="flex items-center mr-1">
-                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        <Star className="w-4 h-4 text-warning fill-warning" />
                         <span className="text-sm font-medium ml-1">{institute.rating}</span>
                       </div>
                       <span className="text-xs text-gray-500 dark:text-gray-400">({institute.reviewCount} 리뷰)</span>

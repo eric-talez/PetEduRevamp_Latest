@@ -152,7 +152,7 @@ export default function ChatbotPage() {
                           <User className="w-4 h-4 text-white" />
                         </div>
                       ) : (
-                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center">
                           <Bot className="w-4 h-4 text-white" />
                         </div>
                       )}
@@ -177,7 +177,7 @@ export default function ChatbotPage() {
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="flex">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mx-2">
+                    <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center mx-2">
                       <Bot className="w-4 h-4 text-white" />
                     </div>
                     <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg">
@@ -236,7 +236,7 @@ export default function ChatbotPage() {
 
         {/* CTA for non-authenticated users */}
         {!isAuthenticated && (
-          <Card className="mt-4 p-6 text-center bg-gradient-to-r from-primary/5 to-blue-500/5">
+          <Card className="mt-4 p-6 text-center bg-gradient-to-r from-primary/5 to-secondary/5">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
               더 전문적인 상담이 필요하시나요?
             </h3>

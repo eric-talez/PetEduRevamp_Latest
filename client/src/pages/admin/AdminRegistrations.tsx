@@ -226,7 +226,7 @@ export default function AdminRegistrations() {
           <Button 
             onClick={handleClearProcessed}
             variant="outline"
-            className="border-red-300 text-red-600 hover:bg-red-50"
+            className="border-destructive/40 text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             처리 완료된 신청 초기화 (승인: {stats.approved}, 거부: {stats.rejected})
@@ -241,9 +241,9 @@ export default function AdminRegistrations() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">대기 중</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
+                <p className="text-2xl font-bold text-primary">{stats.pending}</p>
               </div>
-              <Clock className="w-8 h-8 text-orange-600" />
+              <Clock className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -253,9 +253,9 @@ export default function AdminRegistrations() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">승인됨</p>
-                <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+                <p className="text-2xl font-bold text-success">{stats.approved}</p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <CheckCircle className="w-8 h-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -265,9 +265,9 @@ export default function AdminRegistrations() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">거부됨</p>
-                <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+                <p className="text-2xl font-bold text-destructive">{stats.rejected}</p>
               </div>
-              <XCircle className="w-8 h-8 text-red-600" />
+              <XCircle className="w-8 h-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -277,9 +277,9 @@ export default function AdminRegistrations() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">전체</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
+                <p className="text-2xl font-bold text-primary">{stats.total}</p>
               </div>
-              <FileText className="w-8 h-8 text-blue-600" />
+              <FileText className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -293,7 +293,7 @@ export default function AdminRegistrations() {
               onClick={() => setActiveTab('all')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'all'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  ? 'border-primary/50 text-primary dark:text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -303,7 +303,7 @@ export default function AdminRegistrations() {
               onClick={() => setActiveTab('pending')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'pending'
-                  ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                  ? 'border-primary/50 text-primary dark:text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -313,7 +313,7 @@ export default function AdminRegistrations() {
               onClick={() => setActiveTab('approved')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'approved'
-                  ? 'border-green-500 text-green-600 dark:text-green-400'
+                  ? 'border-success/50 text-success dark:text-success'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -323,7 +323,7 @@ export default function AdminRegistrations() {
               onClick={() => setActiveTab('rejected')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'rejected'
-                  ? 'border-red-500 text-red-600 dark:text-red-400'
+                  ? 'border-destructive/50 text-destructive dark:text-destructive'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -365,10 +365,10 @@ export default function AdminRegistrations() {
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         {application.type === 'trainer' ? 
-                          <User className="w-6 h-6 text-blue-600" /> : 
+                          <User className="w-6 h-6 text-primary" /> : 
                           application.type === 'institute' ?
                           <Building className="w-6 h-6 text-primary" /> :
-                          <FileText className="w-6 h-6 text-green-600" />
+                          <FileText className="w-6 h-6 text-success" />
                         }
                         <div>
                           <h3 className="font-semibold">
@@ -565,7 +565,7 @@ function ApplicationDetails({ application, reviewNotes, setReviewNotes, onReview
             {application.status !== 'approved' && (
               <Button 
                 onClick={() => onReview(application.id, 'approved')}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-success hover:bg-success/90"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
                 승인
@@ -583,7 +583,7 @@ function ApplicationDetails({ application, reviewNotes, setReviewNotes, onReview
             <Button 
               onClick={() => onReview(application.id, 'pending')}
               variant="outline"
-              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              className="border-primary/50 text-primary hover:bg-primary/10"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               초기화 (대기중으로 변경)

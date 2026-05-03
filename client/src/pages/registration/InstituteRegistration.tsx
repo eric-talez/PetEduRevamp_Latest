@@ -336,7 +336,7 @@ export default function InstituteRegistration() {
                       placeholder="서울 펫 트레이닝 센터"
                     />
                     {form.formState.errors.basicInfo?.instituteName && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.basicInfo.instituteName.message}
                       </p>
                     )}
@@ -350,7 +350,7 @@ export default function InstituteRegistration() {
                       placeholder="000-00-00000"
                     />
                     {form.formState.errors.basicInfo?.businessNumber && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.basicInfo.businessNumber.message}
                       </p>
                     )}
@@ -366,7 +366,7 @@ export default function InstituteRegistration() {
                       placeholder="홍길동"
                     />
                     {form.formState.errors.basicInfo?.representativeName && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.basicInfo.representativeName.message}
                       </p>
                     )}
@@ -381,7 +381,7 @@ export default function InstituteRegistration() {
                       type="number"
                     />
                     {form.formState.errors.basicInfo?.establishedYear && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.basicInfo.establishedYear.message}
                       </p>
                     )}
@@ -398,7 +398,7 @@ export default function InstituteRegistration() {
                       placeholder="info@institute.com"
                     />
                     {form.formState.errors.basicInfo?.email && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.basicInfo.email.message}
                       </p>
                     )}
@@ -412,7 +412,7 @@ export default function InstituteRegistration() {
                       placeholder="02-123-4567"
                     />
                     {form.formState.errors.basicInfo?.phone && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.basicInfo.phone.message}
                       </p>
                     )}
@@ -449,7 +449,7 @@ export default function InstituteRegistration() {
                     placeholder="서울시 강남구 테헤란로 123"
                   />
                   {form.formState.errors.locationInfo?.address && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.locationInfo.address.message}
                     </p>
                   )}
@@ -473,7 +473,7 @@ export default function InstituteRegistration() {
                     rows={3}
                   />
                   {form.formState.errors.locationInfo?.accessInfo && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.locationInfo.accessInfo.message}
                     </p>
                   )}
@@ -499,7 +499,7 @@ export default function InstituteRegistration() {
                       type="number"
                     />
                     {form.formState.errors.facilityInfo?.totalArea && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.facilityInfo.totalArea.message}
                       </p>
                     )}
@@ -514,7 +514,7 @@ export default function InstituteRegistration() {
                       type="number"
                     />
                     {form.formState.errors.facilityInfo?.classrooms && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.facilityInfo.classrooms.message}
                       </p>
                     )}
@@ -529,7 +529,7 @@ export default function InstituteRegistration() {
                       type="number"
                     />
                     {form.formState.errors.facilityInfo?.capacity && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.facilityInfo.capacity.message}
                       </p>
                     )}
@@ -560,7 +560,7 @@ export default function InstituteRegistration() {
                     </div>
                   )}
                   {form.formState.errors.facilityInfo?.facilities && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.facilityInfo.facilities.message}
                     </p>
                   )}
@@ -621,7 +621,7 @@ export default function InstituteRegistration() {
                     </div>
                   )}
                   {form.formState.errors.serviceInfo?.serviceTypes && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.serviceInfo.serviceTypes.message}
                     </p>
                   )}
@@ -651,7 +651,7 @@ export default function InstituteRegistration() {
                     </div>
                   )}
                   {form.formState.errors.serviceInfo?.targetAudience && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.serviceInfo.targetAudience.message}
                     </p>
                   )}
@@ -668,7 +668,7 @@ export default function InstituteRegistration() {
                         placeholder="09:00 - 18:00"
                       />
                       {form.formState.errors.serviceInfo?.operatingHours?.weekdays && (
-                        <p className="text-sm text-red-500 mt-1">
+                        <p className="text-sm text-destructive mt-1">
                           {form.formState.errors.serviceInfo.operatingHours.weekdays.message}
                         </p>
                       )}
@@ -682,7 +682,7 @@ export default function InstituteRegistration() {
                         placeholder="10:00 - 17:00"
                       />
                       {form.formState.errors.serviceInfo?.operatingHours?.weekends && (
-                        <p className="text-sm text-red-500 mt-1">
+                        <p className="text-sm text-destructive mt-1">
                           {form.formState.errors.serviceInfo.operatingHours.weekends.message}
                         </p>
                       )}
@@ -708,7 +708,7 @@ export default function InstituteRegistration() {
                     rows={5}
                   />
                   {form.formState.errors.serviceInfo?.description && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.serviceInfo.description.message}
                     </p>
                   )}
@@ -737,7 +737,7 @@ export default function InstituteRegistration() {
                       type="number"
                     />
                     {form.formState.errors.staffInfo?.totalStaff && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.staffInfo.totalStaff.message}
                       </p>
                     )}
@@ -752,7 +752,7 @@ export default function InstituteRegistration() {
                       type="number"
                     />
                     {form.formState.errors.staffInfo?.certifiedTrainers && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.staffInfo.certifiedTrainers.message}
                       </p>
                     )}
@@ -809,7 +809,7 @@ export default function InstituteRegistration() {
                       <span className="text-sm text-gray-600">사업자 등록증 업로드</span>
                     </label>
                     {uploadedFiles.businessLicense && (
-                      <div className="mt-2 text-sm text-green-600">
+                      <div className="mt-2 text-sm text-success">
                         {uploadedFiles.businessLicense.name}
                       </div>
                     )}
@@ -836,7 +836,7 @@ export default function InstituteRegistration() {
                       <div className="mt-2 space-y-1">
                         {uploadedFiles.facilityImages.map((file, index) => (
                           <div key={index} className="flex items-center justify-between text-sm">
-                            <span className="text-green-600">{file.name}</span>
+                            <span className="text-success">{file.name}</span>
                             <Button
                               type="button"
                               variant="ghost"
@@ -872,7 +872,7 @@ export default function InstituteRegistration() {
                       <div className="mt-2 space-y-1">
                         {uploadedFiles.certificationDocs.map((file, index) => (
                           <div key={index} className="flex items-center justify-between text-sm">
-                            <span className="text-green-600">{file.name}</span>
+                            <span className="text-success">{file.name}</span>
                             <Button
                               type="button"
                               variant="ghost"
@@ -889,12 +889,12 @@ export default function InstituteRegistration() {
                 </div>
 
                 {/* 심사 안내 */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
                   <div className="flex items-start">
-                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-2" />
+                    <AlertCircle className="w-5 h-5 text-primary mt-0.5 mr-2" />
                     <div className="text-sm">
-                      <p className="font-medium text-blue-800 mb-1">심사 안내</p>
-                      <ul className="text-blue-700 space-y-1">
+                      <p className="font-medium text-primary mb-1">심사 안내</p>
+                      <ul className="text-primary space-y-1">
                         <li>• 제출하신 서류는 7-10일 내 심사됩니다</li>
                         <li>• 현장 방문 심사가 진행될 수 있습니다</li>
                         <li>• 심사 통과 후 파트너 기관으로 등록됩니다</li>

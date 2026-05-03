@@ -50,7 +50,7 @@ export default function GuidePage() {
     {
       id: 'courses',
       title: '강의 수강',
-      icon: <PlayCircle className="w-6 h-6 text-blue-500" />,
+      icon: <PlayCircle className="w-6 h-6 text-primary" />,
       steps: [
         {
           title: '강의 찾기',
@@ -104,7 +104,7 @@ export default function GuidePage() {
     {
       id: 'events',
       title: '오프라인 이벤트',
-      icon: <Calendar className="w-6 h-6 text-orange-500" />,
+      icon: <Calendar className="w-6 h-6 text-primary" />,
       steps: [
         {
           title: '이벤트 찾기',
@@ -148,7 +148,7 @@ export default function GuidePage() {
     {
       id: 'shop',
       title: '쇼핑몰 이용',
-      icon: <ShoppingBag className="w-6 h-6 text-red-500" />,
+      icon: <ShoppingBag className="w-6 h-6 text-destructive" />,
       steps: [
         {
           title: '상품 찾기',
@@ -187,7 +187,7 @@ export default function GuidePage() {
             <input
               type="text"
               placeholder="기능 검색하기"
-              className="w-full px-4 py-3 pl-12 rounded-full bg-white/90 shadow-md border-0 focus:ring-2 focus:ring-green-400"
+              className="w-full px-4 py-3 pl-12 rounded-full bg-white/90 shadow-md border-0 focus:ring-2 focus:ring-success"
             />
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
           </div>

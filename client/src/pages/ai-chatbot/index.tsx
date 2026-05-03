@@ -114,7 +114,7 @@ const AIChatbotPage = () => {
         <Card className="h-[600px] flex flex-col">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center">
-              <Bot className="h-6 w-6 mr-2 text-blue-600" />
+              <Bot className="h-6 w-6 mr-2 text-primary" />
               펫에듀 AI 어시스턴트
             </CardTitle>
           </CardHeader>
@@ -134,7 +134,7 @@ const AIChatbotPage = () => {
                       <Avatar className="h-8 w-8">
                         {message.type === 'bot' ? (
                           <>
-                            <AvatarFallback className="bg-blue-100 text-blue-600">
+                            <AvatarFallback className="bg-primary/10 text-primary">
                               <Bot className="h-4 w-4" />
                             </AvatarFallback>
                           </>
@@ -149,14 +149,14 @@ const AIChatbotPage = () => {
                       <div
                         className={`rounded-lg px-4 py-2 ${
                           message.type === 'user'
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-primary text-white'
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                         <p className={`text-xs mt-1 ${
                           message.type === 'user' 
-                            ? 'text-blue-100' 
+                            ? 'text-primary/70' 
                             : 'text-gray-500 dark:text-gray-400'
                         }`}>
                           {formatTime(message.timestamp)}
@@ -171,7 +171,7 @@ const AIChatbotPage = () => {
                   <div className="flex justify-start">
                     <div className="flex items-start space-x-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                        <AvatarFallback className="bg-primary/10 text-primary">
                           <Bot className="h-4 w-4" />
                         </AvatarFallback>
                       </Avatar>

@@ -274,7 +274,7 @@ export default function TrainerReservationsPage({ mode = 'view' }: TrainerReserv
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive/90"
                           onClick={() => handleReservationStatusChange(reservation, 'canceled')}
                         >
                           <X className="h-4 w-4 mr-1" />
@@ -398,9 +398,9 @@ export default function TrainerReservationsPage({ mode = 'view' }: TrainerReserv
                       <td className="px-6 py-4">{slot.price.toLocaleString()}원</td>
                       <td className="px-6 py-4">
                         {slot.booked ? (
-                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">예약됨</span>
+                          <span className="px-2 py-1 bg-warning/10 text-warning rounded-full text-xs">예약됨</span>
                         ) : (
-                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">가능</span>
+                          <span className="px-2 py-1 bg-success/10 text-success rounded-full text-xs">가능</span>
                         )}
                       </td>
                       <td className="px-6 py-4">

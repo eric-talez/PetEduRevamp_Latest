@@ -18,7 +18,7 @@ import { GoogleMapView } from '@/components/GoogleMapView';
  */
 function LocationMarker() {
   return (
-    <div className="absolute transform -translate-x-1/2 -translate-y-1/2 text-red-500 animate-bounce">
+    <div className="absolute transform -translate-x-1/2 -translate-y-1/2 text-destructive animate-bounce">
       <MapPin className="h-8 w-8" />
     </div>
   );
@@ -765,10 +765,10 @@ function EventDetailDialog({ event, isOpen, onClose }: { event: any; isOpen: boo
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case '예정': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case '진행중': return 'bg-green-100 text-green-800 border-green-300';
+      case '예정': return 'bg-primary/10 text-primary border-primary/40';
+      case '진행중': return 'bg-success/10 text-success border-success/40';
       case '완료': return 'bg-gray-100 text-gray-800 border-gray-300';
-      case '취소': return 'bg-red-100 text-red-800 border-red-300';
+      case '취소': return 'bg-destructive/10 text-destructive border-destructive/40';
       default: return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
@@ -869,9 +869,9 @@ function EventDetailDialog({ event, isOpen, onClose }: { event: any; isOpen: boo
                 <span className="font-medium">참가비:</span>
                 <span className="ml-2">
                   {event.price === '무료' ? (
-                    <Badge className="bg-green-100 text-green-800">무료</Badge>
+                    <Badge className="bg-success/10 text-success">무료</Badge>
                   ) : (
-                    <Badge className="bg-orange-100 text-orange-800">
+                    <Badge className="bg-primary/10 text-primary">
                       {typeof event.price === 'number' ? `${event.price.toLocaleString()}원` : event.price}
                     </Badge>
                   )}
@@ -1086,10 +1086,10 @@ function EventCard({ event, onThumbnailUpdate }: { event: any; onThumbnailUpdate
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case '예정': return 'bg-blue-100 text-blue-800';
-      case '진행중': return 'bg-green-100 text-green-800';
+      case '예정': return 'bg-primary/10 text-primary';
+      case '진행중': return 'bg-success/10 text-success';
       case '완료': return 'bg-gray-100 text-gray-800';
-      case '취소': return 'bg-red-100 text-red-800';
+      case '취소': return 'bg-destructive/10 text-destructive';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -1183,9 +1183,9 @@ function EventCard({ event, onThumbnailUpdate }: { event: any; onThumbnailUpdate
             
             <div className="flex items-center space-x-2">
               {event.price === '무료' ? (
-                <Badge className="bg-green-100 text-green-800">무료</Badge>
+                <Badge className="bg-success/10 text-success">무료</Badge>
               ) : (
-                <Badge className="bg-orange-100 text-orange-800">
+                <Badge className="bg-primary/10 text-primary">
                   {typeof event.price === 'number' ? `${event.price.toLocaleString()}원` : event.price}
                 </Badge>
               )}
@@ -1374,7 +1374,7 @@ function PlaceCard({ place }: { place: Place }) {
             )}
             {place.rating && (
               <div className="flex items-center mt-1">
-                <Star className="h-3 w-3 text-yellow-400 fill-yellow-400 mr-1" />
+                <Star className="h-3 w-3 text-warning fill-warning mr-1" />
                 <span className="text-xs font-medium">{place.rating.toFixed(1)}</span>
               </div>
             )}
@@ -1472,7 +1472,7 @@ function PlaceCard({ place }: { place: Place }) {
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium">{review.author}</span>
                         <div className="flex items-center">
-                          <Star className="h-3 w-3 text-yellow-400 fill-yellow-400 mr-1" />
+                          <Star className="h-3 w-3 text-warning fill-warning mr-1" />
                           <span>{review.rating}</span>
                         </div>
                       </div>

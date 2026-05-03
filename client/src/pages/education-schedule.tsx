@@ -141,7 +141,7 @@ export default function EducationSchedulePage() {
           <p className="text-gray-600">전문 훈련사와 함께하는 맞춤형 반려동물 교육</p>
         </div>
         <Button 
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-primary hover:bg-primary/90"
           onClick={handleAddSchedule}
           data-testid="button-add-schedule"
         >
@@ -231,16 +231,16 @@ export default function EducationSchedulePage() {
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-blue-600">
+                    <span className="text-lg font-semibold text-primary">
                       {course.price?.toLocaleString()}원
                     </span>
                     {course.is_popular && (
-                      <Badge className="bg-yellow-100 text-yellow-800">인기 강의</Badge>
+                      <Badge className="bg-warning/10 text-warning">인기 강의</Badge>
                     )}
                   </div>
                   
                   <Button 
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full bg-primary hover:bg-primary/90"
                     onClick={() => handleEnrollCourse(course.id, course.title)}
                     data-testid={`button-enroll-${course.id}`}
                   >
@@ -258,11 +258,11 @@ export default function EducationSchedulePage() {
         <h3 className="text-lg font-semibold mb-4">강의 현황</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{filteredCourses.length}</div>
+            <div className="text-2xl font-bold text-primary">{filteredCourses.length}</div>
             <div className="text-sm text-gray-600">전체 강의</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-success">
               {filteredCourses.filter((c: any) => c.is_popular).length}
             </div>
             <div className="text-sm text-gray-600">인기 강의</div>

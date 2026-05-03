@@ -381,16 +381,16 @@ export default function LocationsPage() {
 
   const getLocationTypeBadgeColor = (type: string) => {
     const colors = {
-      'training-center': 'bg-green-100 text-green-800',
-      'training': 'bg-green-100 text-green-800',
-      'pet-store': 'bg-orange-100 text-orange-800',
-      'veterinary': 'bg-red-100 text-red-800',
-      'hospital': 'bg-red-100 text-red-800',
-      'event': 'bg-blue-100 text-blue-800',
+      'training-center': 'bg-success/10 text-success',
+      'training': 'bg-success/10 text-success',
+      'pet-store': 'bg-primary/10 text-primary',
+      'veterinary': 'bg-destructive/10 text-destructive',
+      'hospital': 'bg-destructive/10 text-destructive',
+      'event': 'bg-primary/10 text-primary',
       'grooming': 'bg-primary/10 text-primary',
-      'hotel': 'bg-yellow-100 text-yellow-800',
+      'hotel': 'bg-warning/10 text-warning',
       'cafe': 'bg-secondary/15 text-primary',
-      'park': 'bg-green-100 text-green-800'
+      'park': 'bg-success/10 text-success'
     };
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -557,7 +557,7 @@ export default function LocationsPage() {
           <div className="flex items-center gap-4">
             {/* 로고/타이틀 */}
             <div className="flex items-center gap-2 min-w-0">
-              <MapPin className="w-6 h-6 text-blue-600" />
+              <MapPin className="w-6 h-6 text-primary" />
               <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 hidden sm:block">TALEZ 위치찾기</h1>
             </div>
 
@@ -569,7 +569,7 @@ export default function LocationsPage() {
                   placeholder="장소명, 주소를 검색하세요"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                  className="pl-10 pr-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -597,7 +597,7 @@ export default function LocationsPage() {
                 onClick={() => setShowCertifiedOnly(!showCertifiedOnly)}
                 variant={showCertifiedOnly ? "default" : "outline"}
                 size="sm"
-                className={showCertifiedOnly ? "bg-[#2BAA61] hover:bg-[#229954] text-white" : ""}
+                className={showCertifiedOnly ? "bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white" : ""}
               >
                 <Award className="w-4 h-4 mr-2" />
                 TALEZ 인증
@@ -625,12 +625,12 @@ export default function LocationsPage() {
                 </span>
                 <Badge 
                   variant="secondary" 
-                  className={showCertifiedOnly ? "bg-[#2BAA61] text-white" : ""}
+                  className={showCertifiedOnly ? "bg-[hsl(var(--success))] text-white" : ""}
                 >
                   {filteredLocations.length}
                 </Badge>
                 {showCertifiedOnly && (
-                  <div className="flex items-center gap-1 text-xs text-[#2BAA61]">
+                  <div className="flex items-center gap-1 text-xs text-[hsl(var(--success))]">
                     <Award className="w-3 h-3" />
                     <span>인증된 업체만 표시</span>
                   </div>
@@ -695,14 +695,14 @@ export default function LocationsPage() {
                     <div
                       key={location.id}
                       className={`p-3 rounded-lg cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800 border ${
-                        selectedLocation?.id === location.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-100 dark:border-gray-700'
+                        selectedLocation?.id === location.id ? 'border-primary/50 bg-primary/10 dark:bg-primary/20' : 'border-gray-100 dark:border-gray-700'
                       }`}
                       onClick={() => handleLocationSelect(location)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-blue-600">
+                            <span className="text-sm font-medium text-primary">
                               {index + 1}
                             </span>
                             <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">{location.name}</h4>
@@ -734,7 +734,7 @@ export default function LocationsPage() {
                             <div className="flex items-center justify-between">
                               {location.rating && (
                                 <div className="flex items-center gap-1">
-                                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                  <Star className="w-3 h-3 fill-warning text-warning" />
                                   <span className="text-xs font-medium">{location.rating}</span>
                                   {location.reviewCount && (
                                     <span className="text-xs text-gray-500 dark:text-gray-400">({location.reviewCount})</span>
@@ -743,7 +743,7 @@ export default function LocationsPage() {
                               )}
 
                               {location.distance && (
-                                <span className="text-xs font-medium text-blue-600">
+                                <span className="text-xs font-medium text-primary">
                                   {location.distance < 1 
                                     ? `${Math.round(location.distance * 1000)}m`
                                     : `${location.distance.toFixed(1)}km`
@@ -843,12 +843,12 @@ export default function LocationsPage() {
                           {selectedLocation.name}
                         </h2>
                         {/*{selectedLocation.talezPartner && (
-                          <Badge className="bg-blue-600 text-white">
+                          <Badge className="bg-primary text-white">
                             테일즈 파트너
                           </Badge>
                         )}
                         {selectedLocation.isCertified && (
-                          <Badge className="bg-green-600 text-white">
+                          <Badge className="bg-success text-white">
                             인증업체
                           </Badge>
                         )}*/}
@@ -857,7 +857,7 @@ export default function LocationsPage() {
                       {selectedLocation.rating && (
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
-                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-5 h-5 fill-warning text-warning" />
                             <span className="text-xl font-bold dark:text-gray-100">{selectedLocation.rating}</span>
                             <span className="text-gray-500 dark:text-gray-400">/5</span>
                           </div>
@@ -904,7 +904,7 @@ export default function LocationsPage() {
                         )}
 
                         {selectedLocation.distance && (
-                          <div className="flex items-center gap-2 text-blue-600">
+                          <div className="flex items-center gap-2 text-primary">
                             <Navigation className="w-4 h-4" />
                             <span className="text-sm font-medium">
                               거리: {selectedLocation.distance < 1 
@@ -925,7 +925,7 @@ export default function LocationsPage() {
                             <Award className="w-4 h-4" />
                             TALEZ 인증 정보
                           </h3>
-                          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                          <div className="bg-success/10 dark:bg-success/20 p-4 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
                               <TalezCertificationBadge 
                                 businessData={{
@@ -1003,7 +1003,7 @@ export default function LocationsPage() {
                                       <Badge variant="outline">{trainer.experience}년 경력</Badge>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                      <Star className="w-4 h-4 fill-warning text-warning" />
                                       <span className="text-sm">{trainer.rating}</span>
                                     </div>
                                   </div>
@@ -1015,7 +1015,7 @@ export default function LocationsPage() {
                                     ))}
                                   </div>
                                   {trainer.price && (
-                                    <div className="text-sm text-blue-600 font-medium">
+                                    <div className="text-sm text-primary font-medium">
                                       1회 {trainer.price.toLocaleString()}원
                                     </div>
                                   )}
@@ -1066,7 +1066,7 @@ export default function LocationsPage() {
                                       key={star}
                                       className={`w-3 h-3 ${
                                         star <= Math.round(selectedLocation.rating || 0)
-                                          ? 'fill-yellow-400 text-yellow-400'
+                                          ? 'fill-warning text-warning'
                                           : 'text-gray-300'
                                       }`}
                                     />
@@ -1085,10 +1085,10 @@ export default function LocationsPage() {
                                   return (
                                     <div key={rating} className="flex items-center gap-2 text-xs">
                                       <span className="w-4">{rating}</span>
-                                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                      <Star className="w-3 h-3 fill-warning text-warning" />
                                       <div className="flex-1 bg-gray-200 rounded-full h-2">
                                         <div
-                                          className="bg-yellow-400 h-2 rounded-full"
+                                          className="bg-warning/40 h-2 rounded-full"
                                           style={{ width: `${percentage}%` }}
                                         />
                                       </div>
@@ -1115,7 +1115,7 @@ export default function LocationsPage() {
                                           key={star}
                                           className={`w-3 h-3 ${
                                             star <= review.rating
-                                              ? 'fill-yellow-400 text-yellow-400'
+                                              ? 'fill-warning text-warning'
                                               : 'text-gray-300'
                                           }`}
                                         />

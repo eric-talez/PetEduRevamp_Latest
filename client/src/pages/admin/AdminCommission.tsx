@@ -743,7 +743,7 @@ export default function AdminCommission() {
   const getPolicyStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500">활성화됨</Badge>;
+        return <Badge className="bg-success">활성화됨</Badge>;
       case 'inactive':
         return <Badge variant="outline" className="text-gray-500">비활성화됨</Badge>;
       default:
@@ -755,9 +755,9 @@ export default function AdminCommission() {
   const getTransactionStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-amber-500">미정산</Badge>;
+        return <Badge className="bg-warning">미정산</Badge>;
       case 'paid':
-        return <Badge className="bg-green-500">지급 완료</Badge>;
+        return <Badge className="bg-success">지급 완료</Badge>;
       case 'cancelled':
         return <Badge variant="outline" className="text-gray-500">취소됨</Badge>;
       default:
@@ -769,11 +769,11 @@ export default function AdminCommission() {
   const getSettlementStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-amber-500">정산 대기</Badge>;
+        return <Badge className="bg-warning">정산 대기</Badge>;
       case 'processed':
-        return <Badge className="bg-blue-500">처리 완료</Badge>;
+        return <Badge className="bg-primary">처리 완료</Badge>;
       case 'paid':
-        return <Badge className="bg-green-500">지급 완료</Badge>;
+        return <Badge className="bg-success">지급 완료</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -783,7 +783,7 @@ export default function AdminCommission() {
   const getUserTypeBadge = (type: string) => {
     switch (type) {
       case 'trainer':
-        return <Badge variant="outline" className="border-blue-500 text-blue-500">훈련사</Badge>;
+        return <Badge variant="outline" className="border-primary/50 text-primary">훈련사</Badge>;
       case 'institute':
         return <Badge variant="outline" className="border-primary/50 text-primary">기관</Badge>;
       default:
@@ -917,7 +917,7 @@ export default function AdminCommission() {
                                 </>
                               ) : (
                                 <>
-                                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                                  <Check className="h-4 w-4 mr-2 text-success" />
                                   활성화
                                 </>
                               )}
@@ -925,7 +925,7 @@ export default function AdminCommission() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               onClick={() => handleDeletePolicy(policy.id)}
-                              className="text-red-500"
+                              className="text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               삭제
@@ -1234,7 +1234,7 @@ export default function AdminCommission() {
                                   size="icon"
                                   onClick={() => handleProcessSettlement(settlement.id)}
                                 >
-                                  <Check className="h-4 w-4 text-blue-500" />
+                                  <Check className="h-4 w-4 text-primary" />
                                 </Button>
                               )}
                               
@@ -1244,7 +1244,7 @@ export default function AdminCommission() {
                                   size="icon"
                                   onClick={() => handlePaySettlement(settlement.id)}
                                 >
-                                  <CreditCard className="h-4 w-4 text-green-500" />
+                                  <CreditCard className="h-4 w-4 text-success" />
                                 </Button>
                               )}
                             </div>
@@ -1316,7 +1316,7 @@ export default function AdminCommission() {
                   <div className="space-y-2">
                     <div className="text-muted-foreground text-sm">총 커미션 지급액</div>
                     <div className="text-3xl font-bold">₩1,283,500</div>
-                    <div className="text-sm text-green-500 flex items-center">
+                    <div className="text-sm text-success flex items-center">
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.14645 2.14645C7.34171 1.95118 7.65829 1.95118 7.85355 2.14645L11.8536 6.14645C12.0488 6.34171 12.0488 6.65829 11.8536 6.85355C11.6583 7.04882 11.3417 7.04882 11.1464 6.85355L8 3.70711V12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5V3.70711L3.85355 6.85355C3.65829 7.04882 3.34171 7.04882 3.14645 6.85355C2.95118 6.65829 2.95118 6.34171 3.14645 6.14645L7.14645 2.14645Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                       </svg>
@@ -1330,7 +1330,7 @@ export default function AdminCommission() {
                   <div className="space-y-2">
                     <div className="text-muted-foreground text-sm">총 트랜잭션 수</div>
                     <div className="text-3xl font-bold">245</div>
-                    <div className="text-sm text-green-500 flex items-center">
+                    <div className="text-sm text-success flex items-center">
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.14645 2.14645C7.34171 1.95118 7.65829 1.95118 7.85355 2.14645L11.8536 6.14645C12.0488 6.34171 12.0488 6.65829 11.8536 6.85355C11.6583 7.04882 11.3417 7.04882 11.1464 6.85355L8 3.70711V12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5V3.70711L3.85355 6.85355C3.65829 7.04882 3.34171 7.04882 3.14645 6.85355C2.95118 6.65829 2.95118 6.34171 3.14645 6.14645L7.14645 2.14645Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                       </svg>
@@ -1344,7 +1344,7 @@ export default function AdminCommission() {
                   <div className="space-y-2">
                     <div className="text-muted-foreground text-sm">평균 커미션율</div>
                     <div className="text-3xl font-bold">11.2%</div>
-                    <div className="text-sm text-green-500 flex items-center">
+                    <div className="text-sm text-success flex items-center">
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.14645 2.14645C7.34171 1.95118 7.65829 1.95118 7.85355 2.14645L11.8536 6.14645C12.0488 6.34171 12.0488 6.65829 11.8536 6.85355C11.6583 7.04882 11.3417 7.04882 11.1464 6.85355L8 3.70711V12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5V3.70711L3.85355 6.85355C3.65829 7.04882 3.34171 7.04882 3.14645 6.85355C2.95118 6.65829 2.95118 6.34171 3.14645 6.14645L7.14645 2.14645Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                       </svg>
@@ -1358,7 +1358,7 @@ export default function AdminCommission() {
                   <div className="space-y-2">
                     <div className="text-muted-foreground text-sm">이번 달 정산 예정액</div>
                     <div className="text-3xl font-bold">₩258,900</div>
-                    <div className="text-sm text-red-500 flex items-center">
+                    <div className="text-sm text-destructive flex items-center">
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.14645 12.8536C7.34171 13.0488 7.65829 13.0488 7.85355 12.8536L11.8536 8.85355C12.0488 8.65829 12.0488 8.34171 11.8536 8.14645C11.6583 7.95118 11.3417 7.95118 11.1464 8.14645L8 11.2929V2.5C8 2.22386 7.77614 2 7.5 2C7.22386 2 7 2.22386 7 2.5V11.2929L3.85355 8.14645C3.65829 7.95118 3.34171 7.95118 3.14645 8.14645C2.95118 8.34171 2.95118 8.65829 3.14645 8.85355L7.14645 12.8536Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                       </svg>
@@ -1514,7 +1514,7 @@ export default function AdminCommission() {
                   <CardTitle className="text-sm font-medium">훈련사 수익</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-primary">
                     ₩{curriculumRevenues.reduce((sum, curr) => sum + curr.trainerRevenue, 0).toLocaleString()}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -1528,7 +1528,7 @@ export default function AdminCommission() {
                   <CardTitle className="text-sm font-medium">플랫폼 수익</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-success">
                     ₩{curriculumRevenues.reduce((sum, curr) => sum + curr.platformRevenue, 0).toLocaleString()}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -2003,7 +2003,7 @@ export default function AdminCommission() {
                 <div className="bg-secondary/50 p-3 rounded-md">
                   <div className="text-sm text-muted-foreground mb-1">정산 금액</div>
                   <div className="flex items-center">
-                    <BadgeDollarSign className="h-4 w-4 mr-1 text-green-500" />
+                    <BadgeDollarSign className="h-4 w-4 mr-1 text-success" />
                     <span className="text-xl font-bold">{selectedSettlement.totalCommission.toLocaleString()}원</span>
                   </div>
                   {selectedSettlement.status === 'paid' && selectedSettlement.paymentMethod && (

@@ -247,7 +247,7 @@ export default function StorePolicyManagement() {
                   {form.customRules.map((r, i) => (
                     <div key={i} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
                       <span className="text-sm">{r.rule}</span>
-                      <Button variant="ghost" size="sm" onClick={() => removeCustomRule(i)} className="text-red-500 hover:text-red-700 h-6 px-2">삭제</Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeCustomRule(i)} className="text-destructive hover:text-destructive/90 h-6 px-2">삭제</Button>
                     </div>
                   ))}
                 </div>

@@ -354,7 +354,7 @@ export default function TrainerRegistration() {
                       placeholder="홍길동"
                     />
                     {form.formState.errors.personalInfo?.name && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.personalInfo.name.message}
                       </p>
                     )}
@@ -369,7 +369,7 @@ export default function TrainerRegistration() {
                       placeholder="trainer@example.com"
                     />
                     {form.formState.errors.personalInfo?.email && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.personalInfo.email.message}
                       </p>
                     )}
@@ -385,7 +385,7 @@ export default function TrainerRegistration() {
                       placeholder="010-1234-5678"
                     />
                     {form.formState.errors.personalInfo?.phone && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.personalInfo.phone.message}
                       </p>
                     )}
@@ -399,7 +399,7 @@ export default function TrainerRegistration() {
                       {...form.register('personalInfo.dateOfBirth')}
                     />
                     {form.formState.errors.personalInfo?.dateOfBirth && (
-                      <p className="text-sm text-red-500 mt-1">
+                      <p className="text-sm text-destructive mt-1">
                         {form.formState.errors.personalInfo.dateOfBirth.message}
                       </p>
                     )}
@@ -414,7 +414,7 @@ export default function TrainerRegistration() {
                     placeholder="서울시 강남구 테헤란로 123번길 45"
                   />
                   {form.formState.errors.personalInfo?.address && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.personalInfo.address.message}
                     </p>
                   )}
@@ -448,7 +448,7 @@ export default function TrainerRegistration() {
                     </SelectContent>
                   </Select>
                   {form.formState.errors.professionalInfo?.experience && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.professionalInfo.experience.message}
                     </p>
                   )}
@@ -478,7 +478,7 @@ export default function TrainerRegistration() {
                     </div>
                   )}
                   {form.formState.errors.professionalInfo?.specialties && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.professionalInfo.specialties.message}
                     </p>
                   )}
@@ -517,7 +517,7 @@ export default function TrainerRegistration() {
                     placeholder="서울시 전체, 경기도 남부 등"
                   />
                   {form.formState.errors.professionalInfo?.serviceArea && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.professionalInfo.serviceArea.message}
                     </p>
                   )}
@@ -532,7 +532,7 @@ export default function TrainerRegistration() {
                     rows={4}
                   />
                   {form.formState.errors.professionalInfo?.bio && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.professionalInfo.bio.message}
                     </p>
                   )}
@@ -561,7 +561,7 @@ export default function TrainerRegistration() {
                     </SelectContent>
                   </Select>
                   {form.formState.errors.businessInfo?.businessType && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.businessInfo.businessType.message}
                     </p>
                   )}
@@ -596,7 +596,7 @@ export default function TrainerRegistration() {
                     type="number"
                   />
                   {form.formState.errors.businessInfo?.hourlyRate && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       {form.formState.errors.businessInfo.hourlyRate.message}
                     </p>
                   )}
@@ -642,20 +642,20 @@ export default function TrainerRegistration() {
                         </Button>
                       </div>
                       {codeError && (
-                        <p className="text-sm text-red-500 flex items-center">
+                        <p className="text-sm text-destructive flex items-center">
                           <AlertCircle className="w-4 h-4 mr-1" />
                           {codeError}
                         </p>
                       )}
                     </div>
                   ) : (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="bg-success/10 border border-success/30 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                          <CheckCircle className="w-5 h-5 text-success mr-2" />
                           <div>
-                            <p className="font-medium text-green-800">{verifiedInstitute.name}</p>
-                            <p className="text-sm text-green-600">
+                            <p className="font-medium text-success">{verifiedInstitute.name}</p>
+                            <p className="text-sm text-success">
                               코드: {verifiedInstitute.code} | {verifiedInstitute.address || '주소 정보 없음'}
                             </p>
                           </div>
@@ -665,7 +665,7 @@ export default function TrainerRegistration() {
                           variant="ghost"
                           size="sm"
                           onClick={clearInstituteCode}
-                          className="text-gray-500 hover:text-red-500"
+                          className="text-gray-500 hover:text-destructive"
                           data-testid="button-clear-institute"
                         >
                           <X className="w-4 h-4" />
@@ -704,7 +704,7 @@ export default function TrainerRegistration() {
                       <span className="text-sm text-gray-600">프로필 사진 업로드</span>
                     </label>
                     {uploadedFiles.profileImage && (
-                      <div className="mt-2 text-sm text-green-600">
+                      <div className="mt-2 text-sm text-success">
                         {uploadedFiles.profileImage.name}
                       </div>
                     )}
@@ -731,7 +731,7 @@ export default function TrainerRegistration() {
                       <div className="mt-2 space-y-1">
                         {uploadedFiles.certificationDocs.map((file, index) => (
                           <div key={index} className="flex items-center justify-between text-sm">
-                            <span className="text-green-600">{file.name}</span>
+                            <span className="text-success">{file.name}</span>
                             <Button
                               type="button"
                               variant="ghost"
@@ -767,7 +767,7 @@ export default function TrainerRegistration() {
                       <div className="mt-2 space-y-1">
                         {uploadedFiles.portfolioImages.map((file, index) => (
                           <div key={index} className="flex items-center justify-between text-sm">
-                            <span className="text-green-600">{file.name}</span>
+                            <span className="text-success">{file.name}</span>
                             <Button
                               type="button"
                               variant="ghost"
@@ -784,12 +784,12 @@ export default function TrainerRegistration() {
                 </div>
 
                 {/* 주의사항 */}
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
                   <div className="flex items-start">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-2" />
+                    <AlertCircle className="w-5 h-5 text-warning mt-0.5 mr-2" />
                     <div className="text-sm">
-                      <p className="font-medium text-yellow-800 mb-1">검토 안내</p>
-                      <ul className="text-yellow-700 space-y-1">
+                      <p className="font-medium text-warning mb-1">검토 안내</p>
+                      <ul className="text-warning space-y-1">
                         <li>• 제출하신 서류는 3-5일 내 검토됩니다</li>
                         <li>• 추가 서류 요청 시 이메일로 안내드립니다</li>
                         <li>• 승인 완료 후 훈련사 활동이 가능합니다</li>

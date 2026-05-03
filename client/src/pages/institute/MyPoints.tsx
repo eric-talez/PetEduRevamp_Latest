@@ -55,19 +55,19 @@ export default function InstituteMyPoints() {
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'BRONZE': return 'bg-amber-100 text-amber-800';
+      case 'BRONZE': return 'bg-warning/10 text-warning';
       case 'SILVER': return 'bg-gray-100 text-gray-800';
-      case 'GOLD': return 'bg-yellow-100 text-yellow-800';
-      case 'PLATINUM': return 'bg-blue-100 text-blue-800';
+      case 'GOLD': return 'bg-warning/10 text-warning';
+      case 'PLATINUM': return 'bg-primary/10 text-primary';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case '적립': return <TrendingUp className="w-4 h-4 text-green-600" />;
-      case '사용': return <Gift className="w-4 h-4 text-blue-600" />;
-      case '만료': return <Calendar className="w-4 h-4 text-red-600" />;
+      case '적립': return <TrendingUp className="w-4 h-4 text-success" />;
+      case '사용': return <Gift className="w-4 h-4 text-primary" />;
+      case '만료': return <Calendar className="w-4 h-4 text-destructive" />;
       default: return <Star className="w-4 h-4" />;
     }
   };
@@ -123,7 +123,7 @@ export default function InstituteMyPoints() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-sm font-medium">
               <span>보유 포인트</span>
-              <Star className="w-4 h-4 text-yellow-500" />
+              <Star className="w-4 h-4 text-warning" />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -136,11 +136,11 @@ export default function InstituteMyPoints() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-sm font-medium">
               <span>이번 달 적립</span>
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-4 h-4 text-success" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{data.monthlyEarned.toLocaleString()}P</div>
+            <div className="text-2xl font-bold text-success">{data.monthlyEarned.toLocaleString()}P</div>
             <p className="text-xs text-gray-500 mt-1">이번 달 획득</p>
           </CardContent>
         </Card>
@@ -149,11 +149,11 @@ export default function InstituteMyPoints() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-sm font-medium">
               <span>이번 달 사용</span>
-              <Gift className="w-4 h-4 text-blue-500" />
+              <Gift className="w-4 h-4 text-primary" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{data.monthlyUsed.toLocaleString()}P</div>
+            <div className="text-2xl font-bold text-primary">{data.monthlyUsed.toLocaleString()}P</div>
             <p className="text-xs text-gray-500 mt-1">이번 달 사용</p>
           </CardContent>
         </Card>
@@ -210,13 +210,13 @@ export default function InstituteMyPoints() {
             {data.upcomingExpiry.amount > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-orange-600">
+                  <CardTitle className="flex items-center space-x-2 text-primary">
                     <Calendar className="w-5 h-5" />
                     <span>곧 만료될 포인트</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">{data.upcomingExpiry.amount.toLocaleString()}P</div>
+                  <div className="text-2xl font-bold text-primary">{data.upcomingExpiry.amount.toLocaleString()}P</div>
                   <p className="text-sm text-gray-500 mt-1">만료일: {data.upcomingExpiry.date}</p>
                 </CardContent>
               </Card>
@@ -226,7 +226,7 @@ export default function InstituteMyPoints() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  <TrendingUp className="w-5 h-5 text-success" />
                   <span>포인트 획득 방법</span>
                 </CardTitle>
               </CardHeader>
@@ -234,19 +234,19 @@ export default function InstituteMyPoints() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>훈련사 관리</span>
-                    <span className="text-green-600">+50P</span>
+                    <span className="text-success">+50P</span>
                   </div>
                   <div className="flex justify-between">
                     <span>시설 이용 관리</span>
-                    <span className="text-green-600">+30P</span>
+                    <span className="text-success">+30P</span>
                   </div>
                   <div className="flex justify-between">
                     <span>월간 리포트 작성</span>
-                    <span className="text-green-600">+100P</span>
+                    <span className="text-success">+100P</span>
                   </div>
                   <div className="flex justify-between">
                     <span>교육 프로그램 운영</span>
-                    <span className="text-green-600">+200P</span>
+                    <span className="text-success">+200P</span>
                   </div>
                 </div>
               </CardContent>
@@ -277,7 +277,7 @@ export default function InstituteMyPoints() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-bold ${transaction.type === '적립' ? 'text-green-600' : transaction.type === '사용' ? 'text-blue-600' : 'text-red-600'}`}>
+                        <p className={`font-bold ${transaction.type === '적립' ? 'text-success' : transaction.type === '사용' ? 'text-primary' : 'text-destructive'}`}>
                           {transaction.type === '적립' ? '+' : '-'}{transaction.amount.toLocaleString()}P
                         </p>
                         <p className="text-xs text-gray-500">{transaction.source}</p>
@@ -313,15 +313,15 @@ export default function InstituteMyPoints() {
                       </div>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div className="text-center">
-                          <p className="text-green-600 font-bold">{monthData.earned.toLocaleString()}P</p>
+                          <p className="text-success font-bold">{monthData.earned.toLocaleString()}P</p>
                           <p className="text-gray-500">적립</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-blue-600 font-bold">{monthData.used.toLocaleString()}P</p>
+                          <p className="text-primary font-bold">{monthData.used.toLocaleString()}P</p>
                           <p className="text-gray-500">사용</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-red-600 font-bold">{monthData.expired.toLocaleString()}P</p>
+                          <p className="text-destructive font-bold">{monthData.expired.toLocaleString()}P</p>
                           <p className="text-gray-500">만료</p>
                         </div>
                       </div>

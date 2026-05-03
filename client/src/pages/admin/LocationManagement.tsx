@@ -224,9 +224,9 @@ export default function LocationManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />활성</Badge>;
+        return <Badge className="bg-success"><CheckCircle className="h-3 w-3 mr-1" />활성</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-500"><AlertCircle className="h-3 w-3 mr-1" />대기</Badge>;
+        return <Badge className="bg-warning"><AlertCircle className="h-3 w-3 mr-1" />대기</Badge>;
       case 'inactive':
         return <Badge variant="secondary"><X className="h-3 w-3 mr-1" />비활성</Badge>;
       default:
@@ -267,7 +267,7 @@ export default function LocationManagement() {
         </div>
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-primary hover:bg-primary/90">
               <Plus className="h-4 w-4 mr-2" />
               새 위치 등록
             </Button>
@@ -423,7 +423,7 @@ export default function LocationManagement() {
                 <p className="text-sm text-gray-600">전체 위치</p>
                 <p className="text-2xl font-bold">{locations.length}</p>
               </div>
-              <Building className="h-8 w-8 text-blue-600" />
+              <Building className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -432,11 +432,11 @@ export default function LocationManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">활성 위치</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-2xl font-bold text-success">
                   {locations.filter(l => l.status === 'active').length}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <CheckCircle className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -445,11 +445,11 @@ export default function LocationManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">승인 대기</p>
-                <p className="text-2xl font-bold text-yellow-600">
+                <p className="text-2xl font-bold text-warning">
                   {locations.filter(l => l.status === 'pending').length}
                 </p>
               </div>
-              <AlertCircle className="h-8 w-8 text-yellow-600" />
+              <AlertCircle className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -517,7 +517,7 @@ export default function LocationManagement() {
         <Card>
           <CardContent className="p-8 text-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary/50"></div>
               <p className="text-gray-600">위치 데이터를 불러오는 중...</p>
             </div>
           </CardContent>
@@ -525,7 +525,7 @@ export default function LocationManagement() {
       ) : error ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-600 mb-2">
               데이터를 불러오는 중 오류가 발생했습니다
             </h3>
@@ -562,7 +562,7 @@ export default function LocationManagement() {
               <div className="absolute top-3 right-3 flex gap-2">
                 {getStatusBadge(location.status)}
                 {location.isPartner && (
-                  <Badge className="bg-blue-600">파트너</Badge>
+                  <Badge className="bg-primary">파트너</Badge>
                 )}
               </div>
             </div>
@@ -593,7 +593,7 @@ export default function LocationManagement() {
                   <span>{location.operatingHours.open} - {location.operatingHours.close}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Star className="h-4 w-4 fill-warning text-warning" />
                   <span>{location.rating} ({location.reviewCount} 후기)</span>
                 </div>
               </div>
@@ -606,7 +606,7 @@ export default function LocationManagement() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200"
+                  className="flex-1 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all duration-200"
                   onClick={() => handleEditLocation(location)}
                 >
                   <Edit className="h-3 w-3 mr-1" />
@@ -625,7 +625,7 @@ export default function LocationManagement() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 hover:border-red-400 transition-all duration-200"
+                  className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive/90 hover:border-destructive/40 transition-all duration-200"
                   onClick={() => handleDeleteLocation(location.id)}
                 >
                   <Trash2 className="h-3 w-3" />

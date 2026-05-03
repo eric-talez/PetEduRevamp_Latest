@@ -188,7 +188,7 @@ export default function VideoDetailPage() {
           <h1 className="text-xl font-bold">{video.title}</h1>
           <div className="flex items-center text-sm text-gray-500">
             <span className="flex items-center mr-3">
-              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
+              <Star className="h-4 w-4 text-warning fill-warning mr-1" />
               {video.rating} ({video.reviews} 리뷰)
             </span>
             <span className="flex items-center mr-3">
@@ -244,7 +244,7 @@ export default function VideoDetailPage() {
                 {video.isPremium && !isAuthenticated && (
                   <div className="absolute top-4 right-4 bg-gray-900 bg-opacity-80 rounded px-3 py-1 text-white flex items-center">
                     {previewEnded ? (
-                      <AlertCircle size={14} className="mr-1 text-amber-500" />
+                      <AlertCircle size={14} className="mr-1 text-warning" />
                     ) : (
                       <span className="mr-1">미리보기</span>
                     )}
@@ -255,10 +255,10 @@ export default function VideoDetailPage() {
                 {/* 미리보기 종료 오버레이 */}
                 {video.isPremium && !isAuthenticated && previewEnded && (
                   <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-center p-6">
-                    <Lock size={40} className="text-amber-500 mb-3" />
+                    <Lock size={40} className="text-warning mb-3" />
                     <h2 className="text-white text-2xl font-bold mb-2">미리보기가 종료되었습니다</h2>
                     <p className="text-gray-300 mb-6 max-w-xl">
-                      <span className="text-amber-400 font-bold block mb-2">로그인 후 결제가 필요한 서비스입니다.</span>
+                      <span className="text-warning font-bold block mb-2">로그인 후 결제가 필요한 서비스입니다.</span>
                       이 프리미엄 영상의 나머지 부분을 시청하려면 로그인하고 멤버십에 가입하세요.
                       회원이 되면 모든 프리미엄 콘텐츠에 제한 없이 접근할 수 있습니다.
                     </p>
@@ -401,7 +401,7 @@ export default function VideoDetailPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
-              <Lock className="h-5 w-5 text-amber-500 mr-2" />
+              <Lock className="h-5 w-5 text-warning mr-2" />
               프리미엄 멤버십 필요
             </AlertDialogTitle>
             <AlertDialogDescription>

@@ -19,7 +19,7 @@ export default function CertifiedPartnerPage() {
           <h2 className="text-lg font-semibold mb-3">제2조 (의무)</h2>
           <div className="space-y-3">
             <p>인증 업체는 모든 온라인 상담·수업·알림장 거래를 <strong>반드시 테일즈 플랫폼을 통해 처리</strong>해야 합니다.</p>
-            <p className="font-medium text-red-600 dark:text-red-400">회사의 사전 서면 동의 없이 플랫폼을 우회한 별도 거래는 금지됩니다.</p>
+            <p className="font-medium text-destructive dark:text-destructive">회사의 사전 서면 동의 없이 플랫폼을 우회한 별도 거래는 금지됩니다.</p>
           </div>
         </div>
         
@@ -28,21 +28,21 @@ export default function CertifiedPartnerPage() {
         <div>
           <h2 className="text-lg font-semibold mb-3">제3조 (단계적 제재)</h2>
           <div className="space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2 text-blue-800 dark:text-blue-200">1차 적발</h3>
+            <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2 text-primary dark:text-primary/70">1차 적발</h3>
               <p>경고 및 시정 요구</p>
             </div>
             
-            <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2 text-orange-800 dark:text-orange-200">2차 적발</h3>
+            <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2 text-primary dark:text-primary/70">2차 적발</h3>
               <ul className="list-disc ml-4 space-y-1">
                 <li>1개월간 알림장 기능 제한</li>
                 <li>플랫폼 내 노출 제한</li>
               </ul>
             </div>
             
-            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2 text-red-800 dark:text-red-200">3차 적발</h3>
+            <div className="bg-destructive/10 dark:bg-destructive/20 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2 text-destructive dark:text-destructive/70">3차 적발</h3>
               <ul className="list-disc ml-4 space-y-1">
                 <li><strong>인증 자격 박탈</strong></li>
                 <li><strong>서비스 계약 해지</strong></li>
@@ -63,8 +63,8 @@ export default function CertifiedPartnerPage() {
           </div>
         </div>
         
-        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-          <h3 className="font-semibold mb-2 text-green-800 dark:text-green-200">인증 업체 혜택</h3>
+        <div className="bg-success/10 dark:bg-success/20 p-4 rounded-lg">
+          <h3 className="font-semibold mb-2 text-success dark:text-success/70">인증 업체 혜택</h3>
           <div className="text-sm space-y-1">
             <p>• 테일즈 공식 인증 마크 사용 권한</p>
             <p>• 우선 노출 및 추천 시스템 혜택</p>

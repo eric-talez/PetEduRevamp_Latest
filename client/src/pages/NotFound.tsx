@@ -6,7 +6,7 @@ import { Home, ArrowLeft, Search, MapPin, BookOpen, ShoppingBag } from 'lucide-r
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
         <CardContent className="p-8 text-center">
           {/* 404 아이콘 */}
@@ -99,17 +99,17 @@ export default function NotFound() {
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-xs">
               <Link href="/help/contact">
-                <Button variant="link" size="sm" className="text-blue-600 hover:text-blue-800">
+                <Button variant="link" size="sm" className="text-primary hover:text-primary/90">
                   고객센터 문의
                 </Button>
               </Link>
               <Link href="/help/faq">
-                <Button variant="link" size="sm" className="text-blue-600 hover:text-blue-800">
+                <Button variant="link" size="sm" className="text-primary hover:text-primary/90">
                   자주 묻는 질문
                 </Button>
               </Link>
               <Link href="/help/about">
-                <Button variant="link" size="sm" className="text-blue-600 hover:text-blue-800">
+                <Button variant="link" size="sm" className="text-primary hover:text-primary/90">
                   서비스 소개
                 </Button>
               </Link>

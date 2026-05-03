@@ -86,7 +86,7 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary/50"></div>
         </div>
       </div>
     );
@@ -117,9 +117,9 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
+      case 'beginner': return 'bg-success/10 text-success';
+      case 'intermediate': return 'bg-warning/10 text-warning';
+      case 'advanced': return 'bg-destructive/10 text-destructive';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -156,7 +156,7 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
           강의 목록으로
         </Button>
         <div className="flex items-center gap-2">
-          <Eye className="h-5 w-5 text-blue-600" />
+          <Eye className="h-5 w-5 text-primary" />
           <h1 className="text-2xl font-bold">커리큘럼 미리보기</h1>
         </div>
       </div>
@@ -168,7 +168,7 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-primary rounded-lg flex items-center justify-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
                   <BookOpen className="h-12 w-12 text-white" />
                 </div>
                 <div className="flex-1">
@@ -204,7 +204,7 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
                       <span>{curriculumData.duration}주 과정</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-4 w-4 fill-warning text-warning" />
                       <span>4.8 (245개 리뷰)</span>
                     </div>
                   </div>
@@ -231,13 +231,13 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
                     <div
                       key={module.id}
                       className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedLesson === module.id ? 'bg-blue-50 border-blue-200' : ''
+                        selectedLesson === module.id ? 'bg-primary/10 border-primary/30' : ''
                       }`}
                       onClick={() => handlePlayPreview(module.id)}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <Play className="h-4 w-4 text-green-600" />
+                        <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
+                          <Play className="h-4 w-4 text-success" />
                         </div>
                         <div>
                           <h4 className="font-medium">{module.title}</h4>
@@ -276,7 +276,7 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
                   <div
                     key={module.id}
                     className={`p-4 border rounded-lg ${
-                      module.isFree ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'
+                      module.isFree ? 'border-success/30 bg-success/10' : 'border-gray-200 bg-gray-50'
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -284,7 +284,7 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium">{module.title}</h4>
                           {module.isFree ? (
-                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                            <Badge variant="secondary" className="text-xs bg-success/10 text-success">
                               무료
                             </Badge>
                           ) : (
@@ -298,14 +298,14 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
                         {/* 학습 목표 */}
                         {module.objectives.length > 0 && (
                           <div className="mb-3">
-                            <h5 className="text-sm font-medium text-blue-700 mb-2 flex items-center gap-1">
+                            <h5 className="text-sm font-medium text-primary mb-2 flex items-center gap-1">
                               <Target className="h-4 w-4" />
                               학습 목표
                             </h5>
                             <ul className="space-y-1">
                               {module.objectives.map((objective, index) => (
                                 <li key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                                  <CheckCircle className="h-3 w-3 text-green-500" />
+                                  <CheckCircle className="h-3 w-3 text-success" />
                                   {objective}
                                 </li>
                               ))}
@@ -327,7 +327,7 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
                       
                       <div className="flex items-center gap-2">
                         {module.isFree ? (
-                          <Play className="h-5 w-5 text-green-600" />
+                          <Play className="h-5 w-5 text-success" />
                         ) : (
                           <Lock className="h-5 w-5 text-gray-400" />
                         )}
@@ -377,23 +377,23 @@ export default function CoursePreview({ courseId }: CoursePreviewProps) {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <span className="text-sm">{curriculumData.modules.length}개 모듈</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <span className="text-sm">{curriculumData.duration}주 완주 과정</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <span className="text-sm">전문 훈련사 직접 지도</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <span className="text-sm">평생 수강 가능</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <span className="text-sm">수료증 발급</span>
                 </div>
               </div>

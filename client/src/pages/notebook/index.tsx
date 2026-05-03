@@ -1089,8 +1089,8 @@ export default function NotebookPage() {
                   {(() => { console.log('🚀 Dialog rendering with activeTab:', activeTab); return null; })()}
 
                   {/* Tab Navigation - Custom Implementation */}
-                  <div className="mb-4 p-4 bg-yellow-200 border-4 border-red-500 rounded-lg">
-                    <div className="text-lg text-red-700 font-bold mb-2 text-center">🔥 TAB NAVIGATION SYSTEM 🔥</div>
+                  <div className="mb-4 p-4 bg-warning/20 border-4 border-destructive/50 rounded-lg">
+                    <div className="text-lg text-destructive font-bold mb-2 text-center">🔥 TAB NAVIGATION SYSTEM 🔥</div>
                     <div className="text-sm text-black font-medium mb-2 text-center">현재 활성 탭: {activeTab}</div>
                     <div className="flex space-x-1 bg-gradient-to-r from-primary/10 to-primary/5 p-2 rounded-lg border-2 border-primary shadow-lg"
                          data-tab-system="custom-v2">
@@ -1101,7 +1101,7 @@ export default function NotebookPage() {
                       }}
                       className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
                         activeTab === 'basic' 
-                          ? 'bg-white shadow-sm text-gray-900 border-2 border-blue-500' 
+                          ? 'bg-white shadow-sm text-gray-900 border-2 border-primary/50' 
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
@@ -1114,7 +1114,7 @@ export default function NotebookPage() {
                       }}
                       className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
                         activeTab === 'activities' 
-                          ? 'bg-white shadow-sm text-gray-900 border-2 border-blue-500' 
+                          ? 'bg-white shadow-sm text-gray-900 border-2 border-primary/50' 
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
@@ -1127,7 +1127,7 @@ export default function NotebookPage() {
                       }}
                       className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
                         activeTab === 'media' 
-                          ? 'bg-white shadow-sm text-gray-900 border-2 border-blue-500' 
+                          ? 'bg-white shadow-sm text-gray-900 border-2 border-primary/50' 
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
@@ -1140,7 +1140,7 @@ export default function NotebookPage() {
                       }}
                       className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
                         activeTab === 'ai' 
-                          ? 'bg-white shadow-sm text-gray-900 border-2 border-blue-500' 
+                          ? 'bg-white shadow-sm text-gray-900 border-2 border-primary/50' 
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
@@ -1239,7 +1239,7 @@ export default function NotebookPage() {
                     {/* 배변 활동 */}
                     <div className="p-4 border rounded-lg">
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-warning/10 rounded-full flex items-center justify-center">
                           🚽
                         </div>
                         배변 활동
@@ -1310,7 +1310,7 @@ export default function NotebookPage() {
                     {/* 식사 활동 */}
                     <div className="p-4 border rounded-lg">
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
                           🍽️
                         </div>
                         식사 활동
@@ -1410,7 +1410,7 @@ export default function NotebookPage() {
                     {/* 놀이 활동 */}
                     <div className="p-4 border rounded-lg">
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                           🎾
                         </div>
                         놀이 활동
@@ -1489,7 +1489,7 @@ export default function NotebookPage() {
                     {/* 건강 체크 */}
                     <div className="p-4 border rounded-lg">
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center">
                           🏥
                         </div>
                         건강 체크
@@ -1652,7 +1652,7 @@ export default function NotebookPage() {
                     {/* 특별 노트 */}
                     <div className="p-4 border rounded-lg">
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-warning/10 rounded-full flex items-center justify-center">
                           📝
                         </div>
                         특별 노트
@@ -1679,7 +1679,7 @@ export default function NotebookPage() {
                         사진 업로드
                       </label>
                       <div 
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary/40 hover:bg-primary/10 transition-colors"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
                           e.preventDefault();
@@ -1726,7 +1726,7 @@ export default function NotebookPage() {
                               <button
                                 type="button"
                                 onClick={() => removePhoto(index)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                className="absolute -top-2 -right-2 bg-destructive text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-destructive/90 transition-colors opacity-0 group-hover:opacity-100"
                               >
                                 ×
                               </button>
@@ -1743,7 +1743,7 @@ export default function NotebookPage() {
                         동영상 업로드
                       </label>
                       <div 
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary/40 hover:bg-primary/10 transition-colors"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
                           e.preventDefault();
@@ -1794,7 +1794,7 @@ export default function NotebookPage() {
                               <button
                                 type="button"
                                 onClick={() => removeVideo(index)}
-                                className="text-red-500 hover:text-red-700 text-sm font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                className="text-destructive hover:text-destructive/90 text-sm font-medium px-2 py-1 rounded hover:bg-destructive/10 transition-colors"
                               >
                                 삭제
                               </button>
@@ -1805,9 +1805,9 @@ export default function NotebookPage() {
                     </div>
 
                     {/* 미디어 업로드 도움말 */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-blue-900 mb-2">미디어 업로드 팁</h4>
-                      <ul className="text-xs text-blue-800 space-y-1">
+                    <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-primary mb-2">미디어 업로드 팁</h4>
+                      <ul className="text-xs text-primary space-y-1">
                         <li>• 여러 파일을 한 번에 선택하거나 드래그하여 업로드할 수 있습니다</li>
                         <li>• 이미지는 JPG, PNG 형식을 권장합니다 (최대 10MB)</li>
                         <li>• 동영상은 MP4, AVI, MOV 형식을 권장합니다 (최대 50MB)</li>
@@ -1831,7 +1831,7 @@ export default function NotebookPage() {
                       {templates.map(template => (
                         <Card 
                           key={template.id} 
-                          className={`cursor-pointer transition-colors ${selectedTemplate === template.id ? 'border-blue-500 bg-blue-50' : ''}`}
+                          className={`cursor-pointer transition-colors ${selectedTemplate === template.id ? 'border-primary/50 bg-primary/10' : ''}`}
                           onClick={() => applyTemplate(template.id)}
                         >
                           <CardContent className="p-3 text-center">
@@ -2086,7 +2086,7 @@ export default function NotebookPage() {
           filteredEntries.map((entry) => (
             <Card 
               key={entry.id} 
-              className={`transition-all hover:shadow-md cursor-pointer ${!entry.isRead ? 'border-blue-200 bg-blue-50/30' : ''}`}
+              className={`transition-all hover:shadow-md cursor-pointer ${!entry.isRead ? 'border-primary/30 bg-primary/30' : ''}`}
               onClick={() => {
                 setSelectedEntry(entry);
                 if (!entry.isRead) {
@@ -2134,7 +2134,7 @@ export default function NotebookPage() {
                       {moodEmojis[entry.mood]}
                     </div>
                     {!entry.isRead && (
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      <Badge variant="secondary" className="bg-primary/10 text-primary">
                         새로움
                       </Badge>
                     )}
@@ -2188,7 +2188,7 @@ export default function NotebookPage() {
                             <Video className="h-6 w-6 text-gray-400" />
                           </div>
                           {entry.videos.length > 2 && index === 1 && (
-                            <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            <div className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                               {entry.videos.length - 2}
                             </div>
                           )}
@@ -2318,7 +2318,7 @@ export default function NotebookPage() {
                 <div>
                   <span className="text-sm text-gray-600">반려동물:</span>
                   <div className="flex items-center gap-2 font-medium">
-                    <PawPrint className="h-4 w-4 text-blue-500" />
+                    <PawPrint className="h-4 w-4 text-primary" />
                     {selectedEntry.petName}
                   </div>
                 </div>
@@ -2374,7 +2374,7 @@ export default function NotebookPage() {
                   <ul className="space-y-2">
                     {selectedEntry.nextGoals.map((goal, index) => (
                       <li key={index} className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
                         {goal}
                       </li>
                     ))}
@@ -2436,9 +2436,9 @@ export default function NotebookPage() {
 
               {/* 특별 노트 */}
               {selectedEntry.notes && (
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                  <h4 className="font-medium text-yellow-800 mb-2">특별 노트</h4>
-                  <p className="text-yellow-700">{selectedEntry.notes}</p>
+                <div className="bg-warning/10 border-l-4 border-warning/40 p-4">
+                  <h4 className="font-medium text-warning mb-2">특별 노트</h4>
+                  <p className="text-warning">{selectedEntry.notes}</p>
                 </div>
               )}
             </div>

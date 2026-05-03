@@ -91,7 +91,7 @@ export default function InstitutePetAssignments() {
             <Card key={assignment.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-red-500" />
+                  <Heart className="h-5 w-5 text-destructive" />
                   {assignment.petName}
                 </CardTitle>
               </CardHeader>

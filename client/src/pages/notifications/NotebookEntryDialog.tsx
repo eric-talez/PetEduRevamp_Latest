@@ -56,11 +56,11 @@ export function NotebookEntryDialog({
   const getStatusBadge = () => {
     switch (entry.status) {
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800">완료됨</Badge>;
+        return <Badge className="bg-success/10 text-success hover:bg-success/10 dark:bg-success/30 dark:text-success border-success/30 dark:border-success/50">완료됨</Badge>;
       case 'in-progress':
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">진행중</Badge>;
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/10 dark:bg-primary/30 dark:text-primary border-primary/30 dark:border-primary/50">진행중</Badge>;
       case 'planned':
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">예정됨</Badge>;
+        return <Badge className="bg-warning/10 text-warning hover:bg-warning/10 dark:bg-warning/30 dark:text-warning border-warning/30 dark:border-warning/50">예정됨</Badge>;
       default:
         return null;
     }
@@ -105,10 +105,10 @@ export function NotebookEntryDialog({
           <style>
             body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
             h1 { font-size: 18px; margin-bottom: 5px; }
-            .meta { font-size: 12px; color: #666; margin-bottom: 20px; }
+            .meta { font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 20px; }
             .content { white-space: pre-line; margin-bottom: 20px; }
             .activities { margin-bottom: 20px; }
-            .activity { display: inline-block; padding: 3px 8px; background: #f0f0f0; border-radius: 4px; margin-right: 5px; font-size: 12px; }
+            .activity { display: inline-block; padding: 3px 8px; background: hsl(var(--muted)); border-radius: 4px; margin-right: 5px; font-size: 12px; }
           </style>
         </head>
         <body>
@@ -155,7 +155,7 @@ export function NotebookEntryDialog({
               <div>
                 <DialogTitle className="text-lg flex items-center">
                   <span className="mr-2">{entry.petName}의 알림장</span>
-                  {entry.isImportant && <AlertCircle className="h-4 w-4 text-amber-500" />}
+                  {entry.isImportant && <AlertCircle className="h-4 w-4 text-warning" />}
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
                   <span className="font-medium">{entry.author.name}</span>
@@ -188,7 +188,7 @@ export function NotebookEntryDialog({
                 onClick={(e) => onToggleFavorite(entry.id, !entry.isFavorite)}
               >
                 {entry.isFavorite ? (
-                  <BookmarkCheck className="h-4 w-4 text-blue-500" />
+                  <BookmarkCheck className="h-4 w-4 text-primary" />
                 ) : (
                   <Bookmark className="h-4 w-4" />
                 )}
@@ -258,7 +258,7 @@ export function NotebookEntryDialog({
                 <h4 className="text-sm font-medium">태그</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {entry.tags.map(tag => (
-                    <Badge key={tag} variant="outline" className="bg-blue-50 dark:bg-blue-900/20">
+                    <Badge key={tag} variant="outline" className="bg-primary/10 dark:bg-primary/20">
                       #{tag}
                     </Badge>
                   ))}
@@ -271,7 +271,7 @@ export function NotebookEntryDialog({
                 <button 
                   className={cn(
                     "flex items-center space-x-1", 
-                    entry.reactions?.hasLiked && "text-blue-500"
+                    entry.reactions?.hasLiked && "text-primary"
                   )}
                   onClick={() => onToggleLike(entry.id, !entry.reactions?.hasLiked)}
                 >

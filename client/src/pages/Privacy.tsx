@@ -72,7 +72,7 @@ export default function TalezPrivacyPage() {
           </ul>
         </div>
         
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+        <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
           <h3 className="font-semibold mb-2">개인정보 보호책임자</h3>
           <div className="text-sm">
             <p>이름: 개인정보보호팀장</p>

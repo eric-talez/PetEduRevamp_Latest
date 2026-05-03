@@ -68,9 +68,9 @@ export default function DogAnalysisPage() {
 
   if (isTokenLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-primary to-white flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-green-600 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-success mx-auto mb-4" />
           <p className="text-gray-600">SSO 인증 준비 중...</p>
         </div>
       </div>
@@ -78,16 +78,16 @@ export default function DogAnalysisPage() {
   }
 
   return (
-    <div id="dog-ai-container" className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
+    <div id="dog-ai-container" className="min-h-screen bg-gradient-to-b from-primary to-white flex flex-col">
       <div className="bg-white border-b shadow-sm px-4 py-3">
         <div className="container mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Dog className="w-8 h-8 text-green-600" />
+            <Dog className="w-8 h-8 text-success" />
             <div>
               <h1 className="text-xl font-bold text-gray-900">강아지 AI 분석</h1>
               <p className="text-xs text-gray-500">
                 TALEZ AI Tool - 고급 행동 분석 시스템
-                {ssoData?.token && <span className="ml-2 text-green-600">(SSO 연동됨)</span>}
+                {ssoData?.token && <span className="ml-2 text-success">(SSO 연동됨)</span>}
               </p>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function DogAnalysisPage() {
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-success/50 mx-auto mb-4"></div>
               <p className="text-gray-600">TALEZ AI Tool 로딩 중...</p>
             </div>
           </div>

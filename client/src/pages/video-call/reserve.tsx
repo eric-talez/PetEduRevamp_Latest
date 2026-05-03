@@ -232,7 +232,7 @@ export default function VideoCallReserve() {
                   <h3 className="font-semibold">{trainerInfo.name}</h3>
                   <p className="text-sm text-muted-foreground">{trainerInfo.title}</p>
                   <div className="flex items-center gap-1 mt-1">
-                    <span className="text-yellow-400">★</span>
+                    <span className="text-warning">★</span>
                     <span className="text-sm">{trainerInfo.rating}</span>
                   </div>
                 </div>

@@ -80,7 +80,7 @@ function TrainersList({ instituteId, instituteName }: { instituteId: string | nu
                 )}
                 {trainer.experience && (
                   <div className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 text-yellow-500" />
+                    <Star className="h-3.5 w-3.5 text-warning" />
                     <span>경력 {trainer.experience}년</span>
                   </div>
                 )}
@@ -1359,31 +1359,31 @@ export default function LocationServices() {
           <>
             {/* 검색 결과 카운터 및 정렬 - 접근성 개선 */}
             <div 
-              className="mb-4 p-4 bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/15 dark:to-secondary/15 rounded-lg border border-green-200 dark:border-green-800"
+              className="mb-4 p-4 bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/15 dark:to-secondary/15 rounded-lg border border-success/30 dark:border-success/50"
               aria-live="polite"
               aria-atomic="true"
             >
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  <p className="text-sm md:text-base font-medium text-green-800 dark:text-green-200">
-                    검색 결과 <span className="text-lg font-bold text-green-700 dark:text-green-300">{finalFilteredInstitutes.length}건</span>
+                  <CheckCircle className="h-5 w-5 text-success dark:text-success" />
+                  <p className="text-sm md:text-base font-medium text-success dark:text-success/70">
+                    검색 결과 <span className="text-lg font-bold text-success dark:text-success">{finalFilteredInstitutes.length}건</span>
                   </p>
                 </div>
                 
                 <div className="flex items-center gap-2 flex-wrap">
                   {filter !== "all" && (
-                    <span className="text-xs md:text-sm text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900 px-3 py-1 rounded-full">
+                    <span className="text-xs md:text-sm text-success dark:text-success bg-success/10 dark:bg-success/20 px-3 py-1 rounded-full">
                       {filter} 필터 적용 중
                     </span>
                   )}
                   
                   {/* 정렬 옵션 */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs md:text-sm text-green-700 dark:text-green-300 font-medium">정렬:</span>
+                    <span className="text-xs md:text-sm text-success dark:text-success font-medium">정렬:</span>
                     <Select value={sortBy} onValueChange={handleSortChange}>
                       <SelectTrigger 
-                        className="w-[140px] h-8 text-xs md:text-sm bg-white dark:bg-gray-900 border-green-300 dark:border-green-700"
+                        className="w-[140px] h-8 text-xs md:text-sm bg-white dark:bg-gray-900 border-success/40 dark:border-success/50"
                         aria-label="검색 결과 정렬 방식 선택"
                       >
                         <SelectValue />
@@ -1505,12 +1505,12 @@ export default function LocationServices() {
                       
                       <div className="flex gap-1">
                         {institute.certification && (
-                          <div className="relative inline-flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-pulse-slow">
+                          <div className="relative inline-flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r from-primary via-primary to-secondary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-pulse-slow">
                             <Award className="h-4 w-4 mr-1.5 text-white drop-shadow-md" />
                             <span className="text-sm font-bold text-white drop-shadow-md tracking-wide">
                               테일즈 공식인증
                             </span>
-                            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-600 opacity-30 blur-sm"></div>
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-secondary opacity-30 blur-sm"></div>
                           </div>
                         )}
                       </div>
@@ -1533,7 +1533,7 @@ export default function LocationServices() {
                       </div>
                       
                       <div className="flex items-center">
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-2" />
+                        <Star className="h-4 w-4 text-warning fill-warning mr-2" />
                         <span className="text-sm text-gray-700 dark:text-gray-300">{institute.rating} ({institute.reviews} 후기)</span>
                       </div>
                       
@@ -1754,7 +1754,7 @@ export default function LocationServices() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                          <Star className="h-5 w-5 text-warning fill-warning" />
                           <span className="text-2xl font-bold">{selectedInstitute.rating}</span>
                           <span className="text-gray-500">({selectedInstitute.reviews} 후기)</span>
                         </div>
@@ -1771,7 +1771,7 @@ export default function LocationServices() {
                                   <span className="font-medium text-sm">사용자 {i}</span>
                                   <div className="flex">
                                     {[...Array(5)].map((_, j) => (
-                                      <Star key={j} className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                                      <Star key={j} className="h-3 w-3 text-warning fill-warning" />
                                     ))}
                                   </div>
                                 </div>
@@ -1946,7 +1946,7 @@ export default function LocationServices() {
                 <DialogTitle className="text-xl font-bold flex items-center gap-2">
                   {selectedInstitute.name}
                   {selectedInstitute.certification && (
-                    <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 shadow-md">
+                    <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-primary via-primary to-secondary shadow-md">
                       <Award className="h-3 w-3 mr-1 text-white" />
                       <span className="text-xs font-bold text-white">테일즈 공식인증</span>
                     </div>
@@ -2054,7 +2054,7 @@ export default function LocationServices() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                          <Star className="h-5 w-5 text-warning fill-warning" />
                           <span className="text-2xl font-bold">{selectedInstitute.rating}</span>
                           <span className="text-gray-500">({selectedInstitute.reviews} 후기)</span>
                         </div>
@@ -2070,7 +2070,7 @@ export default function LocationServices() {
                                   <span className="font-medium text-sm">사용자 {i}</span>
                                   <div className="flex">
                                     {[...Array(5)].map((_, j) => (
-                                      <Star key={j} className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                                      <Star key={j} className="h-3 w-3 text-warning fill-warning" />
                                     ))}
                                   </div>
                                 </div>
@@ -2210,9 +2210,9 @@ export default function LocationServices() {
           </DialogHeader>
           
           <div className="py-4 space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-              <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">수집하는 정보</h4>
-              <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+            <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
+              <h4 className="font-medium text-primary dark:text-primary/70 mb-2">수집하는 정보</h4>
+              <ul className="text-sm text-primary dark:text-primary space-y-1">
                 <li>• 현재 위치 (위도, 경도)</li>
               </ul>
             </div>
@@ -2279,7 +2279,7 @@ export default function LocationServices() {
                 <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                   {detailInstitute.name}
                   {detailInstitute.certification && (
-                    <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 shadow-md">
+                    <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-primary via-primary to-secondary shadow-md">
                       <Award className="h-3 w-3 mr-1 text-white" />
                       <span className="text-xs font-bold text-white">테일즈 공식인증</span>
                     </div>
@@ -2360,7 +2360,7 @@ export default function LocationServices() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                      <Star className="h-5 w-5 text-warning fill-warning" />
                       <span className="font-medium">{detailInstitute.rating}</span>
                       <span className="text-gray-500">({detailInstitute.reviews} 후기)</span>
                     </div>
@@ -2883,7 +2883,7 @@ function InstituteEditDialog({
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-yellow-500" />
+                  <Award className="h-4 w-4 text-warning" />
                   <label className="text-sm font-semibold">테일즈 공식 인증</label>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -2893,7 +2893,7 @@ function InstituteEditDialog({
                     onChange={(e) => setFormData({ ...formData, certification: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 dark:peer-focus:ring-yellow-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-yellow-500"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-warning dark:peer-focus:ring-warning rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-warning"></div>
                 </label>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -3075,7 +3075,7 @@ function AiRecommendationsDialog({
           <div className="space-y-6 mt-4">
             {/* 요약 */}
             {summary && (
-              <div className="bg-gradient-to-r from-primary/5 to-blue-50 dark:from-primary/15 dark:to-blue-900/20 p-4 rounded-lg border border-primary/30 dark:border-primary/40">
+              <div className="bg-gradient-to-r from-primary/5 to-secondary dark:from-primary/15 dark:to-secondary/20 p-4 rounded-lg border border-primary/30 dark:border-primary/40">
                 <h3 className="font-semibold text-primary dark:text-primary-foreground mb-2 flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
                   AI 분석 요약
@@ -3110,7 +3110,7 @@ function AiRecommendationsDialog({
                         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">주요 강점:</p>
                         <div className="flex flex-wrap gap-2">
                           {rec.strengths.map((strength: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700">
+                            <Badge key={idx} variant="outline" className="bg-success/10 dark:bg-success/20 text-success dark:text-success border-success/30 dark:border-success/50">
                               {strength}
                             </Badge>
                           ))}
@@ -3119,7 +3119,7 @@ function AiRecommendationsDialog({
                     )}
 
                     {rec.considerations && (
-                      <div className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 p-3 rounded border border-amber-200 dark:border-amber-700 mb-3">
+                      <div className="text-sm text-warning dark:text-warning bg-warning/10 dark:bg-warning/20 p-3 rounded border border-warning/30 dark:border-warning/50 mb-3">
                         <p className="font-semibold mb-1">고려사항:</p>
                         <p>{rec.considerations}</p>
                       </div>

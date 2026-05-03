@@ -478,13 +478,13 @@ export default function TrainerReferrals() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">수수료율</p>
-                      <p className="text-xl font-bold text-green-600">{selectedProduct.commissionRate}%</p>
+                      <p className="text-xl font-bold text-success">{selectedProduct.commissionRate}%</p>
                     </div>
                   </div>
                   
                   <div className="pt-4 border-t">
                     <p className="text-sm font-medium mb-2">이 상품을 구매하면 얻는 수수료:</p>
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="text-lg font-bold text-success">
                       {formatCurrency(selectedProduct.price * (selectedProduct.commissionRate / 100))}
                     </p>
                   </div>
@@ -566,7 +566,7 @@ export default function TrainerReferrals() {
                       className="h-8"
                     >
                       {copySuccess === selectedReferral.code ? (
-                        <Check className="h-4 w-4 mr-1 text-green-500" />
+                        <Check className="h-4 w-4 mr-1 text-success" />
                       ) : (
                         <Copy className="h-4 w-4 mr-1" />
                       )}
@@ -585,7 +585,7 @@ export default function TrainerReferrals() {
                       className="h-8"
                     >
                       {copySuccess === selectedReferral.code ? (
-                        <Check className="h-4 w-4 mr-1 text-green-500" />
+                        <Check className="h-4 w-4 mr-1 text-success" />
                       ) : (
                         <Copy className="h-4 w-4 mr-1" />
                       )}
@@ -668,7 +668,7 @@ export default function TrainerReferrals() {
                 description: '카카오톡 공유가 실행되었습니다.',
               });
             }}>
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="#FFE812">
+              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="hsl(var(--warning))">
                 <path d="M12 3C6.921 3 3 6.921 3 12c0 5.079 6.921 9 12 9s9-3.921 9-9c0-5.079-3.921-9-9-9zm0 14.25c-.375 0-.675-.3-.675-.675s.3-.675.675-.675.675.3.675.675-.3.675-.675.675zm3.12-5.64H8.88c-.36 0-.66-.3-.66-.66s.3-.66.66-.66h6.24c.36 0 .66.3.66.66s-.3.66-.66.66z"/>
               </svg>
               카카오톡으로 공유
@@ -680,7 +680,7 @@ export default function TrainerReferrals() {
                 description: '페이스북 공유가 실행되었습니다.',
               });
             }}>
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="#1877F2">
+              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="hsl(var(--primary))">
                 <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
               </svg>
               페이스북으로 공유
@@ -910,7 +910,7 @@ export default function TrainerReferrals() {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-muted-foreground">수익:</span>
-                          <span className="font-bold text-green-600">{formatCurrency(referral.commission)}</span>
+                          <span className="font-bold text-success">{formatCurrency(referral.commission)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -921,7 +921,7 @@ export default function TrainerReferrals() {
                         onClick={() => copyReferralLink(referral.code)}
                       >
                         {copySuccess === referral.code ? (
-                          <Check className="mr-1 h-4 w-4 text-green-500" />
+                          <Check className="mr-1 h-4 w-4 text-success" />
                         ) : (
                           <Copy className="mr-1 h-4 w-4" />
                         )}
@@ -1023,8 +1023,8 @@ export default function TrainerReferrals() {
                             <TableCell>{formatCurrency(product.price)}</TableCell>
                             <TableCell>
                               <div className="flex items-center">
-                                <Percent className="h-3 w-3 mr-1 text-green-600" />
-                                <span className="font-medium text-green-600">{product.commissionRate}%</span>
+                                <Percent className="h-3 w-3 mr-1 text-success" />
+                                <span className="font-medium text-success">{product.commissionRate}%</span>
                               </div>
                             </TableCell>
                             <TableCell className="text-right">

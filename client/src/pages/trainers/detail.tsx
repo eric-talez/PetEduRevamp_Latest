@@ -88,7 +88,7 @@ export default function TrainerDetail({ trainerId: propTrainerId }: TrainerDetai
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center py-12">
-            <p className="text-red-600 mb-4">{error || '훈련사 정보를 찾을 수 없습니다'}</p>
+            <p className="text-destructive mb-4">{error || '훈련사 정보를 찾을 수 없습니다'}</p>
             <Button onClick={() => window.history.back()}>돌아가기</Button>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function TrainerDetail({ trainerId: propTrainerId }: TrainerDetai
       {/* 훈련사 프로필 헤더 */}
       <Card className="mb-6 overflow-hidden">
         {/* 프로필 이미지를 맨 위로 이동 */}
-        <div className="w-full h-64 bg-gradient-to-br from-blue-50 to-primary/5 relative flex items-center justify-center">
+        <div className="w-full h-64 bg-gradient-to-br from-primary to-secondary/5 relative flex items-center justify-center">
           <Avatar className="w-48 h-48 border-4 border-white shadow-xl">
             <AvatarImage 
               src={displayData.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayData.name)}&backgroundColor=6366f1&textColor=ffffff`} 
@@ -157,7 +157,7 @@ export default function TrainerDetail({ trainerId: propTrainerId }: TrainerDetai
             
             <div className="flex justify-center items-center gap-4 text-sm text-muted-foreground mb-4">
               <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                <Star className="w-4 h-4 text-warning fill-current" />
                 <span>{displayData.rating}</span>
                 <span>({displayData.reviews}개 리뷰)</span>
               </div>

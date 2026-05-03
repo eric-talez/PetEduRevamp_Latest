@@ -240,7 +240,7 @@ export default function EventDetailPage() {
                 <ul className="space-y-2">
                   {event.requirements.map((req, index) => (
                     <li key={index} className="flex items-start">
-                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-success mr-2 flex-shrink-0 mt-0.5" />
                       <span>{req}</span>
                     </li>
                   ))}
@@ -355,8 +355,8 @@ export default function EventDetailPage() {
               <Separator className="my-5" />
               
               {event.maxAttendees && event.attendees >= event.maxAttendees ? (
-                <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
-                  <p className="text-sm text-yellow-800 dark:text-yellow-300 flex items-center">
+                <div className="mb-4 bg-warning/10 dark:bg-warning/20 border border-warning/30 dark:border-warning/50 rounded-md p-3">
+                  <p className="text-sm text-warning dark:text-warning flex items-center">
                     <AlertCircle className="h-4 w-4 mr-2" />
                     모집이 마감되었습니다
                   </p>

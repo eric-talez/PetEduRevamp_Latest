@@ -317,7 +317,7 @@ export default function EventsPage() {
     <div className="container mx-auto px-4 py-6">
       {/* API 오류 메시지 표시 */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-950 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 p-4 mb-6 rounded-lg">
+        <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/40 dark:border-destructive/50 text-destructive dark:text-destructive p-4 mb-6 rounded-lg">
           <h3 className="text-lg font-medium mb-1">데이터를 불러오는 중 오류가 발생했습니다</h3>
           <p>잠시 후 다시 시도해주세요. 문제가 지속되면 관리자에게 문의하세요.</p>
         </div>

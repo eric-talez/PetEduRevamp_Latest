@@ -101,13 +101,13 @@ export default function AdminUsers() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Badge className="bg-red-100 text-red-800"><Shield className="w-3 h-3 mr-1" />관리자</Badge>;
+        return <Badge className="bg-destructive/10 text-destructive"><Shield className="w-3 h-3 mr-1" />관리자</Badge>;
       case 'trainer':
-        return <Badge className="bg-blue-100 text-blue-800">훈련사</Badge>;
+        return <Badge className="bg-primary/10 text-primary">훈련사</Badge>;
       case 'institute-admin':
         return <Badge className="bg-primary/10 text-primary">기관관리자</Badge>;
       case 'user':
-        return <Badge className="bg-green-100 text-green-800">일반회원</Badge>;
+        return <Badge className="bg-success/10 text-success">일반회원</Badge>;
       default:
         return <Badge>{role}</Badge>;
     }
@@ -116,11 +116,11 @@ export default function AdminUsers() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">활성</Badge>;
+        return <Badge className="bg-success/10 text-success">활성</Badge>;
       case 'inactive':
         return <Badge className="bg-gray-100 text-gray-800">비활성</Badge>;
       case 'suspended':
-        return <Badge className="bg-red-100 text-red-800">정지</Badge>;
+        return <Badge className="bg-destructive/10 text-destructive">정지</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -343,7 +343,7 @@ export default function AdminUsers() {
                 </div>
               ))
             ) : usersError ? (
-              <div className="p-8 text-center text-red-500">
+              <div className="p-8 text-center text-destructive">
                 데이터를 불러오는 중 오류가 발생했습니다.
               </div>
             ) : filteredUsers.length === 0 ? (

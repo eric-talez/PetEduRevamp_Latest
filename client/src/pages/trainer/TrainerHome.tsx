@@ -88,7 +88,7 @@ export default function TrainerHome() {
     return (
       <div className="container mx-auto p-6 max-w-7xl flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-4 rounded-lg">
+          <div className="bg-destructive/10 dark:bg-destructive/30 text-destructive dark:text-destructive p-4 rounded-lg">
             <p className="font-medium">대시보드 데이터를 불러올 수 없습니다.</p>
             <p className="text-sm mt-2">페이지를 새로고침하거나 다시 로그인해주세요.</p>
           </div>
@@ -156,7 +156,7 @@ export default function TrainerHome() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-3 rounded-full mr-4">
+              <div className="bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary p-3 rounded-full mr-4">
                 <Users className="h-6 w-6" />
               </div>
               <div>
@@ -173,7 +173,7 @@ export default function TrainerHome() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-3 rounded-full mr-4">
+              <div className="bg-success/10 dark:bg-success/30 text-success dark:text-success p-3 rounded-full mr-4">
                 <Clipboard className="h-6 w-6" />
               </div>
               <div>
@@ -190,7 +190,7 @@ export default function TrainerHome() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-3 rounded-full mr-4">
+              <div className="bg-warning/10 dark:bg-warning/30 text-warning dark:text-warning p-3 rounded-full mr-4">
                 <Star className="h-6 w-6" />
               </div>
               <div>
@@ -232,8 +232,8 @@ export default function TrainerHome() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">수익 관리</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">수익 내역과 정산 현황을 확인하세요</p>
                 </div>
-                <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-                  <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
+                <div className="bg-success/10 dark:bg-success/20 p-3 rounded-full">
+                  <TrendingUp className="w-6 h-6 text-success dark:text-success" />
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between">
@@ -252,13 +252,13 @@ export default function TrainerHome() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">학생 관리</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">수강생 현황과 진도를 관리하세요</p>
                 </div>
-                <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
-                  <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-full">
+                  <Users className="w-6 h-6 text-primary dark:text-primary" />
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">배정된 학생</span>
-                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{stats.totalStudents}명</span>
+                <span className="text-sm font-bold text-primary dark:text-primary">{stats.totalStudents}명</span>
               </div>
             </CardContent>
           </Card>
@@ -311,7 +311,7 @@ export default function TrainerHome() {
                       <div className="font-medium">{schedule.title}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
                         <span className="mr-2">{schedule.time}</span>
-                        <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${schedule.type === "수업" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800" : "bg-primary/5 text-primary dark:bg-primary/15 dark:text-primary border-primary/30 dark:border-primary/40"}`}>
+                        <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${schedule.type === "수업" ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border-primary/30 dark:border-primary/50" : "bg-primary/5 text-primary dark:bg-primary/15 dark:text-primary border-primary/30 dark:border-primary/40"}`}>
                           {schedule.type}
                         </Badge>
                       </div>
@@ -348,7 +348,7 @@ export default function TrainerHome() {
               {recentNotebooks.length > 0 ? (
                 recentNotebooks.map((notebook) => (
                   <div key={notebook.id} className="flex items-start">
-                    <div className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-full mr-3">
+                    <div className="bg-success/10 dark:bg-success/30 text-success dark:text-success p-2 rounded-full mr-3">
                       <Clipboard className="w-5 h-5" />
                     </div>
                     <div className="flex-1">
@@ -449,10 +449,10 @@ export default function TrainerHome() {
 
       {/* 액션 버튼 영역 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="hover:bg-primary-50 dark:hover:bg-primary-950/10 cursor-pointer transition-colors">
+        <Card className="hover:bg-primary-50 dark:hover:bg-primary/90-950/10 cursor-pointer transition-colors">
           <Link href="/trainer-courses">
             <CardContent className="p-6 flex items-center">
-              <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-3 rounded-full mr-4">
+              <div className="bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary p-3 rounded-full mr-4">
                 <BookOpen className="h-6 w-6" />
               </div>
               <div>
@@ -463,10 +463,10 @@ export default function TrainerHome() {
           </Link>
         </Card>
 
-        <Card className="hover:bg-primary-50 dark:hover:bg-primary-950/10 cursor-pointer transition-colors">
+        <Card className="hover:bg-primary-50 dark:hover:bg-primary/90-950/10 cursor-pointer transition-colors">
           <Link href="/trainer-reviews">
             <CardContent className="p-6 flex items-center">
-              <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-3 rounded-full mr-4">
+              <div className="bg-warning/10 dark:bg-warning/30 text-warning dark:text-warning p-3 rounded-full mr-4">
                 <Star className="h-6 w-6" />
               </div>
               <div>
@@ -477,10 +477,10 @@ export default function TrainerHome() {
           </Link>
         </Card>
 
-        <Card className="hover:bg-primary-50 dark:hover:bg-primary-950/10 cursor-pointer transition-colors">
+        <Card className="hover:bg-primary-50 dark:hover:bg-primary/90-950/10 cursor-pointer transition-colors">
           <Link href="/trainer-earnings">
             <CardContent className="p-6 flex items-center">
-              <div className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-3 rounded-full mr-4">
+              <div className="bg-success/10 dark:bg-success/30 text-success dark:text-success p-3 rounded-full mr-4">
                 <TrendingUp className="h-6 w-6" />
               </div>
               <div>
@@ -491,7 +491,7 @@ export default function TrainerHome() {
           </Link>
         </Card>
 
-        <Card className="hover:bg-primary-50 dark:hover:bg-primary-950/10 cursor-pointer transition-colors">
+        <Card className="hover:bg-primary-50 dark:hover:bg-primary/90-950/10 cursor-pointer transition-colors">
           <Link href="/trainer-referrals">
             <CardContent className="p-6 flex items-center">
               <div className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary p-3 rounded-full mr-4">

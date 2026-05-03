@@ -50,7 +50,7 @@ export default function NotFound() {
   // 발자국 스타일 클래스 생성
   const pawPrintClass = `
     inline-block transform 
-    ${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'}
+    ${theme === 'dark' ? 'text-warning' : 'text-warning'}
   `;
   
   return (
@@ -72,8 +72,8 @@ export default function NotFound() {
               <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
                 <PawPrint className="h-12 w-12 text-primary" />
               </div>
-              <div className="absolute -right-2 bottom-0 bg-amber-100 dark:bg-amber-900/60 p-2 rounded-full animate-bounce">
-                <MapPin className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="absolute -right-2 bottom-0 bg-warning/10 dark:bg-warning/60 p-2 rounded-full animate-bounce">
+                <MapPin className="h-5 w-5 text-warning dark:text-warning" />
               </div>
             </div>
             
@@ -84,12 +84,12 @@ export default function NotFound() {
             </p>
           </div>
 
-          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 my-5 border border-amber-100 dark:border-amber-800/50">
+          <div className="bg-warning/10 dark:bg-warning/20 rounded-lg p-4 my-5 border border-warning/30 dark:border-warning/50">
             <div className="flex items-start gap-3">
               <div className="mt-1">
                 <PawPrint className={pawPrintClass} />
               </div>
-              <p className="text-sm text-amber-700 dark:text-amber-300 italic">
+              <p className="text-sm text-warning dark:text-warning italic">
                 "{randomTip}"
               </p>
             </div>
@@ -105,7 +105,7 @@ export default function NotFound() {
                 <Link 
                   key={index} 
                   href={suggestion}
-                  className="text-primary hover:text-primary-dark dark:text-primary-light 
+                  className="text-primary hover:text-primary/90-dark dark:text-primary-light 
                     dark:hover:text-primary-lighter transition-colors p-2 rounded 
                     hover:bg-gray-200 dark:hover:bg-gray-700/50 text-sm flex items-center gap-1.5"
                 >

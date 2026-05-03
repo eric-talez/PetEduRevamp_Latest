@@ -69,7 +69,7 @@ const AuthCheckWrapper: React.FC<AuthCheckWrapperProps> = ({
   // 인증 필요하지만 인증되지 않았고, 컨텐츠를 표시하지 않는 경우
   if (requiredAuth && !isAuthenticated && !showContent) {
     return (
-      <div className="p-4 border rounded-md bg-orange-50 dark:bg-orange-900/20 text-center">
+      <div className="p-4 border rounded-md bg-primary/10 dark:bg-primary/20 text-center">
         <h3 className="font-medium text-lg mb-2">로그인이 필요합니다</h3>
         <p className="text-gray-600 dark:text-gray-300 mb-4">{authMessage}</p>
         <button 

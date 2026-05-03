@@ -70,17 +70,17 @@ export default function AnalyticsPage() {
   const isLoading = trainingLoading || statsLoading || monthlyLoading || usersLoading || coursesLoading;
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'bg-green-500';
-    if (progress >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (progress >= 80) return 'bg-success';
+    if (progress >= 60) return 'bg-warning';
+    return 'bg-destructive';
   };
 
   const getLevelBadgeColor = (level: string) => {
     switch (level) {
       case '마스터': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground';
-      case '숙련': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case '중급': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case '초급': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case '숙련': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/70';
+      case '중급': return 'bg-success/10 text-success dark:bg-success/20 dark:text-success/70';
+      case '초급': return 'bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning/70';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
   };
@@ -120,7 +120,7 @@ export default function AnalyticsPage() {
     <div className="space-y-4">
       {isLoading ? (
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/50 mx-auto"></div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             훈련 진행도를 불러오는 중...
           </p>
@@ -163,7 +163,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       {isLoading ? (
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/50 mx-auto"></div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             훈련 진행도를 불러오는 중...
           </p>
@@ -176,9 +176,9 @@ export default function AnalyticsPage() {
                 <h3 className="font-medium">{item.skill}</h3>
                 <Badge className={getLevelBadgeColor(item.level)}>{item.level}</Badge>
               </div>
-              <div className="h-16 bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-lg flex items-end justify-center relative overflow-hidden">
+              <div className="h-16 bg-gradient-to-r from-primary to-secondary dark:from-primary dark:to-secondary rounded-lg flex items-end justify-center relative overflow-hidden">
                 <div 
-                  className="bg-blue-500 w-full transition-all duration-1000 ease-out flex items-center justify-center text-white text-sm font-medium"
+                  className="bg-primary w-full transition-all duration-1000 ease-out flex items-center justify-center text-white text-sm font-medium"
                   style={{ height: `${item.progress}%` }}
                 >
                   {item.progress}%
@@ -204,7 +204,7 @@ export default function AnalyticsPage() {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {isLoading ? (
         <div className="col-span-2 text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/50 mx-auto"></div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             훈련 진행도를 불러오는 중...
           </p>
@@ -220,10 +220,10 @@ export default function AnalyticsPage() {
                     <div 
                       className="w-4 h-4 rounded-full"
                       style={{
-                        backgroundColor: index === 0 ? '#8B5CF6' : 
-                                       index === 1 ? '#3B82F6' : 
-                                       index === 2 ? '#10B981' : 
-                                       index === 3 ? '#F59E0B' : '#6B7280'
+                        backgroundColor: index === 0 ? 'hsl(var(--secondary))' : 
+                                       index === 1 ? 'hsl(var(--primary))' : 
+                                       index === 2 ? 'hsl(var(--success))' : 
+                                       index === 3 ? 'hsl(var(--warning))' : 'hsl(var(--muted-foreground))'
                       }}
                     />
                     <span className="font-medium">{item.skill}</span>
@@ -258,7 +258,7 @@ export default function AnalyticsPage() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {isLoading ? (
         <div className="col-span-3 text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/50 mx-auto"></div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             훈련 진행도를 불러오는 중...
           </p>
@@ -271,14 +271,14 @@ export default function AnalyticsPage() {
               <div 
                 className="absolute inset-0 rounded-full border-4 border-t-transparent border-r-transparent transform -rotate-90 transition-all duration-1000"
                 style={{
-                  borderLeftColor: index === 0 ? '#8B5CF6' : 
-                                 index === 1 ? '#3B82F6' : 
-                                 index === 2 ? '#10B981' : 
-                                 index === 3 ? '#F59E0B' : '#6B7280',
-                  borderBottomColor: index === 0 ? '#8B5CF6' : 
-                                   index === 1 ? '#3B82F6' : 
-                                   index === 2 ? '#10B981' : 
-                                   index === 3 ? '#F59E0B' : '#6B7280',
+                  borderLeftColor: index === 0 ? 'hsl(var(--secondary))' : 
+                                 index === 1 ? 'hsl(var(--primary))' : 
+                                 index === 2 ? 'hsl(var(--success))' : 
+                                 index === 3 ? 'hsl(var(--warning))' : 'hsl(var(--muted-foreground))',
+                  borderBottomColor: index === 0 ? 'hsl(var(--secondary))' : 
+                                   index === 1 ? 'hsl(var(--primary))' : 
+                                   index === 2 ? 'hsl(var(--success))' : 
+                                   index === 3 ? 'hsl(var(--warning))' : 'hsl(var(--muted-foreground))',
                   clipPath: `polygon(50% 50%, 50% 0%, ${50 + (item.progress / 100) * 50}% 0%, ${50 + (item.progress / 100) * 50}% 100%)`
                 }}
               />
@@ -309,7 +309,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       {isLoading ? (
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/50 mx-auto"></div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             훈련 진행도를 불러오는 중...
           </p>
@@ -383,19 +383,19 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       {isLoading ? (
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/50 mx-auto"></div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             훈련 진행도를 불러오는 중...
           </p>
         </div>
       ) : trainingProgressData && trainingProgressData.length > 0 ? (
         <>
-          <div className="h-64 bg-gradient-to-t from-blue-50 to-transparent dark:from-blue-900 border rounded-lg p-4 relative overflow-hidden">
+          <div className="h-64 bg-gradient-to-t from-primary to-transparent dark:from-primary border rounded-lg p-4 relative overflow-hidden">
             <div className="absolute bottom-0 left-0 right-0 h-full flex items-end justify-around">
               {trainingProgressData.map((item, index) => (
                 <div key={index} className="flex flex-col items-center w-full">
                   <div 
-                    className="bg-gradient-to-t from-blue-500 to-blue-300 w-8 transition-all duration-1000 ease-out rounded-t-lg"
+                    className="bg-gradient-to-t from-primary to-secondary w-8 transition-all duration-1000 ease-out rounded-t-lg"
                     style={{ height: `${(item.progress / 100) * 200}px` }}
                   />
                   <div className="text-xs font-medium mt-2 text-center">{item.skill}</div>
@@ -490,7 +490,7 @@ export default function AnalyticsPage() {
                   )}
                 </p>
               </div>
-              <BookOpen className="h-8 w-8 text-blue-500" />
+              <BookOpen className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -508,7 +508,7 @@ export default function AnalyticsPage() {
                   )}
                 </p>
               </div>
-              <Award className="h-8 w-8 text-green-500" />
+              <Award className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -544,7 +544,7 @@ export default function AnalyticsPage() {
                   )}
                 </p>
               </div>
-              <Zap className="h-8 w-8 text-orange-500" />
+              <Zap className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -630,7 +630,7 @@ export default function AnalyticsPage() {
               <div className="space-y-4">
                 {isLoading ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/50 mx-auto"></div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       강의 데이터를 불러오는 중...
                     </p>
@@ -641,8 +641,8 @@ export default function AnalyticsPage() {
                       <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                              <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                              <BookOpen className="h-6 w-6 text-primary dark:text-primary" />
                             </div>
                             <div>
                               <h3 className="font-medium text-lg">{course.title || '강의 제목'}</h3>
@@ -655,7 +655,7 @@ export default function AnalyticsPage() {
                             <div className="flex items-center gap-2 mb-1">
                               <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <div 
-                                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                  className="bg-primary h-2 rounded-full transition-all duration-300"
                                   style={{ width: `${course.progress || 0}%` }}
                                 />
                               </div>
@@ -668,13 +668,13 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
                           <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                            <div className="font-medium text-green-600 dark:text-green-400">
+                            <div className="font-medium text-success dark:text-success">
                               {course.averageScore || 0}%
                             </div>
                             <div className="text-gray-600 dark:text-gray-400">평균 점수</div>
                           </div>
                           <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                            <div className="font-medium text-blue-600 dark:text-blue-400">
+                            <div className="font-medium text-primary dark:text-primary">
                               {course.timeSpent || 0}시간
                             </div>
                             <div className="text-gray-600 dark:text-gray-400">학습 시간</div>
@@ -721,7 +721,7 @@ export default function AnalyticsPage() {
               <div className="space-y-4">
                 {isLoading ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/50 mx-auto"></div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       월간 진행도를 불러오는 중...
                     </p>
@@ -799,19 +799,19 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">
+                  <div className="p-3 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                    <h4 className="font-medium text-primary dark:text-primary mb-2">
                       이번 주 목표
                     </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-400">
+                    <p className="text-sm text-primary dark:text-primary">
                       "엎드리기" 명령어 80% 성공률 달성하기
                     </p>
                   </div>
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <h4 className="font-medium text-green-900 dark:text-green-300 mb-2">
+                  <div className="p-3 bg-success/10 dark:bg-success/20 rounded-lg">
+                    <h4 className="font-medium text-success dark:text-success mb-2">
                       장기 목표
                     </h4>
-                    <p className="text-sm text-green-700 dark:text-green-400">
+                    <p className="text-sm text-success dark:text-success">
                       고급 훈련 코스 시작 준비하기
                     </p>
                   </div>

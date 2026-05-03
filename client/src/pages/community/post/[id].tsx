@@ -403,7 +403,7 @@ export default function PostDetailPage() {
         </Button>
         
         <div className="text-center py-12">
-          <p className="text-red-500 mb-2">오류가 발생했습니다</p>
+          <p className="text-destructive mb-2">오류가 발생했습니다</p>
           <p className="text-muted-foreground mb-4">{error instanceof Error ? error.message : '게시글을 불러오는데 실패했습니다.'}</p>
           <Button onClick={() => queryClient.invalidateQueries({ queryKey: [`/api/social/posts/${postId}`] })}>
             다시 시도
@@ -590,7 +590,7 @@ export default function PostDetailPage() {
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={handlePostDelete}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-destructive hover:bg-destructive/90"
             >
               {deletePostMutation.isPending ? (
                 <>

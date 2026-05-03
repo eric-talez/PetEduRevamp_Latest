@@ -25,11 +25,11 @@ import {
 } from 'lucide-react';
 
 const TEMPERAMENT_BADGE: Record<string, { label: string; color: string }> = {
-  A: { label: 'A - 사회성 양호', color: 'bg-green-100 text-green-800' },
-  B: { label: 'B - 흥분 조절', color: 'bg-blue-100 text-blue-800' },
-  C: { label: 'C - 짖음/경계', color: 'bg-yellow-100 text-yellow-800' },
-  D: { label: 'D - 공격성 주의', color: 'bg-orange-100 text-orange-800' },
-  E: { label: 'E - 분리불안', color: 'bg-red-100 text-red-800' },
+  A: { label: 'A - 사회성 양호', color: 'bg-success/10 text-success' },
+  B: { label: 'B - 흥분 조절', color: 'bg-primary/10 text-primary' },
+  C: { label: 'C - 짖음/경계', color: 'bg-warning/10 text-warning' },
+  D: { label: 'D - 공격성 주의', color: 'bg-primary/10 text-primary' },
+  E: { label: 'E - 분리불안', color: 'bg-destructive/10 text-destructive' },
 };
 
 interface Pet {
@@ -157,9 +157,9 @@ export default function PetDetailPage() {
       case 'overdue':
         return <Badge variant="destructive">기한 초과</Badge>;
       case 'due-soon':
-        return <Badge variant="outline" className="border-yellow-500 text-yellow-600">접종 예정</Badge>;
+        return <Badge variant="outline" className="border-warning/50 text-warning">접종 예정</Badge>;
       case 'current':
-        return <Badge variant="outline" className="border-green-500 text-green-600">접종 완료</Badge>;
+        return <Badge variant="outline" className="border-success/50 text-success">접종 완료</Badge>;
       default:
         return <Badge variant="outline">완료</Badge>;
     }
@@ -206,20 +206,20 @@ export default function PetDetailPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-red-500" />
+                  <Heart className="w-4 h-4 text-destructive" />
                   <span className="font-medium">견종:</span>
                   <span>{pet.breed}</span>
                 </div>
                 {pet.weight && (
                   <div className="flex items-center gap-2">
-                    <Weight className="w-4 h-4 text-blue-500" />
+                    <Weight className="w-4 h-4 text-primary" />
                     <span className="font-medium">체중:</span>
                     <span>{pet.weight}kg</span>
                   </div>
                 )}
                 {pet.temperament && (
                   <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-green-500" />
+                    <Activity className="w-4 h-4 text-success" />
                     <span className="font-medium">성격:</span>
                     <span>{pet.temperament}</span>
                   </div>
@@ -240,8 +240,8 @@ export default function PetDetailPage() {
               {pet.allergies && (
                 <div className="mt-4">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-red-600">알레르기:</span>
-                    <span className="text-red-600">{pet.allergies}</span>
+                    <span className="font-medium text-destructive">알레르기:</span>
+                    <span className="text-destructive">{pet.allergies}</span>
                   </div>
                 </div>
               )}
@@ -266,11 +266,11 @@ export default function PetDetailPage() {
         <CardContent>
           {noseProfile ? (
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <Fingerprint className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
+                <Fingerprint className="w-8 h-8 text-success" />
               </div>
               <div>
-                <p className="font-medium text-green-700">코 프린트 등록 완료</p>
+                <p className="font-medium text-success">코 프린트 등록 완료</p>
                 <p className="text-sm text-muted-foreground">
                   품질 점수: {noseProfile.qualityScore}점 · 버전 {noseProfile.version}
                 </p>
@@ -350,12 +350,12 @@ export default function PetDetailPage() {
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-blue-500" />
+                          <Calendar className="w-4 h-4 text-primary" />
                           <span>접종일: {formatDate(vaccination.vaccineDate)}</span>
                         </div>
                         {vaccination.nextDueDate && (
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-orange-500" />
+                            <Clock className="w-4 h-4 text-primary" />
                             <span>다음 접종일: {formatDate(vaccination.nextDueDate)}</span>
                           </div>
                         )}
@@ -367,7 +367,7 @@ export default function PetDetailPage() {
                         )}
                         {vaccination.clinicName && (
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-green-500" />
+                            <MapPin className="w-4 h-4 text-success" />
                             <span>{vaccination.clinicName}</span>
                           </div>
                         )}
@@ -419,7 +419,7 @@ export default function PetDetailPage() {
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-blue-500" />
+                          <Calendar className="w-4 h-4 text-primary" />
                           <span className="font-medium">검진일: {formatDate(checkup.checkupDate)}</span>
                         </div>
                         {checkup.nextCheckupDate && (
@@ -432,13 +432,13 @@ export default function PetDetailPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
                         {checkup.weight && (
                           <div className="flex items-center gap-2">
-                            <Weight className="w-4 h-4 text-green-500" />
+                            <Weight className="w-4 h-4 text-success" />
                             <span>체중: {checkup.weight}kg</span>
                           </div>
                         )}
                         {checkup.temperature && (
                           <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-red-500" />
+                            <Activity className="w-4 h-4 text-destructive" />
                             <span>체온: {checkup.temperature}°C</span>
                           </div>
                         )}
@@ -450,7 +450,7 @@ export default function PetDetailPage() {
                         )}
                         {checkup.clinicName && (
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-green-500" />
+                            <MapPin className="w-4 h-4 text-success" />
                             <span>{checkup.clinicName}</span>
                           </div>
                         )}
@@ -510,8 +510,8 @@ function ConsultationHistoryTab({ petId }: { petId: number }) {
     D: 'D - 공격성 주의', E: 'E - 분리불안',
   };
   const TEMP_COLORS: Record<string, string> = {
-    A: 'bg-green-100 text-green-800', B: 'bg-blue-100 text-blue-800', C: 'bg-yellow-100 text-yellow-800',
-    D: 'bg-orange-100 text-orange-800', E: 'bg-red-100 text-red-800',
+    A: 'bg-success/10 text-success', B: 'bg-primary/10 text-primary', C: 'bg-warning/10 text-warning',
+    D: 'bg-primary/10 text-primary', E: 'bg-destructive/10 text-destructive',
   };
 
   return (

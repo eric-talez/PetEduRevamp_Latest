@@ -80,7 +80,7 @@ export default function ContactPage() {
             <input
               type="text"
               placeholder="자주 묻는 질문 검색하기"
-              className="w-full px-4 py-3 pl-12 rounded-full bg-white/90 shadow-md border-0 focus:ring-2 focus:ring-orange-400"
+              className="w-full px-4 py-3 pl-12 rounded-full bg-white/90 shadow-md border-0 focus:ring-2 focus:ring-primary"
             />
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
           </div>
@@ -93,15 +93,15 @@ export default function ContactPage() {
           <Tabs defaultValue="form" className="space-y-8">
             <div className="flex justify-center mb-8">
               <TabsList className="grid grid-cols-3 w-full max-w-md">
-                <TabsTrigger value="form" className="data-[state=active]:bg-orange-100 dark:data-[state=active]:bg-orange-900/30">
+                <TabsTrigger value="form" className="data-[state=active]:bg-primary/10 dark:data-[state=active]:bg-primary/30">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   문의하기
                 </TabsTrigger>
-                <TabsTrigger value="faq" className="data-[state=active]:bg-orange-100 dark:data-[state=active]:bg-orange-900/30">
+                <TabsTrigger value="faq" className="data-[state=active]:bg-primary/10 dark:data-[state=active]:bg-primary/30">
                   <Search className="w-4 h-4 mr-2" />
                   자주 묻는 질문
                 </TabsTrigger>
-                <TabsTrigger value="info" className="data-[state=active]:bg-orange-100 dark:data-[state=active]:bg-orange-900/30">
+                <TabsTrigger value="info" className="data-[state=active]:bg-primary/10 dark:data-[state=active]:bg-primary/30">
                   <Phone className="w-4 h-4 mr-2" />
                   연락처 정보
                 </TabsTrigger>
@@ -192,8 +192,8 @@ export default function ContactPage() {
                     </form>
                   ) : (
                     <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <div className="w-16 h-16 bg-success/10 dark:bg-success/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-success dark:text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
@@ -241,7 +241,7 @@ export default function ContactPage() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="border rounded-lg p-6 text-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <Phone className="w-10 h-10 mx-auto mb-4 text-orange-500" />
+                        <Phone className="w-10 h-10 mx-auto mb-4 text-primary" />
                         <h3 className="font-medium text-lg mb-2">전화 문의</h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-4">1588-0000</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -251,7 +251,7 @@ export default function ContactPage() {
                       </div>
                       
                       <div className="border rounded-lg p-6 text-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <Mail className="w-10 h-10 mx-auto mb-4 text-orange-500" />
+                        <Mail className="w-10 h-10 mx-auto mb-4 text-primary" />
                         <h3 className="font-medium text-lg mb-2">이메일 문의</h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-4">support@petedu.com</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -261,7 +261,7 @@ export default function ContactPage() {
                       </div>
                       
                       <div className="border rounded-lg p-6 text-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <MapPin className="w-10 h-10 mx-auto mb-4 text-orange-500" />
+                        <MapPin className="w-10 h-10 mx-auto mb-4 text-primary" />
                         <h3 className="font-medium text-lg mb-2">방문 상담</h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-4">
                           서울특별시 강남구 테헤란로 123<br />

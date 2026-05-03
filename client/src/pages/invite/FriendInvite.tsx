@@ -103,21 +103,21 @@ export default function FriendInvite() {
     switch (status) {
       case "registered":
         return (
-          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+          <Badge className="bg-success/10 text-success dark:bg-success/20 dark:text-success/70">
             <CheckCircle className="w-3 h-3 mr-1" />
             가입 완료
           </Badge>
         );
       case "pending":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
+          <Badge className="bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning/70">
             <Clock className="w-3 h-3 mr-1" />
             대기 중
           </Badge>
         );
       case "cancelled":
         return (
-          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+          <Badge className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive/70">
             <XCircle className="w-3 h-3 mr-1" />
             취소됨
           </Badge>

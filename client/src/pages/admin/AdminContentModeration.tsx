@@ -266,18 +266,18 @@ const AdminContentModeration: React.FC = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
+      case 'high': return 'bg-destructive';
+      case 'medium': return 'bg-warning';
+      case 'low': return 'bg-success';
       default: return 'bg-gray-500';
     }
   };
 
   const getSeverityBadgeColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'high': return 'bg-destructive/10 text-destructive border-destructive/30';
+      case 'medium': return 'bg-warning/10 text-warning border-warning/30';
+      case 'low': return 'bg-primary/10 text-primary border-primary/30';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -498,7 +498,7 @@ const AdminContentModeration: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                <AlertTriangle className="w-5 h-5 text-warning" />
                 검열 대기 게시글
               </CardTitle>
               <CardDescription>
@@ -651,24 +651,24 @@ const AdminContentModeration: React.FC = () => {
                 </Button>
 
                 {testError && (
-                  <div className="border border-red-200 bg-red-50 p-3 rounded">
+                  <div className="border border-destructive/30 bg-destructive/10 p-3 rounded">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-red-600" />
-                      <span className="text-red-800 text-sm">{testError}</span>
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <span className="text-destructive text-sm">{testError}</span>
                     </div>
                   </div>
                 )}
 
                 {testResult && (
-                  <div className={`border-2 p-4 rounded ${testResult.flagged ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
+                  <div className={`border-2 p-4 rounded ${testResult.flagged ? 'border-destructive/30 bg-destructive/10' : 'border-success/30 bg-success/10'}`}>
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         {testResult.flagged ? (
-                          <XCircle className="w-5 h-5 text-red-600" />
+                          <XCircle className="w-5 h-5 text-destructive" />
                         ) : (
-                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <CheckCircle className="w-5 h-5 text-success" />
                         )}
-                        <span className={`font-medium ${testResult.flagged ? 'text-red-800' : 'text-green-800'}`}>
+                        <span className={`font-medium ${testResult.flagged ? 'text-destructive' : 'text-success'}`}>
                           {testResult.flagged ? '부적절한 콘텐츠 감지됨' : '콘텐츠 검사 통과'}
                         </span>
                         <Badge className={getSeverityBadgeColor(testResult.severity)}>

@@ -40,7 +40,7 @@ export default function NotificationsMenu({ currentPath }: NotificationsMenuProp
           className="w-full justify-start" 
           onClick={() => navigate("/notifications/system")}
         >
-          <div className="mr-2 w-2 h-2 rounded-full bg-blue-500" />
+          <div className="mr-2 w-2 h-2 rounded-full bg-primary" />
           시스템 알림
         </Button>
         <Button 
@@ -56,7 +56,7 @@ export default function NotificationsMenu({ currentPath }: NotificationsMenuProp
           className="w-full justify-start" 
           onClick={() => navigate("/notifications/event")}
         >
-          <div className="mr-2 w-2 h-2 rounded-full bg-green-500" />
+          <div className="mr-2 w-2 h-2 rounded-full bg-success" />
           일정 알림
         </Button>
         <Button 
@@ -64,7 +64,7 @@ export default function NotificationsMenu({ currentPath }: NotificationsMenuProp
           className="w-full justify-start" 
           onClick={() => navigate("/notifications/payment")}
         >
-          <div className="mr-2 w-2 h-2 rounded-full bg-yellow-500" />
+          <div className="mr-2 w-2 h-2 rounded-full bg-warning" />
           결제 알림
         </Button>
         <Button 
@@ -72,7 +72,7 @@ export default function NotificationsMenu({ currentPath }: NotificationsMenuProp
           className="w-full justify-start" 
           onClick={() => navigate("/notifications/security")}
         >
-          <div className="mr-2 w-2 h-2 rounded-full bg-red-500" />
+          <div className="mr-2 w-2 h-2 rounded-full bg-destructive" />
           보안 알림
         </Button>
         <Button 
@@ -80,7 +80,7 @@ export default function NotificationsMenu({ currentPath }: NotificationsMenuProp
           className="w-full justify-start" 
           onClick={() => navigate("/notifications/order")}
         >
-          <div className="mr-2 w-2 h-2 rounded-full bg-indigo-500" />
+          <div className="mr-2 w-2 h-2 rounded-full bg-primary" />
           주문 알림
         </Button>
       </div>

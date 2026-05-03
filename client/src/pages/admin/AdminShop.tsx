@@ -945,9 +945,9 @@ export default function AdminShop() {
   const getProductStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500">판매 중</Badge>;
+        return <Badge className="bg-success">판매 중</Badge>;
       case 'draft':
-        return <Badge className="bg-amber-500">임시저장</Badge>;
+        return <Badge className="bg-warning">임시저장</Badge>;
       case 'out_of_stock':
         return <Badge variant="outline" className="text-gray-500">재고 없음</Badge>;
       default:
@@ -959,17 +959,17 @@ export default function AdminShop() {
   const getOrderStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-amber-500">결제 대기</Badge>;
+        return <Badge className="bg-warning">결제 대기</Badge>;
       case 'processing':
-        return <Badge className="bg-blue-500">처리 중</Badge>;
+        return <Badge className="bg-primary">처리 중</Badge>;
       case 'shipped':
         return <Badge className="bg-primary/50">배송 중</Badge>;
       case 'delivered':
-        return <Badge className="bg-green-500">배송 완료</Badge>;
+        return <Badge className="bg-success">배송 완료</Badge>;
       case 'cancelled':
         return <Badge variant="outline" className="text-gray-500">취소됨</Badge>;
       case 'refunded':
-        return <Badge className="bg-red-500">환불됨</Badge>;
+        return <Badge className="bg-destructive">환불됨</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -981,7 +981,7 @@ export default function AdminShop() {
     
     switch (source) {
       case '훈련사':
-        return <Badge variant="outline" className="border-blue-500 text-blue-500">훈련사 추천</Badge>;
+        return <Badge variant="outline" className="border-primary/50 text-primary">훈련사 추천</Badge>;
       case '기관':
         return <Badge variant="outline" className="border-primary/50 text-primary">기관 추천</Badge>;
       default:
@@ -1018,12 +1018,12 @@ export default function AdminShop() {
     return (
       <div className="flex items-center">
         {Array(fullStars).fill(0).map((_, i) => (
-          <svg key={`full-${i}`} className="w-4 h-4 text-amber-500 fill-current" viewBox="0 0 24 24">
+          <svg key={`full-${i}`} className="w-4 h-4 text-warning fill-current" viewBox="0 0 24 24">
             <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
           </svg>
         ))}
         {halfStar && (
-          <svg className="w-4 h-4 text-amber-500 fill-current" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-warning fill-current" viewBox="0 0 24 24">
             <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z" />
           </svg>
         )}
@@ -1201,14 +1201,14 @@ export default function AdminShop() {
                               <div>
                                 <div className="font-medium">{product.discountPrice.toLocaleString()}원</div>
                                 <div className="text-xs text-muted-foreground line-through">{product.price.toLocaleString()}원</div>
-                                <Badge className="bg-red-500 mt-1">{calculateDiscount(product.price, product.discountPrice)}% 할인</Badge>
+                                <Badge className="bg-destructive mt-1">{calculateDiscount(product.price, product.discountPrice)}% 할인</Badge>
                               </div>
                             ) : (
                               <div className="font-medium">{product.price.toLocaleString()}원</div>
                             )}
                           </TableCell>
                           <TableCell>
-                            <div className={product.stock === 0 ? 'text-red-500' : ''}>{product.stock}</div>
+                            <div className={product.stock === 0 ? 'text-destructive' : ''}>{product.stock}</div>
                           </TableCell>
                           <TableCell>
                             {renderStars(product.ratings)}
@@ -1241,13 +1241,13 @@ export default function AdminShop() {
                                   <DropdownMenuSeparator />
                                   {product.status !== 'active' && (
                                     <DropdownMenuItem onClick={() => handleChangeProductStatus(product.id, 'active')}>
-                                      <Check className="h-4 w-4 mr-2 text-green-500" />
+                                      <Check className="h-4 w-4 mr-2 text-success" />
                                       판매 활성화
                                     </DropdownMenuItem>
                                   )}
                                   {product.status !== 'draft' && (
                                     <DropdownMenuItem onClick={() => handleChangeProductStatus(product.id, 'draft')}>
-                                      <AlignLeft className="h-4 w-4 mr-2 text-amber-500" />
+                                      <AlignLeft className="h-4 w-4 mr-2 text-warning" />
                                       임시저장으로 변경
                                     </DropdownMenuItem>
                                   )}
@@ -1260,7 +1260,7 @@ export default function AdminShop() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteProduct(product.id)}
-                                    className="text-red-500"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     삭제
@@ -1438,7 +1438,7 @@ export default function AdminShop() {
                                   <DropdownMenuSeparator />
                                   {order.status === 'pending' && (
                                     <DropdownMenuItem onClick={() => handleChangeOrderStatus(order.id, 'processing')}>
-                                      <Check className="h-4 w-4 mr-2 text-blue-500" />
+                                      <Check className="h-4 w-4 mr-2 text-primary" />
                                       처리 중으로 변경
                                     </DropdownMenuItem>
                                   )}
@@ -1450,7 +1450,7 @@ export default function AdminShop() {
                                   )}
                                   {order.status === 'shipped' && (
                                     <DropdownMenuItem onClick={() => handleChangeOrderStatus(order.id, 'delivered')}>
-                                      <Check className="h-4 w-4 mr-2 text-green-500" />
+                                      <Check className="h-4 w-4 mr-2 text-success" />
                                       배송 완료로 변경
                                     </DropdownMenuItem>
                                   )}
@@ -1462,7 +1462,7 @@ export default function AdminShop() {
                                   )}
                                   {(order.status === 'delivered' || order.status === 'shipped') && (
                                     <DropdownMenuItem onClick={() => handleChangeOrderStatus(order.id, 'refunded')}>
-                                      <CircleDollarSign className="h-4 w-4 mr-2 text-red-500" />
+                                      <CircleDollarSign className="h-4 w-4 mr-2 text-destructive" />
                                       환불 처리
                                     </DropdownMenuItem>
                                   )}
@@ -1718,7 +1718,7 @@ export default function AdminShop() {
                         </Avatar>
                         <div>
                           <div>박훈련</div>
-                          <Badge variant="outline" className="border-blue-500 text-blue-500">훈련사</Badge>
+                          <Badge variant="outline" className="border-primary/50 text-primary">훈련사</Badge>
                         </div>
                       </div>
                       <div className="font-medium">₩1,245,000</div>
@@ -1742,7 +1742,7 @@ export default function AdminShop() {
                         </Avatar>
                         <div>
                           <div>이하은</div>
-                          <Badge variant="outline" className="border-blue-500 text-blue-500">훈련사</Badge>
+                          <Badge variant="outline" className="border-primary/50 text-primary">훈련사</Badge>
                         </div>
                       </div>
                       <div className="font-medium">₩785,200</div>
@@ -1826,7 +1826,7 @@ export default function AdminShop() {
                   <div className="space-y-2">
                     <div className="text-muted-foreground text-sm">총 판매액</div>
                     <div className="text-3xl font-bold">₩4,283,500</div>
-                    <div className="text-sm text-green-500 flex items-center">
+                    <div className="text-sm text-success flex items-center">
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.14645 2.14645C7.34171 1.95118 7.65829 1.95118 7.85355 2.14645L11.8536 6.14645C12.0488 6.34171 12.0488 6.65829 11.8536 6.85355C11.6583 7.04882 11.3417 7.04882 11.1464 6.85355L8 3.70711V12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5V3.70711L3.85355 6.85355C3.65829 7.04882 3.34171 7.04882 3.14645 6.85355C2.95118 6.65829 2.95118 6.34171 3.14645 6.14645L7.14645 2.14645Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                       </svg>
@@ -1840,7 +1840,7 @@ export default function AdminShop() {
                   <div className="space-y-2">
                     <div className="text-muted-foreground text-sm">총 주문 수</div>
                     <div className="text-3xl font-bold">127</div>
-                    <div className="text-sm text-green-500 flex items-center">
+                    <div className="text-sm text-success flex items-center">
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.14645 2.14645C7.34171 1.95118 7.65829 1.95118 7.85355 2.14645L11.8536 6.14645C12.0488 6.34171 12.0488 6.65829 11.8536 6.85355C11.6583 7.04882 11.3417 7.04882 11.1464 6.85355L8 3.70711V12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5V3.70711L3.85355 6.85355C3.65829 7.04882 3.34171 7.04882 3.14645 6.85355C2.95118 6.65829 2.95118 6.34171 3.14645 6.14645L7.14645 2.14645Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                       </svg>
@@ -1854,7 +1854,7 @@ export default function AdminShop() {
                   <div className="space-y-2">
                     <div className="text-muted-foreground text-sm">평균 주문 금액</div>
                     <div className="text-3xl font-bold">₩33,729</div>
-                    <div className="text-sm text-green-500 flex items-center">
+                    <div className="text-sm text-success flex items-center">
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.14645 2.14645C7.34171 1.95118 7.65829 1.95118 7.85355 2.14645L11.8536 6.14645C12.0488 6.34171 12.0488 6.65829 11.8536 6.85355C11.6583 7.04882 11.3417 7.04882 11.1464 6.85355L8 3.70711V12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5V3.70711L3.85355 6.85355C3.65829 7.04882 3.34171 7.04882 3.14645 6.85355C2.95118 6.65829 2.95118 6.34171 3.14645 6.14645L7.14645 2.14645Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                       </svg>
@@ -1868,7 +1868,7 @@ export default function AdminShop() {
                   <div className="space-y-2">
                     <div className="text-muted-foreground text-sm">추천 판매 비율</div>
                     <div className="text-3xl font-bold">38.2%</div>
-                    <div className="text-sm text-green-500 flex items-center">
+                    <div className="text-sm text-success flex items-center">
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.14645 2.14645C7.34171 1.95118 7.65829 1.95118 7.85355 2.14645L11.8536 6.14645C12.0488 6.34171 12.0488 6.65829 11.8536 6.85355C11.6583 7.04882 11.3417 7.04882 11.1464 6.85355L8 3.70711V12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5V3.70711L3.85355 6.85355C3.65829 7.04882 3.34171 7.04882 3.14645 6.85355C2.95118 6.65829 2.95118 6.34171 3.14645 6.14645L7.14645 2.14645Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                       </svg>
@@ -1999,7 +1999,7 @@ export default function AdminShop() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="bg-amber-50 hover:bg-amber-100 border-amber-200"
+                    className="bg-warning/10 hover:bg-warning/10 border-warning/30"
                     onClick={() => {
                       const pendingRecs = trainerRecommendations.filter(rec => rec.status === 'pending');
                       setFilteredRecommendations(pendingRecs);
@@ -2009,7 +2009,7 @@ export default function AdminShop() {
                       });
                     }}
                   >
-                    <Badge className="bg-amber-500 mr-2">대기</Badge>
+                    <Badge className="bg-warning mr-2">대기</Badge>
                     승인 필요한 항목만
                   </Button>
                   <Button 
@@ -2150,22 +2150,22 @@ export default function AdminShop() {
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Badge variant="outline" className="bg-amber-50 text-amber-900 border-amber-200">
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
                               {recommendation.commissionRate}%
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
                             {recommendation.status === 'active' && (
-                              <Badge className="bg-green-500">활성</Badge>
+                              <Badge className="bg-success">활성</Badge>
                             )}
                             {recommendation.status === 'pending' && (
-                              <Badge className="bg-amber-500">대기</Badge>
+                              <Badge className="bg-warning">대기</Badge>
                             )}
                             {recommendation.status === 'rejected' && (
-                              <Badge variant="outline" className="text-red-500 border-red-500">거절</Badge>
+                              <Badge variant="outline" className="text-destructive border-destructive/50">거절</Badge>
                             )}
                           </TableCell>
-                          <TableCell className="text-right font-medium text-green-600">
+                          <TableCell className="text-right font-medium text-success">
                             ￦{recommendation.totalCommission.toLocaleString()}
                           </TableCell>
                           <TableCell>
@@ -2181,7 +2181,7 @@ export default function AdminShop() {
                               >
                                 <Eye className="h-4 w-4" />
                                 {recommendation.status === 'pending' && (
-                                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-amber-500 rounded-full"></span>
+                                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-warning rounded-full"></span>
                                 )}
                               </Button>
                               <Button
@@ -2260,7 +2260,7 @@ export default function AdminShop() {
                                         });
                                       }
                                     }}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>삭제</span>
@@ -2382,7 +2382,7 @@ export default function AdminShop() {
                           <div className="font-medium">₩873,000</div>
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-green-100 text-green-800">활성</Badge>
+                          <Badge className="bg-success/10 text-success">활성</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
@@ -2438,7 +2438,7 @@ export default function AdminShop() {
                           <div className="font-medium">₩378,000</div>
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-green-100 text-green-800">활성</Badge>
+                          <Badge className="bg-success/10 text-success">활성</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
@@ -2460,7 +2460,7 @@ export default function AdminShop() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2">
-                        <Building className="h-5 w-5 text-blue-600" />
+                        <Building className="h-5 w-5 text-primary" />
                         <div>
                           <div className="text-2xl font-bold">12</div>
                           <div className="text-sm text-muted-foreground">연결된 기관</div>
@@ -2471,7 +2471,7 @@ export default function AdminShop() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2">
-                        <Package className="h-5 w-5 text-green-600" />
+                        <Package className="h-5 w-5 text-success" />
                         <div>
                           <div className="text-2xl font-bold">45</div>
                           <div className="text-sm text-muted-foreground">추천 상품</div>
@@ -2493,7 +2493,7 @@ export default function AdminShop() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2">
-                        <CircleDollarSign className="h-5 w-5 text-orange-600" />
+                        <CircleDollarSign className="h-5 w-5 text-primary" />
                         <div>
                           <div className="text-2xl font-bold">₩2.4M</div>
                           <div className="text-sm text-muted-foreground">총 수익</div>
@@ -2596,16 +2596,16 @@ export default function AdminShop() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
-                            <span className="text-red-600 font-medium">3</span>
+                            <span className="text-destructive font-medium">3</span>
                             <span className="text-sm text-muted-foreground">/ 10</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-red-100 text-red-800">필수</Badge>
+                          <Badge className="bg-destructive/10 text-destructive">필수</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                            <div className="w-4 h-4 rounded-full bg-success"></div>
                             <span className="text-sm">활성</span>
                           </div>
                         </TableCell>
@@ -2653,12 +2653,12 @@ export default function AdminShop() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
-                            <span className="text-green-600 font-medium">15</span>
+                            <span className="text-success font-medium">15</span>
                             <span className="text-sm text-muted-foreground">/ 5</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-red-100 text-red-800">필수</Badge>
+                          <Badge className="bg-destructive/10 text-destructive">필수</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
@@ -2693,9 +2693,9 @@ export default function AdminShop() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
                             <div>
                               <div className="font-medium">프리미엄 목줄</div>
                               <div className="text-sm text-muted-foreground">재고: 3개 / 기준: 10개</div>
@@ -2705,9 +2705,9 @@ export default function AdminShop() {
                             주문하기
                           </Button>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-warning/10 rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-warning"></div>
                             <div>
                               <div className="font-medium">훈련용 클리커</div>
                               <div className="text-sm text-muted-foreground">재고: 8개 / 기준: 15개</div>
@@ -2727,25 +2727,25 @@ export default function AdminShop() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-primary"></div>
                             <div>
                               <div className="font-medium">간식 파우치 (50개)</div>
                               <div className="text-sm text-muted-foreground">주문됨: 어제</div>
                             </div>
                           </div>
-                          <Badge className="bg-blue-100 text-blue-800">진행중</Badge>
+                          <Badge className="bg-primary/10 text-primary">진행중</Badge>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-success/10 rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-success"></div>
                             <div>
                               <div className="font-medium">목줄 세트 (30개)</div>
                               <div className="text-sm text-muted-foreground">배송 완료: 3일 전</div>
                             </div>
                           </div>
-                          <Badge className="bg-green-100 text-green-800">완료</Badge>
+                          <Badge className="bg-success/10 text-success">완료</Badge>
                         </div>
                       </div>
                     </CardContent>
@@ -2757,7 +2757,7 @@ export default function AdminShop() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2">
-                        <BookOpen className="h-5 w-5 text-blue-600" />
+                        <BookOpen className="h-5 w-5 text-primary" />
                         <div>
                           <div className="text-2xl font-bold">8</div>
                           <div className="text-sm text-muted-foreground">연결된 커리큘럼</div>
@@ -2768,7 +2768,7 @@ export default function AdminShop() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2">
-                        <Package className="h-5 w-5 text-green-600" />
+                        <Package className="h-5 w-5 text-success" />
                         <div>
                           <div className="text-2xl font-bold">24</div>
                           <div className="text-sm text-muted-foreground">연결된 상품</div>
@@ -2790,7 +2790,7 @@ export default function AdminShop() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2">
-                        <CircleDollarSign className="h-5 w-5 text-orange-600" />
+                        <CircleDollarSign className="h-5 w-5 text-primary" />
                         <div>
                           <div className="text-2xl font-bold">₹1.8M</div>
                           <div className="text-sm text-muted-foreground">월 자동 주문액</div>
@@ -2952,7 +2952,7 @@ export default function AdminShop() {
                           <div className="grid grid-cols-[120px_1fr] gap-2">
                             <div className="font-medium text-muted-foreground">할인율</div>
                             <div>
-                              <Badge className="bg-red-500">
+                              <Badge className="bg-destructive">
                                 {calculateDiscount(selectedProduct.price, selectedProduct.discountPrice)}% 할인
                               </Badge>
                             </div>
@@ -3005,7 +3005,7 @@ export default function AdminShop() {
                       </div>
                       <div className="grid grid-cols-[120px_1fr] gap-2">
                         <div className="font-medium text-muted-foreground">현재 재고</div>
-                        <div className={selectedProduct.stock === 0 ? 'text-red-500 font-medium' : ''}>
+                        <div className={selectedProduct.stock === 0 ? 'text-destructive font-medium' : ''}>
                           {selectedProduct.stock} 개
                         </div>
                       </div>
@@ -3061,7 +3061,7 @@ export default function AdminShop() {
                         <div className="font-medium text-muted-foreground">반려동물</div>
                         <div className="flex flex-wrap gap-1">
                           {selectedProduct.targetInfo?.petTypes?.map((pet, idx) => (
-                            <Badge key={idx} variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <Badge key={idx} variant="outline" className="bg-success/10 text-success border-success/30">
                               {pet === '강아지' && <Dog className="h-3 w-3 mr-1" />}
                               {pet === '고양이' && <Cat className="h-3 w-3 mr-1" />}
                               {pet}
@@ -3516,7 +3516,7 @@ export default function AdminShop() {
                           variant="outline" 
                           onClick={() => handleChangeOrderStatus(selectedOrder.id, 'processing')}
                         >
-                          <Check className="h-4 w-4 mr-2 text-blue-500" />
+                          <Check className="h-4 w-4 mr-2 text-primary" />
                           처리 중으로 변경
                         </Button>
                       )}
@@ -3534,7 +3534,7 @@ export default function AdminShop() {
                           variant="outline"
                           onClick={() => handleChangeOrderStatus(selectedOrder.id, 'delivered')}
                         >
-                          <Check className="h-4 w-4 mr-2 text-green-500" />
+                          <Check className="h-4 w-4 mr-2 text-success" />
                           배송 완료로 변경
                         </Button>
                       )}
@@ -3551,7 +3551,7 @@ export default function AdminShop() {
                         <Button 
                           variant="outline"
                           onClick={() => handleChangeOrderStatus(selectedOrder.id, 'refunded')}
-                          className="col-span-2 text-red-500 border-red-300 hover:bg-red-50"
+                          className="col-span-2 text-destructive border-destructive/40 hover:bg-destructive/10"
                         >
                           <CircleDollarSign className="h-4 w-4 mr-2" />
                           환불 처리
@@ -3639,13 +3639,13 @@ export default function AdminShop() {
                   <Label>상태</Label>
                   <div className="p-2 border rounded-md text-foreground">
                     {selectedRecommendation.status === 'active' && (
-                      <Badge className="bg-green-500">활성</Badge>
+                      <Badge className="bg-success">활성</Badge>
                     )}
                     {selectedRecommendation.status === 'pending' && (
-                      <Badge className="bg-amber-500">대기</Badge>
+                      <Badge className="bg-warning">대기</Badge>
                     )}
                     {selectedRecommendation.status === 'rejected' && (
-                      <Badge variant="outline" className="text-red-500 border-red-500">거절</Badge>
+                      <Badge variant="outline" className="text-destructive border-destructive/50">거절</Badge>
                     )}
                   </div>
                 </div>
@@ -3660,7 +3660,7 @@ export default function AdminShop() {
                 </div>
                 <div className="space-y-2">
                   <Label>총 수수료</Label>
-                  <div className="p-2 border rounded-md font-medium text-green-600">
+                  <div className="p-2 border rounded-md font-medium text-success">
                     ￦{selectedRecommendation.totalCommission.toLocaleString()}
                   </div>
                 </div>
@@ -3682,7 +3682,7 @@ export default function AdminShop() {
                     {(selectedRecommendation.status === 'active' || selectedRecommendation.status === 'rejected') && (
                       <Button
                         variant="outline"
-                        className="bg-amber-50 hover:bg-amber-100 border-amber-200"
+                        className="bg-warning/10 hover:bg-warning/10 border-warning/30"
                         onClick={() => {
                           const updatedRecs = trainerRecommendations.map(rec => 
                             rec.id === selectedRecommendation.id 
@@ -3705,15 +3705,15 @@ export default function AdminShop() {
 
                     {(selectedRecommendation.status === 'pending') ? (
                       <>
-                        <div className="fixed left-0 right-0 bottom-0 bg-amber-50 p-4 border-t border-amber-200 flex justify-center gap-4 shadow-md">
+                        <div className="fixed left-0 right-0 bottom-0 bg-warning/10 p-4 border-t border-warning/30 flex justify-center gap-4 shadow-md">
                           <div className="flex items-center mr-4">
-                            <Badge className="bg-amber-500 mr-2">대기</Badge>
+                            <Badge className="bg-warning mr-2">대기</Badge>
                             <span className="font-medium">이 추천에 대한 승인 여부를 결정해주세요</span>
                           </div>
                           <Button
                             variant="default"
                             size="lg"
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-success hover:bg-success/90"
                             onClick={() => {
                               const updatedRecs = trainerRecommendations.map(rec => 
                                 rec.id === selectedRecommendation.id 

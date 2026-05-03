@@ -69,7 +69,7 @@ export default function AttendanceStats() {
                   </div>
                   <div>
                     <div className="flex justify-between text-xs mb-1">
-                      <span>결석률</span><span className={r.absenceRate >= 30 ? "text-red-600" : ""}>{r.absenceRate}%</span>
+                      <span>결석률</span><span className={r.absenceRate >= 30 ? "text-destructive" : ""}>{r.absenceRate}%</span>
                     </div>
                     <ProgressBar value={r.absenceRate} className="h-2" />
                   </div>
@@ -97,9 +97,9 @@ function StatCard({ icon: Icon, label, value, variant = "default" }: StatCardPro
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-muted-foreground">{label}</div>
-            <div className={`text-2xl font-bold mt-1 ${variant === "destructive" ? "text-red-600" : ""}`}>{value}</div>
+            <div className={`text-2xl font-bold mt-1 ${variant === "destructive" ? "text-destructive" : ""}`}>{value}</div>
           </div>
-          <Icon className={`w-8 h-8 ${variant === "destructive" ? "text-red-500" : "text-muted-foreground"}`} />
+          <Icon className={`w-8 h-8 ${variant === "destructive" ? "text-destructive" : "text-muted-foreground"}`} />
         </div>
       </CardContent>
     </Card>

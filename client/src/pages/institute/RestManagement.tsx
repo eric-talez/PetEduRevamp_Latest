@@ -180,10 +180,10 @@ const InstituteRestManagement: React.FC = () => {
   // 휴식 신청 상태별 색상
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'planned': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-warning/10 text-warning';
+      case 'approved': return 'bg-success/10 text-success';
+      case 'rejected': return 'bg-destructive/10 text-destructive';
+      case 'planned': return 'bg-primary/10 text-primary';
       case 'active': return 'bg-primary/10 text-primary';
       case 'completed': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -387,8 +387,8 @@ const InstituteRestManagement: React.FC = () => {
                     </div>
                   </div>
                   {application.substituteTrainerName && (
-                    <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-md">
-                      <span className="font-medium text-green-800">대체 훈련사:</span> {application.substituteTrainerName}
+                    <div className="mb-3 p-3 bg-success/10 border border-success/30 rounded-md">
+                      <span className="font-medium text-success">대체 훈련사:</span> {application.substituteTrainerName}
                     </div>
                   )}
                   {application.status === 'pending' && (
@@ -396,7 +396,7 @@ const InstituteRestManagement: React.FC = () => {
                       <Button 
                         size="sm" 
                         onClick={() => handleApplicationAction(application.id, 'approve')}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-success hover:bg-success/90"
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         승인
@@ -405,7 +405,7 @@ const InstituteRestManagement: React.FC = () => {
                         size="sm" 
                         variant="outline"
                         onClick={() => handleApplicationAction(application.id, 'reject')}
-                        className="text-red-600 border-red-300 hover:bg-red-50"
+                        className="text-destructive border-destructive/40 hover:bg-destructive/10"
                       >
                         <XCircle className="w-4 h-4 mr-1" />
                         거부
@@ -529,9 +529,9 @@ const InstituteRestManagement: React.FC = () => {
                       </div>
                     </div>
                     {closure.customerNotice && (
-                      <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                        <p className="font-medium text-blue-800 mb-1">고객 안내문:</p>
-                        <p className="text-sm text-blue-700">{closure.customerNotice}</p>
+                      <div className="mb-3 p-3 bg-primary/10 border border-primary/30 rounded-md">
+                        <p className="font-medium text-primary mb-1">고객 안내문:</p>
+                        <p className="text-sm text-primary">{closure.customerNotice}</p>
                       </div>
                     )}
                     {closure.alternativeOptions && (

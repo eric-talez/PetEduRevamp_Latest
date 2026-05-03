@@ -531,7 +531,7 @@ export default function CourseDetail() {
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`h-5 w-5 ${i < Math.floor(course.rating) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
+                          className={`h-5 w-5 ${i < Math.floor(course.rating) ? 'text-warning fill-warning' : 'text-gray-300'}`}
                         />
                       ))}
                       <span className="ml-2 text-gray-600 dark:text-gray-300">
@@ -565,7 +565,7 @@ export default function CourseDetail() {
                           <Star
                             key={i}
                             className={`h-5 w-5 cursor-pointer ${
-                              i < reviewRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                              i < reviewRating ? 'text-warning fill-warning' : 'text-gray-300'
                             }`}
                             onClick={() => setReviewRating(i + 1)}
                           />

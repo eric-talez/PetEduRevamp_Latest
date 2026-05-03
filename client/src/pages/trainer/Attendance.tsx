@@ -21,7 +21,7 @@ interface SaveResponse { success?: boolean; warnings?: Array<{ userId: number; a
 interface NewSessionPayload { sessionNumber: number; title: string; description: string; durationMinutes: number; }
 
 const STATUS_LABEL: Record<AttendanceStatus, string> = { present: "출석", late: "지각", absent: "결석", scheduled: "예정" };
-const STATUS_COLOR: Record<AttendanceStatus, string> = { present: "bg-green-100 text-green-700", late: "bg-amber-100 text-amber-700", absent: "bg-red-100 text-red-700", scheduled: "bg-gray-100 text-gray-700" };
+const STATUS_COLOR: Record<AttendanceStatus, string> = { present: "bg-success/10 text-success", late: "bg-warning/10 text-warning", absent: "bg-destructive/10 text-destructive", scheduled: "bg-gray-100 text-gray-700" };
 
 export default function TrainerAttendance() {
   const { toast } = useToast();

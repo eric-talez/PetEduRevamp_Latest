@@ -30,32 +30,32 @@ import NotificationsMenu from "./menu";
 // 알림 유형별 아이콘 및 색상 매핑
 const notificationTypeMap = {
   system: {
-    icon: <div className="w-2 h-2 rounded-full bg-blue-500" />,
-    color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    icon: <div className="w-2 h-2 rounded-full bg-primary" />,
+    color: "bg-primary/10 text-primary dark:bg-primary/30 dark:text-primary",
   },
   training: {
     icon: <div className="w-2 h-2 rounded-full bg-primary/50" />,
     color: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary",
   },
   event: {
-    icon: <div className="w-2 h-2 rounded-full bg-green-500" />,
-    color: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+    icon: <div className="w-2 h-2 rounded-full bg-success" />,
+    color: "bg-success/10 text-success dark:bg-success/30 dark:text-success",
   },
   payment: {
-    icon: <div className="w-2 h-2 rounded-full bg-yellow-500" />,
-    color: "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400",
+    icon: <div className="w-2 h-2 rounded-full bg-warning" />,
+    color: "bg-warning/10 text-warning dark:bg-warning/30 dark:text-warning",
   },
   security: {
-    icon: <div className="w-2 h-2 rounded-full bg-red-500" />,
-    color: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+    icon: <div className="w-2 h-2 rounded-full bg-destructive" />,
+    color: "bg-destructive/10 text-destructive dark:bg-destructive/30 dark:text-destructive",
   },
   order: {
-    icon: <div className="w-2 h-2 rounded-full bg-indigo-500" />,
-    color: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400",
+    icon: <div className="w-2 h-2 rounded-full bg-primary" />,
+    color: "bg-primary/10 text-primary dark:bg-primary/30 dark:text-primary",
   },
   pet: {
-    icon: <div className="w-2 h-2 rounded-full bg-orange-500" />,
-    color: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
+    icon: <div className="w-2 h-2 rounded-full bg-primary" />,
+    color: "bg-primary/10 text-primary dark:bg-primary/30 dark:text-primary",
   },
 };
 
@@ -198,14 +198,14 @@ export default function SystemNotificationsPage() {
         </div>
 
         <div className="mb-6">
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+          <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
             <div className="flex items-start">
-              <div className="bg-blue-100 dark:bg-blue-800 rounded-full p-2 mr-4">
-                <Info className="h-6 w-6 text-blue-500 dark:text-blue-300" />
+              <div className="bg-primary/10 dark:bg-primary rounded-full p-2 mr-4">
+                <Info className="h-6 w-6 text-primary dark:text-primary" />
               </div>
               <div>
-                <h3 className="font-medium text-blue-800 dark:text-blue-300">시스템 알림 정보</h3>
-                <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                <h3 className="font-medium text-primary dark:text-primary">시스템 알림 정보</h3>
+                <p className="text-sm text-primary dark:text-primary mt-1">
                   시스템 알림은 PetEdu 서비스 업데이트, 점검 일정, 비밀번호 변경 요청 등 중요한 정보를 포함합니다.
                 </p>
               </div>
@@ -278,7 +278,7 @@ export default function SystemNotificationsPage() {
                       ))
                   ) : (
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                      <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">읽지 않은 알림이 없습니다</h3>
                       <p className="text-gray-500 dark:text-gray-400 mt-2">
                         모든 알림을 확인했습니다.
@@ -371,7 +371,7 @@ function NotificationCard({
 
             <div className="flex items-center space-x-1">
               {!notification.read && (
-                <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
                   새 알림
                 </Badge>
               )}
@@ -431,7 +431,7 @@ function NotificationCard({
               <Button 
                 variant="ghost" 
                 size="sm"
-                className="text-xs h-7 px-2 py-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                className="text-xs h-7 px-2 py-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                 onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                   e.stopPropagation();
                   onDelete();

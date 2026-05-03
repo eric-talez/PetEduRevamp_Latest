@@ -40,7 +40,7 @@ export default function Trainers() {
     console.error("훈련사 데이터 로딩 오류:", error);
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
-        <p className="text-red-500 mb-4">훈련사 정보를 불러오는데 문제가 발생했습니다.</p>
+        <p className="text-destructive mb-4">훈련사 정보를 불러오는데 문제가 발생했습니다.</p>
         <Button onClick={() => window.location.reload()}>다시 시도</Button>
       </div>
     );
@@ -318,7 +318,7 @@ export default function Trainers() {
                   )}
 
                   <div className="flex items-center">
-                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-2" />
+                    <Star className="h-4 w-4 text-warning fill-warning mr-2" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">{trainer.rating} ({trainer.reviewCount} 후기)</span>
                   </div>
 

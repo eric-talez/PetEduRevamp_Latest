@@ -121,13 +121,13 @@ export default function ConsentManagement() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-green-600">{activeRecords.length}</p>
+            <p className="text-2xl font-bold text-success">{activeRecords.length}</p>
             <p className="text-sm text-gray-500">유효 동의</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-red-500">{revokedRecords.length}</p>
+            <p className="text-2xl font-bold text-destructive">{revokedRecords.length}</p>
             <p className="text-sm text-gray-500">철회된 동의</p>
           </CardContent>
         </Card>
@@ -198,9 +198,9 @@ function ConsentCard({ record, onRevoke, isPending, canRevoke }: {
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            {record.consentType === 'photo' && <Camera className="w-5 h-5 text-blue-500" />}
-            {record.consentType === 'store_policy' && <Shield className="w-5 h-5 text-green-500" />}
-            {record.consentType === 'emergency' && <Clock className="w-5 h-5 text-red-500" />}
+            {record.consentType === 'photo' && <Camera className="w-5 h-5 text-primary" />}
+            {record.consentType === 'store_policy' && <Shield className="w-5 h-5 text-success" />}
+            {record.consentType === 'emergency' && <Clock className="w-5 h-5 text-destructive" />}
             {record.consentType === 'all' && <FileText className="w-5 h-5 text-primary" />}
             <span className="font-medium">{CONSENT_TYPE_LABELS[record.consentType] || record.consentType}</span>
           </div>
@@ -208,7 +208,7 @@ function ConsentCard({ record, onRevoke, isPending, canRevoke }: {
             {record.isRevoked ? (
               <Badge variant="destructive">철회됨</Badge>
             ) : (
-              <Badge className="bg-green-100 text-green-800">유효</Badge>
+              <Badge className="bg-success/10 text-success">유효</Badge>
             )}
           </div>
         </div>
@@ -230,7 +230,7 @@ function ConsentCard({ record, onRevoke, isPending, canRevoke }: {
           </div>
           {record.isRevoked && record.revokedAt && (
             <div className="flex items-center gap-1">
-              <XCircle className="w-3 h-3 text-red-500" />
+              <XCircle className="w-3 h-3 text-destructive" />
               <span>철회일: {formatDate(record.revokedAt)}</span>
             </div>
           )}
@@ -241,7 +241,7 @@ function ConsentCard({ record, onRevoke, isPending, canRevoke }: {
             <Button
               variant="outline"
               size="sm"
-              className="text-red-500 hover:text-red-700"
+              className="text-destructive hover:text-destructive/90"
               onClick={onRevoke}
               disabled={isPending}
             >

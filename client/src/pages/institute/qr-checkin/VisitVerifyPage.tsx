@@ -46,10 +46,10 @@ interface NoseVerifyResult {
 }
 
 const TEMPERAMENT_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  A: { label: "사회성 양호", color: "text-green-700", bg: "bg-green-100" },
-  B: { label: "흥분 조절", color: "text-blue-700", bg: "bg-blue-100" },
-  C: { label: "짖음/경계", color: "text-yellow-700", bg: "bg-yellow-100" },
-  D: { label: "공격성 주의", color: "text-red-700", bg: "bg-red-100" },
+  A: { label: "사회성 양호", color: "text-success", bg: "bg-success/10" },
+  B: { label: "흥분 조절", color: "text-primary", bg: "bg-primary/10" },
+  C: { label: "짖음/경계", color: "text-warning", bg: "bg-warning/10" },
+  D: { label: "공격성 주의", color: "text-destructive", bg: "bg-destructive/10" },
   E: { label: "분리불안", color: "text-primary", bg: "bg-primary/10" },
 };
 
@@ -185,19 +185,19 @@ export default function VisitVerifyPage() {
 
   if (!data?.success || data.error) {
     const errorMessages: Record<string, { icon: LucideIcon; title: string; desc: string; bgColor: string }> = {
-      INVALID: { icon: XCircle, title: "유효하지 않은 QR", desc: "해당 방문 세션을 찾을 수 없습니다. 올바른 QR 코드인지 확인해 주세요.", bgColor: "from-red-50" },
+      INVALID: { icon: XCircle, title: "유효하지 않은 QR", desc: "해당 방문 세션을 찾을 수 없습니다. 올바른 QR 코드인지 확인해 주세요.", bgColor: "from-primary" },
       USED: { icon: CheckCircle, title: "이미 사용된 QR", desc: "이 방문 세션은 이미 체크인에 사용되었습니다. 1회용 QR은 재사용할 수 없습니다.", bgColor: "from-gray-50" },
-      EXPIRED: { icon: Clock, title: "만료된 QR", desc: "이 방문 세션의 유효시간(10분)이 경과했습니다. 새 QR을 발급받아 주세요.", bgColor: "from-orange-50" },
-      NETWORK: { icon: AlertTriangle, title: "연결 오류", desc: "서버와 통신할 수 없습니다. 인터넷 연결을 확인해 주세요.", bgColor: "from-red-50" },
+      EXPIRED: { icon: Clock, title: "만료된 QR", desc: "이 방문 세션의 유효시간(10분)이 경과했습니다. 새 QR을 발급받아 주세요.", bgColor: "from-primary" },
+      NETWORK: { icon: AlertTriangle, title: "연결 오류", desc: "서버와 통신할 수 없습니다. 인터넷 연결을 확인해 주세요.", bgColor: "from-primary" },
     };
-    const errInfo = errorMessages[data?.errorCode || ''] || { icon: AlertTriangle, title: "오류", desc: data?.error || "알 수 없는 오류", bgColor: "from-red-50" };
+    const errInfo = errorMessages[data?.errorCode || ''] || { icon: AlertTriangle, title: "오류", desc: data?.error || "알 수 없는 오류", bgColor: "from-primary" };
     const ErrIcon = errInfo.icon;
 
     return (
       <div className={`min-h-screen flex items-center justify-center bg-gradient-to-b ${errInfo.bgColor} to-background p-4`}>
         <Card className="w-full max-w-md">
           <CardContent className="py-12 text-center">
-            <ErrIcon className="w-16 h-16 mx-auto mb-4 text-red-400" />
+            <ErrIcon className="w-16 h-16 mx-auto mb-4 text-destructive" />
             <h2 className="text-xl font-bold mb-2">{errInfo.title}</h2>
             <p className="text-muted-foreground">{errInfo.desc}</p>
           </CardContent>
@@ -213,13 +213,13 @@ export default function VisitVerifyPage() {
   const hasPetsWithNoseProfile = data.pets?.some(p => p.hasNoseProfile);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-background p-4">
+    <div className="min-h-screen bg-gradient-to-b from-primary to-background p-4">
       <div className="max-w-md mx-auto space-y-4 pt-4">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-3">
+            <CheckCircle className="w-10 h-10 text-success" />
           </div>
-          <h1 className="text-xl font-bold text-green-800">체크인 완료!</h1>
+          <h1 className="text-xl font-bold text-success">체크인 완료!</h1>
           <p className="text-sm text-muted-foreground mt-1">QR 스캔과 동시에 체크인이 자동 완료되었습니다.</p>
         </div>
 
@@ -289,12 +289,12 @@ export default function VisitVerifyPage() {
                         <Syringe className="w-4 h-4" />
                         <span className="text-sm font-medium">접종 상태:</span>
                         {petVaccine?.valid ? (
-                          <Badge className="bg-green-100 text-green-800 text-xs">
+                          <Badge className="bg-success/10 text-success text-xs">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             접종 완료
                           </Badge>
                         ) : (
-                          <Badge className="bg-red-100 text-red-800 text-xs">
+                          <Badge className="bg-destructive/10 text-destructive text-xs">
                             <AlertTriangle className="w-3 h-3 mr-1" />
                             미접종/만료
                           </Badge>
@@ -310,7 +310,7 @@ export default function VisitVerifyPage() {
                             인증 완료
                           </Badge>
                         ) : pet.hasNoseProfile ? (
-                          <Badge className="bg-yellow-100 text-yellow-800 text-xs">
+                          <Badge className="bg-warning/10 text-warning text-xs">
                             대기 중
                           </Badge>
                         ) : (
@@ -400,18 +400,18 @@ export default function VisitVerifyPage() {
                 <div className="text-center py-4">
                   {noseResult.status === "retry" && (
                     <>
-                      <AlertTriangle className="w-10 h-10 text-yellow-500 mx-auto mb-2" />
-                      <p className="font-medium text-yellow-700">재촬영 권장</p>
+                      <AlertTriangle className="w-10 h-10 text-warning mx-auto mb-2" />
+                      <p className="font-medium text-warning">재촬영 권장</p>
                       <p className="text-sm text-muted-foreground mb-2">유사도: {noseResult.similarityScore}%</p>
-                      {noseResult.failReason && <p className="text-xs text-yellow-600 mb-3">{noseResult.failReason}</p>}
+                      {noseResult.failReason && <p className="text-xs text-warning mb-3">{noseResult.failReason}</p>}
                     </>
                   )}
                   {noseResult.status === "rejected" && (
                     <>
-                      <XCircle className="w-10 h-10 text-red-500 mx-auto mb-2" />
-                      <p className="font-medium text-red-700">인증 실패</p>
+                      <XCircle className="w-10 h-10 text-destructive mx-auto mb-2" />
+                      <p className="font-medium text-destructive">인증 실패</p>
                       <p className="text-sm text-muted-foreground mb-2">유사도: {noseResult.similarityScore}%</p>
-                      {noseResult.failReason && <p className="text-xs text-red-600 mb-3">{noseResult.failReason}</p>}
+                      {noseResult.failReason && <p className="text-xs text-destructive mb-3">{noseResult.failReason}</p>}
                     </>
                   )}
                   <div className="flex gap-2 justify-center">
@@ -433,13 +433,13 @@ export default function VisitVerifyPage() {
         )}
 
         {noseVerified && noseResult && (
-          <Card className="border-green-300">
+          <Card className="border-success/40">
             <CardContent className="py-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-green-700">
+              <div className="flex items-center justify-center gap-2 text-success">
                 <ShieldCheck className="w-6 h-6" />
                 <span className="font-bold">코 인증 완료</span>
                 {noseResult.similarityScore > 0 && (
-                  <Badge className="bg-green-100 text-green-700 text-xs">유사도 {noseResult.similarityScore}%</Badge>
+                  <Badge className="bg-success/10 text-success text-xs">유사도 {noseResult.similarityScore}%</Badge>
                 )}
               </div>
             </CardContent>

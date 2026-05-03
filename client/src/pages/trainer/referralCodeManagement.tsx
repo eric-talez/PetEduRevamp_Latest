@@ -55,11 +55,11 @@ export default function ReferralCodeManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">활성</Badge>;
+        return <Badge className="bg-success/10 text-success">활성</Badge>;
       case 'expired':
-        return <Badge className="bg-red-100 text-red-800">만료</Badge>;
+        return <Badge className="bg-destructive/10 text-destructive">만료</Badge>;
       case 'paused':
-        return <Badge className="bg-yellow-100 text-yellow-800">일시정지</Badge>;
+        return <Badge className="bg-warning/10 text-warning">일시정지</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -199,14 +199,14 @@ export default function ReferralCodeManagement() {
                   </Button>
                 </div>
                 <div className="text-sm">{code.description}</div>
-                <div className="font-medium text-green-600">
+                <div className="font-medium text-success">
                   {getDiscountText(code.discount, code.discountType)}
                 </div>
                 <div className="text-sm">
                   {code.usageCount}/{code.usageLimit}
                   <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
                     <div 
-                      className="bg-blue-600 h-1 rounded-full" 
+                      className="bg-primary h-1 rounded-full" 
                       style={{ width: `${(code.usageCount / code.usageLimit) * 100}%` }}
                     ></div>
                   </div>

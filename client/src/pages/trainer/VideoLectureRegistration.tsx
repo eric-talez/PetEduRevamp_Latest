@@ -516,15 +516,15 @@ export default function VideoLectureRegistration() {
         )}
 
         {/* 승인 안내 */}
-        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
+        <Card className="border-primary/30 dark:border-primary/50 bg-primary/10 dark:bg-primary/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
               <div>
-                <h4 className="font-medium text-orange-700 dark:text-orange-300 mb-1">
+                <h4 className="font-medium text-primary dark:text-primary mb-1">
                   승인 프로세스 안내
                 </h4>
-                <p className="text-sm text-orange-600 dark:text-orange-400">
+                <p className="text-sm text-primary dark:text-primary">
                   등록된 강의는 관리자 검토 후 승인됩니다. 승인까지 1-3일 정도 소요될 수 있으며, 
                   승인 상태는 마이페이지에서 확인하실 수 있습니다.
                 </p>

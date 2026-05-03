@@ -429,7 +429,7 @@ export default function VideoCallPage() {
             </CardHeader>
             <CardContent>
               {/* 디버깅 정보 */}
-              <div className="mb-4 p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded text-xs">
+              <div className="mb-4 p-2 bg-warning/10 dark:bg-warning/20 rounded text-xs">
                 <strong>디버깅 정보:</strong> 화상수업 {videoClasses.length}개 로드됨
               </div>
               
@@ -515,16 +515,16 @@ export default function VideoCallPage() {
                           </div>
                         </div>
 
-                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">회의 정보</h4>
+                        <div className="mt-4 p-3 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                          <h4 className="font-medium text-primary dark:text-primary/70 mb-2">회의 정보</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                             <div>
-                              <p className="text-blue-700 dark:text-blue-300 font-medium">회의 번호:</p>
-                              <p className="font-mono text-blue-900 dark:text-blue-100">{videoClass.zoomPMI}</p>
+                              <p className="text-primary dark:text-primary font-medium">회의 번호:</p>
+                              <p className="font-mono text-primary dark:text-primary/70">{videoClass.zoomPMI}</p>
                             </div>
                             <div>
-                              <p className="text-blue-700 dark:text-blue-300 font-medium">비밀번호:</p>
-                              <p className="font-mono text-blue-900 dark:text-blue-100">{videoClass.zoomPMIPassword}</p>
+                              <p className="text-primary dark:text-primary font-medium">비밀번호:</p>
+                              <p className="font-mono text-primary dark:text-primary/70">{videoClass.zoomPMIPassword}</p>
                             </div>
                           </div>
                         </div>

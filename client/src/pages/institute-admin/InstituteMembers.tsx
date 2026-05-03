@@ -47,11 +47,11 @@ export default function InstituteMembers() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">활성</Badge>;
+        return <Badge className="bg-success/10 text-success">활성</Badge>;
       case 'inactive':
         return <Badge className="bg-gray-100 text-gray-800">비활성</Badge>;
       case 'suspended':
-        return <Badge className="bg-red-100 text-red-800">정지</Badge>;
+        return <Badge className="bg-destructive/10 text-destructive">정지</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -62,7 +62,7 @@ export default function InstituteMembers() {
       case 'premium':
         return <Badge className="bg-primary/10 text-primary">프리미엄</Badge>;
       case 'basic':
-        return <Badge className="bg-blue-100 text-blue-800">기본</Badge>;
+        return <Badge className="bg-primary/10 text-primary">기본</Badge>;
       default:
         return <Badge>{type}</Badge>;
     }

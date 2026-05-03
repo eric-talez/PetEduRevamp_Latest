@@ -230,7 +230,7 @@ export default function TrainerSettings() {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary/50 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">프로필 정보를 불러오고 있습니다...</p>
           </div>
         </div>
@@ -283,7 +283,7 @@ export default function TrainerSettings() {
                       <User className="w-10 h-10 text-gray-400" />
                     )}
                   </div>
-                  <label className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-1 cursor-pointer hover:bg-blue-600">
+                  <label className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1 cursor-pointer hover:bg-primary/90">
                     <Camera className="w-4 h-4" />
                     <input 
                       type="file" 
@@ -364,7 +364,7 @@ export default function TrainerSettings() {
                     value={profile.certification}
                     onChange={(e) => setProfile(prev => ({ ...prev, certification: e.target.value }))}
                   />
-                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <Badge className="bg-success/10 text-success dark:bg-success/20 dark:text-success/70">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     인증됨
                   </Badge>
@@ -503,13 +503,13 @@ export default function TrainerSettings() {
                 </div>
 
                 {profile.videoCallPreference === 'zoom' && (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <h4 className="font-medium text-blue-900 dark:text-blue-200 flex items-center gap-2 mb-2">
+                  <div className="p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                    <h4 className="font-medium text-primary dark:text-primary/70 flex items-center gap-2 mb-2">
                       <Monitor className="w-4 h-4" />
                       Zoom 설정 가이드
                     </h4>
                     {profile.meetingSetupType === 'pmi' ? (
-                      <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                      <ul className="text-sm text-primary dark:text-primary space-y-1">
                         <li>• Zoom 앱 → 설정 → 개인 → 개인 회의실에서 PMI 확인</li>
                         <li>• PMI 예시: 123 456 7890 (10-11자리 숫자)</li>
                         <li>• 비밀번호: 개인 회의실 → 보안에서 설정</li>
@@ -517,7 +517,7 @@ export default function TrainerSettings() {
                         <li>• 💡 대기실 비활성화 권장: 수강생이 즉시 입장 가능</li>
                       </ul>
                     ) : (
-                      <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                      <ul className="text-sm text-primary dark:text-primary space-y-1">
                         <li>• Zoom 앱에서 "개인 회의실" → "초대 링크 복사"</li>
                         <li>• 링크 예시: https://zoom.us/j/1234567890?pwd=abcd1234</li>
                         <li>• 대기실 설정을 비활성화하면 수강생이 바로 입장 가능합니다</li>
@@ -543,8 +543,8 @@ export default function TrainerSettings() {
 
                 <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                      <Video className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <div className="w-10 h-10 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center">
+                      <Video className="w-5 h-5 text-success dark:text-success" />
                     </div>
                     <div>
                       <h4 className="font-medium">화상수업 설정 상태</h4>
@@ -558,12 +558,12 @@ export default function TrainerSettings() {
                   </div>
                   <div className="flex items-center gap-2">
                     {(profile.meetingSetupType === 'pmi' ? (profile.zoomPMI && profile.zoomPMIPassword) : profile.zoomLink) ? (
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      <Badge className="bg-success/10 text-success dark:bg-success/20 dark:text-success/70">
                         <CheckCircle className="w-3 h-3 mr-1" />
                         설정됨
                       </Badge>
                     ) : (
-                      <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                      <Badge className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/70">
                         <AlertCircle className="w-3 h-3 mr-1" />
                         미설정
                       </Badge>
@@ -854,14 +854,14 @@ export default function TrainerSettings() {
                 </div>
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+              <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
                 <div className="flex items-start space-x-2">
-                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-primary mt-0.5" />
                   <div>
-                    <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                    <h4 className="font-medium text-primary dark:text-primary/70">
                       결제 정보 안내
                     </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-200">
+                    <p className="text-sm text-primary dark:text-primary/70">
                       수익 정산을 위한 계좌 정보입니다. 정확한 정보를 입력해주세요.
                     </p>
                   </div>

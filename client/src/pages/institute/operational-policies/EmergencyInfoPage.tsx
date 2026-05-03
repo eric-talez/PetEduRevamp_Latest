@@ -80,7 +80,7 @@ export default function EmergencyInfoPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
-        <AlertCircle className="w-7 h-7 text-red-500" />
+        <AlertCircle className="w-7 h-7 text-destructive" />
         <div>
           <h1 className="text-2xl font-bold">응급 정보 관리</h1>
           <p className="text-gray-500 text-sm">반려견별 비상 연락처와 지정 동물병원을 관리합니다</p>
@@ -169,7 +169,7 @@ export default function EmergencyInfoPage() {
                         }}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => deleteMutation.mutate(contact.id)}>
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteMutation.mutate(contact.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -182,7 +182,7 @@ export default function EmergencyInfoPage() {
                       </div>
                       {contact.designatedHospital && (
                         <div className="flex items-center gap-1">
-                          <Hospital className="w-4 h-4 text-blue-500" />
+                          <Hospital className="w-4 h-4 text-primary" />
                           <span>{contact.designatedHospital}</span>
                         </div>
                       )}
@@ -201,14 +201,14 @@ export default function EmergencyInfoPage() {
                     </div>
 
                     <div className="mt-3 flex items-center gap-4">
-                      <Badge className={contact.emergencyTransportConsent ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}>
+                      <Badge className={contact.emergencyTransportConsent ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-600'}>
                         {contact.emergencyTransportConsent ? '응급 후송 동의' : '응급 후송 미동의'}
                       </Badge>
                     </div>
 
                     {contact.specialInstructions && (
-                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                        <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">특이사항: </span>
+                      <div className="mt-3 p-3 bg-warning/10 dark:bg-warning/20 rounded-lg">
+                        <span className="text-sm font-medium text-warning dark:text-warning">특이사항: </span>
                         <span className="text-sm">{contact.specialInstructions}</span>
                       </div>
                     )}

@@ -89,9 +89,9 @@ export default function PaymentSuccess() {
   if (error) {
     return (
       <div className="container mx-auto py-12 px-4">
-        <Card className="max-w-2xl mx-auto border-red-200 dark:border-red-800">
+        <Card className="max-w-2xl mx-auto border-destructive/30 dark:border-destructive/50">
           <CardHeader>
-            <CardTitle className="text-red-600 dark:text-red-400">결제 확인 실패</CardTitle>
+            <CardTitle className="text-destructive dark:text-destructive">결제 확인 실패</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -115,12 +115,12 @@ export default function PaymentSuccess() {
 
   return (
     <div className="container mx-auto py-12 px-4">
-      <Card className="max-w-2xl mx-auto border-green-200 dark:border-green-800">
+      <Card className="max-w-2xl mx-auto border-success/30 dark:border-success/50">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-            <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
+          <div className="mx-auto mb-4 w-16 h-16 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center">
+            <CheckCircle className="h-10 w-10 text-success dark:text-success" />
           </div>
-          <CardTitle className="text-2xl text-green-600 dark:text-green-400">결제가 완료되었습니다!</CardTitle>
+          <CardTitle className="text-2xl text-success dark:text-success">결제가 완료되었습니다!</CardTitle>
           <CardDescription className="text-base mt-2">
             구매해 주셔서 감사합니다.
           </CardDescription>
@@ -143,7 +143,7 @@ export default function PaymentSuccess() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">결제 상태</span>
-                <span className="font-medium text-green-600 dark:text-green-400">완료</span>
+                <span className="font-medium text-success dark:text-success">완료</span>
               </div>
               {paymentInfo.approvedAt && (
                 <div className="flex justify-between">
@@ -192,8 +192,8 @@ export default function PaymentSuccess() {
             </div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
+          <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/50 rounded-lg p-4">
+            <p className="text-sm text-primary dark:text-primary/70">
               💡 <strong>안내</strong>: 결제 영수증은 이메일로 발송되었습니다. 
               영수증이 도착하지 않은 경우 스팸 메일함을 확인해주세요.
             </p>

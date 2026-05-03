@@ -226,7 +226,7 @@ export default function Calendar() {
                       
                       <div className="mt-4 flex gap-2">
                         <Button variant="outline" size="sm">일정 수정</Button>
-                        <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600">취소</Button>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive/90">취소</Button>
                       </div>
                     </div>
                   ))}

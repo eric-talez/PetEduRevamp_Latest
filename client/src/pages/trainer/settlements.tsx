@@ -33,11 +33,11 @@ interface ItemRow {
 }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  pending: { label: '예정', color: 'bg-yellow-100 text-yellow-800' },
-  confirmed: { label: '확정', color: 'bg-blue-100 text-blue-800' },
+  pending: { label: '예정', color: 'bg-warning/10 text-warning' },
+  confirmed: { label: '확정', color: 'bg-primary/10 text-primary' },
   locked: { label: '마감', color: 'bg-primary/10 text-primary' },
-  paid: { label: '지급완료', color: 'bg-green-100 text-green-800' },
-  canceled: { label: '취소', color: 'bg-red-100 text-red-800' },
+  paid: { label: '지급완료', color: 'bg-success/10 text-success' },
+  canceled: { label: '취소', color: 'bg-destructive/10 text-destructive' },
 };
 
 export default function TrainerSettlementsPage() {
@@ -76,7 +76,7 @@ export default function TrainerSettlementsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-blue-600" />
+              <Calendar className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm text-muted-foreground">정산월</p>
                 <p className="text-xl font-bold">{summary?.currentMonth || '-'}</p>
@@ -87,7 +87,7 @@ export default function TrainerSettlementsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-yellow-600" />
+              <TrendingUp className="h-8 w-8 text-warning" />
               <div className="ml-4">
                 <p className="text-sm text-muted-foreground">이번 달 예상 정산액</p>
                 <p className="text-2xl font-bold">{(summary?.expected || 0).toLocaleString()}원</p>
@@ -98,7 +98,7 @@ export default function TrainerSettlementsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-8 w-8 text-success" />
               <div className="ml-4">
                 <p className="text-sm text-muted-foreground">이번 달 확정 정산액</p>
                 <p className="text-2xl font-bold">{(summary?.confirmed || 0).toLocaleString()}원</p>
@@ -226,7 +226,7 @@ export default function TrainerSettlementsPage() {
                       <TableCell className="font-medium">{it.sourceName || `#${it.sourceId}`}</TableCell>
                       <TableCell className="text-right">{Number(it.grossAmount).toLocaleString()}원</TableCell>
                       <TableCell className="text-right">{Number(it.commissionRate)}%</TableCell>
-                      <TableCell className="text-right text-red-600">-{Number(it.platformFee).toLocaleString()}원</TableCell>
+                      <TableCell className="text-right text-destructive">-{Number(it.platformFee).toLocaleString()}원</TableCell>
                       <TableCell className="text-right font-semibold">{Number(it.netAmount).toLocaleString()}원</TableCell>
                       <TableCell>
                         <Badge className={STATUS_LABEL[it.status]?.color || ''}>{STATUS_LABEL[it.status]?.label || it.status}</Badge>

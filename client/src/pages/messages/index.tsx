@@ -105,10 +105,10 @@ function MessagesContent() {
           </h2>
           
           {!isConnected && (
-            <div className="text-xs text-yellow-500 flex items-center">
+            <div className="text-xs text-warning flex items-center">
               <span className="relative flex h-2 w-2 mr-1">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-warning/40 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-warning"></span>
               </span>
               연결 중...
             </div>

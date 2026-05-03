@@ -161,9 +161,9 @@ export default function MultiModelTest() {
 
   const getConsensusColor = (level: string) => {
     switch (level) {
-      case 'high': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-success/10 text-success';
+      case 'medium': return 'bg-warning/10 text-warning';
+      case 'low': return 'bg-destructive/10 text-destructive';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -181,7 +181,7 @@ export default function MultiModelTest() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-          <Zap className="h-8 w-8 text-blue-600" />
+          <Zap className="h-8 w-8 text-primary" />
           멀티모델 AI 융합 시스템
         </h1>
         <p className="text-gray-600">OpenAI + Gemini 협업으로 더 정확하고 신뢰할 수 있는 분석 결과를 제공합니다</p>
@@ -268,8 +268,8 @@ export default function MultiModelTest() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-lg mb-2 text-blue-600">📊 융합된 최종 분석</h4>
-                    <p className="text-sm bg-blue-50 p-3 rounded whitespace-pre-wrap">
+                    <h4 className="font-semibold text-lg mb-2 text-primary">📊 융합된 최종 분석</h4>
+                    <p className="text-sm bg-primary/10 p-3 rounded whitespace-pre-wrap">
                       {fusedResults.behavior.fusedResult}
                     </p>
                   </div>
@@ -278,8 +278,8 @@ export default function MultiModelTest() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h5 className="font-medium mb-2 text-green-600">🤖 Gemini 분석</h5>
-                      <p className="text-xs bg-green-50 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <h5 className="font-medium mb-2 text-success">🤖 Gemini 분석</h5>
+                      <p className="text-xs bg-success/10 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {fusedResults.behavior.geminiResult}
                       </p>
                     </div>
@@ -385,8 +385,8 @@ export default function MultiModelTest() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-lg mb-2 text-blue-600">📋 융합된 훈련 계획</h4>
-                    <p className="text-sm bg-blue-50 p-3 rounded whitespace-pre-wrap">
+                    <h4 className="font-semibold text-lg mb-2 text-primary">📋 융합된 훈련 계획</h4>
+                    <p className="text-sm bg-primary/10 p-3 rounded whitespace-pre-wrap">
                       {fusedResults.training.fusedResult}
                     </p>
                   </div>
@@ -395,8 +395,8 @@ export default function MultiModelTest() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h5 className="font-medium mb-2 text-green-600">🤖 Gemini 계획</h5>
-                      <p className="text-xs bg-green-50 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <h5 className="font-medium mb-2 text-success">🤖 Gemini 계획</h5>
+                      <p className="text-xs bg-success/10 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {fusedResults.training.geminiResult}
                       </p>
                     </div>
@@ -474,8 +474,8 @@ export default function MultiModelTest() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-lg mb-2 text-blue-600">🏥 융합된 건강 분석</h4>
-                    <p className="text-sm bg-blue-50 p-3 rounded whitespace-pre-wrap">
+                    <h4 className="font-semibold text-lg mb-2 text-primary">🏥 융합된 건강 분석</h4>
+                    <p className="text-sm bg-primary/10 p-3 rounded whitespace-pre-wrap">
                       {fusedResults.health.fusedResult}
                     </p>
                   </div>
@@ -484,8 +484,8 @@ export default function MultiModelTest() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h5 className="font-medium mb-2 text-green-600">🤖 Gemini 분석</h5>
-                      <p className="text-xs bg-green-50 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <h5 className="font-medium mb-2 text-success">🤖 Gemini 분석</h5>
+                      <p className="text-xs bg-success/10 p-2 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {fusedResults.health.geminiResult}
                       </p>
                     </div>
@@ -557,8 +557,8 @@ export default function MultiModelTest() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded">
-                    <h4 className="font-semibold text-lg mb-3 text-blue-600">💫 융합된 감정 분석 결과</h4>
+                  <div className="bg-primary/10 p-4 rounded">
+                    <h4 className="font-semibold text-lg mb-3 text-primary">💫 융합된 감정 분석 결과</h4>
                     <div className="flex items-center justify-between mb-2">
                       <span>종합 평점:</span>
                       <div className="flex items-center gap-2">
@@ -566,7 +566,7 @@ export default function MultiModelTest() {
                           {[1, 2, 3, 4, 5].map((star) => (
                             <span 
                               key={star} 
-                              className={`text-lg ${star <= fusedResults.sentiment.fusedSentiment.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                              className={`text-lg ${star <= fusedResults.sentiment.fusedSentiment.rating ? 'text-warning' : 'text-gray-300'}`}
                             >
                               ★
                             </span>
@@ -580,7 +580,7 @@ export default function MultiModelTest() {
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-primary h-2 rounded-full" 
                             style={{ width: `${fusedResults.sentiment.fusedSentiment.confidence * 100}%` }}
                           ></div>
                         </div>
@@ -592,8 +592,8 @@ export default function MultiModelTest() {
                   <Separator />
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-green-50 p-3 rounded">
-                      <h5 className="font-medium mb-2 text-green-600">🤖 Gemini 감정 분석</h5>
+                    <div className="bg-success/10 p-3 rounded">
+                      <h5 className="font-medium mb-2 text-success">🤖 Gemini 감정 분석</h5>
                       <div className="text-sm">
                         <div>평점: {fusedResults.sentiment.geminiSentiment.rating}/5</div>
                         <div>신뢰도: {Math.round(fusedResults.sentiment.geminiSentiment.confidence * 100)}%</div>

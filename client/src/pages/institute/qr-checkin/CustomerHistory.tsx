@@ -42,13 +42,13 @@ interface HistoryResponse {
 }
 
 const CONCERN_CATEGORIES: Record<string, { label: string; color: string }> = {
-  '짖음': { label: '짖음', color: '#f97316' },
-  '공격': { label: '공격성', color: '#ef4444' },
-  '불안': { label: '불안', color: '#8b5cf6' },
-  '흥분': { label: '흥분', color: '#eab308' },
-  '사회': { label: '사회성', color: '#22c55e' },
-  '배변': { label: '배변', color: '#6b7280' },
-  '기타': { label: '기타', color: '#3b82f6' },
+  '짖음': { label: '짖음', color: 'hsl(var(--primary))' },
+  '공격': { label: '공격성', color: 'hsl(var(--destructive))' },
+  '불안': { label: '불안', color: 'hsl(var(--secondary))' },
+  '흥분': { label: '흥분', color: 'hsl(var(--warning))' },
+  '사회': { label: '사회성', color: 'hsl(var(--success))' },
+  '배변': { label: '배변', color: 'hsl(var(--muted-foreground))' },
+  '기타': { label: '기타', color: 'hsl(var(--primary))' },
 };
 
 function categorizeConcern(text: string): string {
@@ -145,7 +145,7 @@ function ConcernTrendChart({ history }: { history: CheckinRecord[] }) {
                           {val > 0 ? (
                             <span
                               className="inline-block w-6 h-6 rounded-full text-white text-xs leading-6"
-                              style={{ backgroundColor: CONCERN_CATEGORIES[cat]?.color || '#3b82f6' }}
+                              style={{ backgroundColor: CONCERN_CATEGORIES[cat]?.color || 'hsl(var(--primary))' }}
                             >
                               {val}
                             </span>
@@ -190,10 +190,10 @@ export default function CustomerHistory() {
 
   const temperamentBadge = (level: string | null) => {
     const map: Record<string, { label: string; color: string }> = {
-      A: { label: "A 사회성 양호", color: "bg-green-100 text-green-700" },
-      B: { label: "B 흥분 조절", color: "bg-yellow-100 text-yellow-700" },
-      C: { label: "C 짖음/경계", color: "bg-orange-100 text-orange-700" },
-      D: { label: "D 공격성", color: "bg-red-100 text-red-700" },
+      A: { label: "A 사회성 양호", color: "bg-success/10 text-success" },
+      B: { label: "B 흥분 조절", color: "bg-warning/10 text-warning" },
+      C: { label: "C 짖음/경계", color: "bg-primary/10 text-primary" },
+      D: { label: "D 공격성", color: "bg-destructive/10 text-destructive" },
       E: { label: "E 분리불안", color: "bg-primary/10 text-primary" },
     };
     if (!level || !map[level]) return null;
@@ -288,12 +288,12 @@ export default function CustomerHistory() {
                         return info ? <span key={petId}>{info}</span> : null;
                       })}
                       {Object.values(session.vaccineStatus || {}).some(v => v?.valid) && (
-                        <span className="text-green-600 flex items-center gap-0.5">
+                        <span className="text-success flex items-center gap-0.5">
                           <Syringe className="w-3 h-3" /> 접종완료
                         </span>
                       )}
                       {Object.values(session.zonePermissions || {}).flat().length > 0 && (
-                        <span className="text-blue-600 flex items-center gap-0.5">
+                        <span className="text-primary flex items-center gap-0.5">
                           <MapPin className="w-3 h-3" /> {Object.values(session.zonePermissions || {}).flat().length}개 구역 허용
                         </span>
                       )}
@@ -345,7 +345,7 @@ export default function CustomerHistory() {
                     </div>
                     <div className="flex items-center gap-1">
                       {record.hasPackage && (
-                        <Badge variant="outline" className="text-xs border-green-400 text-green-600">
+                        <Badge variant="outline" className="text-xs border-success/40 text-success">
                           <Package className="w-3 h-3 mr-1" />
                           정기권
                         </Badge>
@@ -362,19 +362,19 @@ export default function CustomerHistory() {
                     )}
                     {record.todayConcern && (
                       <div className="flex items-start gap-2 text-gray-600">
-                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
                         <span>{record.todayConcern}</span>
                       </div>
                     )}
                     {record.recentProblemBehavior && (
                       <div className="flex items-start gap-2 text-gray-600">
-                        <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
                         <span>{record.recentProblemBehavior}</span>
                       </div>
                     )}
                     {record.todayGoal && (
                       <div className="flex items-start gap-2 text-gray-600">
-                        <Target className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <Target className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                         <span>{record.todayGoal}</span>
                       </div>
                     )}

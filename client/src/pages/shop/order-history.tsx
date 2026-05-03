@@ -39,12 +39,12 @@ interface Order {
 const statusInfo = {
   pending: {
     label: '결제 대기',
-    color: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30',
+    color: 'text-warning bg-warning/10 dark:bg-warning/30',
     icon: <ShoppingBag className="h-4 w-4" />
   },
   processing: {
     label: '주문 처리 중',
-    color: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30',
+    color: 'text-primary bg-primary/10 dark:bg-primary/30',
     icon: <Package className="h-4 w-4" />
   },
   shipped: {
@@ -54,12 +54,12 @@ const statusInfo = {
   },
   delivered: {
     label: '배송 완료',
-    color: 'text-green-500 bg-green-100 dark:bg-green-900/30',
+    color: 'text-success bg-success/10 dark:bg-success/30',
     icon: <CheckCircle className="h-4 w-4" />
   },
   cancelled: {
     label: '주문 취소',
-    color: 'text-red-500 bg-red-100 dark:bg-red-900/30',
+    color: 'text-destructive bg-destructive/10 dark:bg-destructive/30',
     icon: <FileText className="h-4 w-4" />
   }
 };

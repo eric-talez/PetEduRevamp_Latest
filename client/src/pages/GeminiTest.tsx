@@ -496,7 +496,7 @@ export default function GeminiTest() {
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star 
                               key={star} 
-                              className={`h-5 w-5 ${star <= results.sentiment.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                              className={`h-5 w-5 ${star <= results.sentiment.rating ? 'text-warning fill-current' : 'text-gray-300'}`} 
                             />
                           ))}
                         </div>
@@ -509,7 +509,7 @@ export default function GeminiTest() {
                       <Label>신뢰도</Label>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                          className="bg-primary h-2 rounded-full" 
                           style={{ width: `${results.sentiment.confidence * 100}%` }}
                         ></div>
                       </div>

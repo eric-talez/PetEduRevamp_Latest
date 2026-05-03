@@ -29,11 +29,11 @@ import {
 } from 'lucide-react';
 
 const TEMPERAMENT_LEVELS = [
-  { value: 'A', label: 'A등급 - 사회성 양호', description: '다른 사람/동물에 대해 우호적이며 안정적', color: 'bg-green-100 text-green-800 border-green-300' },
-  { value: 'B', label: 'B등급 - 흥분 조절 필요', description: '흥분 시 자제력이 부족하나 공격성은 없음', color: 'bg-blue-100 text-blue-800 border-blue-300' },
-  { value: 'C', label: 'C등급 - 짖음/경계', description: '낯선 자극에 짖거나 경계하는 행동을 보임', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-  { value: 'D', label: 'D등급 - 공격성 주의', description: '특정 상황에서 공격적 행동 가능성 있음', color: 'bg-orange-100 text-orange-800 border-orange-300' },
-  { value: 'E', label: 'E등급 - 분리불안', description: '보호자 분리 시 심한 불안 증세를 보임', color: 'bg-red-100 text-red-800 border-red-300' },
+  { value: 'A', label: 'A등급 - 사회성 양호', description: '다른 사람/동물에 대해 우호적이며 안정적', color: 'bg-success/10 text-success border-success/40' },
+  { value: 'B', label: 'B등급 - 흥분 조절 필요', description: '흥분 시 자제력이 부족하나 공격성은 없음', color: 'bg-primary/10 text-primary border-primary/40' },
+  { value: 'C', label: 'C등급 - 짖음/경계', description: '낯선 자극에 짖거나 경계하는 행동을 보임', color: 'bg-warning/10 text-warning border-warning/40' },
+  { value: 'D', label: 'D등급 - 공격성 주의', description: '특정 상황에서 공격적 행동 가능성 있음', color: 'bg-primary/10 text-primary border-primary/40' },
+  { value: 'E', label: 'E등급 - 분리불안', description: '보호자 분리 시 심한 불안 증세를 보임', color: 'bg-destructive/10 text-destructive border-destructive/40' },
 ];
 
 export default function ConsultationForm() {
@@ -132,7 +132,7 @@ export default function ConsultationForm() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <User className="w-5 h-5 text-blue-500" />
+              <User className="w-5 h-5 text-primary" />
               보호자 및 반려동물 정보
             </CardTitle>
             <CardDescription>상담 대상 보호자와 반려동물을 선택해주세요</CardDescription>
@@ -200,7 +200,7 @@ export default function ConsultationForm() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Target className="w-5 h-5 text-red-500" />
+              <Target className="w-5 h-5 text-destructive" />
               방문 목적 및 주요 문제 행동
             </CardTitle>
           </CardHeader>
@@ -231,7 +231,7 @@ export default function ConsultationForm() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-500" />
+              <Clock className="w-5 h-5 text-primary" />
               행동 세부 정보
             </CardTitle>
           </CardHeader>
@@ -269,7 +269,7 @@ export default function ConsultationForm() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Footprints className="w-5 h-5 text-green-500" />
+              <Footprints className="w-5 h-5 text-success" />
               일상 패턴
             </CardTitle>
           </CardHeader>
@@ -338,7 +338,7 @@ export default function ConsultationForm() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Star className="w-5 h-5 text-amber-500" />
+              <Star className="w-5 h-5 text-warning" />
               성향 등급 평가
             </CardTitle>
             <CardDescription>상담 결과에 따라 반려견의 성향 등급을 평가합니다</CardDescription>
@@ -373,7 +373,7 @@ export default function ConsultationForm() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Brain className="w-5 h-5 text-indigo-500" />
+              <Brain className="w-5 h-5 text-primary" />
               추가 메모
             </CardTitle>
           </CardHeader>

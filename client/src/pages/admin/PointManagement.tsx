@@ -211,9 +211,9 @@ const PointManagement: React.FC = () => {
                     value={((pointStats?.totalActiveRules || 0) / Math.max(pointRules.length, 1)) * 100}
                     styles={buildStyles({
                       textSize: '16px',
-                      pathColor: '#3b82f6',
-                      textColor: '#3b82f6',
-                      trailColor: '#e5e7eb',
+                      pathColor: 'hsl(var(--primary))',
+                      textColor: 'hsl(var(--primary))',
+                      trailColor: 'hsl(var(--border))',
                     })}
                   />
                 </div>
@@ -232,9 +232,9 @@ const PointManagement: React.FC = () => {
                     value={Math.min(((pointStats?.totalPointsDistributed || 0) / 10000) * 100, 100)}
                     styles={buildStyles({
                       textSize: '16px',
-                      pathColor: '#10b981',
-                      textColor: '#10b981',
-                      trailColor: '#e5e7eb',
+                      pathColor: 'hsl(var(--success))',
+                      textColor: 'hsl(var(--success))',
+                      trailColor: 'hsl(var(--border))',
                     })}
                   />
                 </div>
@@ -253,9 +253,9 @@ const PointManagement: React.FC = () => {
                     value={((pointStats?.activeTrainers || 0) / 20) * 100}
                     styles={buildStyles({
                       textSize: '16px',
-                      pathColor: '#f59e0b',
-                      textColor: '#f59e0b',
-                      trailColor: '#e5e7eb',
+                      pathColor: 'hsl(var(--warning))',
+                      textColor: 'hsl(var(--warning))',
+                      trailColor: 'hsl(var(--border))',
                     })}
                   />
                 </div>
@@ -274,9 +274,9 @@ const PointManagement: React.FC = () => {
                     value={Math.min(((pointStats?.averageMonthlyPoints || 0) / 500) * 100, 100)}
                     styles={buildStyles({
                       textSize: '16px',
-                      pathColor: '#8b5cf6',
-                      textColor: '#8b5cf6',
-                      trailColor: '#e5e7eb',
+                      pathColor: 'hsl(var(--secondary))',
+                      textColor: 'hsl(var(--secondary))',
+                      trailColor: 'hsl(var(--border))',
                     })}
                   />
                 </div>
@@ -296,7 +296,7 @@ const PointManagement: React.FC = () => {
                 {pointStats?.topPerformers?.map((trainer, index) => (
                   <div key={trainer.trainerId} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-primary flex items-center justify-center text-white font-bold">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white font-bold">
                         {trainer.rank}
                       </div>
                       <div>
@@ -481,7 +481,7 @@ const PointManagement: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label className="text-sm font-medium">기본 포인트</Label>
-                      <div className="text-2xl font-bold text-blue-600">{rule.pointsPerAction}점</div>
+                      <div className="text-2xl font-bold text-primary">{rule.pointsPerAction}점</div>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">일일 최대</Label>
@@ -527,7 +527,7 @@ const PointManagement: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
                     <h4 className="font-semibold mb-2">포인트 계산 방식</h4>
                     <ul className="text-sm space-y-1">
                       <li>• 영상 업로드: 5점</li>
@@ -537,7 +537,7 @@ const PointManagement: React.FC = () => {
                       <li>• 자격증 취득: 100점</li>
                     </ul>
                   </div>
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="p-4 bg-success/10 dark:bg-success/20 rounded-lg">
                     <h4 className="font-semibold mb-2">인센티브 지급</h4>
                     <ul className="text-sm space-y-1">
                       <li>• 리뷰 영상: 35,000원/개</li>
@@ -567,7 +567,7 @@ const PointManagement: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-blue-500 transition-all duration-300"
+                            className="h-full bg-primary transition-all duration-300"
                             style={{ width: `${(rule.pointsPerAction / 100) * 100}%` }}
                           />
                         </div>

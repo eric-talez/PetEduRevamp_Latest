@@ -284,7 +284,7 @@ export default function AdminDashboard({ onAction }: AdminDashboardProps) {
             </Button>
             <Button
               variant="outline"
-              className="bg-background/10 border-primary-foreground/40 text-primary-foreground hover:bg-background/20 hover:text-primary-foreground"
+              className="bg-background/10 border-primary-foreground/40 text-primary-foreground hover:bg-background/20 hover:text-primary/90-foreground"
               onClick={() => window.location.href = '/admin/backup'}
               aria-label="백업 관리로 이동"
             >
@@ -300,7 +300,7 @@ export default function AdminDashboard({ onAction }: AdminDashboardProps) {
         
         <Card className="p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-success/10 dark:bg-success/30 text-success dark:text-success rounded-full flex items-center justify-center">
               <CheckSquare className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -365,7 +365,7 @@ export default function AdminDashboard({ onAction }: AdminDashboardProps) {
           <div className="mt-4">
             <div className="text-xs text-gray-700 dark:text-gray-300">
               <div className="flex items-center mb-1">
-                <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                <div className="w-2 h-2 rounded-full bg-success mr-2"></div>
                 <span>API: 100% 가동</span>
               </div>
             </div>
@@ -421,7 +421,7 @@ export default function AdminDashboard({ onAction }: AdminDashboardProps) {
           <Card className="border border-gray-100 dark:border-gray-700">
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               <div className="p-5 flex items-center">
-                <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center">
+                <div className="flex-shrink-0 h-10 w-10 bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary rounded-full flex items-center justify-center">
                   <CheckSquare className="h-5 w-5" />
                 </div>
                 <div className="ml-4 flex-1">
@@ -438,7 +438,7 @@ export default function AdminDashboard({ onAction }: AdminDashboardProps) {
               </div>
               
               <div className="p-5 flex items-center">
-                <div className="flex-shrink-0 h-10 w-10 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center">
+                <div className="flex-shrink-0 h-10 w-10 bg-destructive/10 dark:bg-destructive/30 text-destructive dark:text-destructive rounded-full flex items-center justify-center">
                   <Bell className="h-5 w-5" />
                 </div>
                 <div className="ml-4 flex-1">
@@ -455,7 +455,7 @@ export default function AdminDashboard({ onAction }: AdminDashboardProps) {
               </div>
               
               <div className="p-5 flex items-center">
-                <div className="flex-shrink-0 h-10 w-10 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+                <div className="flex-shrink-0 h-10 w-10 bg-success/10 dark:bg-success/30 text-success dark:text-success rounded-full flex items-center justify-center">
                   <Settings className="h-5 w-5" />
                 </div>
                 <div className="ml-4 flex-1">
@@ -533,7 +533,7 @@ export default function AdminDashboard({ onAction }: AdminDashboardProps) {
               
               <div className="p-5">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-md bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary flex items-center justify-center">
                     <Building className="h-5 w-5" />
                   </div>
                   <div className="ml-3">

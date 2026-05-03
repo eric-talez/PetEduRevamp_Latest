@@ -445,7 +445,7 @@ export default function BusinessRegistration() {
                       <button
                         type="button"
                         onClick={() => removeService(index)}
-                        className="ml-1 hover:text-red-600"
+                        className="ml-1 hover:text-destructive"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -475,7 +475,7 @@ export default function BusinessRegistration() {
                       <button
                         type="button"
                         onClick={() => removeAmenity(index)}
-                        className="ml-1 hover:text-red-600"
+                        className="ml-1 hover:text-destructive"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -519,7 +519,7 @@ export default function BusinessRegistration() {
                           <button
                             type="button"
                             onClick={() => removePhoto(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                            className="absolute top-1 right-1 bg-destructive text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
                           >
                             ×
                           </button>
@@ -571,9 +571,9 @@ export default function BusinessRegistration() {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* 템플릿 다운로드 */}
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="font-medium text-blue-900 mb-2">업로드 가이드</h3>
-                <ul className="text-sm text-blue-800 space-y-1 mb-3">
+              <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg">
+                <h3 className="font-medium text-primary mb-2">업로드 가이드</h3>
+                <ul className="text-sm text-primary space-y-1 mb-3">
                   <li>• CSV 파일 형식으로 업로드해주세요</li>
                   <li>• 템플릿을 다운로드하여 형식에 맞게 작성하세요</li>
                   <li>• 한 번에 최대 1000개 업체까지 등록 가능합니다</li>
@@ -627,7 +627,7 @@ export default function BusinessRegistration() {
                   <Label>업로드 진행률</Label>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>

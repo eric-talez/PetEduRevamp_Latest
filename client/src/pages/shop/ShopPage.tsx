@@ -407,27 +407,27 @@ export default function ShopPage() {
       
       <style>{`
         .shop-page {
-          --primary-color: #4F46E5;
-          --primary-hover: #4338CA;
-          --success-color: #10B981;
-          --warning-color: #F59E0B;
-          --error-color: #EF4444;
-          --text-color: #111827;
-          --bg-color: #F9FAFB;
-          --card-bg: #FFFFFF;
-          --gray-100: #F3F4F6;
-          --gray-200: #E5E7EB;
-          --gray-300: #D1D5DB;
-          --gray-400: #9CA3AF;
-          --gray-500: #6B7280;
-          --gray-600: #4B5563;
-          --gray-700: #374151;
-          --gray-800: #1F2937;
-          --gray-900: #111827;
-          --border-color: #E5E7EB;
+          --primary-color: hsl(var(--secondary));
+          --primary-hover: hsl(var(--secondary));
+          --success-color: hsl(var(--success));
+          --warning-color: hsl(var(--warning));
+          --error-color: hsl(var(--destructive));
+          --text-color: hsl(var(--foreground));
+          --bg-color: hsl(var(--muted));
+          --card-bg: hsl(var(--background));
+          --gray-100: hsl(var(--muted));
+          --gray-200: hsl(var(--border));
+          --gray-300: hsl(var(--border));
+          --gray-400: hsl(var(--muted-foreground));
+          --gray-500: hsl(var(--muted-foreground));
+          --gray-600: hsl(var(--muted-foreground));
+          --gray-700: hsl(var(--foreground));
+          --gray-800: hsl(var(--foreground));
+          --gray-900: hsl(var(--foreground));
+          --border-color: hsl(var(--border));
           --border-radius: 0.5rem;
           --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          --light-bg: #F9FAFB;
+          --light-bg: hsl(var(--muted));
           color: var(--text-color);
           background-color: var(--bg-color);
           font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -435,11 +435,11 @@ export default function ShopPage() {
         }
 
         .shop-page.dark-mode {
-          --text-color: #F9FAFB;
-          --bg-color: #111827;
-          --card-bg: #1F2937;
-          --border-color: #374151;
-          --light-bg: #1F2937;
+          --text-color: hsl(var(--muted));
+          --bg-color: hsl(var(--foreground));
+          --card-bg: hsl(var(--foreground));
+          --border-color: hsl(var(--foreground));
+          --light-bg: hsl(var(--foreground));
         }
         
         /* 유틸리티 네비게이션 */
@@ -1182,7 +1182,7 @@ export default function ShopPage() {
         }
         
         .product-stars {
-          color: #ff9500;
+          color: hsl(var(--primary));
           margin-right: 0.25rem;
           display: flex;
         }

@@ -430,7 +430,7 @@ export default function AdminProductPricing() {
                     <div className="flex items-center gap-2">
                       {product.isDiscountActive && product.discountPrice ? (
                         <>
-                          <span className="text-lg font-bold text-red-600">
+                          <span className="text-lg font-bold text-destructive">
                             {formatPrice(product.discountPrice)}원
                           </span>
                           <span className="text-sm text-gray-500 line-through">
@@ -444,7 +444,7 @@ export default function AdminProductPricing() {
                       )}
                     </div>
                     {product.isDiscountActive && product.discountPercentage && (
-                      <div className="text-sm text-red-600">
+                      <div className="text-sm text-destructive">
                         {product.discountPercentage}% 할인
                       </div>
                     )}
@@ -453,7 +453,7 @@ export default function AdminProductPricing() {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleEditPrice(product)}
-                    className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300"
+                    className="hover:bg-primary/10 hover:text-primary hover:border-primary/40"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -483,7 +483,7 @@ export default function AdminProductPricing() {
               <h3 className="text-lg font-semibold mb-3">활성 규칙</h3>
               <div className="space-y-3">
                 {activeRules.map((rule: PricingRule) => (
-                  <div key={rule.id} className="flex items-center justify-between p-4 border rounded-lg bg-green-50 dark:bg-green-900/20">
+                  <div key={rule.id} className="flex items-center justify-between p-4 border rounded-lg bg-success/10 dark:bg-success/20">
                     <div>
                       <h4 className="font-semibold">{rule.name}</h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -504,7 +504,7 @@ export default function AdminProductPricing() {
                         variant="outline" 
                         size="sm"
                         onClick={() => handleEditRule(rule)}
-                        className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300"
+                        className="hover:bg-primary/10 hover:text-primary hover:border-primary/40"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -512,7 +512,7 @@ export default function AdminProductPricing() {
                         variant="outline" 
                         size="sm"
                         onClick={() => deleteRuleMutation.mutate(rule.id)}
-                        className="text-red-600 border-red-300 hover:bg-red-50"
+                        className="text-destructive border-destructive/40 hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -552,7 +552,7 @@ export default function AdminProductPricing() {
                           variant="outline" 
                           size="sm"
                           onClick={() => handleEditRule(rule)}
-                          className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/40"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -560,7 +560,7 @@ export default function AdminProductPricing() {
                           variant="outline" 
                           size="sm"
                           onClick={() => deleteRuleMutation.mutate(rule.id)}
-                          className="text-red-600 border-red-300 hover:bg-red-50"
+                          className="text-destructive border-destructive/40 hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -657,9 +657,9 @@ export default function AdminProductPricing() {
                 </div>
                 
                 {priceForm.discountType !== 'none' && priceForm.discountValue > 0 && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
                     <h4 className="font-semibold mb-2">할인 후 가격</h4>
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-2xl font-bold text-primary">
                       {formatPrice(calculateDiscountedPrice(priceForm.originalPrice, priceForm.discountType, priceForm.discountValue))}원
                     </div>
                     <div className="text-sm text-gray-600 mt-1">

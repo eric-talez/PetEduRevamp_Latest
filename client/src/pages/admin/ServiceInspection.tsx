@@ -58,12 +58,12 @@ export default function ServiceInspection() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return <CheckCircle className="h-5 w-5 text-success" />;
       case 'partial':
       case 'limited':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return <AlertTriangle className="h-5 w-5 text-warning" />;
       case 'inactive':
-        return <XCircle className="h-5 w-5 text-red-500" />;
+        return <XCircle className="h-5 w-5 text-destructive" />;
       default:
         return <Clock className="h-5 w-5 text-gray-500" />;
     }
@@ -71,10 +71,10 @@ export default function ServiceInspection() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
-      active: 'bg-green-100 text-green-800',
-      partial: 'bg-yellow-100 text-yellow-800',
-      limited: 'bg-yellow-100 text-yellow-800',
-      inactive: 'bg-red-100 text-red-800'
+      active: 'bg-success/10 text-success',
+      partial: 'bg-warning/10 text-warning',
+      limited: 'bg-warning/10 text-warning',
+      inactive: 'bg-destructive/10 text-destructive'
     };
 
     const labels: Record<string, string> = {
@@ -119,7 +119,7 @@ export default function ServiceInspection() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <span className="text-2xl font-bold">정상</span>
                 </div>
               </CardContent>
@@ -215,7 +215,7 @@ export default function ServiceInspection() {
               <ul className="space-y-2">
                 {inspection.recommendations.map((recommendation, index) => (
                   <li key={index} className="flex items-start space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
                     <span>{recommendation}</span>
                   </li>
                 ))}

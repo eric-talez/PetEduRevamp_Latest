@@ -275,7 +275,7 @@ export default function Login() {
             <DialogTitle>비밀번호 찾기</DialogTitle>
           </DialogHeader>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            <span className="font-medium text-blue-600 dark:text-blue-400">가입시 등록한 아이디와 이메일이 정확히 일치해야 합니다.</span> 일치하는 정보가 확인되면 비밀번호 재설정 안내를 이메일로 보내드립니다.
+            <span className="font-medium text-primary dark:text-primary">가입시 등록한 아이디와 이메일이 정확히 일치해야 합니다.</span> 일치하는 정보가 확인되면 비밀번호 재설정 안내를 이메일로 보내드립니다.
           </p>
           <PasswordResetForm onClose={() => setShowPasswordReset(false)} />
         </DialogContent>

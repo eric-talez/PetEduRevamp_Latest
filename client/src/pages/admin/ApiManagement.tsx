@@ -51,7 +51,7 @@ export default function ApiManagement() {
       id: 'naver',
       name: '네이버 로그인',
       description: '네이버 계정으로 간편 로그인 서비스',
-      icon: <Globe className="w-5 h-5 text-green-600" />,
+      icon: <Globe className="w-5 h-5 text-success" />,
       fields: [
         {
           key: 'clientId',
@@ -82,7 +82,7 @@ export default function ApiManagement() {
       id: 'kakao',
       name: '카카오 로그인',
       description: '카카오 계정으로 간편 로그인 서비스',
-      icon: <Smartphone className="w-5 h-5 text-yellow-600" />,
+      icon: <Smartphone className="w-5 h-5 text-warning" />,
       fields: [
         {
           key: 'clientId',
@@ -113,7 +113,7 @@ export default function ApiManagement() {
       id: 'google',
       name: '구글 로그인',
       description: '구글 계정으로 간편 로그인 서비스',
-      icon: <Globe className="w-5 h-5 text-blue-600" />,
+      icon: <Globe className="w-5 h-5 text-primary" />,
       fields: [
         {
           key: 'clientId',
@@ -144,7 +144,7 @@ export default function ApiManagement() {
       id: 'toss',
       name: '토스페이먼츠',
       description: '토스페이먼츠 결제 서비스',
-      icon: <CreditCard className="w-5 h-5 text-blue-500" />,
+      icon: <CreditCard className="w-5 h-5 text-primary" />,
       fields: [
         {
           key: 'clientKey',
@@ -335,7 +335,7 @@ export default function ApiManagement() {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary/50 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">API 설정을 불러오고 있습니다...</p>
           </div>
         </div>
@@ -380,9 +380,9 @@ export default function ApiManagement() {
                   <div className="flex items-center gap-3">
                     <Badge className={
                       config.status === 'connected' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        ? 'bg-success/10 text-success dark:bg-success/20 dark:text-success/70'
                         : config.status === 'error'
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        ? 'bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive/70'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                     }>
                       {config.status === 'connected' ? (
@@ -415,7 +415,7 @@ export default function ApiManagement() {
                     <div key={field.key}>
                       <Label htmlFor={`${config.id}_${field.key}`}>
                         {field.label}
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                        {field.required && <span className="text-destructive ml-1">*</span>}
                       </Label>
                       <div className="relative">
                         <Input
@@ -488,9 +488,9 @@ export default function ApiManagement() {
                   <div className="flex items-center gap-3">
                     <Badge className={
                       config.status === 'connected' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        ? 'bg-success/10 text-success dark:bg-success/20 dark:text-success/70'
                         : config.status === 'error'
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        ? 'bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive/70'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                     }>
                       {config.status === 'connected' ? (
@@ -523,7 +523,7 @@ export default function ApiManagement() {
                     <div key={field.key}>
                       <Label htmlFor={`${config.id}_${field.key}`}>
                         {field.label}
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                        {field.required && <span className="text-destructive ml-1">*</span>}
                       </Label>
                       <div className="relative">
                         <Input
@@ -555,9 +555,9 @@ export default function ApiManagement() {
                   ))}
                 </div>
 
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">토스페이먼츠 설정 안내</h4>
-                  <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                <div className="p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                  <h4 className="font-medium text-primary dark:text-primary/70 mb-2">토스페이먼츠 설정 안내</h4>
+                  <ul className="text-sm text-primary dark:text-primary space-y-1">
                     <li>• 토스페이먼츠 개발자 센터에서 키를 발급받으세요</li>
                     <li>• 테스트 환경에서는 테스트 키를, 운영 환경에서는 라이브 키를 사용하세요</li>
                     <li>• 웹훅 키는 결제 검증을 위해 권장되지만 필수는 아닙니다</li>

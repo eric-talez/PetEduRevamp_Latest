@@ -331,7 +331,7 @@ export default function InstituteTrainersManagement() {
                         <TableCell className="hidden md:table-cell">
                           <div className="flex items-center">
                             <span className="mr-1">{trainer.rating.toFixed(1)}</span>
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <Star className="h-4 w-4 fill-warning text-warning" />
                           </div>
                         </TableCell>
                         <TableCell>
@@ -356,7 +356,7 @@ export default function InstituteTrainersManagement() {
                                   updateTrainerStatus(trainer.id, 'active');
                                 }}
                               >
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-success" />
                               </Button>
                             )}
                             {trainer.status === 'inactive' && (
@@ -368,7 +368,7 @@ export default function InstituteTrainersManagement() {
                                   updateTrainerStatus(trainer.id, 'active');
                                 }}
                               >
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-success" />
                               </Button>
                             )}
                             {trainer.status === 'active' && (
@@ -380,7 +380,7 @@ export default function InstituteTrainersManagement() {
                                   updateTrainerStatus(trainer.id, 'inactive');
                                 }}
                               >
-                                <X className="h-4 w-4 text-red-500" />
+                                <X className="h-4 w-4 text-destructive" />
                               </Button>
                             )}
                           </div>
@@ -501,7 +501,7 @@ export default function InstituteTrainersManagement() {
                       <div className="flex flex-col gap-2">
                         {selectedTrainer.certification.map((cert, index) => (
                           <div key={index} className="flex items-center text-sm">
-                            <BadgeCheck className="h-4 w-4 mr-2 text-green-500" />
+                            <BadgeCheck className="h-4 w-4 mr-2 text-success" />
                             <span>{cert}</span>
                           </div>
                         ))}
@@ -523,7 +523,7 @@ export default function InstituteTrainersManagement() {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col items-center">
-                              <Star className="h-8 w-8 text-yellow-400 fill-yellow-400 mb-2" />
+                              <Star className="h-8 w-8 text-warning fill-warning mb-2" />
                               <div className="text-2xl font-bold">{selectedTrainer.rating.toFixed(1)}</div>
                               <p className="text-xs text-muted-foreground">평균 평점</p>
                             </div>
@@ -533,7 +533,7 @@ export default function InstituteTrainersManagement() {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col items-center">
-                              <FileText className="h-8 w-8 text-blue-500 mb-2" />
+                              <FileText className="h-8 w-8 text-primary mb-2" />
                               <div className="text-2xl font-bold">{selectedTrainer.courseCount}</div>
                               <p className="text-xs text-muted-foreground">활성 코스</p>
                             </div>
@@ -543,7 +543,7 @@ export default function InstituteTrainersManagement() {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col items-center">
-                              <Award className="h-8 w-8 text-green-500 mb-2" />
+                              <Award className="h-8 w-8 text-success mb-2" />
                               <div className="text-2xl font-bold">{selectedTrainer.completionRate}%</div>
                               <p className="text-xs text-muted-foreground">완료율</p>
                             </div>
@@ -572,21 +572,21 @@ export default function InstituteTrainersManagement() {
                         <CardContent>
                           <div className="space-y-4">
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-blue-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-primary mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">신규 강의 등록: 중급 반려견 사회화 과정</p>
                                 <p className="text-xs text-muted-foreground">2023년 5월 2일</p>
                               </div>
                             </div>
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-green-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-success mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">강의 완료: 기초 훈련 과정 (5명 수강)</p>
                                 <p className="text-xs text-muted-foreground">2023년 4월 15일</p>
                               </div>
                             </div>
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-amber-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-warning mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">새 자격증 추가: 특수 반려견 행동 전문가</p>
                                 <p className="text-xs text-muted-foreground">2023년 3월 21일</p>

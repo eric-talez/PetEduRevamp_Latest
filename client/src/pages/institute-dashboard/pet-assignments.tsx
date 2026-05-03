@@ -378,14 +378,14 @@ export default function PetAssignmentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4 mb-6">
+          <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/50 rounded-md p-4 mb-6">
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <PawPrint className="h-5 w-5 text-blue-500" />
+                <PawPrint className="h-5 w-5 text-primary" />
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">알림장 사용 방법</h3>
-                <div className="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                <h3 className="text-sm font-medium text-primary dark:text-primary">알림장 사용 방법</h3>
+                <div className="mt-2 text-sm text-primary dark:text-primary">
                   <ol className="list-decimal pl-5 space-y-1">
                     <li>회원을 검색하여 반려견 확인</li>
                     <li>반려견에게 적합한 훈련사 매칭</li>
@@ -483,7 +483,7 @@ export default function PetAssignmentsPage() {
                       </TableCell>
                       <TableCell>
                         {pet.notebookEnabled ? (
-                          <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                          <Badge variant="outline" className="bg-success/10 text-success border-success/30">
                             <Check className="w-3.5 h-3.5 mr-1" />
                             활성화
                           </Badge>
@@ -501,7 +501,7 @@ export default function PetAssignmentsPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => unassignTrainer(pet.id)}
-                              className="h-8 text-xs text-red-500 hover:text-red-600"
+                              className="h-8 text-xs text-destructive hover:text-destructive/90"
                             >
                               매칭 해제
                             </Button>

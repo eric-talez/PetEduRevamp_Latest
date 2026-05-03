@@ -59,7 +59,7 @@ function CheckoutProgressBar({ currentStep }: { currentStep: number }) {
                 <div 
                   className={`
                     w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300
-                    ${isCompleted ? 'bg-green-500 border-green-500 text-white' : ''}
+                    ${isCompleted ? 'bg-success border-success/50 text-white' : ''}
                     ${isCurrent ? 'bg-primary border-primary text-white scale-110 shadow-lg' : ''}
                     ${!isCompleted && !isCurrent ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400' : ''}
                   `}
@@ -80,7 +80,7 @@ function CheckoutProgressBar({ currentStep }: { currentStep: number }) {
                 <div 
                   className={`
                     flex-1 h-1 mx-2 rounded transition-all duration-300
-                    ${currentStep > step.id ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}
+                    ${currentStep > step.id ? 'bg-success' : 'bg-gray-200 dark:bg-gray-700'}
                   `}
                 />
               )}
@@ -395,7 +395,7 @@ export default function CheckoutPage() {
                   <div className="space-y-2">
                     <Label htmlFor="name" className="flex items-center gap-1">
                       <User className="h-4 w-4" />
-                      받는 분 <span className="text-red-500">*</span>
+                      받는 분 <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="name"
@@ -408,7 +408,7 @@ export default function CheckoutPage() {
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="flex items-center gap-1">
                       <Phone className="h-4 w-4" />
-                      연락처 <span className="text-red-500">*</span>
+                      연락처 <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="phone"
@@ -436,7 +436,7 @@ export default function CheckoutPage() {
                 <div className="space-y-2">
                   <Label htmlFor="address" className="flex items-center gap-1">
                     <Home className="h-4 w-4" />
-                    배송지 <span className="text-red-500">*</span>
+                    배송지 <span className="text-destructive">*</span>
                   </Label>
                   <div className="flex gap-2">
                     <Input
@@ -604,8 +604,8 @@ export default function CheckoutPage() {
           {currentStep === 4 && (
             <Card>
               <CardContent className="py-12 text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <div className="w-16 h-16 bg-success/10 dark:bg-success/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="h-8 w-8 text-success dark:text-success" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   주문이 완료되었습니다!
@@ -675,7 +675,7 @@ export default function CheckoutPage() {
                 {orderData.type === 'product' && (
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">배송비</span>
-                    <span className={orderData.shippingFee === 0 ? 'text-green-600 font-medium' : ''}>
+                    <span className={orderData.shippingFee === 0 ? 'text-success font-medium' : ''}>
                       {orderData.shippingFee === 0 ? '무료' : `${orderData.shippingFee.toLocaleString()}원`}
                     </span>
                   </div>

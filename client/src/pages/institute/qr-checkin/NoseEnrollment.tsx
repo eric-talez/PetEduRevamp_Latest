@@ -156,15 +156,15 @@ export default function NoseEnrollment() {
       </div>
 
       {profile && (
-        <Card className="border-green-200 bg-green-50/50">
+        <Card className="border-success/30 bg-success/50">
           <CardContent className="py-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-success" />
               </div>
               <div className="flex-1">
-                <p className="font-medium text-green-800">코 프로필 등록됨</p>
-                <p className="text-sm text-green-600">
+                <p className="font-medium text-success">코 프로필 등록됨</p>
+                <p className="text-sm text-success">
                   품질 점수: {profile.qualityScore}점 · 버전 {profile.version}
                 </p>
               </div>
@@ -242,7 +242,7 @@ export default function NoseEnrollment() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-sm text-primary">
               <p className="font-medium flex items-center gap-1 mb-1">
                 <AlertCircle className="w-4 h-4" />
                 촬영 가이드
@@ -297,7 +297,7 @@ export default function NoseEnrollment() {
                   <img src={url} alt={`촬영 ${i + 1}`} className="w-full aspect-square object-cover rounded-lg border" />
                   <button
                     onClick={() => removeImage(i)}
-                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <XCircle className="w-4 h-4" />
                   </button>

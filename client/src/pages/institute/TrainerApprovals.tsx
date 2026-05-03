@@ -180,8 +180,8 @@ export default function TrainerApprovals() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="p-3 bg-warning/10 rounded-lg">
+                <Clock className="w-6 h-6 text-warning" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">대기 중</p>
@@ -193,8 +193,8 @@ export default function TrainerApprovals() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-success/10 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">승인됨</p>
@@ -206,8 +206,8 @@ export default function TrainerApprovals() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <XCircle className="w-6 h-6 text-red-600" />
+              <div className="p-3 bg-destructive/10 rounded-lg">
+                <XCircle className="w-6 h-6 text-destructive" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">거부됨</p>

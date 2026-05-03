@@ -122,7 +122,7 @@ export function NotebookFilters({
         {/* 중요 표시 필터 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertCircle className="h-4 w-4 text-warning" />
             <Label htmlFor="important-filter" className="text-sm">중요 항목만</Label>
           </div>
           <Switch
@@ -135,7 +135,7 @@ export function NotebookFilters({
         {/* 즐겨찾기 필터 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Bookmark className="h-4 w-4 text-blue-500" />
+            <Bookmark className="h-4 w-4 text-primary" />
             <Label htmlFor="favorite-filter" className="text-sm">즐겨찾기만</Label>
           </div>
           <Switch
@@ -152,17 +152,17 @@ export function NotebookFilters({
               필터 적용됨
             </Badge>
             {filter.searchTerm && (
-              <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/20">
+              <Badge variant="outline" className="text-xs bg-primary/10 dark:bg-primary/20">
                 키워드: {filter.searchTerm}
               </Badge>
             )}
             {filter.petId !== 'all' && (
-              <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-900/20">
+              <Badge variant="outline" className="text-xs bg-success/10 dark:bg-success/20">
                 반려동물 선택됨
               </Badge>
             )}
             {filter.status !== 'all' && (
-              <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-900/20">
+              <Badge variant="outline" className="text-xs bg-warning/10 dark:bg-warning/20">
                 상태: {
                   filter.status === 'completed' ? '완료됨' : 
                   filter.status === 'in-progress' ? '진행중' : '예정됨'

@@ -15,10 +15,10 @@ export default function InstituteReportsPage() {
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">수강생 현황</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">138</p>
+                <p className="text-3xl font-bold text-primary dark:text-primary">138</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">총 수강생</p>
               </div>
-              <div className="text-green-500 text-sm font-semibold">
+              <div className="text-success text-sm font-semibold">
                 +12.5% <span className="ml-1">지난달 대비</span>
               </div>
             </div>
@@ -28,10 +28,10 @@ export default function InstituteReportsPage() {
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">완료 강의</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">42</p>
+                <p className="text-3xl font-bold text-success dark:text-success">42</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">이번 달</p>
               </div>
-              <div className="text-green-500 text-sm font-semibold">
+              <div className="text-success text-sm font-semibold">
                 +8.3% <span className="ml-1">지난달 대비</span>
               </div>
             </div>
@@ -44,7 +44,7 @@ export default function InstituteReportsPage() {
                 <p className="text-3xl font-bold text-primary dark:text-primary">₩4,850,000</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">이번 달</p>
               </div>
-              <div className="text-green-500 text-sm font-semibold">
+              <div className="text-success text-sm font-semibold">
                 +15.2% <span className="ml-1">지난달 대비</span>
               </div>
             </div>
@@ -114,13 +114,13 @@ export default function InstituteReportsPage() {
                     <div className="text-sm text-gray-900 dark:text-white">{8 + i}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-yellow-500">★★★★★ ({(4.5 + i * 0.1).toFixed(1)})</div>
+                    <div className="text-sm text-warning">★★★★★ ({(4.5 + i * 0.1).toFixed(1)})</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-white">₩{(1500000 + i * 250000).toLocaleString()}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a href="#" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                    <a href="#" className="text-primary hover:text-primary/90 dark:text-primary dark:hover:text-primary/90">
                       상세보기
                     </a>
                   </td>
@@ -131,7 +131,7 @@ export default function InstituteReportsPage() {
         </div>
         
         <div className="flex justify-end mt-6">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          <button className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
             상세 보고서 다운로드
           </button>
         </div>

@@ -422,7 +422,7 @@ export default function CostManagementPage() {
                         <TableCell className="text-right">
                           {transaction.grossAmount.toLocaleString()}원
                         </TableCell>
-                        <TableCell className="text-right text-red-600">
+                        <TableCell className="text-right text-destructive">
                           -{transaction.feeAmount.toLocaleString()}원
                         </TableCell>
                         <TableCell className="text-right font-medium">
@@ -546,7 +546,7 @@ export default function CostManagementPage() {
                           <TableCell className="text-right">
                             {settlement.totalGrossAmount.toLocaleString()}원
                           </TableCell>
-                          <TableCell className="text-right text-red-600">
+                          <TableCell className="text-right text-destructive">
                             -{settlement.totalFeeAmount.toLocaleString()}원
                           </TableCell>
                           <TableCell className="text-right font-medium">
@@ -766,7 +766,7 @@ export default function CostManagementPage() {
                         <span>총 거래 금액:</span>
                         <span className="font-medium">{parseFloat(calculatorAmount).toLocaleString()}원</span>
                       </div>
-                      <div className="flex justify-between text-red-600">
+                      <div className="flex justify-between text-destructive">
                         <span>수수료 ({calculatorResult.feeRate}%):</span>
                         <span className="font-medium">-{calculatorResult.feeAmount.toLocaleString()}원</span>
                       </div>
@@ -793,13 +793,13 @@ export default function CostManagementPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">이번 달 총 거래액</p>
                     <p className="text-2xl font-bold">8,420만원</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
+                    <p className="text-xs text-success flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       +15.2% 전월 대비
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <DollarSign className="h-6 w-6 text-blue-600" />
+                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <DollarSign className="h-6 w-6 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -811,13 +811,13 @@ export default function CostManagementPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">이번 달 수수료 수익</p>
                     <p className="text-2xl font-bold">758만원</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
+                    <p className="text-xs text-success flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       +12.8% 전월 대비
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <TrendingUp className="h-6 w-6 text-green-600" />
+                  <div className="h-12 w-12 bg-success/10 rounded-full flex items-center justify-center">
+                    <TrendingUp className="h-6 w-6 text-success" />
                   </div>
                 </div>
               </CardContent>

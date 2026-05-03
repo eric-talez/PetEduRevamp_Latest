@@ -240,7 +240,7 @@ export default function HealthRecordPage() {
             <div className="flex gap-2">
               <Dialog open={isPetAddDialogOpen} onOpenChange={setIsPetAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-green-600 border-green-300 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition-all duration-200">
+                  <Button variant="outline" size="sm" className="text-success border-success/40 hover:bg-success/10 hover:text-success/90 hover:border-success/40 transition-all duration-200">
                     <Plus className="w-4 h-4 mr-2" />
                     반려견 추가 등록하기
                   </Button>
@@ -252,7 +252,7 @@ export default function HealthRecordPage() {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleEditPet(selectedPet)}
-                    className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200"
+                    className="text-primary border-primary/40 hover:bg-primary/10 hover:text-primary/90 hover:border-primary/40 transition-all duration-200"
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     반려견 등록 프로필 수정
@@ -613,7 +613,7 @@ export default function HealthRecordPage() {
               <Button type="button" variant="outline" onClick={() => setIsPetEditDialogOpen(false)}>
                 취소
               </Button>
-              <Button type="submit" disabled={updatePetMutation.isPending} variant="outline" className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200">
+              <Button type="submit" disabled={updatePetMutation.isPending} variant="outline" className="text-primary border-primary/40 hover:bg-primary/10 hover:text-primary/90 hover:border-primary/40 transition-all duration-200">
                 {updatePetMutation.isPending ? '수정 중...' : '수정'}
               </Button>
             </div>

@@ -364,13 +364,13 @@ export default function FacilityManagementPage() {
   const getFacilityTypeIcon = (type: string) => {
     switch (type) {
       case 'training_room':
-        return <Building className="h-5 w-5 text-blue-600" />;
+        return <Building className="h-5 w-5 text-primary" />;
       case 'outdoor_area':
-        return <MapPin className="h-5 w-5 text-green-600" />;
+        return <MapPin className="h-5 w-5 text-success" />;
       case 'consultation_room':
         return <Users className="h-5 w-5 text-primary" />;
       case 'grooming_room':
-        return <Coffee className="h-5 w-5 text-orange-600" />;
+        return <Coffee className="h-5 w-5 text-primary" />;
       default:
         return <Building className="h-5 w-5 text-gray-600" />;
     }
@@ -438,7 +438,7 @@ export default function FacilityManagementPage() {
                     <p className="text-sm text-gray-600">총 시설</p>
                     <p className="text-2xl font-bold">{facilities?.length || 0}</p>
                   </div>
-                  <Building className="h-8 w-8 text-blue-500" />
+                  <Building className="h-8 w-8 text-primary" />
                 </div>
               </CardContent>
             </Card>
@@ -447,11 +447,11 @@ export default function FacilityManagementPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">이용 가능</p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-2xl font-bold text-success">
                       {facilities?.filter(f => f.status === 'available').length || 0}
                     </p>
                   </div>
-                  <CheckCircle className="h-8 w-8 text-green-500" />
+                  <CheckCircle className="h-8 w-8 text-success" />
                 </div>
               </CardContent>
             </Card>
@@ -460,11 +460,11 @@ export default function FacilityManagementPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">점검 중</p>
-                    <p className="text-2xl font-bold text-yellow-600">
+                    <p className="text-2xl font-bold text-warning">
                       {facilities?.filter(f => f.status === 'maintenance').length || 0}
                     </p>
                   </div>
-                  <AlertCircle className="h-8 w-8 text-yellow-500" />
+                  <AlertCircle className="h-8 w-8 text-warning" />
                 </div>
               </CardContent>
             </Card>

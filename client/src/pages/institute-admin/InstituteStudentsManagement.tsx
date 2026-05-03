@@ -358,7 +358,7 @@ export default function InstituteStudentsManagement() {
                           <div className="flex items-center gap-1">
                             <span>{student.activeCourses.length} 진행중</span>
                             {student.completedCourses > 0 && (
-                              <span className="text-green-500 text-sm ml-1">
+                              <span className="text-success text-sm ml-1">
                                 {student.completedCourses} 완료
                               </span>
                             )}
@@ -389,7 +389,7 @@ export default function InstituteStudentsManagement() {
                                   updateStudentStatus(student.id, 'active');
                                 }}
                               >
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-success" />
                               </Button>
                             )}
                             {student.status === 'inactive' && (
@@ -401,7 +401,7 @@ export default function InstituteStudentsManagement() {
                                   updateStudentStatus(student.id, 'active');
                                 }}
                               >
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-success" />
                               </Button>
                             )}
                             {student.status === 'active' && (
@@ -413,7 +413,7 @@ export default function InstituteStudentsManagement() {
                                   updateStudentStatus(student.id, 'inactive');
                                 }}
                               >
-                                <X className="h-4 w-4 text-red-500" />
+                                <X className="h-4 w-4 text-destructive" />
                               </Button>
                             )}
                           </div>
@@ -687,28 +687,28 @@ export default function InstituteStudentsManagement() {
                         <CardContent>
                           <div className="space-y-4">
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-blue-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-primary mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">'기초 복종 훈련 A반' 수업 참석</p>
                                 <p className="text-xs text-muted-foreground">2023년 5월 8일</p>
                               </div>
                             </div>
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-green-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-success mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">'사회화 훈련' 과정 등록</p>
                                 <p className="text-xs text-muted-foreground">2023년 4월 15일</p>
                               </div>
                             </div>
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-red-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-destructive mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">'기초 복종 훈련 A반' 수업 불참</p>
                                 <p className="text-xs text-muted-foreground">2023년 4월 10일</p>
                               </div>
                             </div>
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-blue-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-primary mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">'기초 복종 훈련 A반' 수업 참석</p>
                                 <p className="text-xs text-muted-foreground">2023년 4월 3일</p>

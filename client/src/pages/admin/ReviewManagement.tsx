@@ -162,17 +162,17 @@ export default function ReviewManagement() {
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+          className={`h-4 w-4 ${i < rating ? 'text-warning fill-current' : 'text-gray-300'}`}
         />
       ))}
     </div>
   );
 
   const statusBadge = (s: string, count: number) => {
-    if (s === 'hidden') return <Badge className="bg-yellow-100 text-yellow-800">숨김</Badge>;
+    if (s === 'hidden') return <Badge className="bg-warning/10 text-warning">숨김</Badge>;
     if (s === 'deleted') return <Badge className="bg-gray-200 text-gray-700">삭제됨</Badge>;
-    if (count > 0) return <Badge className="bg-red-100 text-red-800">신고 {count}</Badge>;
-    return <Badge className="bg-green-100 text-green-800">활성</Badge>;
+    if (count > 0) return <Badge className="bg-destructive/10 text-destructive">신고 {count}</Badge>;
+    return <Badge className="bg-success/10 text-success">활성</Badge>;
   };
 
   return (
@@ -189,11 +189,11 @@ export default function ReviewManagement() {
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
-          { label: '전체', val: counts.all, color: 'text-blue-600' },
-          { label: '활성', val: counts.active, color: 'text-green-600' },
-          { label: '숨김', val: counts.hidden, color: 'text-yellow-600' },
-          { label: '신고', val: counts.reported, color: 'text-red-600' },
-          { label: '미처리 신고', val: counts.pendingReports, color: 'text-orange-600' },
+          { label: '전체', val: counts.all, color: 'text-primary' },
+          { label: '활성', val: counts.active, color: 'text-success' },
+          { label: '숨김', val: counts.hidden, color: 'text-warning' },
+          { label: '신고', val: counts.reported, color: 'text-destructive' },
+          { label: '미처리 신고', val: counts.pendingReports, color: 'text-primary' },
         ].map((s) => (
           <Card key={s.label}>
             <CardContent className="p-4 text-center">
@@ -312,23 +312,23 @@ export default function ReviewManagement() {
                       </div>
                     )}
                     {review.hiddenReason && (
-                      <div className="text-xs text-yellow-700 bg-yellow-50 rounded p-2 border border-yellow-200">
+                      <div className="text-xs text-warning bg-warning/10 rounded p-2 border border-warning/30">
                         숨김 사유: {review.hiddenReason}
                       </div>
                     )}
                     {review.reply && (
-                      <div className="text-xs bg-blue-50 border-l-4 border-blue-400 p-2 rounded">
+                      <div className="text-xs bg-primary/10 border-l-4 border-primary/40 p-2 rounded">
                         <strong>트레이너 답글:</strong> {review.reply.content}
                       </div>
                     )}
                     {review.reports && review.reports.length > 0 && (
-                      <div className="bg-red-50 border border-red-200 rounded p-2 text-xs">
-                        <div className="font-medium text-red-700 flex items-center gap-1 mb-1">
+                      <div className="bg-destructive/10 border border-destructive/30 rounded p-2 text-xs">
+                        <div className="font-medium text-destructive flex items-center gap-1 mb-1">
                           <Flag className="h-3 w-3" /> 신고 {review.reports.length}건
                         </div>
                         <ul className="space-y-1">
                           {review.reports.map((rep) => (
-                            <li key={rep.id} className="text-red-700">
+                            <li key={rep.id} className="text-destructive">
                               · {reasonLabel(rep.reason)}
                               {rep.description ? ` — ${rep.description}` : ''} ({rep.status})
                             </li>
@@ -358,9 +358,9 @@ export default function ReviewManagement() {
                         <Badge
                           className={
                             rep.status === 'pending'
-                              ? 'bg-orange-100 text-orange-800'
+                              ? 'bg-primary/10 text-primary'
                               : rep.status === 'reviewed'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-success/10 text-success'
                               : 'bg-gray-200 text-gray-700'
                           }
                         >

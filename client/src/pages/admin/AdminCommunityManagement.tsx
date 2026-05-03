@@ -156,14 +156,14 @@ export default function AdminCommunityManagement() {
   // 태그 색상 결정
   const getTagColor = (tag: string) => {
     const colors = {
-      '법률정보': 'bg-red-100 text-red-800',
-      '여행정보': 'bg-blue-100 text-blue-800',
-      '의료정보': 'bg-green-100 text-green-800',
+      '법률정보': 'bg-destructive/10 text-destructive',
+      '여행정보': 'bg-primary/10 text-primary',
+      '의료정보': 'bg-success/10 text-success',
       '생활정보': 'bg-primary/10 text-primary',
-      '건강관리': 'bg-orange-100 text-orange-800',
-      '훈련정보': 'bg-yellow-100 text-yellow-800',
+      '건강관리': 'bg-primary/10 text-primary',
+      '훈련정보': 'bg-warning/10 text-warning',
       '사회화': 'bg-secondary/15 text-primary',
-      '안전관리': 'bg-indigo-100 text-indigo-800',
+      '안전관리': 'bg-primary/10 text-primary',
       '시니어케어': 'bg-gray-100 text-gray-800',
       '고양이케어': 'bg-secondary/15 text-secondary-foreground',
       '동물보호': 'bg-secondary/15 text-secondary-foreground',
@@ -266,13 +266,13 @@ export default function AdminCommunityManagement() {
                     <TableCell className="text-center">{post.views.toLocaleString()}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center">
-                        <Heart className="w-4 h-4 mr-1 text-red-500" />
+                        <Heart className="w-4 h-4 mr-1 text-destructive" />
                         {post.likes}
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 mr-1 text-blue-500" />
+                        <MessageSquare className="w-4 h-4 mr-1 text-primary" />
                         {post.comments}
                       </div>
                     </TableCell>
@@ -304,7 +304,7 @@ export default function AdminCommunityManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteClick(post)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                          className="text-destructive hover:text-destructive/90 hover:bg-destructive/10 hover:border-destructive/40 transition-all duration-200"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -355,7 +355,7 @@ export default function AdminCommunityManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
-              <AlertTriangle className="w-5 h-5 mr-2 text-red-500" />
+              <AlertTriangle className="w-5 h-5 mr-2 text-destructive" />
               게시글 삭제 확인
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -363,7 +363,7 @@ export default function AdminCommunityManagement() {
               <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                 <strong>제목:</strong> {postToDelete?.title}
               </div>
-              <div className="mt-2 text-red-600 text-sm">
+              <div className="mt-2 text-destructive text-sm">
                 ⚠️ 이 작업은 되돌릴 수 없습니다.
               </div>
             </AlertDialogDescription>
@@ -373,7 +373,7 @@ export default function AdminCommunityManagement() {
             <AlertDialogAction
               onClick={() => postToDelete && deletePostMutation.mutate(postToDelete.id)}
               disabled={deletePostMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               {deletePostMutation.isPending ? '삭제 중...' : '삭제'}
             </AlertDialogAction>
@@ -426,7 +426,7 @@ export default function AdminCommunityManagement() {
                         href={selectedPost.linkInfo.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-700 text-xs mt-1 inline-flex items-center"
+                        className="text-primary hover:text-primary/90 text-xs mt-1 inline-flex items-center"
                       >
                         <ExternalLink className="w-3 h-3 mr-1" />
                         원본 보기

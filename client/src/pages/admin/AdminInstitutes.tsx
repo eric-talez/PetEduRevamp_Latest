@@ -326,17 +326,17 @@ export default function AdminInstitutes() {
     
     switch (feature) {
       case 'basicLMS':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-success" />;
       case 'aiRecommendation':
-        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+        return <CheckCircle className="w-4 h-4 text-primary" />;
       case 'customBranding':
         return <CheckCircle className="w-4 h-4 text-primary" />;
       case 'apiIntegration':
-        return <CheckCircle className="w-4 h-4 text-orange-500" />;
+        return <CheckCircle className="w-4 h-4 text-primary" />;
       case 'dedicatedSupport':
         return <CheckCircle className="w-4 h-4 text-primary" />;
       case 'whiteLabel':
-        return <CheckCircle className="w-4 h-4 text-indigo-500" />;
+        return <CheckCircle className="w-4 h-4 text-primary" />;
       default:
         return <CheckCircle className="w-4 h-4 text-gray-500" />;
     }
@@ -379,7 +379,7 @@ export default function AdminInstitutes() {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex justify-center items-center h-96">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">기관 정보를 불러올 수 없습니다</h2>
+            <h2 className="text-2xl font-bold text-destructive mb-4">기관 정보를 불러올 수 없습니다</h2>
             <p className="text-muted-foreground">잠시 후 다시 시도해주세요.</p>
           </div>
         </div>
@@ -390,11 +390,11 @@ export default function AdminInstitutes() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">활성</Badge>;
+        return <Badge className="bg-success/10 text-success">활성</Badge>;
       case 'inactive':
         return <Badge className="bg-gray-100 text-gray-800">비활성</Badge>;
       case 'suspended':
-        return <Badge className="bg-red-100 text-red-800">정지</Badge>;
+        return <Badge className="bg-destructive/10 text-destructive">정지</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -559,13 +559,13 @@ export default function AdminInstitutes() {
                         
                         <div className="grid grid-cols-2 gap-4 mb-3">
                           <div className="flex items-center space-x-2">
-                            <Users className="w-4 h-4 text-blue-500" />
+                            <Users className="w-4 h-4 text-primary" />
                             <span className="text-sm">
                               최대 {selectedPlan.maxMembers === -1 ? '무제한' : selectedPlan.maxMembers}명
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Video className="w-4 h-4 text-green-500" />
+                            <Video className="w-4 h-4 text-success" />
                             <span className="text-sm">
                               월 {selectedPlan.maxVideoHours === -1 ? '무제한' : selectedPlan.maxVideoHours}시간
                             </span>
@@ -578,7 +578,7 @@ export default function AdminInstitutes() {
                             {Object.entries(selectedPlan.features).map(([key, enabled]) => (
                               <div key={key} className="flex items-center space-x-2">
                                 {getFeatureIcon(key, enabled)}
-                                <span className={`text-xs ${enabled ? 'text-green-600' : 'text-gray-400'}`}>
+                                <span className={`text-xs ${enabled ? 'text-success' : 'text-gray-400'}`}>
                                   {key === 'basicLMS' && '기본 LMS'}
                                   {key === 'basicVideoConsultation' && '화상 상담'}
                                   {key === 'basicStatistics' && '기본 통계'}
@@ -824,7 +824,7 @@ export default function AdminInstitutes() {
                   <div>
                     <Badge 
                       variant={institute.subscriptionStatus === 'active' ? 'default' : 'secondary'}
-                      className={institute.subscriptionStatus === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                      className={institute.subscriptionStatus === 'active' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}
                     >
                       {institute.subscriptionStatus === 'active' ? '활성' : '대기'}
                     </Badge>
@@ -834,7 +834,7 @@ export default function AdminInstitutes() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleViewInstitute(institute)}
-                      className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400"
+                      className="text-primary border-primary/40 hover:bg-primary/10 hover:text-primary/90 hover:border-primary/40"
                       data-testid={`button-view-${institute.id}`}
                     >
                       <Eye className="h-4 w-4" />
@@ -843,7 +843,7 @@ export default function AdminInstitutes() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleEditInstitute(institute)}
-                      className="text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
+                      className="text-success border-success/40 hover:bg-success/10 hover:text-success/90 hover:border-success/40"
                       data-testid={`button-edit-${institute.id}`}
                     >
                       <Edit className="h-4 w-4" />
@@ -852,7 +852,7 @@ export default function AdminInstitutes() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleDeleteInstitute(institute)}
-                      className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 hover:border-red-400"
+                      className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive/90 hover:border-destructive/40"
                       data-testid={`button-delete-${institute.id}`}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -861,7 +861,7 @@ export default function AdminInstitutes() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleChangeSubscription(institute)}
-                      className="text-primary border-primary/40 hover:bg-primary/5 hover:text-primary hover:border-primary/40"
+                      className="text-primary border-primary/40 hover:bg-primary/5 hover:text-primary/90 hover:border-primary/40"
                       data-testid={`button-subscription-${institute.id}`}
                     >
                       <CreditCard className="h-4 w-4" />
@@ -893,13 +893,13 @@ export default function AdminInstitutes() {
               {/* 등록 현황 요약 */}
               <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-primary">
                     {selectedInstitute.trainersCount || (selectedInstitute.trainerId ? 1 : 0)}
                   </div>
                   <div className="text-sm text-muted-foreground">등록 훈련사</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-success">
                     {selectedInstitute.studentsCount || 0}
                   </div>
                   <div className="text-sm text-muted-foreground">등록 교육생</div>
@@ -918,7 +918,7 @@ export default function AdminInstitutes() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">구독 플랜:</span>
-                    <span className="ml-2 text-blue-600">
+                    <span className="ml-2 text-primary">
                       {selectedInstitute.subscriptionPlanInfo || 
                        selectedInstitute.subscriptionPlanName || 
                        (selectedInstitute.subscriptionPlan === 'starter' ? '스타터 플랜' : 
@@ -930,7 +930,7 @@ export default function AdminInstitutes() {
                   </div>
                   <div>
                     <span className="font-medium">월 구독료:</span>
-                    <span className="ml-2 text-green-600">
+                    <span className="ml-2 text-success">
                       {selectedInstitute.subscriptionPlanPrice ? selectedInstitute.subscriptionPlanPrice.toLocaleString() : 
                        (selectedInstitute.subscriptionPlan === 'starter' ? '150,000' : 
                         selectedInstitute.subscriptionPlan === 'standard' ? '300,000' : 

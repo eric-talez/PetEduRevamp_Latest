@@ -143,14 +143,14 @@ export default function InquiryManagement() {
     switch (status) {
       case 'pending':
         return (
-          <Badge variant="secondary" className="text-yellow-700 bg-yellow-100">
+          <Badge variant="secondary" className="text-warning bg-warning/10">
             <Clock className="h-3 w-3 mr-1" />
             대기중
           </Badge>
         );
       case 'responded':
         return (
-          <Badge variant="default" className="text-green-700 bg-green-100">
+          <Badge variant="default" className="text-success bg-success/10">
             <CheckCircle className="h-3 w-3 mr-1" />
             응답완료
           </Badge>
@@ -222,7 +222,7 @@ export default function InquiryManagement() {
                 <p className="text-sm text-gray-600">전체 문의</p>
                 <p className="text-2xl font-bold">{inquiries.length}</p>
               </div>
-              <MessageCircle className="h-8 w-8 text-blue-500" />
+              <MessageCircle className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -232,11 +232,11 @@ export default function InquiryManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">대기중</p>
-                <p className="text-2xl font-bold text-yellow-600">
+                <p className="text-2xl font-bold text-warning">
                   {inquiries.filter(i => i.status === 'pending').length}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
+              <Clock className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -246,11 +246,11 @@ export default function InquiryManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">응답완료</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-2xl font-bold text-success">
                   {inquiries.filter(i => i.status === 'responded').length}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <CheckCircle className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -285,7 +285,7 @@ export default function InquiryManagement() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
+                    <div className="p-2 bg-primary/10 rounded-lg">
                       {getTypeIcon(inquiry.type)}
                     </div>
                     <div>
@@ -326,16 +326,16 @@ export default function InquiryManagement() {
                 </div>
 
                 {inquiry.response && (
-                  <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
+                  <div className="bg-success/10 rounded-lg p-4 border-l-4 border-success/40">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-green-800">응답 내용</h4>
+                      <h4 className="font-medium text-success">응답 내용</h4>
                       {inquiry.respondedAt && (
-                        <span className="text-sm text-green-600">
+                        <span className="text-sm text-success">
                           {new Date(inquiry.respondedAt).toLocaleDateString('ko-KR')} 응답
                         </span>
                       )}
                     </div>
-                    <p className="text-green-700 leading-relaxed">{inquiry.response}</p>
+                    <p className="text-success leading-relaxed">{inquiry.response}</p>
                   </div>
                 )}
               </CardContent>
@@ -349,7 +349,7 @@ export default function InquiryManagement() {
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <MessageSquare className="h-6 w-6 text-blue-500" />
+              <MessageSquare className="h-6 w-6 text-primary" />
               <div>
                 <div className="font-semibold">문의 응답</div>
                 <div className="text-sm text-gray-500 font-normal">

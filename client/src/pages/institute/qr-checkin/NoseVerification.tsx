@@ -122,15 +122,15 @@ export default function NoseVerification() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 85) return "text-green-600";
-    if (score >= 75) return "text-yellow-600";
-    return "text-red-600";
+    if (score >= 85) return "text-success";
+    if (score >= 75) return "text-warning";
+    return "text-destructive";
   };
 
   const getScoreBarColor = (score: number) => {
-    if (score >= 85) return "bg-green-500";
-    if (score >= 75) return "bg-yellow-500";
-    return "bg-red-500";
+    if (score >= 85) return "bg-success";
+    if (score >= 75) return "bg-warning";
+    return "bg-destructive";
   };
 
   return (
@@ -149,20 +149,20 @@ export default function NoseVerification() {
       </div>
 
       {verifyResult && verifyResult.status === "approved" && (
-        <Card className="border-green-300 bg-green-50">
+        <Card className="border-success/40 bg-success/10">
           <CardContent className="py-6 text-center">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-              <ShieldCheck className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-success/10 flex items-center justify-center">
+              <ShieldCheck className="w-10 h-10 text-success" />
             </div>
-            <h2 className="text-xl font-bold text-green-800 mb-1">인증 성공</h2>
-            <p className="text-green-600 mb-3">{verifyResult.details}</p>
+            <h2 className="text-xl font-bold text-success mb-1">인증 성공</h2>
+            <p className="text-success mb-3">{verifyResult.details}</p>
             <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl font-bold text-green-700">{verifyResult.similarityScore}%</span>
-              <Badge className="bg-green-200 text-green-800">일치</Badge>
+              <span className="text-2xl font-bold text-success">{verifyResult.similarityScore}%</span>
+              <Badge className="bg-success/20 text-success">일치</Badge>
             </div>
             <div className="w-48 mx-auto mt-3">
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${verifyResult.similarityScore}%` }} />
+                <div className="h-full bg-success rounded-full transition-all" style={{ width: `${verifyResult.similarityScore}%` }} />
               </div>
             </div>
           </CardContent>
@@ -170,18 +170,18 @@ export default function NoseVerification() {
       )}
 
       {verifyResult && verifyResult.status === "retry" && (
-        <Card className="border-yellow-300 bg-yellow-50">
+        <Card className="border-warning/40 bg-warning/10">
           <CardContent className="py-6 text-center">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-yellow-100 flex items-center justify-center">
-              <AlertTriangle className="w-10 h-10 text-yellow-600" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-warning/10 flex items-center justify-center">
+              <AlertTriangle className="w-10 h-10 text-warning" />
             </div>
-            <h2 className="text-xl font-bold text-yellow-800 mb-1">재촬영 권장</h2>
-            <p className="text-yellow-700 mb-3">유사도가 기준치에 약간 미달합니다</p>
+            <h2 className="text-xl font-bold text-warning mb-1">재촬영 권장</h2>
+            <p className="text-warning mb-3">유사도가 기준치에 약간 미달합니다</p>
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className={`text-2xl font-bold ${getScoreColor(verifyResult.similarityScore)}`}>
                 {verifyResult.similarityScore}%
               </span>
-              <Badge className="bg-yellow-200 text-yellow-800">재촬영 필요</Badge>
+              <Badge className="bg-warning/20 text-warning">재촬영 필요</Badge>
             </div>
             <div className="w-48 mx-auto mb-4">
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -189,13 +189,13 @@ export default function NoseVerification() {
               </div>
               <div className="flex justify-between text-[10px] text-gray-400 mt-1">
                 <span>0</span>
-                <span className="text-yellow-500">75</span>
-                <span className="text-green-500">85</span>
+                <span className="text-warning">75</span>
+                <span className="text-success">85</span>
                 <span>100</span>
               </div>
             </div>
             {verifyResult.failReason && (
-              <p className="text-sm text-yellow-700 mb-3">
+              <p className="text-sm text-warning mb-3">
                 사유: {verifyResult.failReason}
               </p>
             )}
@@ -221,19 +221,19 @@ export default function NoseVerification() {
       )}
 
       {verifyResult && verifyResult.status === "rejected" && (
-        <Card className="border-red-300 bg-red-50">
+        <Card className="border-destructive/40 bg-destructive/10">
           <CardContent className="py-6 text-center">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-              <XCircle className="w-10 h-10 text-red-600" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
+              <XCircle className="w-10 h-10 text-destructive" />
             </div>
-            <h2 className="text-xl font-bold text-red-800 mb-1">인증 실패</h2>
-            <p className="text-red-600 mb-3">등록된 코와 일치하지 않습니다</p>
+            <h2 className="text-xl font-bold text-destructive mb-1">인증 실패</h2>
+            <p className="text-destructive mb-3">등록된 코와 일치하지 않습니다</p>
             <div className="flex items-center justify-center gap-2 mb-3">
-              <span className="text-2xl font-bold text-red-700">{verifyResult.similarityScore}%</span>
-              <Badge className="bg-red-200 text-red-800">불일치</Badge>
+              <span className="text-2xl font-bold text-destructive">{verifyResult.similarityScore}%</span>
+              <Badge className="bg-destructive/20 text-destructive">불일치</Badge>
             </div>
             {verifyResult.failReason && (
-              <p className="text-sm text-red-700 bg-red-100 rounded-lg p-2 mb-3">
+              <p className="text-sm text-destructive bg-destructive/10 rounded-lg p-2 mb-3">
                 {verifyResult.failReason}
               </p>
             )}

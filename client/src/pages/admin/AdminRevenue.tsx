@@ -114,7 +114,7 @@ export default function AdminRevenue() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(revenueData.total)}</div>
-            <div className="flex items-center text-xs text-green-600 mt-1">
+            <div className="flex items-center text-xs text-success mt-1">
               <ArrowUp className="h-3 w-3 mr-1" />
               <span>+{revenueData.growth}% 전월 대비</span>
             </div>
@@ -128,7 +128,7 @@ export default function AdminRevenue() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(revenueData.training)}</div>
-            <div className="flex items-center text-xs text-green-600 mt-1">
+            <div className="flex items-center text-xs text-success mt-1">
               <ArrowUp className="h-3 w-3 mr-1" />
               <span>+18.5% 전월 대비</span>
             </div>
@@ -142,7 +142,7 @@ export default function AdminRevenue() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(revenueData.shopping)}</div>
-            <div className="flex items-center text-xs text-green-600 mt-1">
+            <div className="flex items-center text-xs text-success mt-1">
               <ArrowUp className="h-3 w-3 mr-1" />
               <span>+12.3% 전월 대비</span>
             </div>
@@ -192,7 +192,7 @@ export default function AdminRevenue() {
                         title={`훈련: ${formatCurrency(item.training)}`}
                       />
                       <div 
-                        className="bg-blue-400 rounded-r"
+                        className="bg-primary/40 rounded-r"
                         style={{ width: `${(item.shopping / 3000000) * 100}%` }}
                         title={`쇼핑: ${formatCurrency(item.shopping)}`}
                       />
@@ -205,7 +205,7 @@ export default function AdminRevenue() {
                     <span>훈련 수익</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-400 rounded"></div>
+                    <div className="w-3 h-3 bg-primary/40 rounded"></div>
                     <span>쇼핑몰 수익</span>
                   </div>
                 </div>
@@ -235,7 +235,7 @@ export default function AdminRevenue() {
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg">{formatCurrency(trainer.revenue)}</p>
-                      <Badge variant="secondary" className="text-green-600">
+                      <Badge variant="secondary" className="text-success">
                         <ArrowUp className="h-3 w-3 mr-1" />
                         12%
                       </Badge>
@@ -288,8 +288,8 @@ export default function AdminRevenue() {
                 ].map((tx, index) => (
                   <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === '훈련' ? 'bg-primary/10' : 'bg-blue-100'}`}>
-                        {tx.type === '훈련' ? <BookOpen className="h-4 w-4 text-primary" /> : <ShoppingCart className="h-4 w-4 text-blue-600" />}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === '훈련' ? 'bg-primary/10' : 'bg-primary/10'}`}>
+                        {tx.type === '훈련' ? <BookOpen className="h-4 w-4 text-primary" /> : <ShoppingCart className="h-4 w-4 text-primary" />}
                       </div>
                       <div>
                         <p className="font-medium text-sm">{tx.customer}</p>
@@ -297,7 +297,7 @@ export default function AdminRevenue() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-medium ${tx.status === '환불' ? 'text-red-600' : ''}`}>
+                      <p className={`font-medium ${tx.status === '환불' ? 'text-destructive' : ''}`}>
                         {tx.status === '환불' ? '-' : '+'}{formatCurrency(tx.amount)}
                       </p>
                       <Badge variant={tx.status === '완료' ? 'default' : 'destructive'} className="text-xs">

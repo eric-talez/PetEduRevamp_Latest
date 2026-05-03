@@ -132,7 +132,7 @@ export default function InstituteStudentsPage() {
               <input
                 type="text"
                 placeholder="수강생 검색..."
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white"
                 value={searchTerm}
                 onChange={handleSearchChange}
               />
@@ -152,7 +152,7 @@ export default function InstituteStudentsPage() {
             </div>
             <div className="flex space-x-2">
               <select 
-                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white"
                 value={selectedCourse}
                 onChange={handleCourseChange}
               >
@@ -161,7 +161,7 @@ export default function InstituteStudentsPage() {
                 <option value="중급 트릭 훈련">중급 트릭 훈련</option>
                 <option value="문제행동 교정">문제행동 교정</option>
               </select>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              <button className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                 필터 적용
               </button>
             </div>
@@ -221,8 +221,8 @@ export default function InstituteStudentsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         student.status === '진행중' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          ? 'bg-success/10 text-success dark:bg-success/20 dark:text-success/70' 
+                          : 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/70'
                       }`}>
                         {student.status}
                       </span>
@@ -236,7 +236,7 @@ export default function InstituteStudentsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button 
                         onClick={() => handleViewDetails(student)}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        className="text-primary hover:text-primary/90 dark:text-primary dark:hover:text-primary/90"
                       >
                         상세보기
                       </button>
@@ -257,7 +257,7 @@ export default function InstituteStudentsPage() {
               <button className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md text-sm">
                 이전
               </button>
-              <button className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm">
+              <button className="px-3 py-1 bg-primary text-white rounded-md text-sm">
                 1
               </button>
               <button className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md text-sm">
@@ -358,10 +358,10 @@ export default function InstituteStudentsPage() {
                       <h4 className="font-medium mb-2">최근 평가</h4>
                       <div className="space-y-3">
                         {selectedStudent.evaluations.map((evaluation, idx) => (
-                          <div key={idx} className="border-l-4 border-blue-500 pl-3 py-1">
+                          <div key={idx} className="border-l-4 border-primary/50 pl-3 py-1">
                             <div className="flex justify-between">
                               <span className="font-medium">{evaluation.date}</span>
-                              <span className="text-yellow-500">
+                              <span className="text-warning">
                                 {evaluation.score}/5.0
                               </span>
                             </div>
@@ -403,8 +403,8 @@ export default function InstituteStudentsPage() {
                           <span className="font-medium">{assignment.title}</span>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             assignment.status === '완료' 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              ? 'bg-success/10 text-success dark:bg-success/20 dark:text-success/70'
+                              : 'bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning/70'
                           }`}>
                             {assignment.status}
                           </span>

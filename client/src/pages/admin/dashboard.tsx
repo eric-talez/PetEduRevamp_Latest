@@ -110,7 +110,7 @@ const popularItems = [
 ];
 
 // 파이 차트 색상
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--primary))'];
 
 // 관리자 대시보드 컴포넌트
 const AdminDashboard = () => {
@@ -145,13 +145,13 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">2,456</span>
-                <span className="text-xs text-green-500 flex items-center">
+                <span className="text-xs text-success flex items-center">
                   <ChevronUp className="h-3 w-3 mr-1" />
                   12% 증가
                 </span>
               </div>
-              <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
-                <Users className="h-5 w-5 text-blue-500 dark:text-blue-300" />
+              <div className="bg-primary/10 dark:bg-primary/20 p-2 rounded-full">
+                <Users className="h-5 w-5 text-primary dark:text-primary" />
               </div>
             </div>
           </CardContent>
@@ -165,9 +165,9 @@ const AdminDashboard = () => {
                 value={82} 
                 text="82%" 
                 styles={buildStyles({
-                  textColor: "#3b82f6",
-                  pathColor: "#3b82f6",
-                  trailColor: "#e5e7eb"
+                  textColor: "hsl(var(--primary))",
+                  pathColor: "hsl(var(--primary))",
+                  trailColor: "hsl(var(--border))"
                 })}
               />
             </div>
@@ -183,13 +183,13 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">₩32,450,000</span>
-                <span className="text-xs text-green-500 flex items-center">
+                <span className="text-xs text-success flex items-center">
                   <ChevronUp className="h-3 w-3 mr-1" />
                   8% 증가
                 </span>
               </div>
-              <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full">
-                <DollarSign className="h-5 w-5 text-green-500 dark:text-green-300" />
+              <div className="bg-success/10 dark:bg-success/20 p-2 rounded-full">
+                <DollarSign className="h-5 w-5 text-success dark:text-success" />
               </div>
             </div>
           </CardContent>
@@ -203,9 +203,9 @@ const AdminDashboard = () => {
                 value={81} 
                 text="81%" 
                 styles={buildStyles({
-                  textColor: "#10b981",
-                  pathColor: "#10b981",
-                  trailColor: "#e5e7eb"
+                  textColor: "hsl(var(--success))",
+                  pathColor: "hsl(var(--success))",
+                  trailColor: "hsl(var(--border))"
                 })}
               />
             </div>
@@ -221,7 +221,7 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">1,822</span>
-                <span className="text-xs text-green-500 flex items-center">
+                <span className="text-xs text-success flex items-center">
                   <ChevronUp className="h-3 w-3 mr-1" />
                   15% 증가
                 </span>
@@ -241,9 +241,9 @@ const AdminDashboard = () => {
                 value={91} 
                 text="91%" 
                 styles={buildStyles({
-                  textColor: "#8b5cf6",
-                  pathColor: "#8b5cf6",
-                  trailColor: "#e5e7eb"
+                  textColor: "hsl(var(--secondary))",
+                  pathColor: "hsl(var(--secondary))",
+                  trailColor: "hsl(var(--border))"
                 })}
               />
             </div>
@@ -259,13 +259,13 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">356</span>
-                <span className="text-xs text-red-500 flex items-center">
+                <span className="text-xs text-destructive flex items-center">
                   <ChevronDown className="h-3 w-3 mr-1" />
                   5% 감소
                 </span>
               </div>
-              <div className="bg-orange-100 dark:bg-orange-900 p-2 rounded-full">
-                <CalendarDays className="h-5 w-5 text-orange-500 dark:text-orange-300" />
+              <div className="bg-primary/10 dark:bg-primary/20 p-2 rounded-full">
+                <CalendarDays className="h-5 w-5 text-primary dark:text-primary" />
               </div>
             </div>
           </CardContent>
@@ -279,9 +279,9 @@ const AdminDashboard = () => {
                 value={89} 
                 text="89%" 
                 styles={buildStyles({
-                  textColor: "#f97316",
-                  pathColor: "#f97316",
-                  trailColor: "#e5e7eb"
+                  textColor: "hsl(var(--primary))",
+                  pathColor: "hsl(var(--primary))",
+                  trailColor: "hsl(var(--border))"
                 })}
               />
             </div>
@@ -307,9 +307,9 @@ const AdminDashboard = () => {
                 <YAxis />
                 <Tooltip formatter={(value) => `₩${value.toLocaleString()}`} />
                 <Legend />
-                <Bar dataKey="일반회원" stackId="a" fill="#8884d8" />
-                <Bar dataKey="트레이너" stackId="a" fill="#82ca9d" />
-                <Bar dataKey="기관" stackId="a" fill="#ffc658" />
+                <Bar dataKey="일반회원" stackId="a" fill="hsl(var(--secondary))" />
+                <Bar dataKey="트레이너" stackId="a" fill="hsl(var(--success))" />
+                <Bar dataKey="기관" stackId="a" fill="hsl(var(--warning))" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -335,7 +335,7 @@ const AdminDashboard = () => {
                           styles={buildStyles({
                             textColor: "white",
                             pathColor: COLORS[index % COLORS.length],
-                            trailColor: "#374151"
+                            trailColor: "hsl(var(--foreground))"
                           })}
                         />
                       </div>
@@ -391,7 +391,7 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="flex flex-col">
               <span className="text-2xl font-bold">₩1,250,000</span>
-              <span className="text-xs text-green-500 flex items-center">
+              <span className="text-xs text-success flex items-center">
                 <ChevronUp className="h-3 w-3 mr-1" />
                 15% 증가
               </span>
@@ -406,7 +406,7 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="flex flex-col">
               <span className="text-2xl font-bold">₩8,450,000</span>
-              <span className="text-xs text-green-500 flex items-center">
+              <span className="text-xs text-success flex items-center">
                 <ChevronUp className="h-3 w-3 mr-1" />
                 8% 증가
               </span>
@@ -421,7 +421,7 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="flex flex-col">
               <span className="text-2xl font-bold">₩32,450,000</span>
-              <span className="text-xs text-green-500 flex items-center">
+              <span className="text-xs text-success flex items-center">
                 <ChevronUp className="h-3 w-3 mr-1" />
                 8% 증가
               </span>
@@ -436,7 +436,7 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="flex flex-col">
               <span className="text-2xl font-bold">₩187,500,000</span>
-              <span className="text-xs text-green-500 flex items-center">
+              <span className="text-xs text-success flex items-center">
                 <ChevronUp className="h-3 w-3 mr-1" />
                 12% 증가
               </span>
@@ -517,7 +517,7 @@ const AdminDashboard = () => {
                   <TableCell>{item.sales}개</TableCell>
                   <TableCell>₩{item.revenue.toLocaleString()}</TableCell>
                   <TableCell>
-                    <div className={`flex items-center ${item.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <div className={`flex items-center ${item.change >= 0 ? 'text-success' : 'text-destructive'}`}>
                       {item.change >= 0 ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />}
                       {Math.abs(item.change)}%
                     </div>
@@ -582,7 +582,7 @@ const AdminDashboard = () => {
           <div>
             <div className="flex justify-between mb-1">
               <span className="text-sm font-medium">서버 상태</span>
-              <span className="text-sm font-medium text-green-500">정상</span>
+              <span className="text-sm font-medium text-success">정상</span>
             </div>
             <Progress value={98} className="h-2" />
           </div>
@@ -590,7 +590,7 @@ const AdminDashboard = () => {
           <div>
             <div className="flex justify-between mb-1">
               <span className="text-sm font-medium">데이터베이스 상태</span>
-              <span className="text-sm font-medium text-green-500">정상</span>
+              <span className="text-sm font-medium text-success">정상</span>
             </div>
             <Progress value={100} className="h-2" />
           </div>
@@ -745,13 +745,13 @@ const Badge: React.FC<BadgeProps> = ({ children, variant = 'default', className 
   
   switch (variant) {
     case 'success':
-      variantClasses = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      variantClasses = 'bg-success/10 text-success dark:bg-success/20 dark:text-success';
       break;
     case 'warning':
-      variantClasses = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      variantClasses = 'bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning';
       break;
     case 'destructive':
-      variantClasses = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      variantClasses = 'bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive';
       break;
     case 'outline':
       variantClasses = 'bg-transparent border border-gray-200 text-gray-800 dark:border-gray-700 dark:text-gray-300';

@@ -61,10 +61,10 @@ interface GenerateResponse {
 }
 
 const TEMPERAMENT_COLORS: Record<string, string> = {
-  A: "bg-green-100 text-green-800",
-  B: "bg-blue-100 text-blue-800",
-  C: "bg-yellow-100 text-yellow-800",
-  D: "bg-red-100 text-red-800",
+  A: "bg-success/10 text-success",
+  B: "bg-primary/10 text-primary",
+  C: "bg-warning/10 text-warning",
+  D: "bg-destructive/10 text-destructive",
   E: "bg-primary/10 text-primary",
 };
 
@@ -177,8 +177,8 @@ export default function VisitSessionManager() {
 
   function getStatusBadge(session: VisitSession) {
     if (session.usedAt) return <Badge className="bg-gray-100 text-gray-600 gap-1"><CheckCircle className="w-3 h-3" /> 사용됨</Badge>;
-    if (new Date(session.expiresAt).getTime() < now) return <Badge className="bg-red-100 text-red-800 gap-1"><XCircle className="w-3 h-3" /> 만료</Badge>;
-    return <Badge className="bg-green-100 text-green-800 gap-1"><Clock className="w-3 h-3" /> 유효</Badge>;
+    if (new Date(session.expiresAt).getTime() < now) return <Badge className="bg-destructive/10 text-destructive gap-1"><XCircle className="w-3 h-3" /> 만료</Badge>;
+    return <Badge className="bg-success/10 text-success gap-1"><Clock className="w-3 h-3" /> 유효</Badge>;
   }
 
   function isActive(session: VisitSession): boolean {
@@ -194,7 +194,7 @@ export default function VisitSessionManager() {
     printWindow.document.write(`
       <html><head><title>방문 QR</title>
       <style>body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;font-family:sans-serif;flex-direction:column}
-      .info{text-align:center;margin-top:20px;font-size:14px;color:#666}h2{margin-bottom:5px}</style></head>
+      .info{text-align:center;margin-top:20px;font-size:14px;color:hsl(var(--muted-foreground))}h2{margin-bottom:5px}</style></head>
       <body><h2>반려견 방문 신뢰 QR</h2>${svg.outerHTML}
       <div class="info"><p>10분 내 스캔하여 체크인</p><p>1회용 · 자동 만료</p></div>
       <script>window.print();window.close();</script></body></html>
@@ -259,7 +259,7 @@ export default function VisitSessionManager() {
       ) : (
         <div className="space-y-3">
           {sessions.map(session => (
-            <Card key={session.id} className={isActive(session) ? 'border-green-200' : ''}>
+            <Card key={session.id} className={isActive(session) ? 'border-success/30' : ''}>
               <CardContent className="py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -427,7 +427,7 @@ export default function VisitSessionManager() {
                 />
               </div>
               <div className="text-center space-y-2 text-sm">
-                <Badge className="bg-green-100 text-green-800 font-mono">
+                <Badge className="bg-success/10 text-success font-mono">
                   <Clock className="w-3 h-3 mr-1" />
                   {formatRemaining(showQr.expiresAt, now)}
                 </Badge>
@@ -458,9 +458,9 @@ export default function VisitSessionManager() {
                         <div className="flex items-center gap-2 text-xs">
                           <Syringe className="w-3 h-3" />
                           {vaccine?.valid ? (
-                            <span className="text-green-600">접종 완료</span>
+                            <span className="text-success">접종 완료</span>
                           ) : (
-                            <span className="text-red-600">미접종/만료</span>
+                            <span className="text-destructive">미접종/만료</span>
                           )}
                         </div>
                         {zones.length > 0 && (

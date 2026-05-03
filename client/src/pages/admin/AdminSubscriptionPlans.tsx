@@ -220,7 +220,7 @@ export default function AdminSubscriptionPlans() {
                     <CardTitle className="flex items-center gap-2 text-lg">
                       {plan.name}
                       {plan.isActive ? (
-                        <Badge className="bg-green-100 text-green-800">활성</Badge>
+                        <Badge className="bg-success/10 text-success">활성</Badge>
                       ) : (
                         <Badge variant="outline">비활성</Badge>
                       )}

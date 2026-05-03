@@ -41,22 +41,22 @@ export default function AboutPage() {
     {
       title: '전문성',
       description: '모든 교육 콘텐츠는 검증된 전문가들이 제작합니다. 우리는 과학적 근거와 윤리적 훈련 방법만을 지지합니다.',
-      icon: <Award className="w-10 h-10 text-indigo-500" />
+      icon: <Award className="w-10 h-10 text-primary" />
     },
     {
       title: '반려동물 복지',
       description: '동물의 행복과 복지를 최우선으로 생각합니다. 모든 훈련 방법은 긍정 강화를 기반으로 합니다.',
-      icon: <PawPrint className="w-10 h-10 text-indigo-500" />
+      icon: <PawPrint className="w-10 h-10 text-primary" />
     },
     {
       title: '커뮤니티',
       description: '반려인들이 지식과 경험을 나누는 활발한 커뮤니티를 지향합니다. 함께 성장하는 문화를 만들어갑니다.',
-      icon: <Users className="w-10 h-10 text-indigo-500" />
+      icon: <Users className="w-10 h-10 text-primary" />
     },
     {
       title: '접근성',
       description: '모든 반려인이 양질의 교육에 접근할 수 있어야 합니다. 다양한 형태와 가격대의 콘텐츠를 제공합니다.',
-      icon: <Heart className="w-10 h-10 text-indigo-500" />
+      icon: <Heart className="w-10 h-10 text-primary" />
     }
   ];
 

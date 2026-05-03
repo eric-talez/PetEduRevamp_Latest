@@ -351,7 +351,7 @@ export default function TrainerCoursesPage() {
                 <p className="text-sm text-gray-600">총 강좌</p>
                 <p className="text-2xl font-bold">{courses?.length || 0}</p>
               </div>
-              <BookOpen className="h-8 w-8 text-blue-500" />
+              <BookOpen className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -360,11 +360,11 @@ export default function TrainerCoursesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">승인 대기</p>
-                <p className="text-2xl font-bold text-yellow-600">
+                <p className="text-2xl font-bold text-warning">
                   {courses?.filter(c => c.status === 'pending').length || 0}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
+              <Clock className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -373,11 +373,11 @@ export default function TrainerCoursesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">진행 중</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-2xl font-bold text-success">
                   {courses?.filter(c => c.status === 'approved' || c.status === 'active').length || 0}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <CheckCircle className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -466,14 +466,14 @@ export default function TrainerCoursesPage() {
                         <span>{course.price.toLocaleString()}원</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-400" />
+                        <Star className="h-4 w-4 text-warning" />
                         <span>{course.averageRating > 0 ? course.averageRating.toFixed(1) : 'N/A'}</span>
                       </div>
                     </div>
 
                     {/* 신청 현황 표시 */}
                     {course.status === 'approved' && course.enrollmentCount > 0 && (
-                      <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="mt-3 p-3 bg-success/10 dark:bg-success/20 rounded-lg">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                           <div>
                             <span className="text-gray-600">신청자:</span>
@@ -485,19 +485,19 @@ export default function TrainerCoursesPage() {
                           </div>
                           <div>
                             <span className="text-gray-600">수익률:</span>
-                            <span className="ml-1 font-medium text-blue-600">{course.commissionRate}%</span>
+                            <span className="ml-1 font-medium text-primary">{course.commissionRate}%</span>
                           </div>
                           <div>
                             <span className="text-gray-600">내 수익:</span>
-                            <span className="ml-1 font-medium text-green-600">{course.trainerRevenue.toLocaleString()}원</span>
+                            <span className="ml-1 font-medium text-success">{course.trainerRevenue.toLocaleString()}원</span>
                           </div>
                         </div>
                       </div>
                     )}
 
                     {course.status === 'pending' && course.reviewComments && (
-                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <div className="mt-3 p-3 bg-warning/10 dark:bg-warning/20 rounded-lg">
+                        <p className="text-sm text-warning dark:text-warning/70">
                           <AlertCircle className="h-4 w-4 inline mr-1" />
                           {course.reviewComments}
                         </p>
@@ -505,8 +505,8 @@ export default function TrainerCoursesPage() {
                     )}
 
                     {course.status === 'rejected' && course.reviewComments && (
-                      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                        <p className="text-sm text-red-800 dark:text-red-200">
+                      <div className="mt-3 p-3 bg-destructive/10 dark:bg-destructive/20 rounded-lg">
+                        <p className="text-sm text-destructive dark:text-destructive/70">
                           <XCircle className="h-4 w-4 inline mr-1" />
                           거부 사유: {course.reviewComments}
                         </p>
@@ -629,7 +629,7 @@ export default function TrainerCoursesPage() {
                       <div className="space-y-1">
                         {selectedCourse.objectives.map((objective, idx) => (
                           <div key={idx} className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-success" />
                             <span className="text-sm">{objective}</span>
                           </div>
                         ))}
@@ -669,12 +669,12 @@ export default function TrainerCoursesPage() {
 
                 <TabsContent value="students" className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{selectedCourse.enrollmentCount}</div>
+                    <div className="text-center p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{selectedCourse.enrollmentCount}</div>
                       <div className="text-sm text-gray-600">신청자</div>
                     </div>
-                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{selectedCourse.completedStudents}</div>
+                    <div className="text-center p-4 bg-success/10 dark:bg-success/20 rounded-lg">
+                      <div className="text-2xl font-bold text-success">{selectedCourse.completedStudents}</div>
                       <div className="text-sm text-gray-600">수료생</div>
                     </div>
                     <div className="text-center p-4 bg-primary/5 dark:bg-primary/15 rounded-lg">
@@ -686,14 +686,14 @@ export default function TrainerCoursesPage() {
 
                 <TabsContent value="stats" className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-yellow-600">
+                    <div className="text-center p-4 bg-warning/10 dark:bg-warning/20 rounded-lg">
+                      <div className="text-2xl font-bold text-warning">
                         {selectedCourse.averageRating > 0 ? selectedCourse.averageRating.toFixed(1) : 'N/A'}
                       </div>
                       <div className="text-sm text-gray-600">평균 평점</div>
                     </div>
-                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{selectedCourse.commissionRate}%</div>
+                    <div className="text-center p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{selectedCourse.commissionRate}%</div>
                       <div className="text-sm text-gray-600">수익률</div>
                     </div>
                   </div>
@@ -705,8 +705,8 @@ export default function TrainerCoursesPage() {
                       </div>
                       <div className="text-sm text-gray-600">총 수익</div>
                     </div>
-                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
+                    <div className="text-center p-4 bg-success/10 dark:bg-success/20 rounded-lg">
+                      <div className="text-2xl font-bold text-success">
                         {selectedCourse.trainerRevenue.toLocaleString()}원
                       </div>
                       <div className="text-sm text-gray-600">내 수익</div>

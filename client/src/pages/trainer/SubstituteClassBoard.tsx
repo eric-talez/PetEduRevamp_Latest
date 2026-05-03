@@ -245,18 +245,18 @@ export default function SubstituteClassBoard() {
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'urgent': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'normal': return 'bg-blue-500';
-      case 'low': return 'bg-green-500';
+      case 'urgent': return 'bg-destructive';
+      case 'high': return 'bg-primary';
+      case 'normal': return 'bg-primary';
+      case 'low': return 'bg-success';
       default: return 'bg-gray-500';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-green-500';
-      case 'in_progress': return 'bg-blue-500';
+      case 'open': return 'bg-success';
+      case 'in_progress': return 'bg-primary';
       case 'closed': return 'bg-gray-500';
       case 'completed': return 'bg-primary/50';
       default: return 'bg-gray-500';
@@ -352,8 +352,8 @@ export default function SubstituteClassBoard() {
         </div>
 
         <div className="flex items-center gap-2 mb-4">
-          <DollarSign className="h-4 w-4 text-green-600" />
-          <span className="text-sm font-medium text-green-600">
+          <DollarSign className="h-4 w-4 text-success" />
+          <span className="text-sm font-medium text-success">
             {post.paymentAmount?.toLocaleString()}원
           </span>
         </div>
@@ -364,9 +364,9 @@ export default function SubstituteClassBoard() {
         </div>
 
         {post.requirements && (
-          <div className="flex items-start gap-2 mb-4 p-2 bg-yellow-50 rounded">
-            <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <span className="text-sm text-yellow-700">{post.requirements}</span>
+          <div className="flex items-start gap-2 mb-4 p-2 bg-warning/10 rounded">
+            <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-warning">{post.requirements}</span>
           </div>
         )}
 
@@ -580,8 +580,8 @@ export default function SubstituteClassBoard() {
                 <Card key={app.id} className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-medium">{post?.title}</h3>
-                    <Badge className={`${app.status === 'pending' ? 'bg-yellow-500' : 
-                                     app.status === 'accepted' ? 'bg-green-500' : 'bg-red-500'} text-white`}>
+                    <Badge className={`${app.status === 'pending' ? 'bg-warning' : 
+                                     app.status === 'accepted' ? 'bg-success' : 'bg-destructive'} text-white`}>
                       {app.status === 'pending' ? '대기중' : 
                        app.status === 'accepted' ? '승인됨' : '거절됨'}
                     </Badge>
@@ -619,7 +619,7 @@ export default function SubstituteClassBoard() {
               <Card key={app.id} className="mb-4 p-4">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">{app.applicantName}</h4>
-                  <Badge className="bg-blue-500 text-white">
+                  <Badge className="bg-primary text-white">
                     {app.status === 'pending' ? '검토중' : 
                      app.status === 'accepted' ? '승인됨' : '거절됨'}
                   </Badge>

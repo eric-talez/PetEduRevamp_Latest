@@ -105,7 +105,7 @@ export default function OrderComplete() {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[500px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#03c75a] border-solid mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[hsl(var(--success))] border-solid mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">주문 정보를 불러오는 중입니다...</p>
         </div>
       </div>
@@ -116,7 +116,7 @@ export default function OrderComplete() {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="text-center py-16">
-          <div className="text-red-500 text-5xl mb-6">⚠️</div>
+          <div className="text-destructive text-5xl mb-6">⚠️</div>
           <h2 className="text-2xl font-bold mb-4">주문 정보 오류</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-8">
             {error || '주문 정보를 불러올 수 없습니다.'}
@@ -137,8 +137,8 @@ export default function OrderComplete() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full mb-4">
-          <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-success/10 dark:bg-success/20 rounded-full mb-4">
+          <CheckCircle2 className="h-8 w-8 text-success dark:text-success" />
         </div>
         <h1 className="text-2xl md:text-3xl font-bold mb-3">주문이 완료되었습니다</h1>
         <p className="text-gray-600 dark:text-gray-400">
@@ -207,7 +207,7 @@ export default function OrderComplete() {
                           {/* 추천 코드 표시 */}
                           {item.referralCode && item.referralInfo && (
                             <div className="mt-1">
-                              <Badge variant="outline" className="text-xs text-[#03c75a] border-[#03c75a]">
+                              <Badge variant="outline" className="text-xs text-[hsl(var(--success))] border-[hsl(var(--success))]">
                                 {item.referralSource === 'institute' ? '기관' : '트레이너'} 추천: {item.referralInfo.name}
                               </Badge>
                             </div>
@@ -265,7 +265,7 @@ export default function OrderComplete() {
                 
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">배송 예정일</h3>
-                  <p className="text-[#03c75a] font-medium">
+                  <p className="text-[hsl(var(--success))] font-medium">
                     {calculateExpectedDeliveryDate(orderData.orderDate)}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
@@ -313,7 +313,7 @@ export default function OrderComplete() {
                 {orderData.paymentDetails.discountTotal > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">할인 금액</span>
-                    <span className="text-red-600">-{orderData.paymentDetails.discountTotal.toLocaleString()}원</span>
+                    <span className="text-destructive">-{orderData.paymentDetails.discountTotal.toLocaleString()}원</span>
                   </div>
                 )}
                 
@@ -345,7 +345,7 @@ export default function OrderComplete() {
                             {data.source === 'institute' ? '기관' : '트레이너'}
                           </Badge>
                           <span className="font-medium">{data.name}</span>
-                          <span className="ml-auto text-[#03c75a] font-semibold">
+                          <span className="ml-auto text-[hsl(var(--success))] font-semibold">
                             {Math.round(data.commissionAmount).toLocaleString()}원
                           </span>
                         </div>
@@ -380,7 +380,7 @@ export default function OrderComplete() {
                           <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
                             <div className="flex justify-between font-medium">
                               <span>추천 수수료 합계 ({data.commissionRate}%)</span>
-                              <span className="text-[#03c75a]">{Math.round(data.commissionAmount).toLocaleString()}원</span>
+                              <span className="text-[hsl(var(--success))]">{Math.round(data.commissionAmount).toLocaleString()}원</span>
                             </div>
                             <p className="text-xs text-gray-500 mt-2">
                               이 금액은 매월 정산일에 {data.source === 'institute' ? '기관' : '트레이너'}의 계정에 자동으로 정산됩니다.
@@ -392,10 +392,10 @@ export default function OrderComplete() {
                   ))}
                 </Accordion>
                 
-                <div className="mt-4 bg-green-50 dark:bg-green-900 p-4 rounded-md text-sm">
+                <div className="mt-4 bg-success/10 dark:bg-success/20 p-4 rounded-md text-sm">
                   <p className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-green-800 dark:text-green-300">
+                    <CheckCircle2 className="h-4 w-4 text-success dark:text-success mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-success dark:text-success">
                       수수료 정보가 정상적으로 등록되었습니다. 해당 수수료는 추천인의 정산 내역에 반영됩니다.
                     </span>
                   </p>
@@ -419,7 +419,7 @@ export default function OrderComplete() {
                   <div className="absolute top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 dark:bg-gray-700"></div>
                   
                   <div className="relative flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-[#03c75a] text-white flex items-center justify-center z-10">
+                    <div className="w-8 h-8 rounded-full bg-[hsl(var(--success))] text-white flex items-center justify-center z-10">
                       <CheckCircle2 className="h-5 w-5" />
                     </div>
                     <span className="text-xs mt-2">주문완료</span>
@@ -450,15 +450,15 @@ export default function OrderComplete() {
               
               <div className="mt-6 text-gray-700 dark:text-gray-300 text-sm space-y-2">
                 <p className="flex items-center">
-                  <Clock className="h-4 w-4 mr-2 text-[#03c75a]" />
+                  <Clock className="h-4 w-4 mr-2 text-[hsl(var(--success))]" />
                   {formatDate(orderData.orderDate)}에 주문이 완료되었습니다.
                 </p>
                 <p className="flex items-center">
-                  <Truck className="h-4 w-4 mr-2 text-[#03c75a]" />
+                  <Truck className="h-4 w-4 mr-2 text-[hsl(var(--success))]" />
                   상품 준비가 완료되면 배송이 시작됩니다.
                 </p>
                 {orderData.paymentDetails.total >= 30000 && (
-                  <p className="flex items-center font-medium text-[#03c75a]">
+                  <p className="flex items-center font-medium text-[hsl(var(--success))]">
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     무료 배송 혜택이 적용되었습니다.
                   </p>

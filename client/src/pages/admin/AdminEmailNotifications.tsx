@@ -53,9 +53,9 @@ interface EmailLog {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  sent: "bg-green-100 text-green-800",
-  queued: "bg-yellow-100 text-yellow-800",
-  failed: "bg-red-100 text-red-800",
+  sent: "bg-success/10 text-success",
+  queued: "bg-warning/10 text-warning",
+  failed: "bg-destructive/10 text-destructive",
   skipped: "bg-gray-100 text-gray-700",
 };
 
@@ -263,7 +263,7 @@ export default function AdminEmailNotifications() {
         <Alert
           variant={serviceStatus.critical ? "destructive" : "default"}
           data-testid="banner-email-status"
-          className={serviceStatus.critical ? "" : "border-yellow-400 bg-yellow-50 text-yellow-900"}
+          className={serviceStatus.critical ? "" : "border-warning/40 bg-warning/10 text-warning"}
         >
           <AlertTriangle className="w-4 h-4" />
           <AlertTitle>
@@ -548,7 +548,7 @@ export default function AdminEmailNotifications() {
                         <TableCell>
                           <Badge className={STATUS_COLOR[log.status] || ""}>{log.status}</Badge>
                           {log.lastError && (
-                            <div className="text-xs text-red-600">{log.lastError}</div>
+                            <div className="text-xs text-destructive">{log.lastError}</div>
                           )}
                         </TableCell>
                         <TableCell>{log.attempts}</TableCell>

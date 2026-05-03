@@ -75,9 +75,9 @@ const ContentModerationTest: React.FC = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'high': return 'bg-destructive/10 text-destructive border-destructive/30';
+      case 'medium': return 'bg-warning/10 text-warning border-warning/30';
+      case 'low': return 'bg-primary/10 text-primary border-primary/30';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -93,7 +93,7 @@ const ContentModerationTest: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Shield className="w-8 h-8 text-blue-600" />
+        <Shield className="w-8 h-8 text-primary" />
         <div>
           <h1 className="text-2xl font-bold">콘텐츠 검열 테스트</h1>
           <p className="text-gray-600">콘텐츠 필터링 시스템을 테스트해보세요</p>
@@ -135,19 +135,19 @@ const ContentModerationTest: React.FC = () => {
             </Button>
 
             {error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
+              <Alert className="border-destructive/30 bg-destructive/10">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-destructive">
                   {error}
                 </AlertDescription>
               </Alert>
             )}
 
             {result && (
-              <Alert className={`border-2 ${result.flagged ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
+              <Alert className={`border-2 ${result.flagged ? 'border-destructive/30 bg-destructive/10' : 'border-success/30 bg-success/10'}`}>
                 <div className="flex items-center gap-2">
                   {getSeverityIcon(result.severity)}
-                  <AlertDescription className={result.flagged ? 'text-red-800' : 'text-green-800'}>
+                  <AlertDescription className={result.flagged ? 'text-destructive' : 'text-success'}>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">

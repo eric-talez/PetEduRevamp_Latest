@@ -33,7 +33,7 @@ interface CourseProgressData {
 
 
 // 파이 차트 색상
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--primary))', 'hsl(var(--secondary))'];
 
 // 매출 데이터 타입 정의
 interface RevenueData {
@@ -199,9 +199,9 @@ export default function InstituteAdminHome() {
 
   // 지표 카드 데이터 구성
   const keyMetrics = [
-    { name: '신규 등록', value: metricsData.newRegistrations, change: metricsData.newRegistrationsChange, icon: Users, color: 'text-blue-500' },
-    { name: '완료된 과정', value: metricsData.completedCourses, change: metricsData.completedCoursesChange, icon: CheckCircle2, color: 'text-green-500' },
-    { name: '발급 수료증', value: metricsData.issuedCertificates, change: metricsData.issuedCertificatesChange, icon: Award, color: 'text-yellow-500' },
+    { name: '신규 등록', value: metricsData.newRegistrations, change: metricsData.newRegistrationsChange, icon: Users, color: 'text-primary' },
+    { name: '완료된 과정', value: metricsData.completedCourses, change: metricsData.completedCoursesChange, icon: CheckCircle2, color: 'text-success' },
+    { name: '발급 수료증', value: metricsData.issuedCertificates, change: metricsData.issuedCertificatesChange, icon: Award, color: 'text-warning' },
     { name: '운영 중 과정', value: metricsData.activeCourses, change: metricsData.activeCoursesChange, icon: Zap, color: 'text-primary' },
   ];
 
@@ -252,7 +252,7 @@ export default function InstituteAdminHome() {
           <Calendar className="h-4 w-4 mr-2" />
           일정 관리
           {showNotificationBadge && (
-            <span className="w-2 h-2 bg-red-500 rounded-full absolute -top-1 -right-1"></span>
+            <span className="w-2 h-2 bg-destructive rounded-full absolute -top-1 -right-1"></span>
           )}
         </Button>
       </div>
@@ -283,8 +283,8 @@ export default function InstituteAdminHome() {
                     <p className="text-sm font-medium text-muted-foreground">{metric.name}</p>
                     <p className="text-2xl font-bold">{metric.value}</p>
                     <div className="flex items-center mt-1">
-                      <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-                      <span className="text-xs font-medium text-green-500">{metric.change}</span>
+                      <ArrowUpRight className="h-3 w-3 text-success mr-1" />
+                      <span className="text-xs font-medium text-success">{metric.change}</span>
                     </div>
                   </div>
                   <div className={`p-2 rounded-lg bg-gray-100 dark:bg-gray-800 ${metric.color}`}>
@@ -339,7 +339,7 @@ export default function InstituteAdminHome() {
               <CardContent className="pt-0">
                 {courseError ? (
                   <div className="flex flex-col items-center justify-center h-64 text-center p-4">
-                    <AlertTriangle className="h-10 w-10 text-amber-500 mb-2" />
+                    <AlertTriangle className="h-10 w-10 text-warning mb-2" />
                     <p className="text-lg font-medium">데이터 로딩 오류</p>
                     <p className="text-sm text-muted-foreground">{courseError}</p>
                     <Button 
@@ -378,13 +378,13 @@ export default function InstituteAdminHome() {
                         />
                         <Bar 
                           dataKey="수료" 
-                          fill="#8884d8" 
+                          fill="hsl(var(--secondary))" 
                           stackId="a" 
                           name="수료" 
                         />
                         <Bar 
                           dataKey="진행중" 
-                          fill="#82ca9d" 
+                          fill="hsl(var(--success))" 
                           stackId="a" 
                           name="진행중" 
                         />
@@ -395,11 +395,11 @@ export default function InstituteAdminHome() {
                 <div className="mt-4 space-y-2">
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div className="flex items-center gap-1">
-                      <span className="w-3 h-3 bg-[#8884d8] rounded"></span>
+                      <span className="w-3 h-3 bg-[hsl(var(--secondary))] rounded"></span>
                       <span>수료 완료</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="w-3 h-3 bg-[#82ca9d] rounded"></span>
+                      <span className="w-3 h-3 bg-[hsl(var(--success))] rounded"></span>
                       <span>진행 중</span>
                     </div>
                     <div className="flex items-center gap-1 justify-self-end">
@@ -427,7 +427,7 @@ export default function InstituteAdminHome() {
                   </div>
                 ) : revenueError ? (
                   <div className="h-64 w-full flex flex-col items-center justify-center text-center p-4">
-                    <AlertTriangle className="h-10 w-10 text-amber-500 mb-2" />
+                    <AlertTriangle className="h-10 w-10 text-warning mb-2" />
                     <p className="text-lg font-medium">데이터 로딩 오류</p>
                     <p className="text-sm text-muted-foreground">매출 데이터를 불러오는 중 오류가 발생했습니다.</p>
                   </div>
@@ -446,7 +446,7 @@ export default function InstituteAdminHome() {
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
-                          fill="#8884d8"
+                          fill="hsl(var(--secondary))"
                           dataKey="value"
                           nameKey="name"
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -493,13 +493,13 @@ export default function InstituteAdminHome() {
                 </div>
               ) : approvalsError ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <AlertTriangle className="h-10 w-10 text-amber-500 mb-2" />
+                  <AlertTriangle className="h-10 w-10 text-warning mb-2" />
                   <p className="text-lg font-medium">데이터 로딩 오류</p>
                   <p className="text-sm text-muted-foreground">승인 요청을 불러오는 중 오류가 발생했습니다.</p>
                 </div>
               ) : pendingApprovals.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <CheckCircle2 className="h-10 w-10 text-green-500 mb-2" />
+                  <CheckCircle2 className="h-10 w-10 text-success mb-2" />
                   <p className="text-lg font-medium">대기 중인 승인 요청 없음</p>
                   <p className="text-sm text-muted-foreground">처리가 필요한 승인 요청이 없습니다.</p>
                 </div>
@@ -508,8 +508,8 @@ export default function InstituteAdminHome() {
                   {pendingApprovals.map((approval) => (
                     <div key={approval.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-                          {approval.type === '코스' ? <FileText className="h-5 w-5 text-orange-500" /> : <Award className="h-5 w-5 text-orange-500" />}
+                        <div className="p-2 bg-primary/10 dark:bg-primary/30 rounded-full">
+                          {approval.type === '코스' ? <FileText className="h-5 w-5 text-primary" /> : <Award className="h-5 w-5 text-primary" />}
                         </div>
                         <div>
                           <p className="font-medium">{approval.title}</p>
@@ -573,7 +573,7 @@ export default function InstituteAdminHome() {
                           <span>학생 {Math.floor(Math.random() * 20) + 5}명</span>
                         </div>
                         <div className="mt-1 flex items-center gap-1">
-                          <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 py-0.5 px-1.5 rounded-full">
+                          <span className="text-xs bg-success/10 dark:bg-success/30 text-success dark:text-success py-0.5 px-1.5 rounded-full">
                             활성
                           </span>
                         </div>
@@ -609,7 +609,7 @@ export default function InstituteAdminHome() {
             </div>
           ) : notificationsError ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <AlertTriangle className="h-10 w-10 text-amber-500 mb-2" />
+              <AlertTriangle className="h-10 w-10 text-warning mb-2" />
               <p className="text-lg font-medium">알림 로딩 오류</p>
               <p className="text-sm text-muted-foreground">알림을 불러오는 중 오류가 발생했습니다.</p>
             </div>
@@ -624,14 +624,14 @@ export default function InstituteAdminHome() {
               {recentNotifications.map((notification) => (
                 <div key={notification.id} className="flex gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <div className={`p-2 rounded-full flex-shrink-0 ${
-                    notification.type === 'approval' ? 'bg-blue-100 dark:bg-blue-900/30' :
-                    notification.type === 'warning' ? 'bg-amber-100 dark:bg-amber-900/30' :
+                    notification.type === 'approval' ? 'bg-primary/10 dark:bg-primary/30' :
+                    notification.type === 'warning' ? 'bg-warning/10 dark:bg-warning/30' :
                     'bg-gray-100 dark:bg-gray-800'
                   }`}>
                     {notification.type === 'approval' ? (
-                      <FileText className="h-5 w-5 text-blue-500" />
+                      <FileText className="h-5 w-5 text-primary" />
                     ) : notification.type === 'warning' ? (
-                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                      <AlertTriangle className="h-5 w-5 text-warning" />
                     ) : (
                       <Info className="h-5 w-5 text-gray-500" />
                     )}
@@ -692,10 +692,10 @@ export default function InstituteAdminHome() {
           <div className="py-4">
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-4">
               <div className="flex items-start gap-3">
-                <div className={`p-2 rounded-full ${selectedApproval?.type === '코스' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+                <div className={`p-2 rounded-full ${selectedApproval?.type === '코스' ? 'bg-primary/10 dark:bg-primary/30' : 'bg-warning/10 dark:bg-warning/30'}`}>
                   {selectedApproval?.type === '코스' 
-                    ? <FileText className="h-5 w-5 text-blue-500" /> 
-                    : <Award className="h-5 w-5 text-amber-500" />
+                    ? <FileText className="h-5 w-5 text-primary" /> 
+                    : <Award className="h-5 w-5 text-warning" />
                   }
                 </div>
                 <div>

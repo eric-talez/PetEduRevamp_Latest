@@ -23,7 +23,7 @@ interface ProgressData {
 }
 
 const STATUS_LABEL: Record<AttendanceStatus, string> = { present: "출석", late: "지각", absent: "결석", scheduled: "예정" };
-const STATUS_COLOR: Record<AttendanceStatus, string> = { present: "bg-green-100 text-green-700", late: "bg-amber-100 text-amber-700", absent: "bg-red-100 text-red-700", scheduled: "bg-gray-100 text-gray-700" };
+const STATUS_COLOR: Record<AttendanceStatus, string> = { present: "bg-success/10 text-success", late: "bg-warning/10 text-warning", absent: "bg-destructive/10 text-destructive", scheduled: "bg-gray-100 text-gray-700" };
 const STATUS_ICON: Record<AttendanceStatus, LucideIcon> = { present: CheckCircle2, late: Clock, absent: XCircle, scheduled: Calendar };
 
 export default function CourseProgressPage() {
@@ -74,7 +74,7 @@ export default function CourseProgressPage() {
             </div>
             <div className="rounded-md border p-3 text-center">
               <div className="text-xs text-muted-foreground">결석률</div>
-              <div className={`font-semibold mt-1 ${absenceWarning ? "text-red-600" : ""}`}>{absenceRate}%</div>
+              <div className={`font-semibold mt-1 ${absenceWarning ? "text-destructive" : ""}`}>{absenceRate}%</div>
             </div>
             <div className="rounded-md border p-3 text-center">
               <div className="text-xs text-muted-foreground">완료일</div>
@@ -82,7 +82,7 @@ export default function CourseProgressPage() {
             </div>
           </div>
           {absenceWarning && (
-            <div className="mt-4 flex items-start gap-2 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+            <div className="mt-4 flex items-start gap-2 rounded-md bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive">
               <AlertTriangle className="w-4 h-4 mt-0.5" />
               <div>결석률이 30%를 초과했습니다. 트레이너에게 학습 일정을 문의해 주세요.</div>
             </div>

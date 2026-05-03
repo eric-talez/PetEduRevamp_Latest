@@ -520,13 +520,13 @@ export default function AnalyticsPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">총 훈련 세션</p>
                     <p className="text-2xl font-bold">{analytics?.totalSessions || 0}</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
+                    <p className="text-xs text-success flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       +{analytics?.growth.sessions || 0}% 증가
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Activity className="h-6 w-6 text-blue-600" />
+                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Activity className="h-6 w-6 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -541,13 +541,13 @@ export default function AnalyticsPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">완료된 코스</p>
                     <p className="text-2xl font-bold">{analytics?.completedCourses || 0}</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
+                    <p className="text-xs text-success flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       신규 수료생 증가
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  <div className="h-12 w-12 bg-success/10 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-success" />
                   </div>
                 </div>
               </CardContent>
@@ -562,7 +562,7 @@ export default function AnalyticsPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">활성 훈련사</p>
                     <p className="text-2xl font-bold">{analytics?.activeTrainers || 0}</p>
-                    <p className="text-xs text-blue-600 flex items-center mt-1">
+                    <p className="text-xs text-primary flex items-center mt-1">
                       평균 평점 {analytics?.averageRating || 0}점
                     </p>
                   </div>
@@ -582,13 +582,13 @@ export default function AnalyticsPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">활성 학생</p>
                     <p className="text-2xl font-bold">{analytics?.activeStudents || 0}</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
+                    <p className="text-xs text-success flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       +{analytics?.growth.students || 0}% 증가
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <GraduationCap className="h-6 w-6 text-yellow-600" />
+                  <div className="h-12 w-12 bg-warning/10 rounded-full flex items-center justify-center">
+                    <GraduationCap className="h-6 w-6 text-warning" />
                   </div>
                 </div>
               </CardContent>
@@ -605,10 +605,10 @@ export default function AnalyticsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600 mb-2">
+                <div className="text-3xl font-bold text-success mb-2">
                   {formatCurrency(analytics?.totalRevenue || 0)}
                 </div>
-                <p className="text-sm text-green-600 flex items-center">
+                <p className="text-sm text-success flex items-center">
                   <TrendingUp className="h-4 w-4 mr-1" />
                   전월 대비 +{analytics?.growth.revenue || 0}% 증가
                 </p>
@@ -631,14 +631,14 @@ export default function AnalyticsPage() {
                         key={i}
                         className={`h-5 w-5 ${
                           i < Math.floor(analytics?.averageRating || 0) 
-                            ? 'text-yellow-400 fill-current' 
+                            ? 'text-warning fill-current' 
                             : 'text-gray-300'
                         }`}
                       />
                     ))}
                   </div>
                 </div>
-                <p className="text-sm text-green-600 flex items-center">
+                <p className="text-sm text-success flex items-center">
                   <TrendingUp className="h-4 w-4 mr-1" />
                   전월 대비 +{analytics?.growth.rating || 0}% 향상
                 </p>
@@ -667,7 +667,7 @@ export default function AnalyticsPage() {
                     <span className="text-sm text-gray-500">85%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full shadow-sm" style={{width: '85%'}}></div>
+                    <div className="bg-gradient-to-r from-primary to-secondary h-3 rounded-full shadow-sm" style={{width: '85%'}}></div>
                   </div>
                 </div>
                 
@@ -677,7 +677,7 @@ export default function AnalyticsPage() {
                     <span className="text-sm text-gray-500">72%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full shadow-sm" style={{width: '72%'}}></div>
+                    <div className="bg-gradient-to-r from-primary to-secondary h-3 rounded-full shadow-sm" style={{width: '72%'}}></div>
                   </div>
                 </div>
                 
@@ -697,7 +697,7 @@ export default function AnalyticsPage() {
                     <span className="text-sm text-gray-500">91%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 h-3 rounded-full shadow-sm" style={{width: '91%'}}></div>
+                    <div className="bg-gradient-to-r from-primary to-secondary h-3 rounded-full shadow-sm" style={{width: '91%'}}></div>
                   </div>
                 </div>
               </div>
@@ -718,29 +718,29 @@ export default function AnalyticsPage() {
                 {/* 월별 세션 수 트렌드 */}
                 <div>
                   <h4 className="text-sm font-medium mb-3">월별 완료 세션</h4>
-                  <div className="flex items-end justify-between h-32 bg-gradient-to-t from-blue-50 to-transparent rounded-lg p-4">
+                  <div className="flex items-end justify-between h-32 bg-gradient-to-t from-primary to-transparent rounded-lg p-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-blue-400 rounded-t mb-2" style={{height: '60%'}}></div>
+                      <div className="w-8 bg-primary/40 rounded-t mb-2" style={{height: '60%'}}></div>
                       <span className="text-xs text-gray-600">8월</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-blue-500 rounded-t mb-2" style={{height: '75%'}}></div>
+                      <div className="w-8 bg-primary rounded-t mb-2" style={{height: '75%'}}></div>
                       <span className="text-xs text-gray-600">9월</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-blue-600 rounded-t mb-2" style={{height: '85%'}}></div>
+                      <div className="w-8 bg-primary rounded-t mb-2" style={{height: '85%'}}></div>
                       <span className="text-xs text-gray-600">10월</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-blue-500 rounded-t mb-2" style={{height: '70%'}}></div>
+                      <div className="w-8 bg-primary rounded-t mb-2" style={{height: '70%'}}></div>
                       <span className="text-xs text-gray-600">11월</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-blue-700 rounded-t mb-2" style={{height: '95%'}}></div>
+                      <div className="w-8 bg-primary rounded-t mb-2" style={{height: '95%'}}></div>
                       <span className="text-xs text-gray-600">12월</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-blue-800 rounded-t mb-2" style={{height: '100%'}}></div>
+                      <div className="w-8 bg-primary rounded-t mb-2" style={{height: '100%'}}></div>
                       <span className="text-xs text-gray-600">1월</span>
                     </div>
                   </div>
@@ -749,36 +749,36 @@ export default function AnalyticsPage() {
                 {/* 수익 트렌드 */}
                 <div>
                   <h4 className="text-sm font-medium mb-3">월별 수익 (만원)</h4>
-                  <div className="flex items-end justify-between h-32 bg-gradient-to-t from-green-50 to-transparent rounded-lg p-4">
+                  <div className="flex items-end justify-between h-32 bg-gradient-to-t from-primary to-transparent rounded-lg p-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-400 rounded-t mb-2" style={{height: '45%'}}></div>
+                      <div className="w-8 bg-success/40 rounded-t mb-2" style={{height: '45%'}}></div>
                       <span className="text-xs text-gray-600">8월</span>
-                      <span className="text-xs text-green-600 font-medium">950</span>
+                      <span className="text-xs text-success font-medium">950</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '65%'}}></div>
+                      <div className="w-8 bg-success rounded-t mb-2" style={{height: '65%'}}></div>
                       <span className="text-xs text-gray-600">9월</span>
-                      <span className="text-xs text-green-600 font-medium">1,150</span>
+                      <span className="text-xs text-success font-medium">1,150</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-600 rounded-t mb-2" style={{height: '80%'}}></div>
+                      <div className="w-8 bg-success rounded-t mb-2" style={{height: '80%'}}></div>
                       <span className="text-xs text-gray-600">10월</span>
-                      <span className="text-xs text-green-600 font-medium">1,320</span>
+                      <span className="text-xs text-success font-medium">1,320</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-500 rounded-t mb-2" style={{height: '70%'}}></div>
+                      <div className="w-8 bg-success rounded-t mb-2" style={{height: '70%'}}></div>
                       <span className="text-xs text-gray-600">11월</span>
-                      <span className="text-xs text-green-600 font-medium">1,180</span>
+                      <span className="text-xs text-success font-medium">1,180</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-700 rounded-t mb-2" style={{height: '90%'}}></div>
+                      <div className="w-8 bg-success rounded-t mb-2" style={{height: '90%'}}></div>
                       <span className="text-xs text-gray-600">12월</span>
-                      <span className="text-xs text-green-600 font-medium">1,480</span>
+                      <span className="text-xs text-success font-medium">1,480</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <div className="w-8 bg-green-800 rounded-t mb-2" style={{height: '100%'}}></div>
+                      <div className="w-8 bg-success rounded-t mb-2" style={{height: '100%'}}></div>
                       <span className="text-xs text-gray-600">1월</span>
-                      <span className="text-xs text-green-600 font-medium">1,650</span>
+                      <span className="text-xs text-success font-medium">1,650</span>
                     </div>
                   </div>
                 </div>
@@ -807,20 +807,20 @@ export default function AnalyticsPage() {
                           <path
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             fill="none"
-                            stroke="#e2e8f0"
+                            stroke="hsl(var(--border))"
                             strokeWidth="3"
                           />
                           <path
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             fill="none"
-                            stroke="#3b82f6"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="3"
                             strokeDasharray="87, 100"
                             className="drop-shadow-sm"
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-2xl font-bold text-blue-600">87%</span>
+                          <span className="text-2xl font-bold text-primary">87%</span>
                         </div>
                       </div>
                     </div>
@@ -834,20 +834,20 @@ export default function AnalyticsPage() {
                           <path
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             fill="none"
-                            stroke="#e2e8f0"
+                            stroke="hsl(var(--border))"
                             strokeWidth="3"
                           />
                           <path
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             fill="none"
-                            stroke="#10b981"
+                            stroke="hsl(var(--success))"
                             strokeWidth="3"
                             strokeDasharray="94, 100"
                             className="drop-shadow-sm"
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-2xl font-bold text-green-600">94%</span>
+                          <span className="text-2xl font-bold text-success">94%</span>
                         </div>
                       </div>
                     </div>
@@ -858,25 +858,25 @@ export default function AnalyticsPage() {
                 <div>
                   <h4 className="text-sm font-medium mb-3">이번 달 달성한 성과</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Award className="h-6 w-6 text-yellow-600" />
+                    <div className="text-center p-3 bg-warning/10 rounded-lg border border-warning/30">
+                      <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Award className="h-6 w-6 text-warning" />
                       </div>
-                      <span className="text-xs font-medium text-yellow-700">100회 달성</span>
+                      <span className="text-xs font-medium text-warning">100회 달성</span>
                     </div>
                     
-                    <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Star className="h-6 w-6 text-blue-600" />
+                    <div className="text-center p-3 bg-primary/10 rounded-lg border border-primary/30">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Star className="h-6 w-6 text-primary" />
                       </div>
-                      <span className="text-xs font-medium text-blue-700">평점 4.8</span>
+                      <span className="text-xs font-medium text-primary">평점 4.8</span>
                     </div>
                     
-                    <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Users className="h-6 w-6 text-green-600" />
+                    <div className="text-center p-3 bg-success/10 rounded-lg border border-success/30">
+                      <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Users className="h-6 w-6 text-success" />
                       </div>
-                      <span className="text-xs font-medium text-green-700">신규 50명</span>
+                      <span className="text-xs font-medium text-success">신규 50명</span>
                     </div>
                     
                     <div className="text-center p-3 bg-primary/5 rounded-lg border border-primary/30">
@@ -894,18 +894,18 @@ export default function AnalyticsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm">연간 세션 목표 (1,800회)</span>
-                      <span className="text-sm font-medium text-blue-600">156/1,800 (9%)</span>
+                      <span className="text-sm font-medium text-primary">156/1,800 (9%)</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style={{width: '9%'}}></div>
+                      <div className="bg-gradient-to-r from-primary to-secondary h-2 rounded-full" style={{width: '9%'}}></div>
                     </div>
                     
                     <div className="flex justify-between items-center">
                       <span className="text-sm">연간 수익 목표 (1억 5천만원)</span>
-                      <span className="text-sm font-medium text-green-600">12.5M/150M (8%)</span>
+                      <span className="text-sm font-medium text-success">12.5M/150M (8%)</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" style={{width: '8%'}}></div>
+                      <div className="bg-gradient-to-r from-primary to-secondary h-2 rounded-full" style={{width: '8%'}}></div>
                     </div>
                     
                     <div className="flex justify-between items-center">
@@ -931,14 +931,14 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">이번 달 수익</p>
-                    <p className="text-2xl font-bold text-green-600">1,650만원</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
+                    <p className="text-2xl font-bold text-success">1,650만원</p>
+                    <p className="text-xs text-success flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       +11.5% 전월 대비
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <DollarSign className="h-6 w-6 text-green-600" />
+                  <div className="h-12 w-12 bg-success/10 rounded-full flex items-center justify-center">
+                    <DollarSign className="h-6 w-6 text-success" />
                   </div>
                 </div>
               </CardContent>
@@ -949,14 +949,14 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">평균 세션당 수익</p>
-                    <p className="text-2xl font-bold text-blue-600">80,128원</p>
-                    <p className="text-xs text-blue-600 flex items-center mt-1">
+                    <p className="text-2xl font-bold text-primary">80,128원</p>
+                    <p className="text-xs text-primary flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       +5.2% 향상
                     </p>
                   </div>
-                  <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Activity className="h-6 w-6 text-blue-600" />
+                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Activity className="h-6 w-6 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -997,23 +997,23 @@ export default function AnalyticsPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                        <div className="w-4 h-4 bg-primary rounded"></div>
                         <span className="text-sm">기초 복종 훈련</span>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium">650만원 (39%)</div>
-                        <div className="text-xs text-green-600">+15%</div>
+                        <div className="text-xs text-success">+15%</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 bg-green-500 rounded"></div>
+                        <div className="w-4 h-4 bg-success rounded"></div>
                         <span className="text-sm">어질리티 훈련</span>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium">480만원 (29%)</div>
-                        <div className="text-xs text-green-600">+8%</div>
+                        <div className="text-xs text-success">+8%</div>
                       </div>
                     </div>
                     
@@ -1024,18 +1024,18 @@ export default function AnalyticsPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium">380만원 (23%)</div>
-                        <div className="text-xs text-green-600">+22%</div>
+                        <div className="text-xs text-success">+22%</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                        <div className="w-4 h-4 bg-warning rounded"></div>
                         <span className="text-sm">사회화 훈련</span>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium">140만원 (9%)</div>
-                        <div className="text-xs text-red-600">-3%</div>
+                        <div className="text-xs text-destructive">-3%</div>
                       </div>
                     </div>
                   </div>
@@ -1049,9 +1049,9 @@ export default function AnalyticsPage() {
                       <span className="text-sm">12월 → 1월</span>
                       <div className="flex items-center gap-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{width: '75%'}}></div>
+                          <div className="bg-success h-2 rounded-full" style={{width: '75%'}}></div>
                         </div>
-                        <span className="text-sm font-medium text-green-600">+11.5%</span>
+                        <span className="text-sm font-medium text-success">+11.5%</span>
                       </div>
                     </div>
                     
@@ -1059,9 +1059,9 @@ export default function AnalyticsPage() {
                       <span className="text-sm">11월 → 12월</span>
                       <div className="flex items-center gap-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
+                          <div className="bg-success h-2 rounded-full" style={{width: '85%'}}></div>
                         </div>
-                        <span className="text-sm font-medium text-green-600">+25.4%</span>
+                        <span className="text-sm font-medium text-success">+25.4%</span>
                       </div>
                     </div>
                     
@@ -1069,9 +1069,9 @@ export default function AnalyticsPage() {
                       <span className="text-sm">10월 → 11월</span>
                       <div className="flex items-center gap-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div className="bg-red-500 h-2 rounded-full" style={{width: '40%'}}></div>
+                          <div className="bg-destructive h-2 rounded-full" style={{width: '40%'}}></div>
                         </div>
-                        <span className="text-sm font-medium text-red-600">-10.6%</span>
+                        <span className="text-sm font-medium text-destructive">-10.6%</span>
                       </div>
                     </div>
                     
@@ -1079,9 +1079,9 @@ export default function AnalyticsPage() {
                       <span className="text-sm">9월 → 10월</span>
                       <div className="flex items-center gap-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{width: '60%'}}></div>
+                          <div className="bg-success h-2 rounded-full" style={{width: '60%'}}></div>
                         </div>
-                        <span className="text-sm font-medium text-green-600">+14.8%</span>
+                        <span className="text-sm font-medium text-success">+14.8%</span>
                       </div>
                     </div>
                   </div>
@@ -1104,18 +1104,18 @@ export default function AnalyticsPage() {
                 <div>
                   <h4 className="text-sm font-medium mb-3">분기별 예상 수익</h4>
                   <div className="grid grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="text-lg font-bold text-blue-600">1Q</div>
+                    <div className="text-center p-4 bg-primary/10 rounded-lg border border-primary/30">
+                      <div className="text-lg font-bold text-primary">1Q</div>
                       <div className="text-sm text-gray-600">4,200만원</div>
-                      <div className="text-xs text-green-600 mt-1">+18%</div>
+                      <div className="text-xs text-success mt-1">+18%</div>
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                      <div className="text-lg font-bold text-green-600">2Q</div>
+                    <div className="text-center p-4 bg-success/10 rounded-lg border border-success/30">
+                      <div className="text-lg font-bold text-success">2Q</div>
                       <div className="text-sm text-gray-600">3,800만원</div>
                       <div className="text-xs text-gray-600 mt-1">예측</div>
                     </div>
-                    <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <div className="text-lg font-bold text-yellow-600">3Q</div>
+                    <div className="text-center p-4 bg-warning/10 rounded-lg border border-warning/30">
+                      <div className="text-lg font-bold text-warning">3Q</div>
                       <div className="text-sm text-gray-600">3,500만원</div>
                       <div className="text-xs text-gray-600 mt-1">예측</div>
                     </div>
@@ -1132,11 +1132,11 @@ export default function AnalyticsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <span className="text-sm font-medium">신규 고객 확보</span>
-                      <span className="text-sm text-blue-600">월 평균 40명 → 60명</span>
+                      <span className="text-sm text-primary">월 평균 40명 → 60명</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <span className="text-sm font-medium">프리미엄 코스 론칭</span>
-                      <span className="text-sm text-green-600">평균 수강료 +30%</span>
+                      <span className="text-sm text-success">평균 수강료 +30%</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <span className="text-sm font-medium">재수강률 향상</span>
@@ -1180,7 +1180,7 @@ export default function AnalyticsPage() {
                         <div className="flex-1 mx-3">
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div 
-                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+                              className="bg-gradient-to-r from-primary to-secondary h-2 rounded-full transition-all duration-500"
                               style={{width: `${item.percentage}%`}}
                             ></div>
                           </div>
@@ -1208,7 +1208,7 @@ export default function AnalyticsPage() {
                     ].map((item, idx) => (
                       <div key={idx} className="flex flex-col items-center">
                         <div 
-                          className="w-6 bg-primary/50 rounded-t mb-2 hover:bg-primary transition-colors cursor-pointer"
+                          className="w-6 bg-primary/50 rounded-t mb-2 hover:bg-primary/90 transition-colors cursor-pointer"
                           style={{height: `${item.height}%`}}
                           title={`${item.time}시: ${item.sessions}세션`}
                         ></div>
@@ -1257,11 +1257,11 @@ export default function AnalyticsPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             {course.trend === 'up' ? (
-                              <TrendingUp className="h-4 w-4 text-green-500" />
+                              <TrendingUp className="h-4 w-4 text-success" />
                             ) : (
-                              <TrendingDown className="h-4 w-4 text-red-500" />
+                              <TrendingDown className="h-4 w-4 text-destructive" />
                             )}
-                            <span className={`text-sm font-medium ${course.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                            <span className={`text-sm font-medium ${course.trend === 'up' ? 'text-success' : 'text-destructive'}`}>
                               {course.change}
                             </span>
                           </div>
@@ -1275,29 +1275,29 @@ export default function AnalyticsPage() {
                 <div>
                   <h4 className="text-sm font-medium mb-4">계절별 수요 패턴</h4>
                   <div className="grid grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="text-center p-4 bg-primary/10 rounded-lg border border-primary/30">
                       <div className="text-2xl mb-2">❄️</div>
-                      <div className="text-sm font-medium text-blue-700">겨울</div>
+                      <div className="text-sm font-medium text-primary">겨울</div>
                       <div className="text-xs text-gray-600">실내 훈련 선호</div>
-                      <div className="text-lg font-bold text-blue-600 mt-2">85%</div>
+                      <div className="text-lg font-bold text-primary mt-2">85%</div>
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-center p-4 bg-success/10 rounded-lg border border-success/30">
                       <div className="text-2xl mb-2">🌸</div>
-                      <div className="text-sm font-medium text-green-700">봄</div>
+                      <div className="text-sm font-medium text-success">봄</div>
                       <div className="text-xs text-gray-600">사회화 훈련 증가</div>
-                      <div className="text-lg font-bold text-green-600 mt-2">120%</div>
+                      <div className="text-lg font-bold text-success mt-2">120%</div>
                     </div>
-                    <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="text-center p-4 bg-warning/10 rounded-lg border border-warning/30">
                       <div className="text-2xl mb-2">☀️</div>
-                      <div className="text-sm font-medium text-yellow-700">여름</div>
+                      <div className="text-sm font-medium text-warning">여름</div>
                       <div className="text-xs text-gray-600">야외 활동 피크</div>
-                      <div className="text-lg font-bold text-yellow-600 mt-2">145%</div>
+                      <div className="text-lg font-bold text-warning mt-2">145%</div>
                     </div>
-                    <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <div className="text-center p-4 bg-primary/10 rounded-lg border border-primary/30">
                       <div className="text-2xl mb-2">🍂</div>
-                      <div className="text-sm font-medium text-orange-700">가을</div>
+                      <div className="text-sm font-medium text-primary">가을</div>
                       <div className="text-xs text-gray-600">기초 훈련 집중</div>
-                      <div className="text-lg font-bold text-orange-600 mt-2">95%</div>
+                      <div className="text-lg font-bold text-primary mt-2">95%</div>
                     </div>
                   </div>
                 </div>
@@ -1335,11 +1335,11 @@ export default function AnalyticsPage() {
                         <div className="flex items-center gap-2">
                           <div className="w-16 bg-gray-200 rounded-full h-2">
                             <div 
-                              className="bg-gradient-to-r from-indigo-500 to-indigo-600 h-2 rounded-full"
+                              className="bg-gradient-to-r from-primary to-secondary h-2 rounded-full"
                               style={{width: `${item.percentage}%`}}
                             ></div>
                           </div>
-                          <span className="text-xs font-medium text-indigo-600">{item.percentage}%</span>
+                          <span className="text-xs font-medium text-primary">{item.percentage}%</span>
                         </div>
                       </div>
                     ))}
@@ -1389,25 +1389,25 @@ export default function AnalyticsPage() {
                 <div>
                   <h4 className="text-sm font-medium mb-3">다음 달 예상 트렌드</h4>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
+                    <div className="flex items-center gap-3 p-3 bg-success/10 rounded-lg border border-success/30">
+                      <TrendingUp className="h-5 w-5 text-success" />
                       <div>
-                        <div className="text-sm font-medium text-green-700">행동 교정 수요 증가</div>
-                        <div className="text-xs text-green-600">예상 +35% 증가</div>
+                        <div className="text-sm font-medium text-success">행동 교정 수요 증가</div>
+                        <div className="text-xs text-success">예상 +35% 증가</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <TrendingUp className="h-5 w-5 text-blue-600" />
+                    <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/30">
+                      <TrendingUp className="h-5 w-5 text-primary" />
                       <div>
-                        <div className="text-sm font-medium text-blue-700">주말 세션 선호도 상승</div>
-                        <div className="text-xs text-blue-600">토요일 +20% 예상</div>
+                        <div className="text-sm font-medium text-primary">주말 세션 선호도 상승</div>
+                        <div className="text-xs text-primary">토요일 +20% 예상</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <TrendingDown className="h-5 w-5 text-yellow-600" />
+                    <div className="flex items-center gap-3 p-3 bg-warning/10 rounded-lg border border-warning/30">
+                      <TrendingDown className="h-5 w-5 text-warning" />
                       <div>
-                        <div className="text-sm font-medium text-yellow-700">실내 훈련 수요 감소</div>
-                        <div className="text-xs text-yellow-600">봄철 야외 선호</div>
+                        <div className="text-sm font-medium text-warning">실내 훈련 수요 감소</div>
+                        <div className="text-xs text-warning">봄철 야외 선호</div>
                       </div>
                     </div>
                   </div>
@@ -1509,7 +1509,7 @@ export default function AnalyticsPage() {
                                   <Star
                                     key={i}
                                     className={`h-3 w-3 ${
-                                      i < session.rating! ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                      i < session.rating! ? 'text-warning fill-current' : 'text-gray-300'
                                     }`}
                                   />
                                 ))}
@@ -1595,7 +1595,7 @@ export default function AnalyticsPage() {
                                 <Star
                                   key={i}
                                   className={`h-4 w-4 ${
-                                    i < course.finalRating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                    i < course.finalRating ? 'text-warning fill-current' : 'text-gray-300'
                                   }`}
                                 />
                               ))}
@@ -1691,7 +1691,7 @@ export default function AnalyticsPage() {
                                 <Star
                                   key={i}
                                   className={`h-4 w-4 ${
-                                    i < Math.floor(trainer.averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                    i < Math.floor(trainer.averageRating) ? 'text-warning fill-current' : 'text-gray-300'
                                   }`}
                                 />
                               ))}
@@ -1790,7 +1790,7 @@ export default function AnalyticsPage() {
                               <Star
                                 key={i}
                                 className={`h-4 w-4 ${
-                                  i < Math.floor(student.averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                  i < Math.floor(student.averageRating) ? 'text-warning fill-current' : 'text-gray-300'
                                 }`}
                               />
                             ))}

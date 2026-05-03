@@ -411,7 +411,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-4 mb-8">
         <Card className="p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => setLocation('/my-courses')}>
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary rounded-full flex items-center justify-center">
               <BookOpen className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -421,7 +421,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
           </div>
           <div className="mt-4">
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div className="bg-blue-500 h-2 rounded-full" style={{ width: "45%" }}></div>
+              <div className="bg-primary h-2 rounded-full" style={{ width: "45%" }}></div>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">전체 진도율 45%</p>
           </div>
@@ -429,7 +429,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
 
         <Card className="p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => setLocation('/my-pets')}>
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-success/10 dark:bg-success/30 text-success dark:text-success rounded-full flex items-center justify-center">
               <PawPrint className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -466,7 +466,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
         {/* 반려동물 건강 관리 카드 */}
         <Card className="p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => setLocation('/health-tracker')}>
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-success/10 dark:bg-success/30 text-success dark:text-success rounded-full flex items-center justify-center">
               <PawPrint className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -477,11 +477,11 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
           <div className="mt-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-300">다음 예방접종</span>
-              <span className="text-sm font-medium text-green-600 dark:text-green-400">30일 후</span>
+              <span className="text-sm font-medium text-success dark:text-success">30일 후</span>
             </div>
             <div className="flex items-center justify-between mt-2">
               <span className="text-sm text-gray-600 dark:text-gray-300">건강검진</span>
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">6개월 후</span>
+              <span className="text-sm font-medium text-primary dark:text-primary">6개월 후</span>
             </div>
           </div>
         </Card>
@@ -513,7 +513,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
         {/* 훈련 성과 카드 */}
         <Card className="p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => setLocation('/analytics')}>
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary rounded-full flex items-center justify-center">
               <Star className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -524,11 +524,11 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
           <div className="mt-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-300">완료한 훈련</span>
-              <span className="text-sm font-medium text-orange-600 dark:text-orange-400">4/5개</span>
+              <span className="text-sm font-medium text-primary dark:text-primary">4/5개</span>
             </div>
             <div className="flex items-center justify-between mt-2">
               <span className="text-sm text-gray-600 dark:text-gray-300">연속 훈련 일수</span>
-              <span className="text-sm font-medium text-green-600 dark:text-green-400">7일</span>
+              <span className="text-sm font-medium text-success dark:text-success">7일</span>
             </div>
           </div>
         </Card>
@@ -563,10 +563,10 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{course.title}</h3>
                   {course.popular && (
-                    <span className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 px-2 py-1 rounded-full">인기</span>
+                    <span className="text-xs bg-primary/10 text-primary dark:bg-primary/30 dark:text-primary px-2 py-1 rounded-full">인기</span>
                   )}
                   {course.level && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${course.level === "초급" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"}`}>
+                    <span className={`text-xs px-2 py-1 rounded-full ${course.level === "초급" ? "bg-success/10 text-success dark:bg-success/30 dark:text-success" : "bg-primary/10 text-primary dark:bg-primary/30 dark:text-primary"}`}>
                       {course.level}
                     </span>
                   )}
@@ -624,7 +624,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
                   className="w-full h-full object-cover"
                 />
                 {course.petName && (
-                  <span className="absolute top-0 left-0 m-2 text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded-full">
+                  <span className="absolute top-0 left-0 m-2 text-xs bg-destructive/10 text-destructive dark:bg-destructive/30 dark:text-destructive px-2 py-1 rounded-full">
                     {course.petName}에게 맞춤
                   </span>
                 )}
@@ -675,7 +675,7 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
                 <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                   <div className="flex space-x-4">
                     <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-destructive mr-1" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
                       </svg>
                       <span>{post.likes}</span>
@@ -690,8 +690,8 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
 
                   <div>
                     <span className={`text-xs px-2 py-1 rounded-full ${
-                        post.tag === "산책팁" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" :
-                        post.tag === "훈련팁" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : 
+                        post.tag === "산책팁" ? "bg-primary/10 text-primary dark:bg-primary/30 dark:text-primary" :
+                        post.tag === "훈련팁" ? "bg-success/10 text-success dark:bg-success/30 dark:text-success" : 
                         "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary/80"
                       }`}>
                       {post.tag}
@@ -718,13 +718,13 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
               반려견 훈련 일정과 건강 관리 스케줄을 한눈에 확인하세요.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">다가오는 훈련</h3>
-                <p className="text-sm text-blue-600 dark:text-blue-400">오늘 17:00 - 기본 훈련 3주차</p>
+              <div className="p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                <h3 className="font-semibold text-primary dark:text-primary mb-2">다가오는 훈련</h3>
+                <p className="text-sm text-primary dark:text-primary">오늘 17:00 - 기본 훈련 3주차</p>
               </div>
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <h3 className="font-semibold text-green-800 dark:text-green-300 mb-2">건강 체크</h3>
-                <p className="text-sm text-green-600 dark:text-green-400">30일 후 - 예방접종 일정</p>
+              <div className="p-4 bg-success/10 dark:bg-success/20 rounded-lg">
+                <h3 className="font-semibold text-success dark:text-success mb-2">건강 체크</h3>
+                <p className="text-sm text-success dark:text-success">30일 후 - 예방접종 일정</p>
               </div>
             </div>
           </Card>
@@ -743,20 +743,20 @@ export default function PetOwnerDashboard({ onAction }: PetOwnerDashboardProps) 
               반려견과 함께 달성한 성과들을 확인하세요.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <Award className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-yellow-800 dark:text-yellow-300">첫 수료증</h3>
-                <p className="text-sm text-yellow-600 dark:text-yellow-400">기초 훈련 과정 완료</p>
+              <div className="text-center p-4 bg-warning/10 dark:bg-warning/20 rounded-lg">
+                <Award className="h-8 w-8 text-warning mx-auto mb-2" />
+                <h3 className="font-semibold text-warning dark:text-warning">첫 수료증</h3>
+                <p className="text-sm text-warning dark:text-warning">기초 훈련 과정 완료</p>
               </div>
               <div className="text-center p-4 bg-primary/5 dark:bg-primary/15 rounded-lg">
                 <Medal className="h-8 w-8 text-primary mx-auto mb-2" />
                 <h3 className="font-semibold text-primary dark:text-primary/80">7일 연속 학습</h3>
                 <p className="text-sm text-primary dark:text-primary">꾸준한 학습 습관 형성</p>
               </div>
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <Star className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-green-800 dark:text-green-300">우수 반려인</h3>
-                <p className="text-sm text-green-600 dark:text-green-400">커뮤니티 활동 인정</p>
+              <div className="text-center p-4 bg-success/10 dark:bg-success/20 rounded-lg">
+                <Star className="h-8 w-8 text-success mx-auto mb-2" />
+                <h3 className="font-semibold text-success dark:text-success">우수 반려인</h3>
+                <p className="text-sm text-success dark:text-success">커뮤니티 활동 인정</p>
               </div>
             </div>
           </Card>

@@ -143,11 +143,11 @@ export default function Register() {
 
   if (registrationSuccess) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-primary/10 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary to-secondary/10 dark:from-gray-900 dark:to-gray-800 p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
-            <div className="mx-auto w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mb-4">
-              <Clock className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+            <div className="mx-auto w-16 h-16 bg-warning/10 dark:bg-warning/20 rounded-full flex items-center justify-center mb-4">
+              <Clock className="w-8 h-8 text-warning dark:text-warning" />
             </div>
             <CardTitle className="text-2xl">회원가입 신청 완료</CardTitle>
             <CardDescription className="text-base mt-2">
@@ -155,11 +155,11 @@ export default function Register() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-              <p className="text-amber-800 dark:text-amber-200 font-medium">
+            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/30 dark:border-warning/50 rounded-lg p-4">
+              <p className="text-warning dark:text-warning/70 font-medium">
                 관리자 승인 대기 중
               </p>
-              <p className="text-amber-600 dark:text-amber-400 text-sm mt-1">
+              <p className="text-warning dark:text-warning text-sm mt-1">
                 관리자가 가입 신청을 검토한 후 승인됩니다.<br />
                 승인 완료 시 로그인이 가능합니다.
               </p>
@@ -297,8 +297,8 @@ export default function Register() {
               <p className="text-xs text-muted-foreground">초대 코드 입력 시 친구에게 교육 참여 기회가 제공됩니다</p>
             </div>
             
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
-              <p className="text-blue-800 dark:text-blue-200">
+            <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/50 rounded-lg p-3 text-sm">
+              <p className="text-primary dark:text-primary/70">
                 <strong>안내:</strong> 회원가입 후 관리자 승인이 필요합니다.
               </p>
             </div>

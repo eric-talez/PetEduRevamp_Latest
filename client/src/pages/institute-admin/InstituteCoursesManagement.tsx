@@ -484,7 +484,7 @@ export default function InstituteCoursesManagement() {
                                   updateCourseStatus(course.id, 'active');
                                 }}
                               >
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-success" />
                               </Button>
                             )}
                             {course.status === 'active' && (
@@ -496,7 +496,7 @@ export default function InstituteCoursesManagement() {
                                   updateCourseStatus(course.id, 'completed');
                                 }}
                               >
-                                <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                                <CheckCircle2 className="h-4 w-4 text-primary" />
                               </Button>
                             )}
                           </div>
@@ -697,7 +697,7 @@ export default function InstituteCoursesManagement() {
                                         index < Math.floor(selectedCourse.duration * (selectedCourse.completionRate / 100)) 
                                           ? 'bg-primary' 
                                           : index === Math.floor(selectedCourse.duration * (selectedCourse.completionRate / 100))
-                                            ? 'bg-yellow-400'
+                                            ? 'bg-warning/40'
                                             : 'bg-gray-200 dark:bg-gray-700'
                                       }`}
                                     ></div>
@@ -720,7 +720,7 @@ export default function InstituteCoursesManagement() {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col items-center text-center">
-                              <Users className="h-8 w-8 text-blue-500 mb-2" />
+                              <Users className="h-8 w-8 text-primary mb-2" />
                               <div className="text-2xl font-bold">{selectedCourse.studentCount}</div>
                               <p className="text-xs text-muted-foreground">현재 수강생</p>
                             </div>
@@ -730,7 +730,7 @@ export default function InstituteCoursesManagement() {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col items-center text-center">
-                              <Clock className="h-8 w-8 text-amber-500 mb-2" />
+                              <Clock className="h-8 w-8 text-warning mb-2" />
                               <div className="text-2xl font-bold">{selectedCourse.duration}주</div>
                               <p className="text-xs text-muted-foreground">총 교육 기간</p>
                             </div>
@@ -740,7 +740,7 @@ export default function InstituteCoursesManagement() {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col items-center text-center">
-                              <PawPrint className="h-8 w-8 text-green-500 mb-2" />
+                              <PawPrint className="h-8 w-8 text-success mb-2" />
                               <div className="text-2xl font-bold">{Math.floor(selectedCourse.studentCount * 0.85)}</div>
                               <p className="text-xs text-muted-foreground">집중 훈련견</p>
                             </div>
@@ -755,21 +755,21 @@ export default function InstituteCoursesManagement() {
                         <CardContent>
                           <div className="space-y-4">
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-blue-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-primary mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">주간 보고서 업데이트</p>
                                 <p className="text-xs text-muted-foreground">5월 2일에 8주차 보고서가 업데이트되었습니다.</p>
                               </div>
                             </div>
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-green-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-success mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">새 수강생 등록</p>
                                 <p className="text-xs text-muted-foreground">2명의 새로운 수강생이 등록되었습니다.</p>
                               </div>
                             </div>
                             <div className="flex items-start">
-                              <div className="h-2 w-2 rounded-full bg-amber-500 mt-2 mr-3"></div>
+                              <div className="h-2 w-2 rounded-full bg-warning mt-2 mr-3"></div>
                               <div>
                                 <p className="text-sm font-medium">평가 진행</p>
                                 <p className="text-xs text-muted-foreground">7주차 중간 평가가 진행되었습니다.</p>

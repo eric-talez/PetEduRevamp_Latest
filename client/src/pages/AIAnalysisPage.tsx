@@ -433,7 +433,7 @@ export default function AIAnalysisPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <CheckCircle className="w-5 h-5 text-success" />
                   분석 완료
                 </CardTitle>
                 <CardDescription>
@@ -466,7 +466,7 @@ export default function AIAnalysisPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-500" />
+                <Zap className="w-5 h-5 text-warning" />
                 분석 팁
               </CardTitle>
             </CardHeader>

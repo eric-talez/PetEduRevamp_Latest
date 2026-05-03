@@ -140,13 +140,13 @@ const TrainerActivityLogs: React.FC = () => {
 
   const getActivityTypeColor = (activityType: string) => {
     const colors = {
-      'video_upload': 'bg-blue-500',
-      'comment': 'bg-green-500',
+      'video_upload': 'bg-primary',
+      'comment': 'bg-success',
       'view': 'bg-primary/50',
-      'member_recruitment': 'bg-orange-500',
-      'certification': 'bg-red-500',
-      'consultation': 'bg-yellow-500',
-      'course_creation': 'bg-indigo-500'
+      'member_recruitment': 'bg-primary',
+      'certification': 'bg-destructive',
+      'consultation': 'bg-warning',
+      'course_creation': 'bg-primary'
     };
     return colors[activityType as keyof typeof colors] || 'bg-gray-500';
   };
@@ -337,11 +337,11 @@ const TrainerActivityLogs: React.FC = () => {
                             <span>{log.trainerName}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 text-yellow-500" />
+                            <Star className="w-4 h-4 text-warning" />
                             <span>{log.pointsEarned}점</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Award className="w-4 h-4 text-green-500" />
+                            <Award className="w-4 h-4 text-success" />
                             <span>{Number(log.incentiveAmount).toLocaleString()}원</span>
                           </div>
                         </div>
@@ -351,7 +351,7 @@ const TrainerActivityLogs: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteLog(log.id)}
-                      className="text-red-600 hover:bg-red-50"
+                      className="text-destructive hover:bg-destructive/10"
                     >
                       삭제
                     </Button>
@@ -385,9 +385,9 @@ const TrainerActivityLogs: React.FC = () => {
                     value={Math.min(((activitySummary?.totalActivities || 0) / 1000) * 100, 100)}
                     styles={buildStyles({
                       textSize: '16px',
-                      pathColor: '#3b82f6',
-                      textColor: '#3b82f6',
-                      trailColor: '#e5e7eb',
+                      pathColor: 'hsl(var(--primary))',
+                      textColor: 'hsl(var(--primary))',
+                      trailColor: 'hsl(var(--border))',
                     })}
                   />
                 </div>
@@ -406,9 +406,9 @@ const TrainerActivityLogs: React.FC = () => {
                     value={Math.min(((activitySummary?.totalPoints || 0) / 10000) * 100, 100)}
                     styles={buildStyles({
                       textSize: '16px',
-                      pathColor: '#10b981',
-                      textColor: '#10b981',
-                      trailColor: '#e5e7eb',
+                      pathColor: 'hsl(var(--success))',
+                      textColor: 'hsl(var(--success))',
+                      trailColor: 'hsl(var(--border))',
                     })}
                   />
                 </div>
@@ -427,9 +427,9 @@ const TrainerActivityLogs: React.FC = () => {
                     value={Math.min(((activitySummary?.totalIncentives || 0) / 1000000) * 100, 100)}
                     styles={buildStyles({
                       textSize: '16px',
-                      pathColor: '#f59e0b',
-                      textColor: '#f59e0b',
-                      trailColor: '#e5e7eb',
+                      pathColor: 'hsl(var(--warning))',
+                      textColor: 'hsl(var(--warning))',
+                      trailColor: 'hsl(var(--border))',
                     })}
                   />
                 </div>
@@ -448,9 +448,9 @@ const TrainerActivityLogs: React.FC = () => {
                     value={((activitySummary?.activeTrainers || 0) / 20) * 100}
                     styles={buildStyles({
                       textSize: '16px',
-                      pathColor: '#8b5cf6',
-                      textColor: '#8b5cf6',
-                      trailColor: '#e5e7eb',
+                      pathColor: 'hsl(var(--secondary))',
+                      textColor: 'hsl(var(--secondary))',
+                      trailColor: 'hsl(var(--border))',
                     })}
                   />
                 </div>

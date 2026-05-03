@@ -107,17 +107,17 @@ export default function SimpleShopPage() {
                 className="w-full h-full object-cover transition-transform hover:scale-105" 
               />
               {product.isNew && (
-                <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+                <span className="absolute top-2 left-2 bg-success text-white text-xs font-bold px-2 py-1 rounded">
                   NEW
                 </span>
               )}
               {product.isBestseller && (
-                <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                <span className="absolute top-2 right-2 bg-destructive text-white text-xs font-bold px-2 py-1 rounded">
                   인기
                 </span>
               )}
               {product.discountRate && (
-                <span className="absolute bottom-2 left-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">
+                <span className="absolute bottom-2 left-2 bg-warning text-white text-xs font-bold px-2 py-1 rounded">
                   {product.discountRate}% OFF
                 </span>
               )}
@@ -132,7 +132,7 @@ export default function SimpleShopPage() {
                         key={i} 
                         className={`w-4 h-4 ${
                           i < Math.floor(product.rating || 0) 
-                            ? 'fill-yellow-400 text-yellow-400' 
+                            ? 'fill-warning text-warning' 
                             : 'text-gray-300'
                         }`} 
                       />
@@ -175,7 +175,7 @@ export default function SimpleShopPage() {
               </div>
               
               {!product.inStock && (
-                <p className="text-red-500 text-sm mt-2">품절되었습니다</p>
+                <p className="text-destructive text-sm mt-2">품절되었습니다</p>
               )}
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function SimpleShopPage() {
       {/* 디버깅 정보 */}
       <div className="mt-8 p-4 text-center">
         <p>쇼핑 페이지가 정상적으로 로드되었습니다!</p>
-        <div className="bg-green-100 dark:bg-green-900 p-4 rounded-lg mt-2 inline-block">
+        <div className="bg-success/10 dark:bg-success/20 p-4 rounded-lg mt-2 inline-block">
           <p>Path: <code>{window.location.pathname}</code></p>
         </div>
       </div>

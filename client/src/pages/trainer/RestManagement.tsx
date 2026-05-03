@@ -123,9 +123,9 @@ const RestManagement: React.FC = () => {
   // 휴식 신청 상태별 색상
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'pending': return 'bg-warning/10 text-warning';
+      case 'approved': return 'bg-success/10 text-success';
+      case 'rejected': return 'bg-destructive/10 text-destructive';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -313,8 +313,8 @@ const RestManagement: React.FC = () => {
                     </div>
                   </div>
                   {application.rejectedReason && (
-                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <span className="font-medium text-red-800">거부 사유:</span> {application.rejectedReason}
+                    <div className="mt-3 p-3 bg-destructive/10 border border-destructive/30 rounded-md">
+                      <span className="font-medium text-destructive">거부 사유:</span> {application.rejectedReason}
                     </div>
                   )}
                 </CardContent>
@@ -351,7 +351,7 @@ const RestManagement: React.FC = () => {
                         <div className="font-semibold text-lg">
                           {reward.rewardType === 'points' ? `${reward.rewardAmount.toLocaleString()}P` : `${reward.rewardAmount.toLocaleString()}원`}
                         </div>
-                        <Badge className={reward.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                        <Badge className={reward.status === 'paid' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}>
                           {reward.status === 'paid' ? '지급완료' : '지급대기'}
                         </Badge>
                       </div>

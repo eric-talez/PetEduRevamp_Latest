@@ -84,7 +84,7 @@ export default function VerificationCallback() {
         <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
+              <XCircle className="h-5 w-5 text-destructive" />
               인증 오류
             </CardTitle>
             <CardDescription>
@@ -114,12 +114,12 @@ export default function VerificationCallback() {
           <CardTitle className="flex items-center gap-2">
             {result?.success ? (
               <>
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-success" />
                 인증 완료
               </>
             ) : (
               <>
-                <XCircle className="h-5 w-5 text-red-500" />
+                <XCircle className="h-5 w-5 text-destructive" />
                 인증 실패
               </>
             )}

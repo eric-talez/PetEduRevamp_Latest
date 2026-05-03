@@ -385,10 +385,10 @@ export default function AdminSendNotification() {
                 <div>
                   대상: <strong>{lastResult.total}명</strong>
                 </div>
-                <div className="text-green-700">
+                <div className="text-success">
                   성공: <strong>{lastResult.successCount}건</strong>
                 </div>
-                <div className={lastResult.failedCount > 0 ? "text-red-700" : ""}>
+                <div className={lastResult.failedCount > 0 ? "text-destructive" : ""}>
                   실패: <strong>{lastResult.failedCount}건</strong>
                 </div>
                 {lastResult.failures && lastResult.failures.length > 0 && (

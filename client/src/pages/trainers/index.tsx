@@ -295,8 +295,8 @@ export default function Trainers() {
       <div className="py-8 px-4 sm:px-6 lg:px-8 animate-slide-up">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-red-500" />
-            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-destructive" />
+            <p className="text-destructive dark:text-destructive mb-4">{error}</p>
             <Button 
               onClick={() => {
                 setError(null);
@@ -661,7 +661,7 @@ export default function Trainers() {
                     <Star 
                       className={`h-4 w-4 ${
                         favorites.includes(trainer.id) 
-                          ? 'fill-yellow-400 text-yellow-400' 
+                          ? 'fill-warning text-warning' 
                           : 'text-gray-400'
                       }`} 
                     />
@@ -740,7 +740,7 @@ export default function Trainers() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+              <AlertCircle className="h-5 w-5 text-warning mr-2" />
               {alertMessage.title}
             </AlertDialogTitle>
             <AlertDialogDescription>

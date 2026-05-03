@@ -148,9 +148,9 @@ export default function AdminReports() {
       case 'urgent':
         return <Badge variant="destructive">긴급</Badge>;
       case 'high':
-        return <Badge className="bg-orange-100 text-orange-800">높음</Badge>;
+        return <Badge className="bg-primary/10 text-primary">높음</Badge>;
       case 'medium':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">보통</Badge>;
+        return <Badge variant="secondary" className="bg-warning/10 text-warning">보통</Badge>;
       case 'low':
         return <Badge variant="secondary">낮음</Badge>;
       default:
@@ -161,11 +161,11 @@ export default function AdminReports() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">대기중</Badge>;
+        return <Badge variant="secondary" className="bg-warning/10 text-warning">대기중</Badge>;
       case 'investigating':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">조사중</Badge>;
+        return <Badge variant="secondary" className="bg-primary/10 text-primary">조사중</Badge>;
       case 'resolved':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">처리됨</Badge>;
+        return <Badge variant="secondary" className="bg-success/10 text-success">처리됨</Badge>;
       case 'dismissed':
         return <Badge variant="secondary" className="bg-gray-100 text-gray-800">기각됨</Badge>;
       default:
@@ -189,7 +189,7 @@ export default function AdminReports() {
                 <p className="text-sm font-medium text-gray-600">대기중</p>
                 <p className="text-2xl font-bold" data-testid="stat-pending">{stats.pending}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
+              <Clock className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -201,7 +201,7 @@ export default function AdminReports() {
                 <p className="text-sm font-medium text-gray-600">조사중</p>
                 <p className="text-2xl font-bold" data-testid="stat-investigating">{stats.investigating}</p>
               </div>
-              <Eye className="h-8 w-8 text-blue-500" />
+              <Eye className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -213,7 +213,7 @@ export default function AdminReports() {
                 <p className="text-sm font-medium text-gray-600">긴급</p>
                 <p className="text-2xl font-bold" data-testid="stat-urgent">{stats.urgent}</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-500" />
+              <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -225,7 +225,7 @@ export default function AdminReports() {
                 <p className="text-sm font-medium text-gray-600">처리됨</p>
                 <p className="text-2xl font-bold" data-testid="stat-resolved">{stats.resolved}</p>
               </div>
-              <Check className="h-8 w-8 text-green-500" />
+              <Check className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -334,7 +334,7 @@ export default function AdminReports() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="text-green-600 border-green-600 hover:bg-green-50"
+                          className="text-success border-success/50 hover:bg-success/10"
                           onClick={() => handleReportAction(report.id, 'resolve')}
                           disabled={isProcessing}
                         >
@@ -344,7 +344,7 @@ export default function AdminReports() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="text-red-600 border-red-600 hover:bg-red-50"
+                          className="text-destructive border-destructive/50 hover:bg-destructive/10"
                           onClick={() => handleReportAction(report.id, 'dismiss')}
                           disabled={isProcessing}
                         >
@@ -427,14 +427,14 @@ export default function AdminReports() {
                     </Button>
                     <Button 
                       variant="outline"
-                      className="text-red-600 border-red-600 hover:bg-red-50"
+                      className="text-destructive border-destructive/50 hover:bg-destructive/10"
                       onClick={() => handleReportAction(selectedReport.id, 'dismiss', actionComment)}
                       disabled={isProcessing}
                     >
                       {isProcessing ? '처리중...' : '기각'}
                     </Button>
                     <Button 
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-success hover:bg-success/90"
                       onClick={() => handleReportAction(selectedReport.id, 'resolve', actionComment)}
                       disabled={isProcessing}
                     >

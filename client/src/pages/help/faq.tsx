@@ -106,7 +106,7 @@ export default function FAQPage() {
             <input
               type="text"
               placeholder="질문 검색하기"
-              className="w-full px-4 py-3 pl-12 rounded-full bg-white/90 shadow-md border-0 focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-3 pl-12 rounded-full bg-white/90 shadow-md border-0 focus:ring-2 focus:ring-primary"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

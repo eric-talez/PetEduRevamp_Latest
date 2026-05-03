@@ -170,18 +170,18 @@ export default function CourseDetail() {
     <div className="min-h-screen bg-gray-50">
       {/* 미리보기 모드 배너 */}
       {isPreviewMode && (
-        <div className="bg-blue-600 text-white py-2 px-4">
+        <div className="bg-primary text-white py-2 px-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Monitor className="w-5 h-5" />
               <span className="font-medium">미리보기 모드</span>
-              <span className="text-blue-200">실제 강의 페이지가 아닙니다</span>
+              <span className="text-primary/70">실제 강의 페이지가 아닙니다</span>
             </div>
             <Button
               onClick={() => window.close()}
               variant="outline"
               size="sm"
-              className="border-white text-white hover:bg-blue-700"
+              className="border-white text-white hover:bg-primary"
             >
               닫기
             </Button>
@@ -218,7 +218,7 @@ export default function CourseDetail() {
                 <span>{course.enrollmentCount}명 수강중</span>
               </div>
               <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-500" />
+                <Star className="w-5 h-5 text-warning" />
                 <span>{course.rating}/5.0</span>
               </div>
             </div>
@@ -296,8 +296,8 @@ export default function CourseDetail() {
                 )}
 
                 {isPreviewMode && (
-                  <div className="p-4 bg-blue-50 rounded-lg mb-4">
-                    <p className="text-sm text-blue-700 text-center">
+                  <div className="p-4 bg-primary/10 rounded-lg mb-4">
+                    <p className="text-sm text-primary text-center">
                       미리보기 모드에서는 구매할 수 없습니다
                     </p>
                   </div>
@@ -356,7 +356,7 @@ export default function CourseDetail() {
                     <ul className="space-y-2">
                       {course.modules.slice(0, 3).map((module, index) => (
                         <li key={index} className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
                           <span className="text-gray-700">{module.title}</span>
                         </li>
                       ))}

@@ -268,9 +268,9 @@ export default function CurriculumManager() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'ready': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'processing': return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'failed': return <Trash2 className="w-4 h-4 text-red-500" />;
+      case 'ready': return <CheckCircle className="w-4 h-4 text-success" />;
+      case 'processing': return <Clock className="w-4 h-4 text-warning" />;
+      case 'failed': return <Trash2 className="w-4 h-4 text-destructive" />;
       default: return <Clock className="w-4 h-4 text-gray-400" />;
     }
   };

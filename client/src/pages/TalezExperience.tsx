@@ -204,9 +204,9 @@ export default function TalezExperiencePage() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case '높음': return 'bg-red-100 text-red-800';
-      case '중간': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-green-100 text-green-800';
+      case '높음': return 'bg-destructive/10 text-destructive';
+      case '중간': return 'bg-warning/10 text-warning';
+      default: return 'bg-success/10 text-success';
     }
   };
 
@@ -240,21 +240,21 @@ export default function TalezExperiencePage() {
       {/* 진행 단계 표시 */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center space-x-4">
-          <div className={`flex items-center ${currentStep === 'upload' ? 'text-primary' : currentStep === 'analyzing' || currentStep === 'results' || currentStep === 'consultation' ? 'text-green-600' : 'text-muted-foreground'}`}>
+          <div className={`flex items-center ${currentStep === 'upload' ? 'text-primary' : currentStep === 'analyzing' || currentStep === 'results' || currentStep === 'consultation' ? 'text-success' : 'text-muted-foreground'}`}>
             <div className="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center mr-2">
               {currentStep === 'analyzing' || currentStep === 'results' || currentStep === 'consultation' ? <CheckCircle className="h-5 w-5" /> : '1'}
             </div>
             영상 업로드
           </div>
           <div className="w-8 h-px bg-border"></div>
-          <div className={`flex items-center ${currentStep === 'analyzing' ? 'text-primary' : currentStep === 'results' || currentStep === 'consultation' ? 'text-green-600' : 'text-muted-foreground'}`}>
+          <div className={`flex items-center ${currentStep === 'analyzing' ? 'text-primary' : currentStep === 'results' || currentStep === 'consultation' ? 'text-success' : 'text-muted-foreground'}`}>
             <div className="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center mr-2">
               {currentStep === 'results' || currentStep === 'consultation' ? <CheckCircle className="h-5 w-5" /> : '2'}
             </div>
             AI 분석
           </div>
           <div className="w-8 h-px bg-border"></div>
-          <div className={`flex items-center ${currentStep === 'results' ? 'text-primary' : currentStep === 'consultation' ? 'text-green-600' : 'text-muted-foreground'}`}>
+          <div className={`flex items-center ${currentStep === 'results' ? 'text-primary' : currentStep === 'consultation' ? 'text-success' : 'text-muted-foreground'}`}>
             <div className="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center mr-2">
               {currentStep === 'consultation' ? <CheckCircle className="h-5 w-5" /> : '3'}
             </div>
@@ -364,7 +364,7 @@ export default function TalezExperiencePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+                <CheckCircle className="h-5 w-5 mr-2 text-success" />
                 AI 분석 결과
               </CardTitle>
               {analysisResult.note && (
@@ -504,7 +504,7 @@ export default function TalezExperiencePage() {
       {currentStep === 'consultation' && consultationResult && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center text-green-600">
+            <CardTitle className="flex items-center text-success">
               <CheckCircle className="h-5 w-5 mr-2" />
               상담 신청 완료
             </CardTitle>
@@ -529,7 +529,7 @@ export default function TalezExperiencePage() {
               <ul className="space-y-2">
                 {consultationResult.nextActions.map((action, index) => (
                   <li key={index} className="flex items-start space-x-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                     <span>{action}</span>
                   </li>
                 ))}

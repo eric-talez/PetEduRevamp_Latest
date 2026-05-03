@@ -385,7 +385,7 @@ export default function NotificationCenterPage() {
                         <li
                           key={n.id}
                           className={`flex items-start gap-3 p-4 hover:bg-muted/40 transition-colors ${
-                            !n.isRead ? "bg-blue-50/50 dark:bg-blue-950/20" : ""
+                            !n.isRead ? "bg-primary/50 dark:bg-primary/20" : ""
                           }`}
                           data-testid={`notification-item-${n.id}`}
                         >
@@ -410,7 +410,7 @@ export default function NotificationCenterPage() {
                                 {CATEGORY_LABEL[cat]}
                               </span>
                               {!n.isRead && (
-                                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                <span className="w-2 h-2 rounded-full bg-primary" />
                               )}
                             </div>
                             <h4 className={`text-sm ${!n.isRead ? "font-semibold" : "font-medium"}`}>
@@ -450,7 +450,7 @@ export default function NotificationCenterPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive/90"
                               title="삭제"
                               onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(n.id); }}
                               data-testid={`button-delete-${n.id}`}

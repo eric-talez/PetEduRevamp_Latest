@@ -45,8 +45,8 @@ export default function TalezRefundPage() {
           </div>
         </div>
         
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
-          <h3 className="font-semibold mb-2 text-yellow-800 dark:text-yellow-200">환불 처리 절차</h3>
+        <div className="bg-warning/10 dark:bg-warning/20 p-4 rounded-lg">
+          <h3 className="font-semibold mb-2 text-warning dark:text-warning/70">환불 처리 절차</h3>
           <div className="text-sm space-y-1">
             <p>• 환불 신청: 고객센터 또는 마이페이지에서 신청</p>
             <p>• 처리 기간: 신청일로부터 3-5 영업일</p>

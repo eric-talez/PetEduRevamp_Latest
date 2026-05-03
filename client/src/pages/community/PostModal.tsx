@@ -316,7 +316,7 @@ export const PostModal: React.FC<PostModalProps> = ({
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="secondary">{post.category}</Badge>
                   {post.isPinned && (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                    <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
                       공지
                     </Badge>
                   )}
@@ -336,7 +336,7 @@ export const PostModal: React.FC<PostModalProps> = ({
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => setShowDeleteAlert(true)}
-                      className="text-red-600"
+                      className="text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       삭제
@@ -377,7 +377,7 @@ export const PostModal: React.FC<PostModalProps> = ({
             {post.tags && post.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag, index) => (
-                  <div key={index} className="inline-flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  <div key={index} className="inline-flex items-center text-xs text-primary bg-primary/10 px-2 py-1 rounded">
                     <Tag className="h-3 w-3 mr-1" />
                     {tag}
                   </div>
@@ -402,7 +402,7 @@ export const PostModal: React.FC<PostModalProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleLike}
-                  className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}
+                  className={`flex items-center gap-1 ${post.isLiked ? 'text-destructive' : ''}`}
                 >
                   <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-current' : ''}`} />
                   <span>{post.likes}</span>
@@ -495,7 +495,7 @@ export const PostModal: React.FC<PostModalProps> = ({
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => deleteCommentMutation.mutate(comment.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-3 w-3 mr-2" />
                                     삭제
@@ -553,7 +553,7 @@ export const PostModal: React.FC<PostModalProps> = ({
                                 onClick={() => likeCommentMutation.mutate(comment.id)}
                                 className={`h-6 px-2 text-xs ${
                                   comment.isLiked 
-                                    ? 'text-red-500 hover:text-red-600' 
+                                    ? 'text-destructive hover:text-destructive/90' 
                                     : 'text-muted-foreground hover:text-foreground'
                                 }`}
                               >
@@ -639,7 +639,7 @@ export const PostModal: React.FC<PostModalProps> = ({
                 onDelete?.();
                 setShowDeleteAlert(false);
               }}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               삭제
             </AlertDialogAction>

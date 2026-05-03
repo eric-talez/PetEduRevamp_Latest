@@ -151,7 +151,7 @@ export default function TrainerDiaryOverview() {
                       {item.summary.latestWeightKg !== null ? `${item.summary.latestWeightKg}kg` : '-'}
                     </div>
                     {item.summary.weightDeltaKg !== null && (
-                      <div className={`text-[11px] mt-0.5 ${item.summary.weightDeltaKg > 0 ? 'text-orange-600' : item.summary.weightDeltaKg < 0 ? 'text-blue-600' : 'text-muted-foreground'}`}>
+                      <div className={`text-[11px] mt-0.5 ${item.summary.weightDeltaKg > 0 ? 'text-primary' : item.summary.weightDeltaKg < 0 ? 'text-primary' : 'text-muted-foreground'}`}>
                         {item.summary.weightDeltaKg > 0 ? '+' : ''}{item.summary.weightDeltaKg}kg
                       </div>
                     )}

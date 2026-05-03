@@ -75,7 +75,7 @@ export default function CheckinPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary to-white">
         <div className="text-center">
           <PawPrint className="w-12 h-12 mx-auto text-primary animate-bounce" />
           <p className="mt-4 text-gray-500">로딩 중...</p>
@@ -86,11 +86,11 @@ export default function CheckinPage() {
 
   if (error || !data?.success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-red-50 to-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary to-white p-4">
         <Card className="max-w-md w-full">
           <CardContent className="text-center py-8">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <PawPrint className="w-8 h-8 text-red-500" />
+            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <PawPrint className="w-8 h-8 text-destructive" />
             </div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">유효하지 않은 QR 코드</h2>
             <p className="text-gray-500">이 QR 코드는 만료되었거나 유효하지 않습니다.</p>
@@ -102,11 +102,11 @@ export default function CheckinPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary to-white p-4">
         <Card className="max-w-md w-full">
           <CardContent className="text-center py-12">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-10 h-10 text-success" />
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">체크인 완료!</h2>
             <p className="text-gray-500 mb-2">{data.institute?.name}에 체크인 되었습니다.</p>
@@ -122,7 +122,7 @@ export default function CheckinPage() {
   const isLoggedIn = data.isLoggedIn;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-4">
+    <div className="min-h-screen bg-gradient-to-b from-primary to-white p-4">
       <div className="max-w-lg mx-auto space-y-4">
         <div className="text-center py-6">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">

@@ -71,7 +71,7 @@ const PostCard = ({ post, onClick }: { post: any; onClick: (post: any) => void }
           )}
           {/* 영상 배지 */}
           <div className="absolute top-2 left-2">
-            <Badge variant="secondary" className="bg-red-600 text-white">
+            <Badge variant="secondary" className="bg-destructive text-white">
               영상
             </Badge>
           </div>
@@ -141,26 +141,26 @@ const PostCard = ({ post, onClick }: { post: any; onClick: (post: any) => void }
         
         {/* 설문 통계 정보 (설문 게시글인 경우) */}
         {post.tag === '설문' && (
-          <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/30">
             <div className="flex items-center gap-2 mb-2">
-              <BarChart3 className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">설문 참여 현황</span>
+              <BarChart3 className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">설문 참여 현황</span>
             </div>
             
             {/* 전체 참여율 */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1">
-                  <UserCheck className="h-3 w-3 text-green-600" />
+                  <UserCheck className="h-3 w-3 text-success" />
                   <span>총 참여자</span>
                 </div>
-                <span className="font-medium text-green-700">{post.surveyStats?.totalParticipants || 0}명</span>
+                <span className="font-medium text-success">{post.surveyStats?.totalParticipants || 0}명</span>
               </div>
               
               {/* 참여율 프로그레스 바 */}
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                  className="bg-primary h-2 rounded-full transition-all duration-300" 
                   style={{ width: `${Math.min(100, (post.surveyStats?.totalParticipants || 0) / 100 * 100)}%` }}
                 ></div>
               </div>
@@ -178,7 +178,7 @@ const PostCard = ({ post, onClick }: { post: any; onClick: (post: any) => void }
                 </div>
                 <div className="text-xs">
                   <div className="flex items-center gap-1 mb-1">
-                    <MapPin className="h-3 w-3 text-orange-600" />
+                    <MapPin className="h-3 w-3 text-primary" />
                     <span>지역 분포</span>
                   </div>
                   <div className="text-gray-600">
@@ -189,7 +189,7 @@ const PostCard = ({ post, onClick }: { post: any; onClick: (post: any) => void }
               
               {/* 설문 종료일 */}
               {post.surveyEndDate && (
-                <div className="flex items-center gap-1 text-xs text-gray-500 mt-2 pt-2 border-t border-blue-200">
+                <div className="flex items-center gap-1 text-xs text-gray-500 mt-2 pt-2 border-t border-primary/30">
                   <Clock className="h-3 w-3" />
                   <span>종료: {new Date(post.surveyEndDate).toLocaleDateString('ko-KR')}</span>
                 </div>
@@ -205,7 +205,7 @@ const PostCard = ({ post, onClick }: { post: any; onClick: (post: any) => void }
               <div className="flex-1">
                 <h4 className="font-medium text-sm line-clamp-1">{post.linkInfo.title}</h4>
                 <p className="text-xs text-gray-600 line-clamp-2 mt-1">{post.linkInfo.description}</p>
-                <p className="text-xs text-blue-600 mt-1 truncate">{post.linkInfo.url}</p>
+                <p className="text-xs text-primary mt-1 truncate">{post.linkInfo.url}</p>
               </div>
             </div>
           </div>
@@ -307,7 +307,7 @@ const NewsCard = ({ article, viewType = 'card', onOpenDetail }: { article: NewsA
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary" className="bg-blue-600 text-white text-xs">
+                <Badge variant="secondary" className="bg-primary text-white text-xs">
                   뉴스
                 </Badge>
                 <Badge variant="outline" className="text-xs">
@@ -351,7 +351,7 @@ const NewsCard = ({ article, viewType = 'card', onOpenDetail }: { article: NewsA
           </div>
         )}
         <div className="absolute top-2 left-2">
-          <Badge variant="secondary" className="bg-blue-600 text-white">
+          <Badge variant="secondary" className="bg-primary text-white">
             뉴스
           </Badge>
         </div>
@@ -965,7 +965,7 @@ function CommunityPage() {
             <Button 
               onClick={() => crawlEventsMutation.mutate()}
               disabled={crawlEventsMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white mr-2"
+              className="bg-primary hover:bg-primary/90 text-white mr-2"
               data-testid="button-crawl-events"
             >
               {crawlEventsMutation.isPending ? (
@@ -980,7 +980,7 @@ function CommunityPage() {
           {/* 게시글 작성 버튼 */}
           <Dialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
+              <Button className="bg-success hover:bg-success/90 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 글쓰기
               </Button>
@@ -1067,12 +1067,12 @@ function CommunityPage() {
                           className="w-full"
                         />
                         {newPost.videoUrl && (
-                          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                            <p className="text-sm text-green-800 font-medium">
+                          <div className="mt-3 p-3 bg-success/10 border border-success/30 rounded-lg">
+                            <p className="text-sm text-success font-medium">
                               ✅ 영상이 성공적으로 업로드되었습니다!
                             </p>
                             {newPost.videoDuration > 0 && (
-                              <p className="text-xs text-green-600 mt-1">
+                              <p className="text-xs text-success mt-1">
                                 재생시간: {Math.floor(newPost.videoDuration / 60)}분 {newPost.videoDuration % 60}초
                               </p>
                             )}
@@ -1240,12 +1240,12 @@ function CommunityPage() {
                     
                     {/* 위치 정보 섹션 (지도 표시용) */}
                     <div className="col-span-4 mt-4">
-                      <div className="border rounded-lg p-4 bg-blue-50">
+                      <div className="border rounded-lg p-4 bg-primary/10">
                         <div className="flex items-center gap-2 mb-3">
-                          <MapPin className="h-5 w-5 text-blue-600" />
-                          <h4 className="font-semibold text-blue-800">위치 정보 (지도 표시용)</h4>
+                          <MapPin className="h-5 w-5 text-primary" />
+                          <h4 className="font-semibold text-primary">위치 정보 (지도 표시용)</h4>
                         </div>
-                        <p className="text-sm text-blue-700 mb-4">
+                        <p className="text-sm text-primary mb-4">
                           위치 정보를 입력하면 지도에서 이벤트 위치를 확인할 수 있습니다.
                         </p>
                         
@@ -1363,11 +1363,11 @@ function CommunityPage() {
 
                 {/* 링크 정보 섹션 */}
                 {showLinkSection && (
-                  <div className="border rounded-lg p-4 bg-blue-50">
+                  <div className="border rounded-lg p-4 bg-primary/10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <Link className="h-5 w-5 text-blue-600" />
-                        <h3 className="font-semibold text-blue-800">
+                        <Link className="h-5 w-5 text-primary" />
+                        <h3 className="font-semibold text-primary">
                           링크 정보 추가
                         </h3>
                       </div>
@@ -1376,13 +1376,13 @@ function CommunityPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setShowLinkSection(false)}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-primary hover:text-primary/90"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                     
-                    <p className="text-blue-700 mb-4">
+                    <p className="text-primary mb-4">
                       URL을 입력하면 자동으로 링크 정보를 추출하여 게시글을 더 풍부하게 만들 수 있습니다.
                     </p>
                     
@@ -1401,7 +1401,7 @@ function CommunityPage() {
                           />
                           {isExtractingLink && (
                             <div className="flex items-center px-3">
-                              <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                              <div className="animate-spin w-4 h-4 border-2 border-primary/50 border-t-transparent rounded-full"></div>
                             </div>
                           )}
                         </div>
@@ -1667,12 +1667,12 @@ function CommunityPage() {
 
             {error && (
               <div className="text-center py-8">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-                  <div className="text-red-600 font-medium mb-2">게시글을 불러올 수 없습니다</div>
-                  <div className="text-red-500 text-sm">{error?.message || '알 수 없는 오류가 발생했습니다'}</div>
+                <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 max-w-md mx-auto">
+                  <div className="text-destructive font-medium mb-2">게시글을 불러올 수 없습니다</div>
+                  <div className="text-destructive text-sm">{error?.message || '알 수 없는 오류가 발생했습니다'}</div>
                   <button 
                     onClick={() => window.location.reload()} 
-                    className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                    className="mt-3 px-4 py-2 bg-destructive text-white rounded hover:bg-destructive/90 text-sm"
                   >
                     새로고침
                   </button>
@@ -1883,7 +1883,7 @@ function CommunityPage() {
                           href={selectedPost.linkInfo.url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                          className="text-primary hover:text-primary/90 text-sm flex items-center gap-1"
                         >
                           <ExternalLink className="h-3 w-3" />
                           링크 바로가기
@@ -2038,7 +2038,7 @@ function CommunityPage() {
             <>
               <DialogHeader>
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="secondary" className="bg-blue-600 text-white">
+                  <Badge variant="secondary" className="bg-primary text-white">
                     뉴스
                   </Badge>
                   <span className="text-sm text-gray-500">

@@ -461,7 +461,7 @@ export default function Home() {
       <div className="min-h-screen" style={{ background: 'var(--page-bg)' }}>
         {/* Hero Banner Section - 슬라이드 배너 */}
         <div className="mb-8 px-4 pt-4">
-          <div className="relative overflow-hidden rounded-xl min-h-[400px] bg-gradient-to-r from-primary to-primary/80 shadow-lg">
+          <div className="relative overflow-hidden rounded-xl min-h-[400px] bg-gradient-to-r from-primary to-secondary/80 shadow-lg">
             <div className="absolute inset-0">
               <img
                 src={bannerSlides[currentSlide].image}
@@ -486,7 +486,7 @@ export default function Home() {
                       key={idx}
                       className="inline-flex items-center text-sm bg-white/20 text-white px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/20"
                     >
-                      <span className="mr-1.5 text-yellow-300 text-lg">✓</span> {feature}
+                      <span className="mr-1.5 text-warning text-lg">✓</span> {feature}
                     </span>
                   ))}
                 </div>
@@ -581,8 +581,8 @@ export default function Home() {
                   onClick={() => setLocation('/courses')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40 transition-colors">
-                      <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/30 group-hover:bg-primary/20 dark:group-hover:bg-primary/40 transition-colors">
+                      <BookOpen className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -600,8 +600,8 @@ export default function Home() {
                   onClick={() => setLocation('/pet-care')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-800/40 transition-colors">
-                      <Syringe className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <div className="p-3 rounded-full bg-success/10 dark:bg-success/30 group-hover:bg-success/20 dark:group-hover:bg-success/40 transition-colors">
+                      <Syringe className="h-5 w-5 text-success dark:text-success" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -619,8 +619,8 @@ export default function Home() {
                   onClick={() => setLocation('/facilities')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900/30 group-hover:bg-orange-200 dark:group-hover:bg-orange-800/40 transition-colors">
-                      <MapPin className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/30 group-hover:bg-primary/20 dark:group-hover:bg-primary/40 transition-colors">
+                      <MapPin className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -640,8 +640,8 @@ export default function Home() {
                   onClick={() => setLocation('/trainer/courses')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40 transition-colors">
-                      <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/30 group-hover:bg-primary/20 dark:group-hover:bg-primary/40 transition-colors">
+                      <BookOpen className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -678,8 +678,8 @@ export default function Home() {
                   onClick={() => setLocation('/trainer/revenue')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-800/40 transition-colors">
-                      <BarChart3 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <div className="p-3 rounded-full bg-success/10 dark:bg-success/30 group-hover:bg-success/20 dark:group-hover:bg-success/40 transition-colors">
+                      <BarChart3 className="h-5 w-5 text-success dark:text-success" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -697,8 +697,8 @@ export default function Home() {
                   onClick={() => setLocation('/trainer/schedule')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-800/40 transition-colors">
-                      <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <div className="p-3 rounded-full bg-warning/10 dark:bg-warning/30 group-hover:bg-warning/20 dark:group-hover:bg-warning/40 transition-colors">
+                      <Calendar className="h-5 w-5 text-warning dark:text-warning" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -737,8 +737,8 @@ export default function Home() {
                   onClick={() => setLocation('/institute-admin/courses')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40 transition-colors">
-                      <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/30 group-hover:bg-primary/20 dark:group-hover:bg-primary/40 transition-colors">
+                      <BookOpen className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -756,8 +756,8 @@ export default function Home() {
                   onClick={() => setLocation('/institute-admin/revenue')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-800/40 transition-colors">
-                      <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <div className="p-3 rounded-full bg-success/10 dark:bg-success/30 group-hover:bg-success/20 dark:group-hover:bg-success/40 transition-colors">
+                      <TrendingUp className="h-5 w-5 text-success dark:text-success" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -796,8 +796,8 @@ export default function Home() {
                   onClick={() => setLocation('/auth/register')}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40 transition-colors">
-                      <UserPlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/30 group-hover:bg-primary/20 dark:group-hover:bg-primary/40 transition-colors">
+                      <UserPlus className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -834,8 +834,8 @@ export default function Home() {
                   onClick={() => setShowExperience(true)}
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-800/40 transition-colors">
-                      <Zap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <div className="p-3 rounded-full bg-warning/10 dark:bg-warning/30 group-hover:bg-warning/20 dark:group-hover:bg-warning/40 transition-colors">
+                      <Zap className="h-5 w-5 text-warning dark:text-warning" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
@@ -1019,12 +1019,12 @@ export default function Home() {
                 <div className="md:col-span-3 flex justify-between space-x-6">
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">등록 사용자</span>
+                      <span className="text-sm font-semibold text-primary dark:text-primary">등록 사용자</span>
                       <span className="text-lg font-bold">{systemStats?.totalUsers || 6}</span>
                     </div>
                     <button
                       onClick={() => setLocation('/dashboard')}
-                      className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 py-1 px-2 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors cursor-pointer"
+                      className="text-xs text-success bg-success/10 dark:bg-success/30 dark:text-success py-1 px-2 rounded-full hover:bg-success/20 dark:hover:bg-success/50 transition-colors cursor-pointer"
                       title="대시보드에서 자세히 보기"
                     >
                       실데이터
@@ -1033,12 +1033,12 @@ export default function Home() {
 
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">인증 훈련사</span>
+                      <span className="text-sm font-semibold text-success dark:text-success">인증 훈련사</span>
                       <span className="text-lg font-bold">1</span>
                     </div>
                     <button
                       onClick={() => setLocation('/trainers')}
-                      className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 py-1 px-2 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors cursor-pointer"
+                      className="text-xs text-success bg-success/10 dark:bg-success/30 dark:text-success py-1 px-2 rounded-full hover:bg-success/20 dark:hover:bg-success/50 transition-colors cursor-pointer"
                       title="훈련사 목록 보기"
                     >
                       왕짱스쿨
@@ -1052,7 +1052,7 @@ export default function Home() {
                     </div>
                     <button
                       onClick={() => setLocation('/courses')}
-                      className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 py-1 px-2 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors cursor-pointer"
+                      className="text-xs text-success bg-success/10 dark:bg-success/30 dark:text-success py-1 px-2 rounded-full hover:bg-success/20 dark:hover:bg-success/50 transition-colors cursor-pointer"
                       title="강좌 목록 보기"
                     >
                       실제현황
@@ -1063,7 +1063,7 @@ export default function Home() {
                 <div className="flex items-center justify-center md:justify-end">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-warning">
                         <circle cx="12" cy="12" r="5" />
                         <line x1="12" y1="1" x2="12" y2="3" />
                         <line x1="12" y1="21" x2="12" y2="23" />
@@ -1091,23 +1091,23 @@ export default function Home() {
                 <div className="md:col-span-3">
                   <div className="grid grid-cols-3 gap-3">
                     {/* 등록 사용자 */}
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                    <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-lg">
                       <div className="flex justify-between items-center">
                         <div>
-                          <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{systemStats?.totalUsers || 6}</span>
+                          <span className="text-xl font-bold text-primary dark:text-primary">{systemStats?.totalUsers || 6}</span>
                           <div className="text-xs text-gray-600 dark:text-gray-400">등록 사용자 (현재)</div>
                         </div>
-                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-800/50 rounded flex items-center justify-center">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <div className="w-8 h-8 bg-primary/10 dark:bg-primary/50 rounded flex items-center justify-center">
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                         </div>
                       </div>
-                      <div className="mt-2 text-xs text-green-600 dark:text-green-400">실제 데이터</div>
+                      <div className="mt-2 text-xs text-success dark:text-success">실제 데이터</div>
                       <div className="mt-1">
                         <div className="flex items-end gap-1 mb-1 h-8">
                           {(weeklyStats?.userRegistrations || [1, 2, 1, 3, 2, 4, 3]).map((value, index) => (
                             <div key={index} className="flex-1 relative group">
                               <div
-                                className="bg-blue-200 dark:bg-blue-700 rounded-sm transition-colors hover:bg-blue-300 dark:hover:bg-blue-600"
+                                className="bg-primary/20 dark:bg-primary rounded-sm transition-colors hover:bg-primary/40 dark:hover:bg-primary/90"
                                 style={{height: `${Math.max(value * 8, 4)}px`}}
                               ></div>
                               <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -1130,23 +1130,23 @@ export default function Home() {
                     </div>
 
                     {/* 인증 훈련사 */}
-                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                    <div className="bg-success/10 dark:bg-success/20 p-3 rounded-lg">
                       <div className="flex justify-between items-center">
                         <div>
-                          <span className="text-xl font-bold text-green-600 dark:text-green-400">1</span>
+                          <span className="text-xl font-bold text-success dark:text-success">1</span>
                           <div className="text-xs text-gray-600 dark:text-gray-400">인증 훈련사 (현재)</div>
                         </div>
-                        <div className="w-8 h-8 bg-green-100 dark:bg-green-800/50 rounded flex items-center justify-center">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div className="w-8 h-8 bg-success/10 dark:bg-success/50 rounded flex items-center justify-center">
+                          <div className="w-2 h-2 bg-success rounded-full"></div>
                         </div>
                       </div>
-                      <div className="mt-2 text-xs text-green-600 dark:text-green-400">왕짱스쿨</div>
+                      <div className="mt-2 text-xs text-success dark:text-success">왕짱스쿨</div>
                       <div className="mt-1">
                         <div className="flex items-end gap-1 mb-1 h-8">
                           {(weeklyStats?.trainerCertifications || [0, 1, 0, 0, 1, 0, 0]).map((value, index) => (
                             <div key={index} className="flex-1 relative group">
                               <div
-                                className="bg-green-200 dark:bg-green-700 rounded-sm transition-colors hover:bg-green-300 dark:hover:bg-green-600"
+                                className="bg-success/20 dark:bg-success rounded-sm transition-colors hover:bg-success/40 dark:hover:bg-success/90"
                                 style={{height: `${Math.max(value * 20, 4)}px`}}
                               ></div>
                               <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -1179,13 +1179,13 @@ export default function Home() {
                           <div className="w-2 h-2 bg-primary/50 rounded-full"></div>
                         </div>
                       </div>
-                      <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">실제현황</div>
+                      <div className="mt-2 text-xs text-primary dark:text-primary">실제현황</div>
                       <div className="mt-1">
                         <div className="flex items-end gap-1 mb-1 h-8">
                           {(weeklyStats?.petRegistrations || [1, 0, 2, 0, 1, 1, 0]).map((value, index) => (
                             <div key={index} className="flex-1 relative group">
                               <div
-                                className="bg-primary/15 dark:bg-primary/20 rounded-sm transition-colors hover:bg-primary/15 dark:hover:bg-primary"
+                                className="bg-primary/15 dark:bg-primary/20 rounded-sm transition-colors hover:bg-primary/15 dark:hover:bg-primary/90"
                                 style={{height: `${Math.max(value * 12, 4)}px`}}
                               ></div>
                               <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -1225,7 +1225,7 @@ export default function Home() {
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12">
                       {/* 날씨 아이콘 - 맑음 */}
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-warning">
                         <circle cx="12" cy="12" r="5" />
                         <line x1="12" y1="1" x2="12" y2="3" />
                         <line x1="12" y1="21" x2="12" y2="23" />
@@ -1366,9 +1366,9 @@ export default function Home() {
                 {/* 단계 표시 */}
                 <div className="flex items-center justify-center mb-6">
                   <div className="flex items-center space-x-4">
-                    <div className={`flex items-center space-x-2 ${analysisStep === 'upload' ? 'text-blue-600' : 'text-green-600'}`}>
+                    <div className={`flex items-center space-x-2 ${analysisStep === 'upload' ? 'text-primary' : 'text-success'}`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        analysisStep === 'upload' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
+                        analysisStep === 'upload' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'
                       }`}>
                         {analysisStep === 'upload' ? '1' : <CheckCircle className="h-5 w-5" />}
                       </div>
@@ -1376,21 +1376,21 @@ export default function Home() {
                     </div>
                     <div className="w-8 h-0.5 bg-gray-300"></div>
                     <div className={`flex items-center space-x-2 ${
-                      analysisStep === 'analyzing' ? 'text-blue-600' :
-                      analysisStep === 'result' ? 'text-green-600' : 'text-gray-400'
+                      analysisStep === 'analyzing' ? 'text-primary' :
+                      analysisStep === 'result' ? 'text-success' : 'text-gray-400'
                     }`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        analysisStep === 'analyzing' ? 'bg-blue-100 text-blue-600' :
-                        analysisStep === 'result' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                        analysisStep === 'analyzing' ? 'bg-primary/10 text-primary' :
+                        analysisStep === 'result' ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'
                       }`}>
                         {analysisStep === 'result' ? <CheckCircle className="h-5 w-5" /> : '2'}
                       </div>
                       <span className="text-sm font-medium">AI 분석</span>
                     </div>
                     <div className="w-8 h-0.5 bg-gray-300"></div>
-                    <div className={`flex items-center space-x-2 ${analysisStep === 'result' ? 'text-blue-600' : 'text-gray-400'}`}>
+                    <div className={`flex items-center space-x-2 ${analysisStep === 'result' ? 'text-primary' : 'text-gray-400'}`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        analysisStep === 'result' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
+                        analysisStep === 'result' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'
                       }`}>
                         3
                       </div>
@@ -1415,19 +1415,19 @@ export default function Home() {
                           value={videoDescription}
                           onChange={(e) => setVideoDescription(e.target.value)}
                           rows={6}
-                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-primary focus:border-transparent"
                           placeholder="예시: 저희 강아지는 다른 강아지를 보면 꼬리를 흔들며 다가가지만, 낯선 사람이 오면 짖으면서 뒤로 물러납니다. 산책할 때는 줄을 많이 당기고, 집에서는 혼자 있을 때 불안해하는 모습을 보입니다. 간식을 주면 '앉아'는 잘 따르지만 '기다려'는 아직 어려워합니다."
                         />
                         <div className="flex justify-between items-center mt-2">
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             💡 팁: 산책 시 행동, 다른 강아지/사람과의 상호작용, 명령 반응도, 집에서의 행동 등을 자세히 적어주세요.
                           </p>
-                          <span className={`text-xs ${videoDescription.trim().length < 20 ? 'text-orange-500' : 'text-green-500'}`}>
+                          <span className={`text-xs ${videoDescription.trim().length < 20 ? 'text-primary' : 'text-success'}`}>
                             {videoDescription.trim().length}/20자
                           </span>
                         </div>
                         {videoDescription.trim().length > 0 && videoDescription.trim().length < 20 && (
-                          <p className="text-xs text-orange-500 mt-1">
+                          <p className="text-xs text-primary mt-1">
                             최소 20자 이상 입력해주세요. ({20 - videoDescription.trim().length}자 더 필요)
                           </p>
                         )}
@@ -1445,8 +1445,8 @@ export default function Home() {
                       </Button>
 
                       {uploadError && (
-                        <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                          <p className="text-red-600 dark:text-red-400 text-sm">{uploadError}</p>
+                        <div className="p-4 bg-destructive/10 dark:bg-destructive/20 rounded-lg">
+                          <p className="text-destructive dark:text-destructive text-sm">{uploadError}</p>
                         </div>
                       )}
                     </div>
@@ -1455,7 +1455,7 @@ export default function Home() {
 
                 {analysisStep === 'analyzing' && (
                   <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm text-center">
-                    <Loader2 className="mx-auto h-12 w-12 text-blue-500 animate-spin mb-4" />
+                    <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin mb-4" />
                     <h3 className="text-lg font-semibold mb-2">AI가 영상을 분석하고 있습니다</h3>
                     <p className="text-gray-600 dark:text-gray-400">
                       강아지의 행동과 특성을 분석 중입니다. 잠시만 기다려주세요.
@@ -1466,7 +1466,7 @@ export default function Home() {
                 {analysisStep === 'result' && analysisResult && (
                   <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm max-w-3xl mx-auto">
                     <h3 className="text-2xl font-bold mb-6 flex items-center">
-                      <CheckCircle className="mr-2 h-6 w-6 text-green-500" />
+                      <CheckCircle className="mr-2 h-6 w-6 text-success" />
                       AI 종합 분석 완료
                     </h3>
 
@@ -1486,9 +1486,9 @@ export default function Home() {
                       </div>
 
                       {/* 훈련 수준 점수 */}
-                      <div className="p-5 bg-white dark:bg-gray-700 rounded-lg border-2 border-blue-200 dark:border-blue-700">
+                      <div className="p-5 bg-white dark:bg-gray-700 rounded-lg border-2 border-primary/30 dark:border-primary/50">
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                          <svg className="h-5 w-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="h-5 w-5 mr-2 text-primary" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
                           훈련 수준 평가
@@ -1499,7 +1499,7 @@ export default function Home() {
                             <span className="text-3xl font-bold">{analysisResult.trainingAssessment?.overallScore || 0}</span>
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">전반적 훈련 점수</p>
-                          <p className="text-lg font-semibold text-blue-600 dark:text-blue-400 mt-1">
+                          <p className="text-lg font-semibold text-primary dark:text-primary mt-1">
                             {analysisResult.trainingAssessment?.level || '중급'} 수준
                           </p>
                         </div>
@@ -1507,7 +1507,7 @@ export default function Home() {
                         <div className="grid grid-cols-3 gap-3">
                           {analysisResult.trainingAssessment?.scores && Object.entries(analysisResult.trainingAssessment.scores).map(([key, value]: [string, any]) => (
                             <div key={key} className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{value}/10</div>
+                              <div className="text-2xl font-bold text-primary dark:text-primary">{value}/10</div>
                               <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                                 {key === 'commandResponse' ? '명령 반응' : key === 'focus' ? '집중력' : '학습 능력'}
                               </div>
@@ -1517,9 +1517,9 @@ export default function Home() {
                       </div>
 
                       {/* 성격 프로필 */}
-                      <div className="p-5 bg-white dark:bg-gray-700 rounded-lg border-2 border-green-200 dark:border-green-700">
+                      <div className="p-5 bg-white dark:bg-gray-700 rounded-lg border-2 border-success/30 dark:border-success/50">
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                          <svg className="h-5 w-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="h-5 w-5 mr-2 text-success" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                           </svg>
                           성격 프로필
@@ -1544,7 +1544,7 @@ export default function Home() {
                                 <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
                                   <div
                                     className={`h-2.5 rounded-full ${
-                                      key === 'anxiety' ? 'bg-orange-500' : 'bg-green-500'
+                                      key === 'anxiety' ? 'bg-primary' : 'bg-success'
                                     }`}
                                     style={{ width: `${(value / 10) * 100}%` }}
                                   />
@@ -1557,26 +1557,26 @@ export default function Home() {
 
                       {/* 행동 패턴 */}
                       {analysisResult.behaviorAnalysis?.patterns && (
-                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
-                          <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-3">
+                        <div className="p-4 bg-warning/10 dark:bg-warning/20 rounded-lg border border-warning/30 dark:border-warning/50">
+                          <h4 className="font-semibold text-warning dark:text-warning/70 mb-3">
                             관찰된 행동 패턴
                           </h4>
                           <div className="flex flex-wrap gap-2 mb-3">
                             {analysisResult.behaviorAnalysis.patterns.mainBehaviors?.map((behavior: string, idx: number) => (
-                              <span key={idx} className="px-3 py-1 bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-100 rounded-full text-sm font-medium">
+                              <span key={idx} className="px-3 py-1 bg-warning/10 dark:bg-warning text-warning dark:text-warning/70 rounded-full text-sm font-medium">
                                 {behavior}
                               </span>
                             ))}
                           </div>
-                          <p className="text-sm text-amber-800 dark:text-amber-200">
+                          <p className="text-sm text-warning dark:text-warning/70">
                             {analysisResult.behaviorAnalysis.patterns.meaning}
                           </p>
                         </div>
                       )}
 
                       {/* 맞춤형 추천 */}
-                      <div className="p-5 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-900/20 dark:to-primary/15 rounded-lg border border-green-200 dark:border-green-700">
-                        <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center">
+                      <div className="p-5 bg-gradient-to-r from-primary to-secondary/5 dark:from-primary/20 dark:to-primary/15 rounded-lg border border-success/30 dark:border-success/50">
+                        <h4 className="font-semibold text-success dark:text-success/70 mb-3 flex items-center">
                           <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                           </svg>
@@ -1584,19 +1584,19 @@ export default function Home() {
                         </h4>
 
                         <div className="space-y-2 mb-4">
-                          <p className="text-sm font-medium text-green-800 dark:text-green-200">우선 훈련 항목:</p>
+                          <p className="text-sm font-medium text-success dark:text-success/70">우선 훈련 항목:</p>
                           <ul className="list-disc list-inside space-y-1">
                             {analysisResult.recommendations?.priorities?.map((priority: string, idx: number) => (
-                              <li key={idx} className="text-sm text-green-700 dark:text-green-300">{priority}</li>
+                              <li key={idx} className="text-sm text-success dark:text-success">{priority}</li>
                             ))}
                           </ul>
                         </div>
 
                         <div className="space-y-2">
-                          <p className="text-sm font-medium text-green-800 dark:text-green-200">훈련 팁:</p>
+                          <p className="text-sm font-medium text-success dark:text-success/70">훈련 팁:</p>
                           <ul className="list-disc list-inside space-y-1">
                             {analysisResult.recommendations?.tips?.map((tip: string, idx: number) => (
-                              <li key={idx} className="text-sm text-green-700 dark:text-green-300">{tip}</li>
+                              <li key={idx} className="text-sm text-success dark:text-success">{tip}</li>
                             ))}
                           </ul>
                         </div>

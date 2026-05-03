@@ -103,7 +103,7 @@ export function NotebookHeader({
           
           <Button 
             variant="outline" 
-            className="bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 border-blue-200 dark:border-blue-800"
+            className="bg-primary/10 text-primary hover:bg-primary/10 dark:bg-primary/20 dark:text-primary dark:hover:bg-primary/30 border-primary/30 dark:border-primary/50"
             onClick={onShowAIHelper}
           >
             <Sparkles className="mr-2 h-4 w-4" />
@@ -118,9 +118,9 @@ export function NotebookHeader({
       </div>
       
       {activeFilter && onClearFilters && (
-        <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md">
-          <HelpCircle className="h-4 w-4 text-blue-500 mr-2" />
-          <span className="text-sm text-blue-600 dark:text-blue-400">필터가 적용되었습니다.</span>
+        <div className="flex items-center bg-primary/10 dark:bg-primary/20 p-2 rounded-md">
+          <HelpCircle className="h-4 w-4 text-primary mr-2" />
+          <span className="text-sm text-primary dark:text-primary">필터가 적용되었습니다.</span>
           <Button variant="ghost" size="sm" className="ml-auto" onClick={onClearFilters}>
             <RefreshCw className="h-3 w-3 mr-1" />
             초기화

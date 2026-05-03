@@ -301,8 +301,8 @@ export default function MessagingPage() {
                             </Avatar>
                             <span
                               className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background
-                                ${contact.status === 'online' ? 'bg-green-500' : 
-                                  contact.status === 'away' ? 'bg-amber-500' : 'bg-gray-400'}
+                                ${contact.status === 'online' ? 'bg-success' : 
+                                  contact.status === 'away' ? 'bg-warning' : 'bg-gray-400'}
                               `}
                             />
                           </div>

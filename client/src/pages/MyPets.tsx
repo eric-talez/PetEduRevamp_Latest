@@ -121,7 +121,7 @@ export default function MyPets() {
                       </div>
                     </div>
                     <div className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="bg-destructive/10 dark:bg-destructive/30 text-destructive dark:text-destructive w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
                         <Heart className="w-5 h-5" />
                       </div>
                       <div className="ml-3">

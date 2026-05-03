@@ -89,9 +89,9 @@ export default function AdminMonetization() {
       case 0:
         return <Badge variant="secondary" data-testid="badge-level-0">Level 0 - 무료</Badge>;
       case 1:
-        return <Badge className="bg-blue-500" data-testid="badge-level-1">Level 1 - 광고 수익</Badge>;
+        return <Badge className="bg-primary" data-testid="badge-level-1">Level 1 - 광고 수익</Badge>;
       case 2:
-        return <Badge className="bg-orange-500" data-testid="badge-level-2">Level 2 - 유료 콘텐츠</Badge>;
+        return <Badge className="bg-primary" data-testid="badge-level-2">Level 2 - 유료 콘텐츠</Badge>;
       default:
         return <Badge variant="outline" data-testid="badge-level-default">미정</Badge>;
     }
@@ -100,8 +100,8 @@ export default function AdminMonetization() {
   const getStageBadge = (stage: number) => {
     const stages = [
       { label: "Stage 1 (60/40)", color: "bg-gray-500" },
-      { label: "Stage 2 (50/50)", color: "bg-blue-500" },
-      { label: "Stage 3 (40/60)", color: "bg-green-500" },
+      { label: "Stage 2 (50/50)", color: "bg-primary" },
+      { label: "Stage 3 (40/60)", color: "bg-success" },
     ];
     const s = stages[stage - 1] || stages[0];
     return <Badge className={s.color} data-testid={`badge-stage-${stage}`}>{s.label}</Badge>;
@@ -160,10 +160,10 @@ export default function AdminMonetization() {
         <Card data-testid="card-eligible-trainers">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">수익화 자격자</CardTitle>
-            <Award className="h-4 w-4 text-orange-500" />
+            <Award className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-500">{summaryStats.eligibleTrainers}명</div>
+            <div className="text-2xl font-bold text-primary">{summaryStats.eligibleTrainers}명</div>
             <p className="text-xs text-muted-foreground">Level 1 이상</p>
           </CardContent>
         </Card>
@@ -171,10 +171,10 @@ export default function AdminMonetization() {
         <Card data-testid="card-pending-payouts">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">미정산 금액</CardTitle>
-            <Wallet className="h-4 w-4 text-blue-500" />
+            <Wallet className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-500">{formatCurrency(summaryStats.totalPendingPayouts)}</div>
+            <div className="text-2xl font-bold text-primary">{formatCurrency(summaryStats.totalPendingPayouts)}</div>
             <p className="text-xs text-muted-foreground">정산 대기 총액</p>
           </CardContent>
         </Card>
@@ -182,10 +182,10 @@ export default function AdminMonetization() {
         <Card data-testid="card-avg-score">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">평균 TALEZ SCORE</CardTitle>
-            <Star className="h-4 w-4 text-yellow-500" />
+            <Star className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-500">{summaryStats.avgScore.toFixed(1)}점</div>
+            <div className="text-2xl font-bold text-warning">{summaryStats.avgScore.toFixed(1)}점</div>
             <p className="text-xs text-muted-foreground">전체 훈련사 평균</p>
           </CardContent>
         </Card>
@@ -235,8 +235,8 @@ export default function AdminMonetization() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                            <span className="text-orange-600 font-bold">{trainer.name?.charAt(0) || "T"}</span>
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-primary font-bold">{trainer.name?.charAt(0) || "T"}</span>
                           </div>
                           <div>
                             <h4 className="font-semibold">{trainer.name || "이름 없음"}</h4>
@@ -247,7 +247,7 @@ export default function AdminMonetization() {
                         <div className="flex items-center gap-6">
                           <div className="text-center">
                             <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-500" />
+                              <Star className="h-4 w-4 text-warning" />
                               <span className="font-bold text-lg">{trainer.talezScore?.toFixed(1) || 0}</span>
                             </div>
                             <span className="text-xs text-muted-foreground">TALEZ SCORE</span>
@@ -255,7 +255,7 @@ export default function AdminMonetization() {
 
                           <div className="text-center">
                             <div className="flex items-center gap-1">
-                              <Users className="h-4 w-4 text-blue-500" />
+                              <Users className="h-4 w-4 text-primary" />
                               <span className="font-bold">{trainer.followers || 0}</span>
                             </div>
                             <span className="text-xs text-muted-foreground">팔로워</span>
@@ -272,7 +272,7 @@ export default function AdminMonetization() {
                           </div>
 
                           <div className="text-right">
-                            <div className="font-bold text-green-600">{formatCurrency(trainer.pendingPayout || 0)}</div>
+                            <div className="font-bold text-success">{formatCurrency(trainer.pendingPayout || 0)}</div>
                             <span className="text-xs text-muted-foreground">미정산액</span>
                           </div>
 
@@ -324,7 +324,7 @@ export default function AdminMonetization() {
                   </div>
                   <div className="flex justify-between">
                     <span>훈련사 몫</span>
-                    <span className="font-bold text-green-600">40%</span>
+                    <span className="font-bold text-success">40%</span>
                   </div>
                   <Progress value={40} className="h-2" />
                 </div>
@@ -334,7 +334,7 @@ export default function AdminMonetization() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <div className="w-3 h-3 rounded-full bg-primary" />
                   Stage 2
                 </CardTitle>
                 <CardDescription>월 매출 500만~1,500만원</CardDescription>
@@ -347,7 +347,7 @@ export default function AdminMonetization() {
                   </div>
                   <div className="flex justify-between">
                     <span>훈련사 몫</span>
-                    <span className="font-bold text-green-600">50%</span>
+                    <span className="font-bold text-success">50%</span>
                   </div>
                   <Progress value={50} className="h-2" />
                 </div>
@@ -357,7 +357,7 @@ export default function AdminMonetization() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <div className="w-3 h-3 rounded-full bg-success" />
                   Stage 3
                 </CardTitle>
                 <CardDescription>월 매출 1,500만원 이상</CardDescription>
@@ -370,7 +370,7 @@ export default function AdminMonetization() {
                   </div>
                   <div className="flex justify-between">
                     <span>훈련사 몫</span>
-                    <span className="font-bold text-green-600">60%</span>
+                    <span className="font-bold text-success">60%</span>
                   </div>
                   <Progress value={60} className="h-2" />
                 </div>
@@ -421,14 +421,14 @@ export default function AdminMonetization() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-blue-500" />
+                  <Award className="h-5 w-5 text-primary" />
                   Level 1 - 광고 수익
                 </CardTitle>
                 <CardDescription>콘텐츠에 광고를 삽입하여 수익 창출</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <div>
                     <p className="font-medium">팔로워 300명 이상</p>
                     <p className="text-sm text-muted-foreground">또는 TALEZ SCORE 20점 이상</p>
@@ -448,14 +448,14 @@ export default function AdminMonetization() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-orange-500" />
+                  <Award className="h-5 w-5 text-primary" />
                   Level 2 - 유료 콘텐츠
                 </CardTitle>
                 <CardDescription>유료 강좌 및 프리미엄 콘텐츠 판매</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <div>
                     <p className="font-medium">팔로워 1,000명 이상</p>
                     <p className="text-sm text-muted-foreground">그리고 TALEZ SCORE 80점 이상</p>
@@ -482,21 +482,21 @@ export default function AdminMonetization() {
             <CardContent>
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="text-center p-4 border rounded-lg">
-                  <Eye className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+                  <Eye className="h-8 w-8 mx-auto mb-2 text-primary" />
                   <h4 className="font-bold">조회수</h4>
-                  <p className="text-2xl font-bold text-blue-500">30%</p>
+                  <p className="text-2xl font-bold text-primary">30%</p>
                   <p className="text-sm text-muted-foreground">로그 스케일 적용</p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <Clock className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                  <Clock className="h-8 w-8 mx-auto mb-2 text-success" />
                   <h4 className="font-bold">완료율</h4>
-                  <p className="text-2xl font-bold text-green-500">30%</p>
+                  <p className="text-2xl font-bold text-success">30%</p>
                   <p className="text-sm text-muted-foreground">강좌 완료 비율</p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <ThumbsUp className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+                  <ThumbsUp className="h-8 w-8 mx-auto mb-2 text-primary" />
                   <h4 className="font-bold">좋아요</h4>
-                  <p className="text-2xl font-bold text-orange-500">20%</p>
+                  <p className="text-2xl font-bold text-primary">20%</p>
                   <p className="text-sm text-muted-foreground">콘텐츠 좋아요 수</p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
@@ -576,7 +576,7 @@ export default function AdminMonetization() {
                 <Card>
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Star className="h-5 w-5 text-yellow-500" />
+                      <Star className="h-5 w-5 text-warning" />
                       <span className="font-medium">TALEZ SCORE</span>
                     </div>
                     <p className="text-3xl font-bold">{selectedTrainer.talezScore?.toFixed(1) || 0}점</p>
@@ -585,10 +585,10 @@ export default function AdminMonetization() {
                 <Card>
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Wallet className="h-5 w-5 text-green-500" />
+                      <Wallet className="h-5 w-5 text-success" />
                       <span className="font-medium">미정산 금액</span>
                     </div>
-                    <p className="text-3xl font-bold text-green-600">
+                    <p className="text-3xl font-bold text-success">
                       {formatCurrency(selectedTrainer.pendingPayout || 0)}
                     </p>
                   </CardContent>

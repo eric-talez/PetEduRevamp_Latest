@@ -287,11 +287,11 @@ export default function PaymentIntegration() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />활성</Badge>;
+        return <Badge className="bg-success/10 text-success"><CheckCircle className="w-3 h-3 mr-1" />활성</Badge>;
       case 'inactive':
         return <Badge className="bg-gray-100 text-gray-800"><XCircle className="w-3 h-3 mr-1" />비활성</Badge>;
       case 'testing':
-        return <Badge className="bg-yellow-100 text-yellow-800"><AlertTriangle className="w-3 h-3 mr-1" />테스트</Badge>;
+        return <Badge className="bg-warning/10 text-warning"><AlertTriangle className="w-3 h-3 mr-1" />테스트</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -592,7 +592,7 @@ export default function PaymentIntegration() {
             {paymentMethods.map((method) => (
               <div key={method.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <CreditCard className="w-8 h-8 text-blue-600" />
+                  <CreditCard className="w-8 h-8 text-primary" />
                   <div>
                     <h3 className="font-medium">{method.name}</h3>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -663,7 +663,7 @@ export default function PaymentIntegration() {
                   <ul className="text-sm text-muted-foreground space-y-1">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="flex items-center">
-                        <CheckCircle className="w-3 h-3 mr-2 text-green-600" />
+                        <CheckCircle className="w-3 h-3 mr-2 text-success" />
                         {feature}
                       </li>
                     ))}
@@ -703,12 +703,12 @@ export default function PaymentIntegration() {
                 <div key={methodId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <span>{paymentMethods.find(m => m.id === methodId)?.name}</span>
                   {success ? (
-                    <Badge className="bg-green-100 text-green-800">
+                    <Badge className="bg-success/10 text-success">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       성공
                     </Badge>
                   ) : (
-                    <Badge className="bg-red-100 text-red-800">
+                    <Badge className="bg-destructive/10 text-destructive">
                       <XCircle className="w-3 h-3 mr-1" />
                       실패
                     </Badge>

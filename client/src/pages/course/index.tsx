@@ -306,9 +306,9 @@ export default function CoursePage() {
 
   const getLevelBadge = (level: string) => {
     const levelConfig = {
-      beginner: { label: '초급', variant: 'secondary' as const, color: 'bg-green-100 text-green-800' },
-      intermediate: { label: '중급', variant: 'default' as const, color: 'bg-blue-100 text-blue-800' },
-      advanced: { label: '고급', variant: 'destructive' as const, color: 'bg-red-100 text-red-800' }
+      beginner: { label: '초급', variant: 'secondary' as const, color: 'bg-success/10 text-success' },
+      intermediate: { label: '중급', variant: 'default' as const, color: 'bg-primary/10 text-primary' },
+      advanced: { label: '고급', variant: 'destructive' as const, color: 'bg-destructive/10 text-destructive' }
     };
 
     const config = levelConfig[level as keyof typeof levelConfig] || levelConfig.beginner;
@@ -372,21 +372,21 @@ export default function CoursePage() {
               <h2 className="text-xl font-semibold mb-4">👨‍🏫 당신을 위한 추천 강의</h2>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {recommendedCourses.slice(0, 3).map((course) => (
-                  <Card key={course.id} className="border-blue-200 bg-blue-50/30">
+                  <Card key={course.id} className="border-primary/30 bg-primary/30">
                     <div className="relative">
                       <img
                         src={course.thumbnail}
                         alt={course.title}
                         className="w-full h-32 object-cover rounded-t-lg"
                       />
-                      <Badge className="absolute top-2 left-2 bg-blue-500">추천</Badge>
+                      <Badge className="absolute top-2 left-2 bg-primary">추천</Badge>
                     </div>
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-sm mb-1">{course.title}</h3>
-                      <p className="text-xs text-blue-600 mb-2">{course.reason}</p>
+                      <p className="text-xs text-primary mb-2">{course.reason}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <Star className="h-3 w-3 fill-warning text-warning" />
                           <span className="text-xs">{course.rating}</span>
                         </div>
                         <span className="text-sm font-medium">{course.price.toLocaleString()}원</span>
@@ -409,7 +409,7 @@ export default function CoursePage() {
                   />
                   {course.isEnrolled && (
                     <div className="absolute top-2 right-2">
-                      <Badge className="bg-green-500">수강중</Badge>
+                      <Badge className="bg-success">수강중</Badge>
                     </div>
                   )}
                   {course.discountPrice && (
@@ -463,7 +463,7 @@ export default function CoursePage() {
 
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-4 w-4 fill-warning text-warning" />
                       <span className="text-sm font-medium">{course.rating}</span>
                       <span className="text-sm text-gray-500">({course.reviewCount})</span>
                     </div>
@@ -481,7 +481,7 @@ export default function CoursePage() {
                     <div>
                       {course.discountPrice ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-red-600">
+                          <span className="text-lg font-bold text-destructive">
                             {course.discountPrice.toLocaleString()}원
                           </span>
                           <span className="text-sm text-gray-500 line-through">
@@ -497,7 +497,7 @@ export default function CoursePage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleFavorite(course.id)}
-                        className={favoriteList.includes(course.id) ? "text-red-500" : "text-gray-400"}
+                        className={favoriteList.includes(course.id) ? "text-destructive" : "text-gray-400"}
                       >
                         <Heart className={`h-4 w-4 ${favoriteList.includes(course.id) ? 'fill-current' : ''}`} />
                       </Button>
@@ -545,7 +545,7 @@ export default function CoursePage() {
                                     <div>
                                       <p className="font-medium">{selectedCourse.instructor.name}</p>
                                       <div className="flex items-center gap-1">
-                                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                        <Star className="h-4 w-4 fill-warning text-warning" />
                                         <span className="text-sm">{selectedCourse.instructor.rating}</span>
                                       </div>
                                     </div>
@@ -585,7 +585,7 @@ export default function CoursePage() {
                                   {selectedCourse.discountPrice ? (
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-2">
-                                        <span className="text-2xl font-bold text-red-600">
+                                        <span className="text-2xl font-bold text-destructive">
                                           {selectedCourse.discountPrice.toLocaleString()}원
                                         </span>
                                         <Badge variant="danger">할인</Badge>
@@ -617,7 +617,7 @@ export default function CoursePage() {
                                       <button
                                         key={star}
                                         onClick={() => setNewReview(prev => ({...prev, rating: star}))}
-                                        className={`${newReview.rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                                        className={`${newReview.rating >= star ? 'text-warning' : 'text-gray-300'}`}
                                       >
                                         <Star className="h-4 w-4 fill-current" />
                                       </button>
@@ -653,14 +653,14 @@ export default function CoursePage() {
                                         <span className="font-medium text-sm">{review.userName}</span>
                                         <div className="flex">
                                           {Array.from({length: review.rating}).map((_, i) => (
-                                            <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                            <Star key={i} className="h-3 w-3 fill-warning text-warning" />
                                           ))}
                                         </div>
                                         <span className="text-xs text-gray-500">{review.createdAt}</span>
                                       </div>
                                       <p className="text-sm text-gray-700">{review.comment}</p>
                                       <div className="flex items-center gap-2 mt-2">
-                                        <button className="text-xs text-gray-500 hover:text-blue-600">
+                                        <button className="text-xs text-gray-500 hover:text-primary">
                                           도움됨 ({review.helpful})
                                         </button>
                                       </div>

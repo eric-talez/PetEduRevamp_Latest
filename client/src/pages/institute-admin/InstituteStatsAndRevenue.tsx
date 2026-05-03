@@ -159,11 +159,11 @@ export default function InstituteStatsAndRevenue() {
         
         // 임시 수업 유형별 데이터
         const mockCourseTypeData: CourseTypeData[] = [
-          { name: '기초 훈련', value: 35, color: '#8884d8' },
-          { name: '문제행동 교정', value: 25, color: '#82ca9d' },
-          { name: '사회화', value: 20, color: '#ffc658' },
-          { name: '특수 훈련', value: 15, color: '#ff8042' },
-          { name: '어질리티', value: 5, color: '#0088fe' },
+          { name: '기초 훈련', value: 35, color: 'hsl(var(--secondary))' },
+          { name: '문제행동 교정', value: 25, color: 'hsl(var(--success))' },
+          { name: '사회화', value: 20, color: 'hsl(var(--warning))' },
+          { name: '특수 훈련', value: 15, color: 'hsl(var(--primary))' },
+          { name: '어질리티', value: 5, color: 'hsl(var(--primary))' },
         ];
         
         // 임시 훈련사 성과 데이터
@@ -386,9 +386,9 @@ export default function InstituteStatsAndRevenue() {
                 </div>
                 <div className={`p-2 rounded-full ${
                   stat.trend === 'up' 
-                    ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' 
+                    ? 'bg-success/10 text-success dark:bg-success/30 dark:text-success' 
                     : stat.trend === 'down' 
-                      ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' 
+                      ? 'bg-destructive/10 text-destructive dark:bg-destructive/30 dark:text-destructive' 
                       : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                 }`}>
                   <stat.icon className="h-5 w-5" />
@@ -397,9 +397,9 @@ export default function InstituteStatsAndRevenue() {
               <div className="flex items-center mt-4">
                 <div className={`${
                   stat.trend === 'up' 
-                    ? 'text-green-600 dark:text-green-400' 
+                    ? 'text-success dark:text-success' 
                     : stat.trend === 'down' 
-                      ? 'text-red-600 dark:text-red-400' 
+                      ? 'text-destructive dark:text-destructive' 
                       : 'text-gray-600 dark:text-gray-400'
                 } flex items-center text-sm`}>
                   {stat.trend === 'up' 
@@ -459,9 +459,9 @@ export default function InstituteStatsAndRevenue() {
                         labelFormatter={(label) => `${label} 수익`}
                       />
                       <Legend />
-                      <Bar dataKey="강습료" fill="#8884d8" />
-                      <Bar dataKey="위탁교육" fill="#82ca9d" />
-                      <Bar dataKey="상품판매" fill="#ffc658" />
+                      <Bar dataKey="강습료" fill="hsl(var(--secondary))" />
+                      <Bar dataKey="위탁교육" fill="hsl(var(--success))" />
+                      <Bar dataKey="상품판매" fill="hsl(var(--warning))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -560,8 +560,8 @@ export default function InstituteStatsAndRevenue() {
                             <h4 className="font-medium">{trainer.name}</h4>
                             <span className={`text-sm ${
                               trainer.revenueChange > 0 
-                                ? 'text-green-600 dark:text-green-400' 
-                                : 'text-red-600 dark:text-red-400'
+                                ? 'text-success dark:text-success' 
+                                : 'text-destructive dark:text-destructive'
                             }`}>
                               {trainer.revenueChange > 0 ? '+' : ''}{trainer.revenueChange}%
                             </span>
@@ -608,9 +608,9 @@ export default function InstituteStatsAndRevenue() {
                         labelFormatter={(label) => `${label} 수익`}
                       />
                       <Legend />
-                      <Area type="monotone" dataKey="강습료" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                      <Area type="monotone" dataKey="위탁교육" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-                      <Area type="monotone" dataKey="상품판매" stackId="1" stroke="#ffc658" fill="#ffc658" />
+                      <Area type="monotone" dataKey="강습료" stackId="1" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" />
+                      <Area type="monotone" dataKey="위탁교육" stackId="1" stroke="hsl(var(--success))" fill="hsl(var(--success))" />
+                      <Area type="monotone" dataKey="상품판매" stackId="1" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -646,7 +646,7 @@ export default function InstituteStatsAndRevenue() {
                       <Line 
                         type="monotone" 
                         dataKey="total" 
-                        stroke="#8884d8" 
+                        stroke="hsl(var(--secondary))" 
                         activeDot={{ r: 8 }} 
                         name="총 수익"
                       />
@@ -666,7 +666,7 @@ export default function InstituteStatsAndRevenue() {
                 <div className="text-3xl font-bold mb-2">
                   {(revenueData.reduce((sum, item) => sum + item.강습료, 0) / 10000).toLocaleString()}만원
                 </div>
-                <div className="text-sm text-green-600 dark:text-green-400 flex items-center justify-center">
+                <div className="text-sm text-success dark:text-success flex items-center justify-center">
                   <ArrowUp className="h-3 w-3 mr-1" />
                   <span>12.3% 증가</span>
                 </div>
@@ -682,7 +682,7 @@ export default function InstituteStatsAndRevenue() {
                 <div className="text-3xl font-bold mb-2">
                   {(revenueData.reduce((sum, item) => sum + item.위탁교육, 0) / 10000).toLocaleString()}만원
                 </div>
-                <div className="text-sm text-green-600 dark:text-green-400 flex items-center justify-center">
+                <div className="text-sm text-success dark:text-success flex items-center justify-center">
                   <ArrowUp className="h-3 w-3 mr-1" />
                   <span>8.7% 증가</span>
                 </div>
@@ -698,7 +698,7 @@ export default function InstituteStatsAndRevenue() {
                 <div className="text-3xl font-bold mb-2">
                   {(revenueData.reduce((sum, item) => sum + item.상품판매, 0) / 10000).toLocaleString()}만원
                 </div>
-                <div className="text-sm text-green-600 dark:text-green-400 flex items-center justify-center">
+                <div className="text-sm text-success dark:text-success flex items-center justify-center">
                   <ArrowUp className="h-3 w-3 mr-1" />
                   <span>15.2% 증가</span>
                 </div>
@@ -795,8 +795,8 @@ export default function InstituteStatsAndRevenue() {
                         ]}
                       />
                       <Legend />
-                      <Bar dataKey="revenue" name="수익" fill="#8884d8" />
-                      <Bar dataKey="students" name="학생 수" fill="#82ca9d" />
+                      <Bar dataKey="revenue" name="수익" fill="hsl(var(--secondary))" />
+                      <Bar dataKey="students" name="학생 수" fill="hsl(var(--success))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -873,8 +873,8 @@ export default function InstituteStatsAndRevenue() {
                       <td className="text-right py-3 px-2">
                         <span className={`inline-flex items-center ${
                           trainer.revenueChange > 0 
-                            ? 'text-green-600 dark:text-green-400' 
-                            : 'text-red-600 dark:text-red-400'
+                            ? 'text-success dark:text-success' 
+                            : 'text-destructive dark:text-destructive'
                         }`}>
                           {trainer.revenueChange > 0 
                             ? <ArrowUp className="h-3 w-3 mr-1" /> 
@@ -928,8 +928,8 @@ export default function InstituteStatsAndRevenue() {
                         ]}
                       />
                       <Legend />
-                      <Bar dataKey="enrollments" name="등록 수" fill="#8884d8" />
-                      <Bar dataKey="rating" name="평점" fill="#82ca9d" />
+                      <Bar dataKey="enrollments" name="등록 수" fill="hsl(var(--secondary))" />
+                      <Bar dataKey="rating" name="평점" fill="hsl(var(--success))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -952,11 +952,11 @@ export default function InstituteStatsAndRevenue() {
                         cx="50%"
                         cy="50%"
                         outerRadius={80}
-                        fill="#8884d8"
+                        fill="hsl(var(--secondary))"
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       >
                         {popularCourses.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042'][index % 4]} />
+                          <Cell key={`cell-${index}`} fill={['hsl(var(--secondary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--primary))'][index % 4]} />
                         ))}
                       </Pie>
                       <Tooltip 
@@ -997,7 +997,7 @@ export default function InstituteStatsAndRevenue() {
                       <td className="text-center py-3 px-2">
                         <div className="flex items-center justify-center">
                           <span className="mr-1">{course.rating.toFixed(1)}</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-yellow-500">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-warning">
                             <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
                           </svg>
                         </div>
@@ -1039,7 +1039,7 @@ export default function InstituteStatsAndRevenue() {
                 <div className="text-3xl font-bold mb-2">
                   {Math.round(popularCourses.reduce((sum, item) => sum + item.enrollments, 0) / popularCourses.length)}명
                 </div>
-                <div className="text-sm text-green-600 dark:text-green-400 flex items-center justify-center">
+                <div className="text-sm text-success dark:text-success flex items-center justify-center">
                   <ArrowUp className="h-3 w-3 mr-1" />
                   <span>8.5% 증가</span>
                 </div>
@@ -1054,11 +1054,11 @@ export default function InstituteStatsAndRevenue() {
               <CardContent className="text-center">
                 <div className="text-3xl font-bold mb-2 flex items-center justify-center">
                   {(popularCourses.reduce((sum, item) => sum + item.rating, 0) / popularCourses.length).toFixed(1)}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-yellow-500 ml-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-warning ml-2">
                     <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <div className="text-sm text-green-600 dark:text-green-400 flex items-center justify-center">
+                <div className="text-sm text-success dark:text-success flex items-center justify-center">
                   <ArrowUp className="h-3 w-3 mr-1" />
                   <span>0.2 증가</span>
                 </div>
@@ -1074,7 +1074,7 @@ export default function InstituteStatsAndRevenue() {
                 <div className="text-3xl font-bold mb-2">
                   {Math.round(popularCourses.reduce((sum, item) => sum + item.revenue, 0) / popularCourses.length / 10000).toLocaleString()}만원
                 </div>
-                <div className="text-sm text-green-600 dark:text-green-400 flex items-center justify-center">
+                <div className="text-sm text-success dark:text-success flex items-center justify-center">
                   <ArrowUp className="h-3 w-3 mr-1" />
                   <span>10.3% 증가</span>
                 </div>

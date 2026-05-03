@@ -361,9 +361,9 @@ export default function LocationFinder() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />활성</Badge>;
+        return <Badge className="bg-success"><CheckCircle className="h-3 w-3 mr-1" />활성</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-500"><AlertCircle className="h-3 w-3 mr-1" />대기</Badge>;
+        return <Badge className="bg-warning"><AlertCircle className="h-3 w-3 mr-1" />대기</Badge>;
       case 'inactive':
         return <Badge variant="secondary"><X className="h-3 w-3 mr-1" />비활성</Badge>;
       default:
@@ -801,7 +801,7 @@ export default function LocationFinder() {
             <div className="flex gap-2">
               <Button 
                 onClick={() => setShowAdminDialog(true)}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-success hover:bg-success/90"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 업체 등록
@@ -844,7 +844,7 @@ export default function LocationFinder() {
                   <p className="text-sm text-gray-600">전체 업체</p>
                   <p className="text-2xl font-bold">{locations.length}</p>
                 </div>
-                <Building className="h-8 w-8 text-blue-600" />
+                <Building className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -853,11 +853,11 @@ export default function LocationFinder() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">활성 업체</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-2xl font-bold text-success">
                     {locations.filter(l => l.status === 'active').length}
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
+                <CheckCircle className="h-8 w-8 text-success" />
               </div>
             </CardContent>
           </Card>
@@ -866,11 +866,11 @@ export default function LocationFinder() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">승인 대기</p>
-                  <p className="text-2xl font-bold text-yellow-600">
+                  <p className="text-2xl font-bold text-warning">
                     {locations.filter(l => l.status === 'pending').length}
                   </p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-yellow-600" />
+                <AlertCircle className="h-8 w-8 text-warning" />
               </div>
             </CardContent>
           </Card>
@@ -946,7 +946,7 @@ export default function LocationFinder() {
         )}
         {searchTerm.trim() && searchResults.length > 0 && (
           <div className="col-span-full mb-4">
-            <p className="text-sm text-green-600 font-medium">
+            <p className="text-sm text-success font-medium">
               🔍 "{searchTerm}" 검색 결과 {searchResults.length}개 발견
             </p>
           </div>
@@ -962,7 +962,7 @@ export default function LocationFinder() {
               <div className="absolute top-3 right-3 flex gap-2">
                 {getStatusBadge(location.status)}
                 {location.isPartner && (
-                  <Badge className="bg-blue-600">파트너</Badge>
+                  <Badge className="bg-primary">파트너</Badge>
                 )}
               </div>
             </div>
@@ -993,7 +993,7 @@ export default function LocationFinder() {
                   <span>{location.operatingHours.open} - {location.operatingHours.close}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Star className="h-4 w-4 fill-warning text-warning" />
                   <span>{location.rating} ({location.reviewCount} 후기)</span>
                 </div>
               </div>
@@ -1042,7 +1042,7 @@ export default function LocationFinder() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive/90"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteLocation(location.id);
@@ -1087,7 +1087,7 @@ export default function LocationFinder() {
                 <span className="text-lg">{getTypeIcon(selectedLocation.type)}</span>
                 {selectedLocation.name}
                 {selectedLocation.isPartner && (
-                  <Badge className="bg-blue-600">파트너</Badge>
+                  <Badge className="bg-primary">파트너</Badge>
                 )}
               </DialogTitle>
             </DialogHeader>
@@ -1112,7 +1112,7 @@ export default function LocationFinder() {
                   <span>운영시간: {selectedLocation.operatingHours.open} - {selectedLocation.operatingHours.close}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Star className="h-4 w-4 fill-warning text-warning" />
                   <span>{selectedLocation.rating} ({selectedLocation.reviewCount} 후기)</span>
                 </div>
               </div>
@@ -1228,7 +1228,7 @@ export default function LocationFinder() {
                         <button
                           type="button"
                           onClick={() => setEditingLocation({...editingLocationItem, image: ''})}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                          className="absolute -top-2 -right-2 bg-destructive text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-destructive/90"
                         >
                           ✕
                         </button>
@@ -1273,7 +1273,7 @@ export default function LocationFinder() {
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                              className="absolute -top-2 -right-2 bg-destructive text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-destructive/90"
                             >
                               ✕
                             </button>
@@ -1287,7 +1287,7 @@ export default function LocationFinder() {
                   )}
                   
                   {uploadedImages.length >= 7 && (
-                    <p className="text-sm text-orange-600">
+                    <p className="text-sm text-primary">
                       최대 7개의 이미지만 업로드할 수 있습니다.
                     </p>
                   )}
@@ -1465,7 +1465,7 @@ export default function LocationFinder() {
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                              className="absolute -top-2 -right-2 bg-destructive text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-destructive/90"
                             >
                               ✕
                             </button>
@@ -1478,7 +1478,7 @@ export default function LocationFinder() {
                     )}
                     
                     {uploadedImages.length >= 7 && (
-                      <p className="text-sm text-orange-600">
+                      <p className="text-sm text-primary">
                         최대 7개의 이미지만 업로드할 수 있습니다.
                       </p>
                     )}

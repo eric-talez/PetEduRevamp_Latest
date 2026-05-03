@@ -319,13 +319,13 @@ export default function TrainerClasses() {
   const getStatusBadge = (status: string) => {
     switch(status) {
       case 'scheduled':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">예정됨</Badge>;
+        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">예정됨</Badge>;
       case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">완료됨</Badge>;
+        return <Badge variant="default" className="bg-success/10 text-success border-success/30">완료됨</Badge>;
       case 'cancelled':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">취소됨</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">취소됨</Badge>;
       case 'in-progress':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">진행 중</Badge>;
+        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">진행 중</Badge>;
       default:
         return <Badge variant="outline">미정</Badge>;
     }
@@ -431,7 +431,7 @@ export default function TrainerClasses() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Zoom 링크</p>
                     <a href={selectedSession.zoom_url} target="_blank" rel="noopener noreferrer" 
-                      className="text-base text-blue-600 hover:underline">
+                      className="text-base text-primary hover:underline">
                       {selectedSession.zoom_url}
                     </a>
                   </div>

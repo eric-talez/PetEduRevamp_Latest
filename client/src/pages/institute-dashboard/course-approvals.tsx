@@ -267,7 +267,7 @@ export default function InstituteCourseApprovals() {
           <TabsTrigger value="pending" className="relative">
             대기 중
             {pendingCourses.length > 0 && (
-              <Badge className="ml-2 bg-orange-500">{pendingCourses.length}</Badge>
+              <Badge className="ml-2 bg-primary">{pendingCourses.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="approved">승인됨</TabsTrigger>
@@ -308,7 +308,7 @@ export default function InstituteCourseApprovals() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={course.type === '1:1 상담' ? 'bg-blue-500' : 'bg-green-500'}>
+                        <Badge className={course.type === '1:1 상담' ? 'bg-primary' : 'bg-success'}>
                           {course.type}
                         </Badge>
                       </TableCell>
@@ -369,7 +369,7 @@ export default function InstituteCourseApprovals() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={course.type === '1:1 상담' ? 'bg-blue-500' : 'bg-green-500'}>
+                        <Badge className={course.type === '1:1 상담' ? 'bg-primary' : 'bg-success'}>
                           {course.type}
                         </Badge>
                       </TableCell>
@@ -430,7 +430,7 @@ export default function InstituteCourseApprovals() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={course.type === '1:1 상담' ? 'bg-blue-500' : 'bg-green-500'}>
+                        <Badge className={course.type === '1:1 상담' ? 'bg-primary' : 'bg-success'}>
                           {course.type}
                         </Badge>
                       </TableCell>
@@ -477,7 +477,7 @@ export default function InstituteCourseApprovals() {
                   <div className="grid grid-cols-[120px_1fr] gap-2">
                     <div className="font-medium">수업 유형</div>
                     <div>
-                      <Badge className={selectedCourse.type === '1:1 상담' ? 'bg-blue-500' : 'bg-green-500'}>
+                      <Badge className={selectedCourse.type === '1:1 상담' ? 'bg-primary' : 'bg-success'}>
                         {selectedCourse.type}
                       </Badge>
                     </div>

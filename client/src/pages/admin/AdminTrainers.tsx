@@ -144,11 +144,11 @@ export default function AdminTrainers() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">활성</Badge>;
+        return <Badge className="bg-success/10 text-success">활성</Badge>;
       case 'inactive':
         return <Badge className="bg-gray-100 text-gray-800">비활성</Badge>;
       case 'suspended':
-        return <Badge className="bg-red-100 text-red-800">정지</Badge>;
+        return <Badge className="bg-destructive/10 text-destructive">정지</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -157,7 +157,7 @@ export default function AdminTrainers() {
   const getRatingStars = (rating: number) => {
     return (
       <div className="flex items-center">
-        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+        <Star className="h-4 w-4 fill-warning text-warning" />
         <span className="ml-1 text-sm font-medium">{rating}</span>
       </div>
     );
@@ -462,7 +462,7 @@ export default function AdminTrainers() {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
+                    className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
                     onClick={() => {
                       const newName = prompt('훈련사 이름 수정:', trainer.name);
                       if (newName && newName !== trainer.name) {
@@ -475,7 +475,7 @@ export default function AdminTrainers() {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive/90"
                     onClick={() => {
                       if (confirm(`정말로 "${trainer.name}" 훈련사를 삭제하시겠습니까?`)) {
                         alert(`${trainer.name} 훈련사가 삭제되었습니다.`);
@@ -497,7 +497,7 @@ export default function AdminTrainers() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-yellow-500" />
+                <Trophy className="h-5 w-5 text-warning" />
                 훈련사 성과 순위
               </CardTitle>
             </CardHeader>
@@ -524,9 +524,9 @@ export default function AdminTrainers() {
                     .map((trainer: any, index: number) => (
                       <div key={trainer.id} className="grid grid-cols-7 gap-4 p-4 border-b last:border-b-0 hover:bg-muted/30">
                         <div className="flex items-center gap-2">
-                          {index === 0 && <Trophy className="h-5 w-5 text-yellow-500" />}
+                          {index === 0 && <Trophy className="h-5 w-5 text-warning" />}
                           {index === 1 && <Trophy className="h-5 w-5 text-gray-400" />}
-                          {index === 2 && <Trophy className="h-5 w-5 text-amber-600" />}
+                          {index === 2 && <Trophy className="h-5 w-5 text-warning" />}
                           <span className="font-bold">{index + 1}위</span>
                         </div>
                         <div>
@@ -537,7 +537,7 @@ export default function AdminTrainers() {
                         <div className="text-center">{trainer.coursesCompleted || 0}개</div>
                         <div className="text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            <Star className="h-4 w-4 text-warning fill-warning" />
                             {(trainer.rating || 0).toFixed(1)}
                           </div>
                         </div>
@@ -560,7 +560,7 @@ export default function AdminTrainers() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-blue-500" />
+                <MessageSquare className="h-5 w-5 text-primary" />
                 훈련사 리뷰 및 평가
               </CardTitle>
             </CardHeader>
@@ -571,12 +571,12 @@ export default function AdminTrainers() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-100 rounded-lg">
-                          <ThumbsUp className="h-5 w-5 text-green-600" />
+                        <div className="p-2 bg-success/10 rounded-lg">
+                          <ThumbsUp className="h-5 w-5 text-success" />
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">긍정 리뷰</p>
-                          <p className="text-xl font-bold text-green-600">85%</p>
+                          <p className="text-xl font-bold text-success">85%</p>
                         </div>
                       </div>
                     </CardContent>
@@ -584,12 +584,12 @@ export default function AdminTrainers() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-red-100 rounded-lg">
-                          <ThumbsDown className="h-5 w-5 text-red-600" />
+                        <div className="p-2 bg-destructive/10 rounded-lg">
+                          <ThumbsDown className="h-5 w-5 text-destructive" />
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">개선 필요</p>
-                          <p className="text-xl font-bold text-red-600">15%</p>
+                          <p className="text-xl font-bold text-destructive">15%</p>
                         </div>
                       </div>
                     </CardContent>
@@ -597,12 +597,12 @@ export default function AdminTrainers() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-yellow-100 rounded-lg">
-                          <Star className="h-5 w-5 text-yellow-600" />
+                        <div className="p-2 bg-warning/10 rounded-lg">
+                          <Star className="h-5 w-5 text-warning" />
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">전체 평균</p>
-                          <p className="text-xl font-bold text-yellow-600">
+                          <p className="text-xl font-bold text-warning">
                             {trainers.length > 0 ? (trainers.reduce((t: number, trainer: any) => t + (trainer.rating || 0), 0) / trainers.length).toFixed(1) : '0.0'}점
                           </p>
                         </div>
@@ -612,12 +612,12 @@ export default function AdminTrainers() {
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <MessageSquare className="h-5 w-5 text-blue-600" />
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <MessageSquare className="h-5 w-5 text-primary" />
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">총 리뷰 수</p>
-                          <p className="text-xl font-bold text-blue-600">
+                          <p className="text-xl font-bold text-primary">
                             {trainers.reduce((t: number, trainer: any) => t + (trainer.reviewsCount || 0), 0)}개
                           </p>
                         </div>
@@ -646,22 +646,22 @@ export default function AdminTrainers() {
                         </div>
                         <div className="text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            <Star className="h-4 w-4 text-warning fill-warning" />
                             {(trainer.rating || 0).toFixed(1)}
                           </div>
                         </div>
                         <div className="text-center">{trainer.reviewsCount || 0}개</div>
-                        <div className="text-center text-green-600">{positiveRate}%</div>
-                        <div className="text-center text-red-600">{100 - positiveRate}%</div>
+                        <div className="text-center text-success">{positiveRate}%</div>
+                        <div className="text-center text-destructive">{100 - positiveRate}%</div>
                         <div>
                           {(trainer.rating || 0) >= 4.5 ? (
-                            <Badge className="bg-green-100 text-green-700">우수</Badge>
+                            <Badge className="bg-success/10 text-success">우수</Badge>
                           ) : (trainer.rating || 0) >= 3.5 ? (
-                            <Badge className="bg-blue-100 text-blue-700">양호</Badge>
+                            <Badge className="bg-primary/10 text-primary">양호</Badge>
                           ) : (trainer.rating || 0) >= 2.5 ? (
-                            <Badge className="bg-yellow-100 text-yellow-700">보통</Badge>
+                            <Badge className="bg-warning/10 text-warning">보통</Badge>
                           ) : (
-                            <Badge className="bg-red-100 text-red-700">개선 필요</Badge>
+                            <Badge className="bg-destructive/10 text-destructive">개선 필요</Badge>
                           )}
                         </div>
                       </div>

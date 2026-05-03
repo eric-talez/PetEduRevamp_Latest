@@ -12,7 +12,7 @@ export default function InstituteTrainersPage() {
         <div className="mb-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">훈련사 목록</h2>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <button className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
               + 새 훈련사 추가
             </button>
           </div>
@@ -22,7 +22,7 @@ export default function InstituteTrainersPage() {
               <input
                 type="text"
                 placeholder="훈련사 검색..."
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white"
               />
               <svg
                 className="absolute right-3 top-3 h-4 w-4 text-gray-500 dark:text-gray-400"
@@ -39,13 +39,13 @@ export default function InstituteTrainersPage() {
               </svg>
             </div>
             <div className="flex space-x-2">
-              <select className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+              <select className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white">
                 <option>모든 전문분야</option>
                 <option>복종훈련</option>
                 <option>문제행동</option>
                 <option>어질리티</option>
               </select>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              <button className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                 필터 적용
               </button>
             </div>
@@ -65,7 +65,7 @@ export default function InstituteTrainersPage() {
                       <p className="text-sm text-gray-500 dark:text-gray-400">trainer{i}@example.com</p>
                     </div>
                     <div className="ml-auto">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      <span className="px-2 py-1 text-xs rounded-full bg-success/10 text-success dark:bg-success/20 dark:text-success/70">
                         활동중
                       </span>
                     </div>
@@ -82,7 +82,7 @@ export default function InstituteTrainersPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">평점:</span>
-                      <span className="text-sm font-medium text-yellow-500">★★★★★ (4.8)</span>
+                      <span className="text-sm font-medium text-warning">★★★★★ (4.8)</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">수강생:</span>
@@ -95,10 +95,10 @@ export default function InstituteTrainersPage() {
                   </div>
                   
                   <div className="flex space-x-2 mt-4">
-                    <button className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <button className="flex-1 px-3 py-2 bg-primary text-white text-sm rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                       상세 정보
                     </button>
-                    <button className="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    <button className="flex-1 px-3 py-2 bg-success text-white text-sm rounded-md hover:bg-success/90 focus:outline-none focus:ring-2 focus:ring-success focus:ring-offset-2">
                       수수료 관리
                     </button>
                   </div>
@@ -117,7 +117,7 @@ export default function InstituteTrainersPage() {
               <button className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md text-sm">
                 이전
               </button>
-              <button className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm">
+              <button className="px-3 py-1 bg-primary text-white rounded-md text-sm">
                 1
               </button>
               <button className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md text-sm">

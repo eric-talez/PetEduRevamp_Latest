@@ -210,7 +210,7 @@ const MyTrainersPage = () => {
                           trainerId={trainer.id}
                           fallbackRating={trainer.rating}
                           fallbackReviews={trainer.reviews}
-                          iconClassName="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1"
+                          iconClassName="h-4 w-4 fill-warning text-warning mr-1"
                           textClassName="text-sm font-medium text-gray-700 dark:text-gray-300"
                         />
                       </div>
@@ -229,7 +229,7 @@ const MyTrainersPage = () => {
                       </div>
                     </div>
                   </div>
-                  <Badge variant="default" className="bg-green-100 text-green-800">
+                  <Badge variant="default" className="bg-success/10 text-success">
                     활성
                   </Badge>
                 </div>
@@ -268,10 +268,10 @@ const MyTrainersPage = () => {
 
                 {/* 다음 세션 */}
                 {trainer.nextSession && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                  <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-lg">
                     <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      <Calendar className="h-4 w-4 mr-2 text-primary" />
+                      <span className="text-sm font-medium text-primary dark:text-primary/70">
                         다음 세션: {trainer.nextSession}
                       </span>
                     </div>
@@ -391,7 +391,7 @@ const MyTrainersPage = () => {
                         trainerId={selectedTrainer.id}
                         fallbackRating={selectedTrainer.rating}
                         fallbackReviews={selectedTrainer.reviews}
-                        iconClassName="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1"
+                        iconClassName="h-4 w-4 fill-warning text-warning mr-1"
                         textClassName="text-sm text-gray-700 dark:text-gray-300"
                       />
                     </div>
@@ -446,7 +446,7 @@ const MyTrainersPage = () => {
 
               {/* 예약 정보 요약 */}
               {selectedDate && selectedTime && (
-                <div className="p-4 bg-blue-50 rounded-lg">
+                <div className="p-4 bg-primary/10 rounded-lg">
                   <h4 className="font-medium mb-2">예약 정보</h4>
                   <div className="space-y-1 text-sm">
                     <p><span className="font-medium">훈련사:</span> {selectedTrainer?.name}</p>

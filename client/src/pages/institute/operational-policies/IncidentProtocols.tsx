@@ -22,10 +22,10 @@ interface IncidentProtocol {
 }
 
 const INCIDENT_TYPES: Record<string, { label: string; color: string; icon: string }> = {
-  bite: { label: '물림 사고', color: 'bg-red-100 text-red-800', icon: '🦷' },
-  dog_fight: { label: '타견 접촉 사고', color: 'bg-orange-100 text-orange-800', icon: '🐕' },
-  injury: { label: '부상/낙상', color: 'bg-yellow-100 text-yellow-800', icon: '🩹' },
-  escape: { label: '이탈/도주', color: 'bg-blue-100 text-blue-800', icon: '🏃' },
+  bite: { label: '물림 사고', color: 'bg-destructive/10 text-destructive', icon: '🦷' },
+  dog_fight: { label: '타견 접촉 사고', color: 'bg-primary/10 text-primary', icon: '🐕' },
+  injury: { label: '부상/낙상', color: 'bg-warning/10 text-warning', icon: '🩹' },
+  escape: { label: '이탈/도주', color: 'bg-primary/10 text-primary', icon: '🏃' },
   health_emergency: { label: '건강 응급', color: 'bg-primary/10 text-primary', icon: '🏥' },
   other: { label: '기타 사고', color: 'bg-gray-100 text-gray-800', icon: '⚠️' },
 };
@@ -141,7 +141,7 @@ export default function IncidentProtocols() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="w-7 h-7 text-orange-500" />
+          <AlertTriangle className="w-7 h-7 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">사고 처리 프로토콜</h1>
             <p className="text-gray-500 text-sm">사고 유형별 처리 절차 체크리스트</p>
@@ -191,7 +191,7 @@ export default function IncidentProtocols() {
             const allChecked = steps.length > 0 && checked.size === steps.length;
 
             return (
-              <Card key={protocol.id} className={allChecked ? 'border-green-300 bg-green-50/30' : ''}>
+              <Card key={protocol.id} className={allChecked ? 'border-success/40 bg-success/30' : ''}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -202,13 +202,13 @@ export default function IncidentProtocols() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {allChecked && <Badge className="bg-green-100 text-green-800">완료</Badge>}
+                      {allChecked && <Badge className="bg-success/10 text-success">완료</Badge>}
                       <span className="text-sm text-gray-500">{checked.size}/{steps.length}</span>
                       {isManager && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-500 hover:text-red-700"
+                          className="text-destructive hover:text-destructive/90"
                           onClick={() => deleteMutation.mutate(protocol.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -223,13 +223,13 @@ export default function IncidentProtocols() {
                       <div
                         key={i}
                         className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                          checked.has(i) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          checked.has(i) ? 'bg-success/10 dark:bg-success/20' : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                         onClick={() => toggleStep(protocol.id, i)}
                       >
                         <Checkbox checked={checked.has(i)} className="mt-0.5" />
                         <div className="flex-1">
-                          <span className={`text-sm font-medium mr-2 ${checked.has(i) ? 'text-green-600' : 'text-primary'}`}>
+                          <span className={`text-sm font-medium mr-2 ${checked.has(i) ? 'text-success' : 'text-primary'}`}>
                             Step {i + 1}.
                           </span>
                           <span className={`text-sm ${checked.has(i) ? 'line-through text-gray-400' : ''}`}>
@@ -323,7 +323,7 @@ function CreateProtocolForm({ instituteId, onSuccess }: { instituteId: number; o
             <div key={i} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
               <span className="text-sm font-medium text-primary min-w-[50px]">Step {i + 1}</span>
               <span className="text-sm flex-1">{step}</span>
-              <Button variant="ghost" size="sm" onClick={() => removeStep(i)} className="text-red-500 h-6 px-2">삭제</Button>
+              <Button variant="ghost" size="sm" onClick={() => removeStep(i)} className="text-destructive h-6 px-2">삭제</Button>
             </div>
           ))}
         </div>

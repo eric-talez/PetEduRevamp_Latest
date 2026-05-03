@@ -259,13 +259,13 @@ export default function AdminApprovals() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">대기중</Badge>;
+        return <Badge variant="secondary" className="bg-warning/10 text-warning">대기중</Badge>;
       case 'reviewing':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">검토중</Badge>;
+        return <Badge variant="secondary" className="bg-primary/10 text-primary">검토중</Badge>;
       case 'approved':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">승인됨</Badge>;
+        return <Badge variant="secondary" className="bg-success/10 text-success">승인됨</Badge>;
       case 'rejected':
-        return <Badge variant="secondary" className="bg-red-100 text-red-800">거부됨</Badge>;
+        return <Badge variant="secondary" className="bg-destructive/10 text-destructive">거부됨</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -287,7 +287,7 @@ export default function AdminApprovals() {
                 <p className="text-sm font-medium text-gray-600">전체 대기</p>
                 <p className="text-2xl font-bold">{approvals.filter(a => a.status === 'pending').length}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
+              <Clock className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -299,7 +299,7 @@ export default function AdminApprovals() {
                 <p className="text-sm font-medium text-gray-600">검토중</p>
                 <p className="text-2xl font-bold">{approvals.filter(a => a.status === 'reviewing').length}</p>
               </div>
-              <Eye className="h-8 w-8 text-blue-500" />
+              <Eye className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -311,7 +311,7 @@ export default function AdminApprovals() {
                 <p className="text-sm font-medium text-gray-600">승인됨</p>
                 <p className="text-2xl font-bold">{approvals.filter(a => a.status === 'approved').length}</p>
               </div>
-              <Check className="h-8 w-8 text-green-500" />
+              <Check className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -323,7 +323,7 @@ export default function AdminApprovals() {
                 <p className="text-sm font-medium text-gray-600">거부됨</p>
                 <p className="text-2xl font-bold">{approvals.filter(a => a.status === 'rejected').length}</p>
               </div>
-              <X className="h-8 w-8 text-red-500" />
+              <X className="h-8 w-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -420,7 +420,7 @@ export default function AdminApprovals() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="text-green-600 border-green-600 hover:bg-green-50"
+                          className="text-success border-success/50 hover:bg-success/10"
                           onClick={() => handleApprovalAction(approval.id, 'approve')}
                           disabled={isProcessing}
                         >
@@ -430,7 +430,7 @@ export default function AdminApprovals() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="text-red-600 border-red-600 hover:bg-red-50"
+                          className="text-destructive border-destructive/50 hover:bg-destructive/10"
                           onClick={() => handleApprovalAction(approval.id, 'reject')}
                           disabled={isProcessing}
                         >
@@ -546,14 +546,14 @@ export default function AdminApprovals() {
                     </Button>
                     <Button 
                       variant="outline"
-                      className="text-red-600 border-red-600 hover:bg-red-50"
+                      className="text-destructive border-destructive/50 hover:bg-destructive/10"
                       onClick={() => handleApprovalAction(selectedApproval.id, 'reject', reviewComment)}
                       disabled={isProcessing}
                     >
                       {isProcessing ? '처리중...' : '거부'}
                     </Button>
                     <Button 
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-success hover:bg-success/90"
                       onClick={() => handleApprovalAction(selectedApproval.id, 'approve', reviewComment)}
                       disabled={isProcessing}
                     >

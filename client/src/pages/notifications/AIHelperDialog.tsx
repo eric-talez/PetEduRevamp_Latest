@@ -100,7 +100,7 @@ export function AIHelperDialog({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            <Sparkles className="h-5 w-5 mr-2 text-blue-500" />
+            <Sparkles className="h-5 w-5 mr-2 text-primary" />
             AI 알림장 도우미
           </DialogTitle>
           <DialogDescription>
@@ -126,7 +126,7 @@ export function AIHelperDialog({
           {aiSuggestion && (
             <div className="mt-4">
               <Label>AI 생성 내용</Label>
-              <div className="border rounded-md p-4 bg-blue-50 dark:bg-blue-900/20 mt-2">
+              <div className="border rounded-md p-4 bg-primary/10 dark:bg-primary/20 mt-2">
                 <div className="whitespace-pre-wrap">{aiSuggestion}</div>
                 <div className="flex justify-end mt-4">
                   <Button 

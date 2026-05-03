@@ -67,7 +67,7 @@ export default function MyCourses() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <p className="text-red-500 mb-2">강의 목록을 불러오는 중 오류가 발생했습니다.</p>
+          <p className="text-destructive mb-2">강의 목록을 불러오는 중 오류가 발생했습니다.</p>
           <Button onClick={() => window.location.reload()}>
             다시 시도
           </Button>
@@ -204,7 +204,7 @@ export default function MyCourses() {
                 >
                   {course.completedDate && (
                     <div className="mt-3 flex items-center text-xs text-gray-600 dark:text-gray-400">
-                      <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                      <CheckCircle className="w-3 h-3 mr-1 text-success" />
                       <span>완료일: {course.completedDate}</span>
                     </div>
                   )}

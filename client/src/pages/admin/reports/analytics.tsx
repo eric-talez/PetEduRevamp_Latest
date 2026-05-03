@@ -104,7 +104,7 @@ export default function AnalyticsReportPage() {
           <CardContent>
             <div className="text-2xl font-bold">12,483명</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+5.2%</span> 전월 대비
+              <span className="text-success">+5.2%</span> 전월 대비
             </p>
             <div className="mt-4 h-1 w-full bg-secondary">
               <div className="h-1 bg-primary" style={{ width: '75%' }} />
@@ -120,7 +120,7 @@ export default function AnalyticsReportPage() {
           <CardContent>
             <div className="text-2xl font-bold">127개</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+2.8%</span> 전월 대비
+              <span className="text-success">+2.8%</span> 전월 대비
             </p>
             <div className="mt-4 h-1 w-full bg-secondary">
               <div className="h-1 bg-primary" style={{ width: '65%' }} />
@@ -136,7 +136,7 @@ export default function AnalyticsReportPage() {
           <CardContent>
             <div className="text-2xl font-bold">542명</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+8.7%</span> 전월 대비
+              <span className="text-success">+8.7%</span> 전월 대비
             </p>
             <div className="mt-4 h-1 w-full bg-secondary">
               <div className="h-1 bg-primary" style={{ width: '82%' }} />
@@ -152,7 +152,7 @@ export default function AnalyticsReportPage() {
           <CardContent>
             <div className="text-2xl font-bold">1,872개</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+12.4%</span> 전월 대비
+              <span className="text-success">+12.4%</span> 전월 대비
             </p>
             <div className="mt-4 h-1 w-full bg-secondary">
               <div className="h-1 bg-primary" style={{ width: '88%' }} />
@@ -282,12 +282,12 @@ export default function AnalyticsReportPage() {
                 <p className="text-sm text-center text-muted-foreground">사용자 역할 분포 차트가 표시됩니다.</p>
                 <div className="mt-4 w-full space-y-2">
                   <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                    <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
                     <span className="text-sm flex-1">반려인</span>
                     <span className="text-sm font-medium">78%</span>
                   </div>
                   <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <div className="w-3 h-3 rounded-full bg-success mr-2"></div>
                     <span className="text-sm flex-1">훈련사</span>
                     <span className="text-sm font-medium">12%</span>
                   </div>
@@ -297,7 +297,7 @@ export default function AnalyticsReportPage() {
                     <span className="text-sm font-medium">8%</span>
                   </div>
                   <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
+                    <div className="w-3 h-3 rounded-full bg-warning mr-2"></div>
                     <span className="text-sm flex-1">기타</span>
                     <span className="text-sm font-medium">2%</span>
                   </div>

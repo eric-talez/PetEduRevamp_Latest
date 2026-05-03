@@ -307,7 +307,7 @@ export default function EventCalendarPage() {
         key={`current-${day}`}
         className={`
           h-24 border rounded-md p-1 cursor-pointer transition-colors
-          ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : ''}
+          ${isToday ? 'bg-primary/10 dark:bg-primary/20 border-primary/30 dark:border-primary/50' : ''}
           ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}
           ${hasEvent ? 'border-primary/40 dark:border-primary/40' : 'border-gray-200 dark:border-gray-700'}
           hover:bg-gray-50 dark:hover:bg-gray-800/50
@@ -316,7 +316,7 @@ export default function EventCalendarPage() {
       >
         <div className={`
           text-right text-sm font-medium
-          ${isToday ? 'text-blue-600 dark:text-blue-400' : ''}
+          ${isToday ? 'text-primary dark:text-primary' : ''}
         `}>
           {day}
         </div>

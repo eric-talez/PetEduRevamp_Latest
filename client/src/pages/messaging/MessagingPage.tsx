@@ -38,7 +38,7 @@ function MessagingContent() {
                  activeConversation.userRole === 'admin' ? '관리자' : '반려동물 보호자'}
               </div>
               {activeConversation.isOnline && (
-                <div className="ml-2 text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                <div className="ml-2 text-xs px-2 py-1 rounded-full bg-success/10 dark:bg-success/20 text-success dark:text-success/70">
                   온라인
                 </div>
               )}

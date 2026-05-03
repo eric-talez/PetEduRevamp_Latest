@@ -76,7 +76,7 @@ export default function MyCoursesPage() {
                   </div>
 
                   {item.absenceWarning && (
-                    <div className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 p-2 text-xs text-red-700">
+                    <div className="flex items-start gap-2 rounded-md bg-destructive/10 border border-destructive/30 p-2 text-xs text-destructive">
                       <AlertTriangle className="w-4 h-4 mt-0.5" />
                       <span>결석률 {item.absenceRate}% — 학습 일정을 확인해주세요.</span>
                     </div>

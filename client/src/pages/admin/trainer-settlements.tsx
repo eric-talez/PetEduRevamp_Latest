@@ -59,11 +59,11 @@ interface CloseResult { success: boolean; data?: { closed?: number } }
 interface BackfillResult { success: boolean; data?: { created?: number } }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  pending: { label: '예정', color: 'bg-yellow-100 text-yellow-800' },
-  confirmed: { label: '확정', color: 'bg-blue-100 text-blue-800' },
+  pending: { label: '예정', color: 'bg-warning/10 text-warning' },
+  confirmed: { label: '확정', color: 'bg-primary/10 text-primary' },
   locked: { label: '마감', color: 'bg-primary/10 text-primary' },
-  paid: { label: '지급완료', color: 'bg-green-100 text-green-800' },
-  canceled: { label: '취소', color: 'bg-red-100 text-red-800' },
+  paid: { label: '지급완료', color: 'bg-success/10 text-success' },
+  canceled: { label: '취소', color: 'bg-destructive/10 text-destructive' },
 };
 
 const monthOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -204,7 +204,7 @@ export default function AdminTrainerSettlementsPage() {
                       </TableCell>
                       <TableCell className="text-right">{r.itemCount}건</TableCell>
                       <TableCell className="text-right">{Number(r.totalGross).toLocaleString()}원</TableCell>
-                      <TableCell className="text-right text-red-600">{Number(r.totalFee).toLocaleString()}원</TableCell>
+                      <TableCell className="text-right text-destructive">{Number(r.totalFee).toLocaleString()}원</TableCell>
                       <TableCell className="text-right font-semibold">{Number(r.totalNet).toLocaleString()}원</TableCell>
                       <TableCell>
                         <span className="text-xs text-muted-foreground">예정 {r.pendingCount} / 마감 {r.lockedCount}</span>
@@ -266,7 +266,7 @@ export default function AdminTrainerSettlementsPage() {
                       <TableCell><Badge variant="outline">{it.sourceType}</Badge></TableCell>
                       <TableCell>{it.sourceName || `#${it.sourceId}`}</TableCell>
                       <TableCell className="text-right">{Number(it.grossAmount).toLocaleString()}원</TableCell>
-                      <TableCell className="text-right text-red-600">{Number(it.platformFee).toLocaleString()}원 ({Number(it.commissionRate)}%)</TableCell>
+                      <TableCell className="text-right text-destructive">{Number(it.platformFee).toLocaleString()}원 ({Number(it.commissionRate)}%)</TableCell>
                       <TableCell className="text-right font-semibold">{Number(it.netAmount).toLocaleString()}원</TableCell>
                       <TableCell><Badge className={STATUS_LABEL[it.status]?.color}>{STATUS_LABEL[it.status]?.label || it.status}</Badge></TableCell>
                       <TableCell>
@@ -391,7 +391,7 @@ function CommissionRatesPanel({ rates }: { rates: RateRow[] }) {
                 <TableCell className="text-right font-semibold">{Number(r.ratePercent)}%</TableCell>
                 <TableCell>{r.description || '-'}</TableCell>
                 <TableCell>
-                  {r.isActive ? <Badge className="bg-green-100 text-green-800"><CheckCircle2 className="h-3 w-3 mr-1" />활성</Badge> : <Badge variant="outline">비활성</Badge>}
+                  {r.isActive ? <Badge className="bg-success/10 text-success"><CheckCircle2 className="h-3 w-3 mr-1" />활성</Badge> : <Badge variant="outline">비활성</Badge>}
                 </TableCell>
                 <TableCell>
                   <Button size="sm" variant="ghost" onClick={() => remove.mutate(r.id)}>

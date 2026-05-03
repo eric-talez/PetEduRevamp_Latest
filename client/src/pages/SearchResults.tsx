@@ -175,7 +175,7 @@ export default function SearchResults() {
           <div className="mb-6">
             <p className="text-gray-600">
               <span className="font-semibold text-primary">"{searchQuery}"</span>에 대한 
-              <span className="font-semibold text-green-600 ml-1">{totalResults}개</span>의 결과
+              <span className="font-semibold text-success ml-1">{totalResults}개</span>의 결과
             </p>
           </div>
         )}
@@ -199,7 +199,7 @@ export default function SearchResults() {
                     </div>
                     {result.rating && (
                       <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <Star className="w-4 h-4 fill-warning text-warning" />
                         <span className="text-sm font-medium">{result.rating}</span>
                       </div>
                     )}

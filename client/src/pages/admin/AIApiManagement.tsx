@@ -170,7 +170,7 @@ export default function AIApiManagement() {
     
     if (status.available) {
       return (
-        <Badge className="bg-green-100 text-green-800">
+        <Badge className="bg-success/10 text-success">
           <CheckCircle className="w-3 h-3 mr-1" />
           정상 {status.latency && `(${status.latency}ms)`}
         </Badge>
@@ -191,7 +191,7 @@ export default function AIApiManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Bot className="h-6 w-6 text-blue-600" />
+            <Bot className="h-6 w-6 text-primary" />
             AI API 관리
           </h1>
           <p className="text-muted-foreground">
@@ -226,8 +226,8 @@ export default function AIApiManagement() {
             <div className="grid md:grid-cols-4 gap-4">
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Bot className="h-5 w-5 text-green-600" />
+                  <div className="p-2 bg-success/10 rounded-lg">
+                    <Bot className="h-5 w-5 text-success" />
                   </div>
                   <div>
                     <h3 className="font-medium">OpenAI</h3>
@@ -239,8 +239,8 @@ export default function AIApiManagement() {
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Bot className="h-5 w-5 text-orange-600" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Bot className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-medium">Claude</h3>
@@ -252,8 +252,8 @@ export default function AIApiManagement() {
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Bot className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Bot className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-medium">Google Gemini</h3>
@@ -286,7 +286,7 @@ export default function AIApiManagement() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-yellow-500" />
+                <Zap className="h-4 w-4 text-warning" />
                 <span className="text-sm font-medium">총 요청</span>
               </div>
               <p className="text-2xl font-bold mt-1">{(usageStats as any)?.totalRequests?.toLocaleString() || 0}</p>
@@ -296,7 +296,7 @@ export default function AIApiManagement() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-500" />
+                <DollarSign className="h-4 w-4 text-success" />
                 <span className="text-sm font-medium">총 비용</span>
               </div>
               <p className="text-2xl font-bold mt-1">${(usageStats as any)?.totalCost?.toFixed(2) || '0.00'}</p>
@@ -306,7 +306,7 @@ export default function AIApiManagement() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-500" />
+                <Clock className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">월간 사용량</span>
               </div>
               <p className="text-2xl font-bold mt-1">{(usageStats as any)?.monthlyUsage || 0}</p>

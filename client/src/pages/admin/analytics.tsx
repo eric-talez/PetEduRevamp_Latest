@@ -109,7 +109,7 @@ const petBreedData = [
   { name: '기타', value: 300 }
 ];
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF6B6B'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--destructive))'];
 
 // 심층 분석 컴포넌트
 const AnalyticsPage = () => {
@@ -181,7 +181,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">2,456명</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전년 대비 12% 증가</span>
                 </div>
@@ -193,7 +193,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">1,789명</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 8% 증가</span>
                 </div>
@@ -205,7 +205,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">4.2%</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowDownIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 1.2% 감소</span>
                 </div>
@@ -235,9 +235,9 @@ const AnalyticsPage = () => {
                       labelFormatter={(label) => `${label} 사용자 통계`}
                     />
                     <Legend />
-                    <Area type="monotone" dataKey="신규회원" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                    <Area type="monotone" dataKey="활성회원" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-                    <Area type="monotone" dataKey="휴면회원" stackId="1" stroke="#ffc658" fill="#ffc658" />
+                    <Area type="monotone" dataKey="신규회원" stackId="1" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" />
+                    <Area type="monotone" dataKey="활성회원" stackId="1" stroke="hsl(var(--success))" fill="hsl(var(--success))" />
+                    <Area type="monotone" dataKey="휴면회원" stackId="1" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -266,7 +266,7 @@ const AnalyticsPage = () => {
                         labelLine={false}
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
-                        fill="#8884d8"
+                        fill="hsl(var(--secondary))"
                         dataKey="value"
                       >
                         {petBreedData.map((entry, index) => (
@@ -305,7 +305,7 @@ const AnalyticsPage = () => {
                       <YAxis dataKey="name" type="category" />
                       <Tooltip formatter={(value) => `${value}명`} />
                       <Legend />
-                      <Bar dataKey="사용자수" fill="#8884d8" />
+                      <Bar dataKey="사용자수" fill="hsl(var(--secondary))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -357,7 +357,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">7,895회</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전년 대비 15% 증가</span>
                 </div>
@@ -369,7 +369,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">45분</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 5분 증가</span>
                 </div>
@@ -381,7 +381,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">89.5%</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 2.3% 증가</span>
                 </div>
@@ -411,9 +411,9 @@ const AnalyticsPage = () => {
                       labelFormatter={(label) => `${label} 훈련 통계`}
                     />
                     <Legend />
-                    <Bar dataKey="개인훈련" fill="#8884d8" />
-                    <Bar dataKey="단체훈련" fill="#82ca9d" />
-                    <Bar dataKey="온라인훈련" fill="#ffc658" />
+                    <Bar dataKey="개인훈련" fill="hsl(var(--secondary))" />
+                    <Bar dataKey="단체훈련" fill="hsl(var(--success))" />
+                    <Bar dataKey="온라인훈련" fill="hsl(var(--warning))" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -437,7 +437,7 @@ const AnalyticsPage = () => {
                         labelLine={false}
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
-                        fill="#8884d8"
+                        fill="hsl(var(--secondary))"
                         dataKey="value"
                       >
                         {petBreedData.map((entry, index) => (
@@ -470,8 +470,8 @@ const AnalyticsPage = () => {
                       <PolarGrid />
                       <PolarAngleAxis dataKey="subject" />
                       <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                      <Radar name="전문 훈련사" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                      <Radar name="반려인 훈련" dataKey="B" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
+                      <Radar name="전문 훈련사" dataKey="A" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" fillOpacity={0.6} />
+                      <Radar name="반려인 훈련" dataKey="B" stroke="hsl(var(--success))" fill="hsl(var(--success))" fillOpacity={0.6} />
                       <Legend />
                       <Tooltip formatter={(value) => `${value}%`} />
                     </RadarChart>
@@ -525,7 +525,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">₩324,567,000</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전년 대비 18% 증가</span>
                 </div>
@@ -537,7 +537,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">₩75,000</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 5% 증가</span>
                 </div>
@@ -549,7 +549,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">₩125,000/월</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 7.5% 증가</span>
                 </div>
@@ -579,10 +579,10 @@ const AnalyticsPage = () => {
                       labelFormatter={(label) => `${label} 수익 요약`}
                     />
                     <Legend />
-                    <Area type="monotone" dataKey="상품판매" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                    <Area type="monotone" dataKey="수업료" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-                    <Area type="monotone" dataKey="멤버십" stackId="1" stroke="#ffc658" fill="#ffc658" />
-                    <Area type="monotone" dataKey="광고" stackId="1" stroke="#ff8042" fill="#ff8042" />
+                    <Area type="monotone" dataKey="상품판매" stackId="1" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" />
+                    <Area type="monotone" dataKey="수업료" stackId="1" stroke="hsl(var(--success))" fill="hsl(var(--success))" />
+                    <Area type="monotone" dataKey="멤버십" stackId="1" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" />
+                    <Area type="monotone" dataKey="광고" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -613,7 +613,7 @@ const AnalyticsPage = () => {
                         labelLine={false}
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
-                        fill="#8884d8"
+                        fill="hsl(var(--secondary))"
                         dataKey="value"
                       >
                         {petBreedData.map((entry, index) => (
@@ -651,7 +651,7 @@ const AnalyticsPage = () => {
                       <YAxis dataKey="name" type="category" />
                       <Tooltip formatter={(value) => `₩${value}백만`} />
                       <Legend />
-                      <Bar dataKey="수익" fill="#8884d8" />
+                      <Bar dataKey="수익" fill="hsl(var(--secondary))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -703,7 +703,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">385,792회</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 12% 증가</span>
                 </div>
@@ -715,7 +715,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">12분 35초</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 2분 증가</span>
                 </div>
@@ -727,7 +727,7 @@ const AnalyticsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">72.5%</div>
-                <div className="flex items-center text-xs text-green-500 mt-1">
+                <div className="flex items-center text-xs text-success mt-1">
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                   <span>전월 대비 3.2% 증가</span>
                 </div>
@@ -773,9 +773,9 @@ const AnalyticsPage = () => {
                       labelFormatter={(label) => `${label} 활동 통계`}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="방문자수" stroke="#8884d8" activeDot={{ r: 8 }} />
-                    <Line type="monotone" dataKey="세션수" stroke="#82ca9d" />
-                    <Line type="monotone" dataKey="게시글수" stroke="#ffc658" />
+                    <Line type="monotone" dataKey="방문자수" stroke="hsl(var(--secondary))" activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey="세션수" stroke="hsl(var(--success))" />
+                    <Line type="monotone" dataKey="게시글수" stroke="hsl(var(--warning))" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -806,7 +806,7 @@ const AnalyticsPage = () => {
                       <XAxis type="number" />
                       <YAxis dataKey="name" type="category" width={150} />
                       <Tooltip formatter={(value) => `${value.toLocaleString()}회`} />
-                      <Bar dataKey="views" fill="#8884d8" />
+                      <Bar dataKey="views" fill="hsl(var(--secondary))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -825,8 +825,8 @@ const AnalyticsPage = () => {
                       <PolarGrid />
                       <PolarAngleAxis dataKey="subject" />
                       <PolarRadiusAxis />
-                      <Radar name="2024년" dataKey="B" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-                      <Radar name="2025년" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                      <Radar name="2024년" dataKey="B" stroke="hsl(var(--success))" fill="hsl(var(--success))" fillOpacity={0.6} />
+                      <Radar name="2025년" dataKey="A" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" fillOpacity={0.6} />
                       <Legend />
                       <Tooltip />
                     </RadarChart>

@@ -354,7 +354,7 @@ const VideoLecturePlayer: React.FC = () => {
                         <span>{currentLecture.studentCount.toLocaleString()}명 수강</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-400" />
+                        <Star className="w-4 h-4 text-warning" />
                         <span>{currentLecture.rating}</span>
                         <span>({currentLecture.reviewCount})</span>
                       </div>
@@ -436,7 +436,7 @@ const VideoLecturePlayer: React.FC = () => {
                     <div
                       key={module.id}
                       className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                        currentModule.id === module.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                        currentModule.id === module.id ? 'bg-primary/10 border-l-4 border-l-blue-500' : ''
                       }`}
                       onClick={() => handleModuleSelect(module)}
                     >
@@ -496,7 +496,7 @@ const VideoLecturePlayer: React.FC = () => {
                             {formatDuration(video.duration)}
                           </div>
                           {!video.isPurchased && video.price && (
-                            <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
                               ₩{video.price.toLocaleString()}
                             </div>
                           )}
@@ -512,7 +512,7 @@ const VideoLecturePlayer: React.FC = () => {
                             <span>{video.viewCount.toLocaleString()}회 시청</span>
                             <span>•</span>
                             <div className="flex items-center gap-1">
-                              <Star className="w-3 h-3 text-yellow-400" />
+                              <Star className="w-3 h-3 text-warning" />
                               <span>{video.rating}</span>
                             </div>
                           </div>

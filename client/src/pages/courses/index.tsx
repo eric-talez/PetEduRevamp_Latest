@@ -284,7 +284,7 @@ export default function Courses(props?: CoursesPageProps) {
       case 'beginner':
         return <Badge variant="success">초급</Badge>;
       case 'intermediate':
-        return <Badge className="bg-blue-500 text-white">중급</Badge>;
+        return <Badge className="bg-primary text-white">중급</Badge>;
       case 'advanced':
         return <Badge variant="danger">고급</Badge>;
       default:
@@ -505,7 +505,7 @@ export default function Courses(props?: CoursesPageProps) {
               </div>
               {minRating > 0 && (
                 <div className="flex items-center text-xs text-gray-500">
-                  <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 mr-1" />
+                  <Star className="h-3 w-3 text-warning fill-warning mr-1" />
                   {minRating}점 이상
                 </div>
               )}
@@ -584,7 +584,7 @@ export default function Courses(props?: CoursesPageProps) {
                         if (parent) {
                           parent.className += ' bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center';
                           parent.innerHTML += course.hasAnyVideo 
-                            ? '<div class="w-16 h-16 text-green-500"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>'
+                            ? '<div class="w-16 h-16 text-success"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>'
                             : '<div class="w-16 h-16 text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>';
                         }
                       }}
@@ -592,7 +592,7 @@ export default function Courses(props?: CoursesPageProps) {
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                       {course.hasAnyVideo ? (
-                        <Video className="w-16 h-16 text-green-500" />
+                        <Video className="w-16 h-16 text-success" />
                       ) : (
                         <BookOpen className="w-16 h-16 text-primary" />
                       )}
@@ -603,7 +603,7 @@ export default function Courses(props?: CoursesPageProps) {
                     발행됨
                   </Badge>
                   {course.hasAnyVideo && (
-                    <Badge className="absolute top-2 left-2 bg-green-500 text-white">
+                    <Badge className="absolute top-2 left-2 bg-success text-white">
                       <Video className="w-3 h-3 mr-1" />
                       영상 {course.totalVideos}개
                     </Badge>
@@ -613,7 +613,7 @@ export default function Courses(props?: CoursesPageProps) {
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">{course.title}</h3>
 
                   <div className="flex items-center mb-2">
-                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-warning fill-warning" />
                     <span className="text-sm text-gray-700 dark:text-gray-300 ml-1 mr-2">
                       {course.averageRating || 0}
                     </span>
@@ -648,7 +648,7 @@ export default function Courses(props?: CoursesPageProps) {
                     {course.hasAnyVideo && (
                       <>
                         <span className="mx-2">•</span>
-                        <span className="text-green-600 font-medium">
+                        <span className="text-success font-medium">
                           <Video className="w-3 h-3 inline mr-1" />
                           영상 {course.modulesWithVideoCount}/{course.modules.length}
                         </span>
@@ -701,7 +701,7 @@ export default function Courses(props?: CoursesPageProps) {
                     ) : (
                       <div className="w-full h-full min-h-[100px] bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                         {course.hasAnyVideo ? (
-                          <Video className="w-12 h-12 text-green-500" />
+                          <Video className="w-12 h-12 text-success" />
                         ) : (
                           <BookOpen className="w-12 h-12 text-primary" />
                         )}
@@ -711,7 +711,7 @@ export default function Courses(props?: CoursesPageProps) {
                       발행됨
                     </Badge>
                     {course.hasAnyVideo && (
-                      <Badge className="absolute bottom-2 left-2 bg-green-500 text-white text-xs">
+                      <Badge className="absolute bottom-2 left-2 bg-success text-white text-xs">
                         <Video className="w-3 h-3 mr-1" />
                         영상 {course.totalVideos}개
                       </Badge>
@@ -725,7 +725,7 @@ export default function Courses(props?: CoursesPageProps) {
                         <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">{course.title}</h3>
                         <div className="flex items-center gap-2 flex-wrap">
                           <div className="flex items-center">
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            <Star className="h-4 w-4 text-warning fill-warning" />
                             <span className="text-sm text-gray-700 dark:text-gray-300 ml-1">
                               {course.averageRating || 0}
                             </span>
@@ -756,7 +756,7 @@ export default function Courses(props?: CoursesPageProps) {
                         <span>{Math.floor(course.duration / 60)}시간 {course.duration % 60}분</span>
                         <span>{course.modules.length}개 모듈</span>
                         {course.hasAnyVideo && (
-                          <span className="text-green-600 font-medium">
+                          <span className="text-success font-medium">
                             <Video className="w-3 h-3 inline mr-1" />
                             영상 {course.modulesWithVideoCount}/{course.modules.length}
                           </span>
@@ -951,17 +951,17 @@ export default function Courses(props?: CoursesPageProps) {
                             {/* 영상 정보 */}
                             <div className="mt-3">
                               {module.hasVideo ? (
-                                <div className="flex items-center justify-between gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                                <div className="flex items-center justify-between gap-2 p-3 bg-success/10 rounded-lg border border-success/30">
                                   <div className="flex items-center gap-2">
-                                    <Video className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm font-medium text-green-700">
+                                    <Video className="w-4 h-4 text-success" />
+                                    <span className="text-sm font-medium text-success">
                                       영상 강의 {module.videoCount}개 업로드됨
                                     </span>
                                   </div>
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="bg-green-500 text-white border-green-500 hover:bg-green-600"
+                                    className="bg-success text-white border-success/50 hover:bg-success/90"
                                     onClick={() => handlePlayVideo(module)}
                                   >
                                     <Play className="w-3 h-3 mr-1" />
@@ -1140,7 +1140,7 @@ export default function Courses(props?: CoursesPageProps) {
                     <div className="text-3xl font-bold text-primary mb-1">
                       {selectedProduct.price.toLocaleString()}원
                     </div>
-                    <div className="text-sm text-green-600">
+                    <div className="text-sm text-success">
                       {selectedProduct.inStock ? '재고 있음' : '품절'}
                     </div>
                   </div>
@@ -1149,7 +1149,7 @@ export default function Courses(props?: CoursesPageProps) {
                 {/* 평점 및 리뷰 */}
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="w-4 h-4 text-warning fill-warning" />
                     <span className="font-medium">{selectedProduct.rating}</span>
                   </div>
                   <div className="text-sm text-gray-600">

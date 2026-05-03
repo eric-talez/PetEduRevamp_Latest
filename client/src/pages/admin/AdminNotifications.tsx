@@ -255,13 +255,13 @@ export default function AdminNotifications() {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'system':
-        return <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+        return <Bell className="h-5 w-5 text-primary dark:text-primary" />;
       case 'security':
-        return <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />;
+        return <Shield className="h-5 w-5 text-success dark:text-success" />;
       case 'database':
         return <Database className="h-5 w-5 text-primary dark:text-primary" />;
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />;
+        return <AlertTriangle className="h-5 w-5 text-warning dark:text-warning" />;
       case 'user':
         return <Bell className="h-5 w-5 text-secondary-foreground dark:text-secondary-foreground" />;
       default:
@@ -273,13 +273,13 @@ export default function AdminNotifications() {
   const getNotificationBadge = (type: string) => {
     switch (type) {
       case 'system':
-        return <Badge className="bg-blue-500">시스템</Badge>;
+        return <Badge className="bg-primary">시스템</Badge>;
       case 'security':
-        return <Badge className="bg-green-500">보안</Badge>;
+        return <Badge className="bg-success">보안</Badge>;
       case 'database':
         return <Badge className="bg-primary/50">데이터베이스</Badge>;
       case 'warning':
-        return <Badge className="bg-amber-500">경고</Badge>;
+        return <Badge className="bg-warning">경고</Badge>;
       case 'user':
         return <Badge className="bg-secondary/100">사용자</Badge>;
       default:
@@ -291,11 +291,11 @@ export default function AdminNotifications() {
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high':
-        return <Badge variant="outline" className="border-red-500 text-red-500">높음</Badge>;
+        return <Badge variant="outline" className="border-destructive/50 text-destructive">높음</Badge>;
       case 'medium':
-        return <Badge variant="outline" className="border-amber-500 text-amber-500">중간</Badge>;
+        return <Badge variant="outline" className="border-warning/50 text-warning">중간</Badge>;
       case 'low':
-        return <Badge variant="outline" className="border-green-500 text-green-500">낮음</Badge>;
+        return <Badge variant="outline" className="border-success/50 text-success">낮음</Badge>;
       default:
         return <Badge variant="outline">{priority}</Badge>;
     }
@@ -538,7 +538,7 @@ export default function AdminNotifications() {
                         </div>
                         <div className="w-24 text-right">
                           {notification.status === 'unread' ? (
-                            <Badge variant="default" className="bg-blue-500">읽지 않음</Badge>
+                            <Badge variant="default" className="bg-primary">읽지 않음</Badge>
                           ) : (
                             <Badge variant="outline">읽음</Badge>
                           )}
@@ -581,7 +581,7 @@ export default function AdminNotifications() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteNotification(notification.id)}
-                                className="text-red-500 focus:text-red-500"
+                                className="text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 삭제
@@ -678,7 +678,7 @@ export default function AdminNotifications() {
                           </p>
                         </div>
                         <div className="w-24 text-right">
-                          <Badge variant="default" className="bg-blue-500">읽지 않음</Badge>
+                          <Badge variant="default" className="bg-primary">읽지 않음</Badge>
                         </div>
                         <div className="w-32 text-right text-sm text-muted-foreground">
                           {new Date(notification.createdAt).toLocaleString()}
@@ -706,7 +706,7 @@ export default function AdminNotifications() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteNotification(notification.id)}
-                                className="text-red-500 focus:text-red-500"
+                                className="text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 삭제
@@ -797,7 +797,7 @@ export default function AdminNotifications() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteNotification(notification.id)}
-                                className="text-red-500 focus:text-red-500"
+                                className="text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 삭제

@@ -87,7 +87,7 @@ export default function QrCodeManagement() {
     if (!ctx) return;
     const img = new Image();
     img.onload = () => {
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = "hsl(var(--background))";
       ctx.fillRect(0, 0, 300, 300);
       ctx.drawImage(img, 0, 0, 300, 300);
       const link = document.createElement("a");
@@ -108,7 +108,7 @@ export default function QrCodeManagement() {
       <!DOCTYPE html>
       <html><head><title>QR 코드 - ${label}</title>
       <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;}
-      h2{margin-bottom:8px;}p{color:#666;font-size:14px;}</style></head>
+      h2{margin-bottom:8px;}p{color:hsl(var(--muted-foreground));font-size:14px;}</style></head>
       <body><h2>${label}</h2><div>${svgData}</div>
       <p>${getCheckinUrl(token)}</p>
       <script>window.onload=()=>{window.print();window.close();}<\/script></body></html>
@@ -242,7 +242,7 @@ export default function QrCodeManagement() {
                     <Button size="sm" variant="ghost" title="이름 수정" onClick={() => { setEditingId(qr.id); setEditLabel(qr.label ?? ""); }}>
                       <Edit2 className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" variant="ghost" className="text-red-500" title="삭제" onClick={() => {
+                    <Button size="sm" variant="ghost" className="text-destructive" title="삭제" onClick={() => {
                       if (confirm("이 QR 코드를 삭제하시겠습니까?")) deleteMutation.mutate(qr.id);
                     }}>
                       <Trash2 className="w-4 h-4" />

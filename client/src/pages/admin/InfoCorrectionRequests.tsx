@@ -479,7 +479,7 @@ export default function InfoCorrectionRequests() {
 
                     <div>
                       <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">수정 요청 정보</Label>
-                      <p className="text-sm mt-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-gray-900 dark:text-white">{request.proposedValue}</p>
+                      <p className="text-sm mt-1 p-2 bg-primary/10 dark:bg-primary/20 rounded text-gray-900 dark:text-white">{request.proposedValue}</p>
                     </div>
 
                     <div>
@@ -504,7 +504,7 @@ export default function InfoCorrectionRequests() {
                     {request.adminNotes && (
                       <div>
                         <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">관리자 메모</Label>
-                        <p className="text-sm mt-1 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-gray-900 dark:text-white">{request.adminNotes}</p>
+                        <p className="text-sm mt-1 p-2 bg-warning/10 dark:bg-warning/20 rounded text-gray-900 dark:text-white">{request.adminNotes}</p>
                         {request.reviewedBy && request.reviewedAt && (
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             {request.reviewedBy} • {formatDistanceToNow(new Date(request.reviewedAt), {
@@ -677,7 +677,7 @@ export default function InfoCorrectionRequests() {
                   <CheckCircle className="h-4 w-4 text-primary" />
                   <Label className="font-medium">적용 상태</Label>
                 </div>
-                <p className="text-lg font-semibold mt-1 text-green-600">
+                <p className="text-lg font-semibold mt-1 text-success">
                   정상
                 </p>
                 <p className="text-sm text-muted-foreground">

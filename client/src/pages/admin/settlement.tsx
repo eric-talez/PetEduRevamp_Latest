@@ -283,8 +283,8 @@ export default function InstitutionSettlementManagement() {
                     text="67%" 
                     styles={buildStyles({
                       textColor: "white",
-                      pathColor: "#10b981",
-                      trailColor: "#374151"
+                      pathColor: "hsl(var(--success))",
+                      trailColor: "hsl(var(--foreground))"
                     })}
                   />
                 </div>
@@ -298,8 +298,8 @@ export default function InstitutionSettlementManagement() {
                     text="85%" 
                     styles={buildStyles({
                       textColor: "white",
-                      pathColor: "#3b82f6",
-                      trailColor: "#374151"
+                      pathColor: "hsl(var(--primary))",
+                      trailColor: "hsl(var(--foreground))"
                     })}
                   />
                 </div>
@@ -313,8 +313,8 @@ export default function InstitutionSettlementManagement() {
                     text="10%" 
                     styles={buildStyles({
                       textColor: "white",
-                      pathColor: "#f59e0b",
-                      trailColor: "#374151"
+                      pathColor: "hsl(var(--warning))",
+                      trailColor: "hsl(var(--foreground))"
                     })}
                   />
                 </div>

@@ -43,6 +43,18 @@
     --destructive: 5 78% 57%;
     --destructive-foreground: 0 0% 100%;
 
+    /* 성공 색상 - Green */
+    --success: 142 65% 38%;
+    --success-foreground: 0 0% 100%;
+
+    /* 경고 색상 - Amber */
+    --warning: 38 92% 45%;
+    --warning-foreground: 0 0% 10%;
+
+    /* 정보 색상 - 브랜드 보조 (옐로우) */
+    --info: 43 96% 50%;
+    --info-foreground: 240 10% 10%;
+
     /* 경계선 및 입력 */
     --border: 240 10% 88%;
     --input: 240 10% 96%;
@@ -84,6 +96,18 @@
     /* 다크 모드 파괴적 액션 */
     --destructive: 5 78% 65%;
     --destructive-foreground: 0 0% 10%;
+
+    /* 다크 모드 성공 */
+    --success: 142 60% 50%;
+    --success-foreground: 0 0% 10%;
+
+    /* 다크 모드 경고 */
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 10%;
+
+    /* 다크 모드 정보 */
+    --info: 43 96% 60%;
+    --info-foreground: 0 0% 10%;
 
     /* 다크 모드 경계선 및 입력 */
     --border: 240 10% 20%;

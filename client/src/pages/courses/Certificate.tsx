@@ -33,10 +33,10 @@ export default function CertificatePage() {
         </Button>
       </div>
 
-      <div className="bg-white border-8 border-double border-amber-700 p-12 print:border-amber-700" id="certificate">
+      <div className="bg-white border-8 border-double border-warning/50 p-12 print:border-warning/50" id="certificate">
         <div className="text-center">
-          <Award className="w-16 h-16 text-amber-600 mx-auto" />
-          <h1 className="text-4xl font-bold mt-4 text-amber-900">수 료 증</h1>
+          <Award className="w-16 h-16 text-warning mx-auto" />
+          <h1 className="text-4xl font-bold mt-4 text-warning">수 료 증</h1>
           <p className="mt-2 text-sm text-muted-foreground">Certificate of Completion</p>
           <p className="text-xs text-muted-foreground">No. {c.certificateNo}</p>
 

@@ -108,10 +108,10 @@ export default function AIOptimizationDashboard() {
 
   const getHealthStatusColor = (health: string) => {
     switch (health) {
-      case 'optimal': return 'text-green-500';
-      case 'good': return 'text-blue-500';
-      case 'warning': return 'text-yellow-500';
-      case 'critical': return 'text-red-500';
+      case 'optimal': return 'text-success';
+      case 'good': return 'text-primary';
+      case 'warning': return 'text-warning';
+      case 'critical': return 'text-destructive';
       default: return 'text-gray-500';
     }
   };

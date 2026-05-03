@@ -79,9 +79,9 @@ export default function TrainerEarnings() {
       case 0:
         return <Badge variant="secondary">Level 0 - 무료</Badge>;
       case 1:
-        return <Badge className="bg-blue-500">Level 1 - 광고 수익</Badge>;
+        return <Badge className="bg-primary">Level 1 - 광고 수익</Badge>;
       case 2:
-        return <Badge className="bg-orange-500">Level 2 - 유료 콘텐츠</Badge>;
+        return <Badge className="bg-primary">Level 2 - 유료 콘텐츠</Badge>;
       default:
         return <Badge variant="outline">미정</Badge>;
     }
@@ -90,8 +90,8 @@ export default function TrainerEarnings() {
   const getStageBadge = (stage: number) => {
     const stages = [
       { label: "Stage 1 (60/40)", color: "bg-gray-500" },
-      { label: "Stage 2 (50/50)", color: "bg-blue-500" },
-      { label: "Stage 3 (40/60)", color: "bg-green-500" },
+      { label: "Stage 2 (50/50)", color: "bg-primary" },
+      { label: "Stage 3 (40/60)", color: "bg-success" },
     ];
     const s = stages[stage - 1] || stages[0];
     return <Badge className={s.color}>{s.label}</Badge>;
@@ -258,11 +258,11 @@ export default function TrainerEarnings() {
   const getStatusBadge = (status: EarningRecord['status']) => {
     switch(status) {
       case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">완료</Badge>;
+        return <Badge variant="default" className="bg-success/10 text-success border-success/30">완료</Badge>;
       case 'processing':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">처리중</Badge>;
+        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">처리중</Badge>;
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">대기</Badge>;
+        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">대기</Badge>;
       default:
         return <Badge variant="outline">미정</Badge>;
     }
@@ -334,11 +334,11 @@ export default function TrainerEarnings() {
       </div>
 
       {/* TALEZ SCORE 수익화 카드 */}
-      <Card className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
+      <Card className="bg-gradient-to-r from-primary to-secondary dark:from-primary/20 dark:to-secondary/20 border-primary/30 dark:border-primary/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+              <CardTitle className="flex items-center gap-2 text-primary dark:text-primary">
                 <Star className="h-5 w-5" />
                 TALEZ SCORE
               </CardTitle>
@@ -354,44 +354,44 @@ export default function TrainerEarnings() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             <div className="text-center p-4 bg-white/50 dark:bg-gray-900/30 rounded-lg">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Star className="h-8 w-8 text-yellow-500" />
+                <Star className="h-8 w-8 text-warning" />
               </div>
-              <p className="text-3xl font-bold text-yellow-600">{scoreData?.talezScore?.toFixed(1) || 0}</p>
+              <p className="text-3xl font-bold text-warning">{scoreData?.talezScore?.toFixed(1) || 0}</p>
               <p className="text-sm text-muted-foreground">현재 점수</p>
             </div>
             <div className="text-center p-4 bg-white/50 dark:bg-gray-900/30 rounded-lg">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Users className="h-8 w-8 text-blue-500" />
+                <Users className="h-8 w-8 text-primary" />
               </div>
-              <p className="text-3xl font-bold text-blue-600">{scoreData?.followers || 0}</p>
+              <p className="text-3xl font-bold text-primary">{scoreData?.followers || 0}</p>
               <p className="text-sm text-muted-foreground">팔로워</p>
             </div>
             <div className="text-center p-4 bg-white/50 dark:bg-gray-900/30 rounded-lg">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Eye className="h-8 w-8 text-green-500" />
+                <Eye className="h-8 w-8 text-success" />
               </div>
-              <p className="text-3xl font-bold text-green-600">{(scoreData?.totalViews || 0).toLocaleString()}</p>
+              <p className="text-3xl font-bold text-success">{(scoreData?.totalViews || 0).toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">총 조회수</p>
             </div>
             <div className="text-center p-4 bg-white/50 dark:bg-gray-900/30 rounded-lg">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <ThumbsUp className="h-8 w-8 text-orange-500" />
+                <ThumbsUp className="h-8 w-8 text-primary" />
               </div>
-              <p className="text-3xl font-bold text-orange-600">{(scoreData?.totalLikes || 0).toLocaleString()}</p>
+              <p className="text-3xl font-bold text-primary">{(scoreData?.totalLikes || 0).toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">총 좋아요</p>
             </div>
             <div className="text-center p-4 bg-white/50 dark:bg-gray-900/30 rounded-lg">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <DollarSign className="h-8 w-8 text-green-600" />
+                <DollarSign className="h-8 w-8 text-success" />
               </div>
-              <p className="text-3xl font-bold text-green-600">{(eligibilityData?.pendingPayout || 0).toLocaleString()}원</p>
+              <p className="text-3xl font-bold text-success">{(eligibilityData?.pendingPayout || 0).toLocaleString()}원</p>
               <p className="text-sm text-muted-foreground">미정산액</p>
             </div>
           </div>
           
           {eligibilityData?.eligibilityLevel === 0 && (
-            <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <div className="mt-4 p-4 bg-warning/10 dark:bg-warning/30 rounded-lg border border-warning/30 dark:border-warning/50">
+              <p className="text-sm text-warning dark:text-warning/70">
                 <Award className="h-4 w-4 inline mr-2" />
                 수익화 자격 달성까지: 
                 {eligibilityData?.requirements?.level1 && (
@@ -414,7 +414,7 @@ export default function TrainerEarnings() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-8 w-8 text-success" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">이번 달 순수익</p>
                 <p className="text-2xl font-bold">
@@ -423,13 +423,13 @@ export default function TrainerEarnings() {
                 <div className="flex items-center text-xs mt-1">
                   {parseFloat(monthlyGrowth) > 0 ? (
                     <>
-                      <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-                      <span className="text-green-500">+{monthlyGrowth}%</span>
+                      <ArrowUpRight className="h-3 w-3 text-success mr-1" />
+                      <span className="text-success">+{monthlyGrowth}%</span>
                     </>
                   ) : (
                     <>
-                      <ArrowDownRight className="h-3 w-3 text-red-500 mr-1" />
-                      <span className="text-red-500">{monthlyGrowth}%</span>
+                      <ArrowDownRight className="h-3 w-3 text-destructive mr-1" />
+                      <span className="text-destructive">{monthlyGrowth}%</span>
                     </>
                   )}
                   <span className="text-muted-foreground ml-1">지난 달 대비</span>
@@ -442,7 +442,7 @@ export default function TrainerEarnings() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-blue-600" />
+              <TrendingUp className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">총 매출</p>
                 <p className="text-2xl font-bold">{totalRevenue.toLocaleString()}원</p>
@@ -466,7 +466,7 @@ export default function TrainerEarnings() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-amber-600" />
+              <Calendar className="h-8 w-8 text-warning" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">거래 건수</p>
                 <p className="text-2xl font-bold">{filteredEarnings.length}건</p>
@@ -503,7 +503,7 @@ export default function TrainerEarnings() {
                 <div className="text-right flex items-center space-x-2">
                   {isAdmin && (
                     <div>
-                      <div className="text-lg font-bold text-green-600">
+                      <div className="text-lg font-bold text-success">
                         {summary.netEarnings.toLocaleString()}원
                       </div>
                       <div className="text-sm text-muted-foreground">
@@ -537,7 +537,7 @@ export default function TrainerEarnings() {
                   <CardContent className="p-4">
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">총 매출</p>
-                      <p className="text-xl font-bold text-blue-600">
+                      <p className="text-xl font-bold text-primary">
                         {selectedMonthDetail.totalRevenue.toLocaleString()}원
                       </p>
                     </div>
@@ -548,7 +548,7 @@ export default function TrainerEarnings() {
                   <CardContent className="p-4">
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">순수익</p>
-                      <p className="text-xl font-bold text-green-600">
+                      <p className="text-xl font-bold text-success">
                         {selectedMonthDetail.netEarnings.toLocaleString()}원
                       </p>
                     </div>
@@ -570,7 +570,7 @@ export default function TrainerEarnings() {
                   <CardContent className="p-4">
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">거래 건수</p>
-                      <p className="text-xl font-bold text-amber-600">
+                      <p className="text-xl font-bold text-warning">
                         {selectedMonthDetail.transactionCount}건
                       </p>
                     </div>
@@ -613,10 +613,10 @@ export default function TrainerEarnings() {
                               <td className="py-3 px-2 text-right font-medium">
                                 {earning.amount.toLocaleString()}원
                               </td>
-                              <td className="py-3 px-2 text-right text-red-600">
+                              <td className="py-3 px-2 text-right text-destructive">
                                 {earning.commissionRate}%
                               </td>
-                              <td className="py-3 px-2 text-right font-bold text-green-600">
+                              <td className="py-3 px-2 text-right font-bold text-success">
                                 {earning.netAmount.toLocaleString()}원
                               </td>
                               <td className="py-3 px-2 text-center">
@@ -692,10 +692,10 @@ export default function TrainerEarnings() {
                       <td className="py-3 px-2 text-right font-medium">
                         {earning.amount.toLocaleString()}원
                       </td>
-                      <td className="py-3 px-2 text-right text-red-600">
+                      <td className="py-3 px-2 text-right text-destructive">
                         {earning.commissionRate}%
                       </td>
-                      <td className="py-3 px-2 text-right font-bold text-green-600">
+                      <td className="py-3 px-2 text-right font-bold text-success">
                         {earning.netAmount.toLocaleString()}원
                       </td>
                       <td className="py-3 px-2 text-center">

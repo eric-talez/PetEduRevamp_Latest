@@ -223,8 +223,8 @@ export default function SubstituteTrainerOverview() {
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'certified': return 'bg-primary/50';
-      case 'semi_certified': return 'bg-blue-500';
-      case 'general': return 'bg-green-500';
+      case 'semi_certified': return 'bg-primary';
+      case 'general': return 'bg-success';
       default: return 'bg-gray-500';
     }
   };
@@ -240,9 +240,9 @@ export default function SubstituteTrainerOverview() {
 
   const getAlertColor = (type: string) => {
     switch (type) {
-      case 'urgent': return 'bg-red-500';
-      case 'warning': return 'bg-orange-500';
-      case 'info': return 'bg-blue-500';
+      case 'urgent': return 'bg-destructive';
+      case 'warning': return 'bg-primary';
+      case 'info': return 'bg-primary';
       default: return 'bg-gray-500';
     }
   };
@@ -285,12 +285,12 @@ export default function SubstituteTrainerOverview() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-600" />
+                  <Calendar className="h-5 w-5 text-primary" />
                   총 대체 요청
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-3xl font-bold text-primary">
                   {MOCK_OVERVIEW.totalSubstitutePosts}
                 </div>
                 <p className="text-sm text-gray-600">이번 달</p>
@@ -300,12 +300,12 @@ export default function SubstituteTrainerOverview() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5 text-green-600" />
+                  <Users className="h-5 w-5 text-success" />
                   총 신청 수
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-3xl font-bold text-success">
                   {MOCK_OVERVIEW.totalApplications}
                 </div>
                 <p className="text-sm text-gray-600">신청 건수</p>
@@ -330,12 +330,12 @@ export default function SubstituteTrainerOverview() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-orange-600" />
+                  <DollarSign className="h-5 w-5 text-primary" />
                   총 지급액
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-600">
+                <div className="text-3xl font-bold text-primary">
                   {MOCK_OVERVIEW.totalPayments.toLocaleString()}
                 </div>
                 <p className="text-sm text-gray-600">원</p>
@@ -347,18 +347,18 @@ export default function SubstituteTrainerOverview() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  <TrendingUp className="h-5 w-5 text-primary" />
                   월간 성장률
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-4xl font-bold text-blue-600 mb-2">
+                <div className="text-4xl font-bold text-primary mb-2">
                   +{MOCK_OVERVIEW.monthlyGrowth}%
                 </div>
                 <p className="text-sm text-gray-600">지난 달 대비</p>
                 <div className="mt-4">
                   <div className="text-sm text-gray-600 mb-1">평균 수업료</div>
-                  <div className="text-xl font-semibold text-green-600">
+                  <div className="text-xl font-semibold text-success">
                     {MOCK_OVERVIEW.averageCompensation.toLocaleString()}원
                   </div>
                 </div>
@@ -368,7 +368,7 @@ export default function SubstituteTrainerOverview() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
                   주요 알림
                 </CardTitle>
               </CardHeader>
@@ -376,7 +376,7 @@ export default function SubstituteTrainerOverview() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">긴급 요청</span>
-                    <Badge className="bg-red-500 text-white">
+                    <Badge className="bg-destructive text-white">
                       {MOCK_OVERVIEW.urgentRequests}건
                     </Badge>
                   </div>
@@ -386,7 +386,7 @@ export default function SubstituteTrainerOverview() {
                   <div className="space-y-1">
                     {MOCK_OVERVIEW.topPerformingInstitutes.map((institute, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-yellow-500" />
+                        <Star className="h-4 w-4 text-warning" />
                         <span className="text-sm">{institute}</span>
                       </div>
                     ))}
@@ -405,7 +405,7 @@ export default function SubstituteTrainerOverview() {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg flex items-center gap-2">
-                        <Building className="h-5 w-5 text-blue-600" />
+                        <Building className="h-5 w-5 text-primary" />
                         {institute.name}
                       </CardTitle>
                       <CardDescription className="text-sm text-gray-600 mt-1">
@@ -413,7 +413,7 @@ export default function SubstituteTrainerOverview() {
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-yellow-500" />
+                      <Star className="h-4 w-4 text-warning" />
                       <span className="text-sm font-medium">{institute.averageRating}</span>
                     </div>
                   </div>
@@ -422,25 +422,25 @@ export default function SubstituteTrainerOverview() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
                       <div className="text-sm text-gray-600">총 요청</div>
-                      <div className="text-xl font-semibold text-blue-600">
+                      <div className="text-xl font-semibold text-primary">
                         {institute.totalRequests}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600">완료된 배정</div>
-                      <div className="text-xl font-semibold text-green-600">
+                      <div className="text-xl font-semibold text-success">
                         {institute.completedAssignments}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600">총 지급액</div>
-                      <div className="text-xl font-semibold text-orange-600">
+                      <div className="text-xl font-semibold text-primary">
                         {institute.totalPayments.toLocaleString()}원
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600">대기 중</div>
-                      <div className="text-xl font-semibold text-yellow-600">
+                      <div className="text-xl font-semibold text-warning">
                         {institute.pendingRequests}
                       </div>
                     </div>
@@ -482,7 +482,7 @@ export default function SubstituteTrainerOverview() {
                       </div>
                     </div>
                     {alert.isResolved && (
-                      <Badge className="bg-green-500 text-white">해결됨</Badge>
+                      <Badge className="bg-success text-white">해결됨</Badge>
                     )}
                   </div>
                   
@@ -543,7 +543,7 @@ export default function SubstituteTrainerOverview() {
                       <TableCell>{performer.totalSubstitutes}</TableCell>
                       <TableCell>{performer.successRate}%</TableCell>
                       <TableCell className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-500" />
+                        <Star className="h-4 w-4 text-warning" />
                         {performer.averageRating}
                       </TableCell>
                       <TableCell>{performer.totalEarnings.toLocaleString()}원</TableCell>
@@ -607,7 +607,7 @@ export default function SubstituteTrainerOverview() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">월간 성장률</span>
-                    <span className="font-medium text-green-600">+23.5%</span>
+                    <span className="font-medium text-success">+23.5%</span>
                   </div>
                 </div>
                 <Button className="w-full mt-4">
@@ -654,7 +654,7 @@ export default function SubstituteTrainerOverview() {
                 <div>
                   <Label className="text-sm font-medium">평균 평점</Label>
                   <p className="text-sm flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-500" />
+                    <Star className="h-4 w-4 text-warning" />
                     {selectedInstitute.averageRating}
                   </p>
                 </div>

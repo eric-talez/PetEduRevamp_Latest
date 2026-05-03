@@ -161,11 +161,11 @@ export default function ProcessTest() {
   const getStatusIcon = (status: TestResult['status']) => {
     switch (status) {
       case 'running':
-        return <Loader2 className="w-5 h-5 animate-spin text-blue-500" />;
+        return <Loader2 className="w-5 h-5 animate-spin text-primary" />;
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-success" />;
       case 'error':
-        return <CheckCircle className="w-5 h-5 text-red-500" />;
+        return <CheckCircle className="w-5 h-5 text-destructive" />;
       default:
         return <Clock className="w-5 h-5 text-gray-400" />;
     }
@@ -181,7 +181,7 @@ export default function ProcessTest() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-primary to-secondary p-6">
       <div className="max-w-6xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
@@ -204,8 +204,8 @@ export default function ProcessTest() {
           <CardContent>
             <div className="flex items-center justify-between overflow-x-auto pb-4">
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Upload className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Upload className="w-6 h-6 text-primary" />
                 </div>
                 <span className="text-sm font-medium">파일 업로드</span>
               </div>
@@ -213,8 +213,8 @@ export default function ProcessTest() {
               <ArrowRight className="w-5 h-5 text-gray-400" />
               
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-success" />
                 </div>
                 <span className="text-sm font-medium">커리큘럼 생성</span>
               </div>
@@ -231,8 +231,8 @@ export default function ProcessTest() {
               <ArrowRight className="w-5 h-5 text-gray-400" />
               
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                  <ShoppingCart className="w-6 h-6 text-orange-600" />
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <ShoppingCart className="w-6 h-6 text-primary" />
                 </div>
                 <span className="text-sm font-medium">상품 등록</span>
               </div>
@@ -240,8 +240,8 @@ export default function ProcessTest() {
               <ArrowRight className="w-5 h-5 text-gray-400" />
               
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-destructive" />
                 </div>
                 <span className="text-sm font-medium">결제 완료</span>
               </div>
@@ -294,7 +294,7 @@ export default function ProcessTest() {
                       <p className="text-sm text-muted-foreground">{result.message}</p>
                       {result.data && (
                         <details className="mt-2">
-                          <summary className="text-xs text-blue-600 cursor-pointer">
+                          <summary className="text-xs text-primary cursor-pointer">
                             상세 데이터 보기
                           </summary>
                           <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
@@ -312,12 +312,12 @@ export default function ProcessTest() {
 
         {/* 성공 시 액션 버튼들 */}
         {testResults.some(r => r.step === 'complete' && r.status === 'success') && (
-          <Card className="mt-8 border-green-200 bg-green-50">
+          <Card className="mt-8 border-success/30 bg-success/10">
             <CardHeader>
-              <CardTitle className="text-green-800">🎉 테스트 완료!</CardTitle>
+              <CardTitle className="text-success">🎉 테스트 완료!</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-green-700 mb-4">
+              <p className="text-success mb-4">
                 커리큘럼 → 강의 → 상품 → 결제 전체 프로세스가 성공적으로 연동되었습니다.
               </p>
               <div className="flex gap-4">

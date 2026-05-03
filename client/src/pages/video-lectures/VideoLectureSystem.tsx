@@ -1335,7 +1335,7 @@ export default function VideoLectureSystem() {
 
                 <div className="flex items-center gap-4 mb-4">
                   <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                    <Star className="h-4 w-4 text-warning fill-current" />
                     <span className="text-sm font-medium">{lecture.rating}</span>
                     <span className="text-xs text-gray-500">({lecture.reviewCount})</span>
                   </div>
@@ -1446,7 +1446,7 @@ export default function VideoLectureSystem() {
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <Clock className="h-3 w-3" />
                           <span>{module.duration}분</span>
-                          {module.isCompleted && <CheckCircle className="h-3 w-3 text-green-500" />}
+                          {module.isCompleted && <CheckCircle className="h-3 w-3 text-success" />}
                           {!module.isFree && !selectedLecture.isPurchased && <Lock className="h-3 w-3" />}
                         </div>
                       </div>
@@ -1549,7 +1549,7 @@ export default function VideoLectureSystem() {
                       <Button 
                         size="sm" 
                         onClick={() => handlePlayInPlayer(selectedLecture, currentModule)}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-primary hover:bg-primary/90"
                       >
                         <Fullscreen className="h-4 w-4 mr-1" />
                         전체 화면으로 보기
@@ -1575,7 +1575,7 @@ export default function VideoLectureSystem() {
                     <ul className="space-y-1">
                       {currentModule.objectives.map((objective, index) => (
                         <li key={index} className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                           <span className="text-sm">{objective}</span>
                         </li>
                       ))}

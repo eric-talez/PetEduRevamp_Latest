@@ -25,11 +25,11 @@ export function NotebookEntryCard({
   const getStatusBadge = () => {
     switch (entry.status) {
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800">완료됨</Badge>;
+        return <Badge className="bg-success/10 text-success hover:bg-success/10 dark:bg-success/30 dark:text-success border-success/30 dark:border-success/50">완료됨</Badge>;
       case 'in-progress':
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">진행중</Badge>;
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/10 dark:bg-primary/30 dark:text-primary border-primary/30 dark:border-primary/50">진행중</Badge>;
       case 'planned':
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">예정됨</Badge>;
+        return <Badge className="bg-warning/10 text-warning hover:bg-warning/10 dark:bg-warning/30 dark:text-warning border-warning/30 dark:border-warning/50">예정됨</Badge>;
       default:
         return null;
     }
@@ -53,7 +53,7 @@ export function NotebookEntryCard({
     >
       {entry.isImportant && (
         <div className="absolute top-2 right-2">
-          <AlertCircle className="h-4 w-4 text-amber-500" />
+          <AlertCircle className="h-4 w-4 text-warning" />
         </div>
       )}
       
@@ -123,7 +123,7 @@ export function NotebookEntryCard({
             <button 
               className={cn(
                 "flex items-center space-x-1", 
-                entry.reactions?.hasLiked && "text-blue-500"
+                entry.reactions?.hasLiked && "text-primary"
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -141,7 +141,7 @@ export function NotebookEntryCard({
           </div>
           
           <button 
-            className="text-gray-400 hover:text-blue-500"
+            className="text-gray-400 hover:text-primary"
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(entry.id, !entry.isFavorite);

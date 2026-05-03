@@ -492,7 +492,7 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[500px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#03c75a] border-solid"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[hsl(var(--success))] border-solid"></div>
       </div>
     );
   }
@@ -519,9 +519,9 @@ export default function ProductDetail() {
       {/* 상단 경로 네비게이션 */}
       <div className="container mx-auto px-4 py-4">
         <nav className="flex text-sm text-gray-500 dark:text-gray-400 mb-6">
-          <Link href="/shop" className="hover:text-[#03c75a]">홈</Link>
+          <Link href="/shop" className="hover:text-[hsl(var(--success))]">홈</Link>
           <ChevronRight className="h-4 w-4 mx-1 my-auto" />
-          <Link href={`/shop/category/${product.categoryId}`} className="hover:text-[#03c75a]">{product.categoryName}</Link>
+          <Link href={`/shop/category/${product.categoryId}`} className="hover:text-[hsl(var(--success))]">{product.categoryName}</Link>
           <ChevronRight className="h-4 w-4 mx-1 my-auto" />
           <span className="text-gray-900 dark:text-gray-200">{product.name}</span>
         </nav>
@@ -538,7 +538,7 @@ export default function ProductDetail() {
               
               {product.isBestseller && (
                 <div className="absolute top-4 left-4">
-                  <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+                  <Badge variant="default" className="bg-warning hover:bg-warning/90">
                     베스트셀러
                   </Badge>
                 </div>
@@ -546,7 +546,7 @@ export default function ProductDetail() {
               
               {product.isNew && (
                 <div className="absolute top-4 left-4">
-                  <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">
+                  <Badge variant="default" className="bg-primary hover:bg-primary/90">
                     신상품
                   </Badge>
                 </div>
@@ -554,7 +554,7 @@ export default function ProductDetail() {
               
               {discountRate > 0 && (
                 <div className="absolute top-4 right-4">
-                  <Badge variant="default" className="bg-red-500 hover:bg-red-600">
+                  <Badge variant="default" className="bg-destructive hover:bg-destructive/90">
                     {discountRate}% 할인
                   </Badge>
                 </div>
@@ -568,7 +568,7 @@ export default function ProductDetail() {
                   key={idx}
                   className={`w-20 h-20 rounded-md overflow-hidden cursor-pointer border-2 ${
                     currentImage === idx 
-                      ? 'border-[#03c75a]' 
+                      ? 'border-[hsl(var(--success))]' 
                       : 'border-gray-200 dark:border-gray-700'
                   }`}
                   onClick={() => selectImage(idx)}
@@ -588,7 +588,7 @@ export default function ProductDetail() {
             <div className="mb-2">
               <Link 
                 href={`/shop/brand/${product.brand}`}
-                className="text-[#03c75a] text-sm hover:underline"
+                className="text-[hsl(var(--success))] text-sm hover:underline"
               >
                 {product.brand}
               </Link>
@@ -603,7 +603,7 @@ export default function ProductDetail() {
                     key={idx} 
                     className={`h-5 w-5 ${
                       idx < Math.floor(product.rating) 
-                        ? 'text-yellow-400 fill-yellow-400' 
+                        ? 'text-warning fill-warning' 
                         : 'text-gray-300'
                     }`} 
                   />
@@ -624,7 +624,7 @@ export default function ProductDetail() {
                   <span className="ml-2 text-sm line-through text-gray-500">
                     {originalPrice.toLocaleString()}원
                   </span>
-                  <span className="ml-2 text-red-600 font-semibold">
+                  <span className="ml-2 text-destructive font-semibold">
                     {discountRate}% 할인
                   </span>
                 </div>
@@ -725,18 +725,18 @@ export default function ProductDetail() {
               </div>
               
               {isValidReferral && referralInfo && (
-                <div className="mt-2 p-3 bg-green-50 dark:bg-green-900 rounded-md border border-green-200 dark:border-green-800">
+                <div className="mt-2 p-3 bg-success/10 dark:bg-success/20 rounded-md border border-success/30 dark:border-success/50">
                   <div className="flex items-start">
-                    <Check className="h-5 w-5 text-green-600 dark:text-green-400 mr-2 mt-0.5" />
+                    <Check className="h-5 w-5 text-success dark:text-success mr-2 mt-0.5" />
                     <div>
-                      <span className="block text-sm font-medium text-green-800 dark:text-green-300">
+                      <span className="block text-sm font-medium text-success dark:text-success">
                         {referralSource === 'institute' ? '기관' : '트레이너'} 추천 코드가 적용되었습니다
                       </span>
-                      <span className="block text-xs text-green-700 dark:text-green-400 mt-1">
+                      <span className="block text-xs text-success dark:text-success mt-1">
                         {referralInfo.name} ({referralInfo.code})
                       </span>
                       {commissionRate && (
-                        <span className="block text-xs text-green-700 dark:text-green-400 mt-1">
+                        <span className="block text-xs text-success dark:text-success mt-1">
                           구매 시 {commissionRate}%의 수수료가 {referralSource === 'institute' ? '기관' : '트레이너'}에게 적립됩니다.
                         </span>
                       )}
@@ -764,7 +764,7 @@ export default function ProductDetail() {
             {/* 구매 버튼 */}
             <div className="flex gap-2 mb-6">
               <Button 
-                className="flex-1 bg-[#03c75a] hover:bg-[#02b04a] text-white"
+                className="flex-1 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white"
                 onClick={addToCart}
               >
                 <ShoppingBag className="mr-2 h-5 w-5" />
@@ -773,10 +773,10 @@ export default function ProductDetail() {
               
               <Button 
                 variant="outline" 
-                className={`px-4 ${isInWishlist ? 'text-red-500 border-red-500' : ''}`}
+                className={`px-4 ${isInWishlist ? 'text-destructive border-destructive/50' : ''}`}
                 onClick={toggleWishlist}
               >
-                <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-red-500' : ''}`} />
+                <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-destructive' : ''}`} />
               </Button>
               
               <Button 
@@ -792,7 +792,7 @@ export default function ProductDetail() {
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-start">
-                  <Shield className="h-5 w-5 text-[#03c75a] mr-3 mt-0.5" />
+                  <Shield className="h-5 w-5 text-[hsl(var(--success))] mr-3 mt-0.5" />
                   <div>
                     <span className="block text-sm font-semibold">안전 결제</span>
                     <span className="block text-xs text-gray-600 dark:text-gray-400">
@@ -802,7 +802,7 @@ export default function ProductDetail() {
                 </div>
                 
                 <div className="flex items-start">
-                  <RefreshCw className="h-5 w-5 text-[#03c75a] mr-3 mt-0.5" />
+                  <RefreshCw className="h-5 w-5 text-[hsl(var(--success))] mr-3 mt-0.5" />
                   <div>
                     <span className="block text-sm font-semibold">간편 교환/반품</span>
                     <span className="block text-xs text-gray-600 dark:text-gray-400">
@@ -812,7 +812,7 @@ export default function ProductDetail() {
                 </div>
                 
                 <div className="flex items-start">
-                  <ThumbsUp className="h-5 w-5 text-[#03c75a] mr-3 mt-0.5" />
+                  <ThumbsUp className="h-5 w-5 text-[hsl(var(--success))] mr-3 mt-0.5" />
                   <div>
                     <span className="block text-sm font-semibold">품질 보증</span>
                     <span className="block text-xs text-gray-600 dark:text-gray-400">
@@ -822,7 +822,7 @@ export default function ProductDetail() {
                 </div>
                 
                 <div className="flex items-start">
-                  <Gift className="h-5 w-5 text-[#03c75a] mr-3 mt-0.5" />
+                  <Gift className="h-5 w-5 text-[hsl(var(--success))] mr-3 mt-0.5" />
                   <div>
                     <span className="block text-sm font-semibold">선물 포장</span>
                     <span className="block text-xs text-gray-600 dark:text-gray-400">
@@ -888,7 +888,7 @@ export default function ProductDetail() {
                         key={idx} 
                         className={`h-5 w-5 ${
                           idx < Math.floor(product.rating) 
-                            ? 'text-yellow-400 fill-yellow-400' 
+                            ? 'text-warning fill-warning' 
                             : 'text-gray-300'
                         }`} 
                       />
@@ -911,7 +911,7 @@ export default function ProductDetail() {
                             key={idx} 
                             className={`h-4 w-4 ${
                               idx < review.rating 
-                                ? 'text-yellow-400 fill-yellow-400' 
+                                ? 'text-warning fill-warning' 
                                 : 'text-gray-300'
                             }`} 
                           />
@@ -989,7 +989,7 @@ export default function ProductDetail() {
                     />
                     {product.discountPrice < product.price && (
                       <div className="absolute top-2 right-2">
-                        <Badge variant="default" className="bg-red-500">
+                        <Badge variant="default" className="bg-destructive">
                           {Math.round((1 - product.discountPrice / product.price) * 100)}% 할인
                         </Badge>
                       </div>
@@ -1006,7 +1006,7 @@ export default function ProductDetail() {
                             key={idx} 
                             className={`h-3 w-3 ${
                               idx < Math.floor(product.rating) 
-                                ? 'text-yellow-400 fill-yellow-400' 
+                                ? 'text-warning fill-warning' 
                                 : 'text-gray-300'
                             }`} 
                           />

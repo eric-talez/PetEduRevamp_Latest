@@ -422,11 +422,11 @@ export default function InstituteAdminPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="text-yellow-600">대기중</Badge>;
+        return <Badge variant="outline" className="text-warning">대기중</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="text-green-600">승인됨</Badge>;
+        return <Badge variant="outline" className="text-success">승인됨</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="text-red-600">거부됨</Badge>;
+        return <Badge variant="outline" className="text-destructive">거부됨</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -510,7 +510,7 @@ export default function InstituteAdminPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats?.pendingApprovals || 0}</div>
+            <div className="text-2xl font-bold text-warning">{stats?.pendingApprovals || 0}</div>
             <p className="text-xs text-muted-foreground">
               검토 필요
             </p>
@@ -523,7 +523,7 @@ export default function InstituteAdminPage() {
             <Check className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats?.approvedContent || 0}</div>
+            <div className="text-2xl font-bold text-success">{stats?.approvedContent || 0}</div>
             <p className="text-xs text-muted-foreground">
               이번 달
             </p>
@@ -708,7 +708,7 @@ export default function InstituteAdminPage() {
                             <h3 className="font-semibold">{trainer.name}</h3>
                             <Badge 
                               variant={trainer.status === 'active' ? 'default' : 'secondary'}
-                              className={trainer.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                              className={trainer.status === 'active' ? 'bg-success/10 text-success' : ''}
                             >
                               {trainer.status === 'active' ? '활성' : 
                                trainer.status === 'inactive' ? '비활성' : '정지'}
@@ -726,7 +726,7 @@ export default function InstituteAdminPage() {
                             <span>학생 {trainer.totalStudents}명</span>
                             <span>총 {trainer.totalHours}시간</span>
                             <div className="flex items-center gap-1">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <Star className="h-3 w-3 fill-warning text-warning" />
                               <span>{trainer.rating.toFixed(1)}</span>
                             </div>
                           </div>
@@ -791,7 +791,7 @@ export default function InstituteAdminPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <BookOpen className="h-5 w-5 text-blue-600" />
+                          <BookOpen className="h-5 w-5 text-primary" />
                           <CardTitle className="text-xl">{course.title}</CardTitle>
                           <Badge variant="outline">{course.category}</Badge>
                           <Badge variant="secondary">{course.level}</Badge>
@@ -909,7 +909,7 @@ export default function InstituteAdminPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-5 w-5 text-green-600" />
+                          <FileText className="h-5 w-5 text-success" />
                           <CardTitle className="text-lg">{journal.title}</CardTitle>
                           <Badge variant={journal.status === 'sent' ? 'default' : 'secondary'}>
                             {journal.status === 'sent' ? '전송됨' : '읽음'}
@@ -950,7 +950,7 @@ export default function InstituteAdminPage() {
                               <Star
                                 key={i}
                                 className={`h-4 w-4 ${
-                                  i < journal.progressRating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                  i < journal.progressRating ? 'text-warning fill-current' : 'text-gray-300'
                                 }`}
                               />
                             ))}
@@ -1025,7 +1025,7 @@ export default function InstituteAdminPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <GraduationCap className="h-5 w-5 text-blue-600" />
+                          <GraduationCap className="h-5 w-5 text-primary" />
                           <CardTitle className="text-xl">{student.name}</CardTitle>
                           <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
                             {student.status === 'active' ? '수강중' : '휴강'}
@@ -1038,7 +1038,7 @@ export default function InstituteAdminPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-green-600">
+                        <div className="text-lg font-bold text-success">
                           {student.attendance.attendanceRate}%
                         </div>
                         <div className="text-sm text-gray-500">출석률</div>
@@ -1048,7 +1048,7 @@ export default function InstituteAdminPage() {
                   <CardContent>
                     <div className="space-y-4">
                       {/* 반려동물 정보 */}
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                      <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-lg">
                         <h4 className="font-semibold text-sm mb-2 flex items-center gap-1">
                           <Heart className="h-4 w-4" />
                           반려동물 정보
@@ -1075,17 +1075,17 @@ export default function InstituteAdminPage() {
                         <div>
                           <h4 className="font-semibold text-sm mb-2">출석 현황</h4>
                           <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div className="text-center p-2 bg-green-100 rounded">
-                              <div className="font-bold text-green-800">{student.attendance.attendedSessions}</div>
-                              <div className="text-green-600">출석</div>
+                            <div className="text-center p-2 bg-success/10 rounded">
+                              <div className="font-bold text-success">{student.attendance.attendedSessions}</div>
+                              <div className="text-success">출석</div>
                             </div>
-                            <div className="text-center p-2 bg-yellow-100 rounded">
-                              <div className="font-bold text-yellow-800">{student.attendance.lateArrivals}</div>
-                              <div className="text-yellow-600">지각</div>
+                            <div className="text-center p-2 bg-warning/10 rounded">
+                              <div className="font-bold text-warning">{student.attendance.lateArrivals}</div>
+                              <div className="text-warning">지각</div>
                             </div>
-                            <div className="text-center p-2 bg-red-100 rounded">
-                              <div className="font-bold text-red-800">{student.attendance.absences}</div>
-                              <div className="text-red-600">결석</div>
+                            <div className="text-center p-2 bg-destructive/10 rounded">
+                              <div className="font-bold text-destructive">{student.attendance.absences}</div>
+                              <div className="text-destructive">결석</div>
                             </div>
                           </div>
                         </div>
@@ -1101,7 +1101,7 @@ export default function InstituteAdminPage() {
                               <div className="flex items-center gap-2">
                                 <div className="w-24 h-2 bg-gray-200 rounded-full">
                                   <div 
-                                    className="h-2 bg-blue-500 rounded-full" 
+                                    className="h-2 bg-primary rounded-full" 
                                     style={{ width: `${skill.score}%` }}
                                   ></div>
                                 </div>
@@ -1191,7 +1191,7 @@ export default function InstituteAdminPage() {
                       <Badge variant="outline">{getContentTypeName(selectedApproval.contentType)}</Badge>
                       {getStatusBadge(selectedApproval.instituteStatus)}
                       {selectedApproval.adminStatus === 'pending' && (
-                        <Badge variant="outline" className="text-blue-600">최종 승인 대기</Badge>
+                        <Badge variant="outline" className="text-primary">최종 승인 대기</Badge>
                       )}
                     </div>
                   </div>
@@ -1330,7 +1330,7 @@ export default function InstituteAdminPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <DialogTitle className="text-xl flex items-center gap-2">
-                      <BookOpen className="h-6 w-6 text-blue-600" />
+                      <BookOpen className="h-6 w-6 text-primary" />
                       {selectedCourse.title}
                     </DialogTitle>
                     <div className="flex items-center gap-2 mt-2">
@@ -1443,7 +1443,7 @@ export default function InstituteAdminPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <DialogTitle className="text-xl flex items-center gap-2">
-                      <FileText className="h-6 w-6 text-green-600" />
+                      <FileText className="h-6 w-6 text-success" />
                       {selectedJournal.title}
                     </DialogTitle>
                     <div className="flex items-center gap-2 mt-2">
@@ -1497,7 +1497,7 @@ export default function InstituteAdminPage() {
                         <Star
                           key={i}
                           className={`h-5 w-5 ${
-                            i < selectedJournal.progressRating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                            i < selectedJournal.progressRating ? 'text-warning fill-current' : 'text-gray-300'
                           }`}
                         />
                       ))}
@@ -1516,13 +1516,13 @@ export default function InstituteAdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold mb-2">숙제 지시사항</h4>
-                    <p className="text-sm text-gray-600 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600 bg-primary/10 dark:bg-primary/20 p-3 rounded-lg">
                       {selectedJournal.homeworkInstructions}
                     </p>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">다음 훈련 목표</h4>
-                    <p className="text-sm text-gray-600 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600 bg-success/10 dark:bg-success/20 p-3 rounded-lg">
                       {selectedJournal.nextGoals}
                     </p>
                   </div>
@@ -1551,7 +1551,7 @@ export default function InstituteAdminPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <DialogTitle className="text-xl flex items-center gap-2">
-                      <GraduationCap className="h-6 w-6 text-blue-600" />
+                      <GraduationCap className="h-6 w-6 text-primary" />
                       {selectedStudent.name} 학생 정보
                     </DialogTitle>
                     <div className="flex items-center gap-2 mt-2">
@@ -1564,7 +1564,7 @@ export default function InstituteAdminPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-success">
                       {selectedStudent.attendance.attendanceRate}%
                     </div>
                     <div className="text-sm text-gray-500">출석률</div>
@@ -1586,7 +1586,7 @@ export default function InstituteAdminPage() {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-3">반려동물 정보</h4>
-                    <div className="space-y-2 text-sm bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                    <div className="space-y-2 text-sm bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
                       <div><span className="font-medium">이름:</span> {selectedStudent.pet.name}</div>
                       <div><span className="font-medium">품종:</span> {selectedStudent.pet.breed}</div>
                       <div><span className="font-medium">나이:</span> {selectedStudent.pet.age}살</div>
@@ -1601,7 +1601,7 @@ export default function InstituteAdminPage() {
                 {/* 특이사항 */}
                 <div>
                   <h4 className="font-semibold mb-2">반려동물 특이사항</h4>
-                  <p className="text-gray-700 dark:text-gray-300 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+                  <p className="text-gray-700 dark:text-gray-300 bg-warning/10 dark:bg-warning/20 p-3 rounded-lg">
                     {selectedStudent.pet.specialNotes}
                   </p>
                 </div>
@@ -1617,9 +1617,9 @@ export default function InstituteAdminPage() {
                         <div><span className="font-medium">수강 기간:</span> {selectedStudent.course.startDate} ~ {selectedStudent.course.endDate}</div>
                       </div>
                     </div>
-                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                    <div className="bg-success/10 dark:bg-success/20 p-4 rounded-lg">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600 mb-1">
+                        <div className="text-2xl font-bold text-success mb-1">
                           {selectedStudent.progress.overallRating}
                         </div>
                         <div className="text-sm text-gray-600">종합 평점 (5점 만점)</div>
@@ -1632,20 +1632,20 @@ export default function InstituteAdminPage() {
                 <div>
                   <h4 className="font-semibold mb-3">출석 현황</h4>
                   <div className="grid grid-cols-4 gap-4 mb-4">
-                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{selectedStudent.attendance.totalSessions}</div>
+                    <div className="text-center p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{selectedStudent.attendance.totalSessions}</div>
                       <div className="text-sm text-gray-600">총 수업</div>
                     </div>
-                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{selectedStudent.attendance.attendedSessions}</div>
+                    <div className="text-center p-4 bg-success/10 dark:bg-success/20 rounded-lg">
+                      <div className="text-2xl font-bold text-success">{selectedStudent.attendance.attendedSessions}</div>
                       <div className="text-sm text-gray-600">출석</div>
                     </div>
-                    <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-yellow-600">{selectedStudent.attendance.lateArrivals}</div>
+                    <div className="text-center p-4 bg-warning/10 dark:bg-warning/20 rounded-lg">
+                      <div className="text-2xl font-bold text-warning">{selectedStudent.attendance.lateArrivals}</div>
                       <div className="text-sm text-gray-600">지각</div>
                     </div>
-                    <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-red-600">{selectedStudent.attendance.absences}</div>
+                    <div className="text-center p-4 bg-destructive/10 dark:bg-destructive/20 rounded-lg">
+                      <div className="text-2xl font-bold text-destructive">{selectedStudent.attendance.absences}</div>
                       <div className="text-sm text-gray-600">결석</div>
                     </div>
                   </div>
@@ -1684,11 +1684,11 @@ export default function InstituteAdminPage() {
                       <div key={idx} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-center mb-2">
                           <span className="font-medium">{skill.skill}</span>
-                          <span className="text-lg font-bold text-blue-600">{skill.score}점</span>
+                          <span className="text-lg font-bold text-primary">{skill.score}점</span>
                         </div>
                         <div className="w-full h-3 bg-gray-200 rounded-full mb-2">
                           <div 
-                            className="h-3 bg-blue-500 rounded-full transition-all duration-300" 
+                            className="h-3 bg-primary rounded-full transition-all duration-300" 
                             style={{ width: `${skill.score}%` }}
                           ></div>
                         </div>

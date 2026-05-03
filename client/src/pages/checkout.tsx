@@ -142,24 +142,24 @@ const CheckoutForm: React.FC<{
 
   return (
     <div className="space-y-6">
-      <div className="p-4 mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
-        <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
+      <div className="p-4 mb-4 bg-warning/10 dark:bg-warning/20 border border-warning/30 dark:border-warning/50 rounded">
+        <p className="text-sm text-warning dark:text-warning/70 mb-2">
           결제 전 약관 및 정책을 확인해주세요.
         </p>
         <div className="flex gap-4">
-          <a href="/terms" target="_blank" className="text-blue-600 dark:text-blue-400 text-sm hover:underline">
+          <a href="/terms" target="_blank" className="text-primary dark:text-primary text-sm hover:underline">
             📝 이용약관
           </a>
-          <a href="/refund" target="_blank" className="text-blue-600 dark:text-blue-400 text-sm hover:underline">
+          <a href="/refund" target="_blank" className="text-primary dark:text-primary text-sm hover:underline">
             💰 환불정책  
           </a>
         </div>
       </div>
 
       {isTestMode && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded">
-          <p className="text-sm text-blue-700 dark:text-blue-300 font-semibold mb-2">🧪 테스트 결제 모드</p>
-          <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+        <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/50 p-4 rounded">
+          <p className="text-sm text-primary dark:text-primary font-semibold mb-2">🧪 테스트 결제 모드</p>
+          <div className="text-xs text-primary dark:text-primary space-y-1">
             <p>• 실제 결제되지 않습니다</p>
             <p>• 토스페이먼츠 테스트 카드를 사용하세요</p>
             <p>• 테스트 금액: 100원</p>
@@ -290,7 +290,7 @@ export default function Checkout() {
                   {isTestMode ? '100' : itemInfo.price.toLocaleString()}원
                 </span>
                 {isTestMode && (
-                  <div className="text-sm text-orange-600 dark:text-orange-400 mt-1">
+                  <div className="text-sm text-primary dark:text-primary mt-1">
                     💡 테스트 모드: 100원 테스트 결제
                   </div>
                 )}

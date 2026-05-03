@@ -524,11 +524,11 @@ export default function PushNotificationManagement() {
                   </div>
                   <div>
                     <Label className="text-muted-foreground">성공</Label>
-                    <p className="text-xl font-bold text-green-600">{selectedCampaign.successCount}</p>
+                    <p className="text-xl font-bold text-success">{selectedCampaign.successCount}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">실패</Label>
-                    <p className="text-xl font-bold text-red-600">{selectedCampaign.failureCount}</p>
+                    <p className="text-xl font-bold text-destructive">{selectedCampaign.failureCount}</p>
                   </div>
                 </div>
               )}

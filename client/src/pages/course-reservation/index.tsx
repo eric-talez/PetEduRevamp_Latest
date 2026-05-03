@@ -281,7 +281,7 @@ export default function CourseReservationPage() {
                           <div>
                             <h3 className="font-semibold text-lg">{trainer.name}</h3>
                             <div className="flex items-center gap-2 mt-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                              <Star className="h-4 w-4 fill-warning text-warning" />
                               <span className="text-sm font-medium">{trainer.rating}</span>
                               <span className="text-sm text-gray-500">({trainer.reviewCount})</span>
                             </div>

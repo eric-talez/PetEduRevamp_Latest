@@ -465,7 +465,7 @@ export default function TrainerStats() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">금액</p>
-                    <p className={`text-base font-medium ${selectedTransaction.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                    <p className={`text-base font-medium ${selectedTransaction.amount < 0 ? 'text-destructive' : 'text-success'}`}>
                       {formatCurrency(selectedTransaction.amount)}
                     </p>
                   </div>
@@ -560,13 +560,13 @@ export default function TrainerStats() {
               <div className="text-sm flex items-center">
                 {earningsSummary.monthlyGrowth > 0 ? (
                   <>
-                    <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-500">{earningsSummary.monthlyGrowth}% 증가</span>
+                    <ArrowUpRight className="h-4 w-4 text-success mr-1" />
+                    <span className="text-success">{earningsSummary.monthlyGrowth}% 증가</span>
                   </>
                 ) : (
                   <>
-                    <ArrowDownRight className="h-4 w-4 text-red-500 mr-1" />
-                    <span className="text-red-500">{Math.abs(earningsSummary.monthlyGrowth)}% 감소</span>
+                    <ArrowDownRight className="h-4 w-4 text-destructive mr-1" />
+                    <span className="text-destructive">{Math.abs(earningsSummary.monthlyGrowth)}% 감소</span>
                   </>
                 )}
                 <span className="text-muted-foreground ml-1">(전월 대비)</span>
@@ -607,7 +607,7 @@ export default function TrainerStats() {
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div 
-                    className="bg-blue-500 rounded-full h-2" 
+                    className="bg-primary rounded-full h-2" 
                     style={{ width: `${Math.round(earningsSummary.referralEarnings / earningsSummary.totalEarnings * 100)}%` }}
                   ></div>
                 </div>
@@ -638,7 +638,7 @@ export default function TrainerStats() {
                         style={{ height: `${report.earnings.course / 3000}px` }}
                       ></div>
                       <div 
-                        className="w-4 bg-blue-500 rounded-t-sm" 
+                        className="w-4 bg-primary rounded-t-sm" 
                         style={{ height: `${report.earnings.referral / 3000}px` }}
                       ></div>
                     </div>
@@ -656,7 +656,7 @@ export default function TrainerStats() {
                   <span className="text-xs">강좌</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded-sm mr-1"></div>
+                  <div className="w-3 h-3 bg-primary rounded-sm mr-1"></div>
                   <span className="text-xs">추천</span>
                 </div>
               </div>
@@ -771,8 +771,8 @@ export default function TrainerStats() {
                       <TableCell>
                         <Badge variant="outline" className={
                           transaction.type === 'course' ? 'border-primary text-primary' :
-                          transaction.type === 'referral' ? 'border-blue-500 text-blue-500' :
-                          'border-orange-500 text-orange-500'
+                          transaction.type === 'referral' ? 'border-primary/50 text-primary' :
+                          'border-primary/50 text-primary'
                         }>
                           {transaction.type === 'course' ? '강좌' : 
                            transaction.type === 'referral' ? '추천' : '출금'}
@@ -781,7 +781,7 @@ export default function TrainerStats() {
                       <TableCell className="max-w-[250px] truncate">
                         {transaction.description}
                       </TableCell>
-                      <TableCell className={`text-right font-medium ${transaction.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                      <TableCell className={`text-right font-medium ${transaction.amount < 0 ? 'text-destructive' : 'text-success'}`}>
                         {formatCurrency(transaction.amount)}
                       </TableCell>
                       <TableCell>

@@ -164,20 +164,20 @@ export default function AdminHome() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'healthy':
-        return 'text-green-500';
+        return 'text-success';
       case 'warning':
-        return 'text-amber-500';
+        return 'text-warning';
       case 'critical':
-        return 'text-red-500';
+        return 'text-destructive';
       default:
         return 'text-gray-500';
     }
   };
 
   const getLoadColor = (load: number) => {
-    if (load < 50) return 'bg-green-500';
-    if (load < 80) return 'bg-amber-500';
-    return 'bg-red-500';
+    if (load < 50) return 'bg-success';
+    if (load < 80) return 'bg-warning';
+    return 'bg-destructive';
   };
 
   const handleManageInstitutes = () => {
@@ -237,7 +237,7 @@ export default function AdminHome() {
                     </div>
                     <div className="flex justify-between text-xs">
                       <span>지난 주 대비</span>
-                      <span className="text-green-500">+13.1%</span>
+                      <span className="text-success">+13.1%</span>
                     </div>
                   </div>
                 </CardContent>
@@ -252,11 +252,11 @@ export default function AdminHome() {
                   <CompactUserTypeChart height={200} />
                   <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
+                      <div className="w-2 h-2 rounded-full bg-primary mr-1"></div>
                       <span>반려인 78%</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-green-500 mr-1"></div>
+                      <div className="w-2 h-2 rounded-full bg-success mr-1"></div>
                       <span>훈련사 12%</span>
                     </div>
                     <div className="flex items-center">
@@ -264,7 +264,7 @@ export default function AdminHome() {
                       <span>기관 8%</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-amber-500 mr-1"></div>
+                      <div className="w-2 h-2 rounded-full bg-warning mr-1"></div>
                       <span>기타 2%</span>
                     </div>
                   </div>
@@ -294,46 +294,46 @@ export default function AdminHome() {
                       <tr className="border-b">
                         <td className="py-2 px-2">총 사용자</td>
                         <td className="py-2 px-2 text-right">12,483명</td>
-                        <td className="py-2 px-2 text-right text-green-500">+5.2%</td>
-                        <td className="py-2 px-2 text-right text-green-500">+32.7%</td>
+                        <td className="py-2 px-2 text-right text-success">+5.2%</td>
+                        <td className="py-2 px-2 text-right text-success">+32.7%</td>
                         <td className="py-2 px-2 text-right">
-                          <TrendingUp className="h-4 w-4 text-green-500 inline" />
+                          <TrendingUp className="h-4 w-4 text-success inline" />
                         </td>
                       </tr>
                       <tr className="border-b">
                         <td className="py-2 px-2">월 활성 사용자</td>
                         <td className="py-2 px-2 text-right">8,712명</td>
-                        <td className="py-2 px-2 text-right text-green-500">+3.8%</td>
-                        <td className="py-2 px-2 text-right text-green-500">+28.4%</td>
+                        <td className="py-2 px-2 text-right text-success">+3.8%</td>
+                        <td className="py-2 px-2 text-right text-success">+28.4%</td>
                         <td className="py-2 px-2 text-right">
-                          <TrendingUp className="h-4 w-4 text-green-500 inline" />
+                          <TrendingUp className="h-4 w-4 text-success inline" />
                         </td>
                       </tr>
                       <tr className="border-b">
                         <td className="py-2 px-2">신규 강의 등록</td>
                         <td className="py-2 px-2 text-right">126개</td>
-                        <td className="py-2 px-2 text-right text-red-500">-2.3%</td>
-                        <td className="py-2 px-2 text-right text-green-500">+18.9%</td>
+                        <td className="py-2 px-2 text-right text-destructive">-2.3%</td>
+                        <td className="py-2 px-2 text-right text-success">+18.9%</td>
                         <td className="py-2 px-2 text-right">
-                          <TrendingUp className="h-4 w-4 text-amber-500 inline transform rotate-45" />
+                          <TrendingUp className="h-4 w-4 text-warning inline transform rotate-45" />
                         </td>
                       </tr>
                       <tr className="border-b">
                         <td className="py-2 px-2">평균 체류 시간</td>
                         <td className="py-2 px-2 text-right">24.7분</td>
-                        <td className="py-2 px-2 text-right text-green-500">+8.1%</td>
-                        <td className="py-2 px-2 text-right text-green-500">+42.3%</td>
+                        <td className="py-2 px-2 text-right text-success">+8.1%</td>
+                        <td className="py-2 px-2 text-right text-success">+42.3%</td>
                         <td className="py-2 px-2 text-right">
-                          <TrendingUp className="h-4 w-4 text-green-500 inline" />
+                          <TrendingUp className="h-4 w-4 text-success inline" />
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2 px-2">수료율</td>
                         <td className="py-2 px-2 text-right">68.2%</td>
-                        <td className="py-2 px-2 text-right text-green-500">+1.5%</td>
-                        <td className="py-2 px-2 text-right text-green-500">+5.7%</td>
+                        <td className="py-2 px-2 text-right text-success">+1.5%</td>
+                        <td className="py-2 px-2 text-right text-success">+5.7%</td>
                         <td className="py-2 px-2 text-right">
-                          <TrendingUp className="h-4 w-4 text-green-500 inline" />
+                          <TrendingUp className="h-4 w-4 text-success inline" />
                         </td>
                       </tr>
                     </tbody>
@@ -376,13 +376,13 @@ export default function AdminHome() {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
         <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setLocation('/admin/users')}>
           <div className="flex flex-col items-center text-center">
-            <Users className="w-8 h-8 text-blue-600 mb-2" />
+            <Users className="w-8 h-8 text-primary mb-2" />
             <span className="text-sm font-medium">사용자</span>
           </div>
         </Card>
         <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setLocation('/admin/institutes')}>
           <div className="flex flex-col items-center text-center">
-            <Building className="w-8 h-8 text-green-600 mb-2" />
+            <Building className="w-8 h-8 text-success mb-2" />
             <span className="text-sm font-medium">기관</span>
           </div>
         </Card>
@@ -394,7 +394,7 @@ export default function AdminHome() {
         </Card>
         <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setLocation('/admin/contents')}>
           <div className="flex flex-col items-center text-center">
-            <FileText className="w-8 h-8 text-orange-600 mb-2" />
+            <FileText className="w-8 h-8 text-primary mb-2" />
             <span className="text-sm font-medium">콘텐츠</span>
           </div>
         </Card>
@@ -406,7 +406,7 @@ export default function AdminHome() {
         </Card>
         <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setLocation('/admin/review-management')}>
           <div className="flex flex-col items-center text-center">
-            <Monitor className="w-8 h-8 text-red-600 mb-2" />
+            <Monitor className="w-8 h-8 text-destructive mb-2" />
             <span className="text-sm font-medium">모니터링</span>
           </div>
         </Card>
@@ -451,7 +451,7 @@ export default function AdminHome() {
             <div className="text-2xl font-bold">98.6%</div>
             <p className="text-xs text-muted-foreground">최적 상태</p>
             <div className="mt-4 h-1 w-full bg-secondary">
-              <div className="h-1 bg-green-500" style={{ width: '98.6%' }} />
+              <div className="h-1 bg-success" style={{ width: '98.6%' }} />
             </div>
           </CardContent>
         </Card>
@@ -480,11 +480,11 @@ export default function AdminHome() {
                       <p className="text-xl font-bold">{(stat.value ?? 0).toLocaleString()}</p>
                       <div className="flex items-center text-xs">
                         {stat.changeType === 'increase' ? (
-                          <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                          <TrendingUp className="h-3 w-3 mr-1 text-success" />
                         ) : (
-                          <TrendingUp className="h-3 w-3 mr-1 text-red-500 transform rotate-180" />
+                          <TrendingUp className="h-3 w-3 mr-1 text-destructive transform rotate-180" />
                         )}
-                        <span className={stat.changeType === 'increase' ? 'text-green-500' : 'text-red-500'}>
+                        <span className={stat.changeType === 'increase' ? 'text-success' : 'text-destructive'}>
                           {stat.change ?? 0}%
                         </span>
                       </div>
@@ -573,9 +573,9 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-between items-start p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                <div className="flex justify-between items-start p-3 rounded-lg bg-warning/10 dark:bg-warning/20 border border-warning/30 dark:border-warning/50">
                   <div className="flex items-start">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5 mr-3" />
+                    <AlertTriangle className="h-5 w-5 text-warning dark:text-warning mt-0.5 mr-3" />
                     <div>
                       <p className="font-medium text-sm">스토리지 서버 용량 경고</p>
                       <p className="text-sm text-muted-foreground">스토리지 서버가 78% 사용 중입니다. 최적화 또는 확장이 필요합니다.</p>
@@ -583,9 +583,9 @@ export default function AdminHome() {
                   </div>
                   <span className="text-xs text-gray-500">2시간 전</span>
                 </div>
-                <div className="flex justify-between items-start p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                <div className="flex justify-between items-start p-3 rounded-lg bg-success/10 dark:bg-success/20 border border-success/30 dark:border-success/50">
                   <div className="flex items-start">
-                    <Shield className="h-5 w-5 text-green-600 dark:text-green-500 mt-0.5 mr-3" />
+                    <Shield className="h-5 w-5 text-success dark:text-success mt-0.5 mr-3" />
                     <div>
                       <p className="font-medium text-sm">보안 업데이트 완료</p>
                       <p className="text-sm text-muted-foreground">모든 시스템에 대한 보안 패치가 성공적으로 적용되었습니다.</p>
@@ -593,9 +593,9 @@ export default function AdminHome() {
                   </div>
                   <span className="text-xs text-gray-500">어제</span>
                 </div>
-                <div className="flex justify-between items-start p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <div className="flex justify-between items-start p-3 rounded-lg bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/50">
                   <div className="flex items-start">
-                    <Database className="h-5 w-5 text-blue-600 dark:text-blue-500 mt-0.5 mr-3" />
+                    <Database className="h-5 w-5 text-primary dark:text-primary mt-0.5 mr-3" />
                     <div>
                       <p className="font-medium text-sm">데이터베이스 백업 완료</p>
                       <p className="text-sm text-muted-foreground">전체 데이터베이스 백업이 성공적으로 완료되었습니다.</p>
@@ -637,19 +637,19 @@ export default function AdminHome() {
                       <div className={`flex items-center ${getStatusColor(item.status)}`}>
                         {item.status === 'healthy' && (
                           <>
-                            <span className="h-2 w-2 rounded-full bg-green-500 mr-1.5"></span>
+                            <span className="h-2 w-2 rounded-full bg-success mr-1.5"></span>
                             <span>정상</span>
                           </>
                         )}
                         {item.status === 'warning' && (
                           <>
-                            <span className="h-2 w-2 rounded-full bg-amber-500 mr-1.5"></span>
+                            <span className="h-2 w-2 rounded-full bg-warning mr-1.5"></span>
                             <span>주의</span>
                           </>
                         )}
                         {item.status === 'critical' && (
                           <>
-                            <span className="h-2 w-2 rounded-full bg-red-500 mr-1.5"></span>
+                            <span className="h-2 w-2 rounded-full bg-destructive mr-1.5"></span>
                             <span>위험</span>
                           </>
                         )}
@@ -759,8 +759,8 @@ export default function AdminHome() {
                         <div className="text-sm text-muted-foreground">인증 완료</div>
                         <div className="text-2xl font-bold">118</div>
                       </div>
-                      <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                        <Check className="h-5 w-5 text-green-600" />
+                      <div className="h-10 w-10 rounded-full bg-success/10 dark:bg-success/30 flex items-center justify-center">
+                        <Check className="h-5 w-5 text-success" />
                       </div>
                     </div>
                     <div className="flex justify-between items-center p-4 border rounded-lg">
@@ -768,8 +768,8 @@ export default function AdminHome() {
                         <div className="text-sm text-muted-foreground">심사 중</div>
                         <div className="text-2xl font-bold">9</div>
                       </div>
-                      <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                        <Activity className="h-5 w-5 text-amber-600" />
+                      <div className="h-10 w-10 rounded-full bg-warning/10 dark:bg-warning/30 flex items-center justify-center">
+                        <Activity className="h-5 w-5 text-warning" />
                       </div>
                     </div>
                   </div>

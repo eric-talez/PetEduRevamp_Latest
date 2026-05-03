@@ -179,7 +179,7 @@ export default function InstituteCertificationPage() {
           {isSubmitted ? (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-green-600">
+                <CardTitle className="flex items-center text-success">
                   <Check className="w-5 h-5 mr-2" />
                   인증 신청 완료
                 </CardTitle>
@@ -248,7 +248,7 @@ export default function InstituteCertificationPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="instituteName">
-                        기관명 <span className="text-red-500">*</span>
+                        기관명 <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="instituteName"
@@ -262,7 +262,7 @@ export default function InstituteCertificationPage() {
                     
                     <div>
                       <Label htmlFor="ownerName">
-                        대표자 이름 <span className="text-red-500">*</span>
+                        대표자 이름 <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="ownerName"
@@ -277,7 +277,7 @@ export default function InstituteCertificationPage() {
                   
                   <div>
                     <Label htmlFor="businessNumber">
-                      사업자등록번호 <span className="text-red-500">*</span>
+                      사업자등록번호 <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="businessNumber"
@@ -291,7 +291,7 @@ export default function InstituteCertificationPage() {
                   
                   <div>
                     <Label htmlFor="address">
-                      주소 <span className="text-red-500">*</span>
+                      주소 <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="address"
@@ -306,7 +306,7 @@ export default function InstituteCertificationPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="phone">
-                        연락처 <span className="text-red-500">*</span>
+                        연락처 <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="phone"
@@ -320,7 +320,7 @@ export default function InstituteCertificationPage() {
                     
                     <div>
                       <Label htmlFor="email">
-                        이메일 <span className="text-red-500">*</span>
+                        이메일 <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="email"
@@ -406,18 +406,18 @@ export default function InstituteCertificationPage() {
                 <CardContent className="space-y-6">
                   <div>
                     <Label className="mb-2 block">
-                      사업자등록증 <span className="text-red-500">*</span>
+                      사업자등록증 <span className="text-destructive">*</span>
                     </Label>
                     
                     {uploadedFiles.businessLicense ? (
                       <div className="flex items-center p-3 border border-gray-200 rounded-md">
-                        <FileText className="w-5 h-5 text-blue-500 mr-2" />
+                        <FileText className="w-5 h-5 text-primary mr-2" />
                         <span className="flex-1">{uploadedFiles.businessLicense.name}</span>
                         <Button 
                           variant="ghost" 
                           size="sm" 
                           onClick={() => removeFile('businessLicense')}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-destructive hover:text-destructive/90"
                         >
                           삭제
                         </Button>
@@ -452,13 +452,13 @@ export default function InstituteCertificationPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                           {uploadedFiles.institutePhotos.map((file, index) => (
                             <div key={index} className="flex items-center p-3 border border-gray-200 rounded-md">
-                              <FileText className="w-5 h-5 text-green-500 mr-2" />
+                              <FileText className="w-5 h-5 text-success mr-2" />
                               <span className="flex-1 truncate">{file.name}</span>
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={() => removeFile('institutePhotos', index)}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-destructive hover:text-destructive/90"
                               >
                                 삭제
                               </Button>
@@ -500,13 +500,13 @@ export default function InstituteCertificationPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                           {uploadedFiles.certifications.map((file, index) => (
                             <div key={index} className="flex items-center p-3 border border-gray-200 rounded-md">
-                              <FileText className="w-5 h-5 text-amber-500 mr-2" />
+                              <FileText className="w-5 h-5 text-warning mr-2" />
                               <span className="flex-1 truncate">{file.name}</span>
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={() => removeFile('certifications', index)}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-destructive hover:text-destructive/90"
                               >
                                 삭제
                               </Button>
@@ -573,36 +573,36 @@ export default function InstituteCertificationPage() {
             <CardContent className="space-y-6">
               <div className="space-y-3">
                 <div className="flex items-start">
-                  <Check className="w-5 h-5 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                  <Check className="w-5 h-5 mr-2 text-success flex-shrink-0 mt-0.5" />
                   <span>위치 서비스에 공식 인증 마크와 함께 노출</span>
                 </div>
                 <div className="flex items-start">
-                  <Check className="w-5 h-5 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                  <Check className="w-5 h-5 mr-2 text-success flex-shrink-0 mt-0.5" />
                   <span>고유 기관 코드 및 관리자 아이디 발급</span>
                 </div>
                 <div className="flex items-start">
-                  <Check className="w-5 h-5 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                  <Check className="w-5 h-5 mr-2 text-success flex-shrink-0 mt-0.5" />
                   <span>소속 훈련사 프로필 관리 및 등록</span>
                 </div>
                 <div className="flex items-start">
-                  <Check className="w-5 h-5 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                  <Check className="w-5 h-5 mr-2 text-success flex-shrink-0 mt-0.5" />
                   <span>통합 상담 예약 시스템 제공</span>
                 </div>
                 <div className="flex items-start">
-                  <Check className="w-5 h-5 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                  <Check className="w-5 h-5 mr-2 text-success flex-shrink-0 mt-0.5" />
                   <span>검색 노출 우선순위 상향</span>
                 </div>
                 <div className="flex items-start">
-                  <Check className="w-5 h-5 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                  <Check className="w-5 h-5 mr-2 text-success flex-shrink-0 mt-0.5" />
                   <span>수수료 우대 혜택 (일반 기관 대비 3% 할인)</span>
                 </div>
               </div>
               
               <Separator />
               
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="font-medium text-blue-800 mb-2">인증 절차 안내</h3>
-                <ol className="space-y-2 text-sm text-blue-700">
+              <div className="bg-primary/10 p-4 rounded-lg">
+                <h3 className="font-medium text-primary mb-2">인증 절차 안내</h3>
+                <ol className="space-y-2 text-sm text-primary">
                   <li className="flex items-start">
                     <span className="font-bold mr-2">1.</span>
                     <span>인증 신청서 작성 및 필요 서류 제출</span>

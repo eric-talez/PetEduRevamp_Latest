@@ -407,13 +407,13 @@ export default function AiAnalysisPage() {
       case 'good': 
       case 'normal': 
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-success';
       case 'warning': 
       case 'irregular':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-warning';
       case 'bad': 
       case 'skipped':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-destructive';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -427,7 +427,7 @@ export default function AiAnalysisPage() {
       {/* 헤더 */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-3">
-          <Brain className="w-8 h-8 text-blue-600" />
+          <Brain className="w-8 h-8 text-primary" />
           AI 분석 시스템
         </h1>
         <p className="text-gray-600">
@@ -559,7 +559,7 @@ export default function AiAnalysisPage() {
               
               {/* 분석 정보 */}
               {analyzeDataMutation.isPending && (
-                <div className="text-sm text-muted-foreground text-center p-2 bg-blue-50 rounded-md">
+                <div className="text-sm text-muted-foreground text-center p-2 bg-primary/10 rounded-md">
                   <p>선택된 {selectedLogIds.length}개의 알림장을 {selectedModel.startsWith('claude') ? 'Claude' : 'ChatGPT'}로 분석 중입니다...</p>
                   <p>잠시만 기다려주세요.</p>
                 </div>
@@ -720,7 +720,7 @@ export default function AiAnalysisPage() {
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <CheckCircle className="w-5 h-5 text-success" />
                       최신 분석 결과
                     </CardTitle>
                     <CardDescription>
@@ -777,7 +777,7 @@ export default function AiAnalysisPage() {
                 {(analyzeDataMutation.data as any)?.analysis?.resultJson?.behavior && (
                   <div>
                     <h4 className="font-medium mb-2">🐕 행동 패턴</h4>
-                    <p className="text-sm text-gray-700 bg-blue-50 p-3 rounded">
+                    <p className="text-sm text-gray-700 bg-primary/10 p-3 rounded">
                       {(analyzeDataMutation.data as any).analysis.resultJson.behavior}
                     </p>
                   </div>
@@ -786,7 +786,7 @@ export default function AiAnalysisPage() {
                 {(analyzeDataMutation.data as any)?.analysis?.resultJson?.health && (
                   <div>
                     <h4 className="font-medium mb-2">💊 건강 상태</h4>
-                    <p className="text-sm text-gray-700 bg-green-50 p-3 rounded">
+                    <p className="text-sm text-gray-700 bg-success/10 p-3 rounded">
                       {(analyzeDataMutation.data as any).analysis.resultJson.health}
                     </p>
                   </div>
@@ -795,7 +795,7 @@ export default function AiAnalysisPage() {
                 {(analyzeDataMutation.data as any)?.analysis?.resultJson?.nutrition && (
                   <div>
                     <h4 className="font-medium mb-2">🍽️ 영양 상태</h4>
-                    <p className="text-sm text-gray-700 bg-yellow-50 p-3 rounded">
+                    <p className="text-sm text-gray-700 bg-warning/10 p-3 rounded">
                       {(analyzeDataMutation.data as any).analysis.resultJson.nutrition}
                     </p>
                   </div>
@@ -812,12 +812,12 @@ export default function AiAnalysisPage() {
 
                 <div>
                   <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <AlertTriangle className="w-4 h-4 text-warning" />
                     주의사항
                   </h4>
                   <div className="space-y-2">
                     {((analyzeDataMutation.data as any)?.analysis?.resultJson?.redFlags || []).map((flag: string, index: number) => (
-                      <div key={index} className="text-sm bg-amber-50 border-l-4 border-amber-400 p-3">
+                      <div key={index} className="text-sm bg-warning/10 border-l-4 border-warning/40 p-3">
                         {flag}
                       </div>
                     ))}
@@ -828,7 +828,7 @@ export default function AiAnalysisPage() {
                   <h4 className="font-medium mb-2">✅ 권장사항</h4>
                   <div className="space-y-2">
                     {((analyzeDataMutation.data as any)?.analysis?.resultJson?.nextSteps || []).map((step: string, index: number) => (
-                      <div key={index} className="text-sm bg-blue-50 border-l-4 border-blue-400 p-3">
+                      <div key={index} className="text-sm bg-primary/10 border-l-4 border-primary/40 p-3">
                         {step}
                       </div>
                     ))}
@@ -837,9 +837,9 @@ export default function AiAnalysisPage() {
 
                 {/* AI 오류 표시 */}
                 {(analyzeDataMutation.data as any)?.analysis?.resultJson?.error && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <h4 className="font-medium text-red-800 mb-2">⚠️ 참고사항</h4>
-                    <p className="text-sm text-red-700">
+                  <div className="mt-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                    <h4 className="font-medium text-destructive mb-2">⚠️ 참고사항</h4>
+                    <p className="text-sm text-destructive">
                       AI API 할당량 초과로 임시 분석을 제공하고 있습니다. 실제 AI 분석을 위해서는 API 키 설정이 필요합니다.
                     </p>
                   </div>
@@ -1054,12 +1054,12 @@ export default function AiAnalysisPage() {
                   {analysis.resultJson.redFlags?.length > 0 && (
                     <div>
                       <h5 className="font-medium text-sm mb-1 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3 text-amber-500" />
+                        <AlertTriangle className="w-3 h-3 text-warning" />
                         주의사항
                       </h5>
                       <div className="space-y-1">
                         {analysis.resultJson.redFlags.map((flag: string, index: number) => (
-                          <div key={index} className="text-xs bg-amber-50 border-l-2 border-amber-400 p-2">
+                          <div key={index} className="text-xs bg-warning/10 border-l-2 border-warning/40 p-2">
                             {flag}
                           </div>
                         ))}
@@ -1151,7 +1151,7 @@ export default function AiAnalysisPage() {
 
                 {/* 자세 분석 */}
                 {mediaAnalysisResult?.analysis?.posture && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
                     <h4 className="font-medium mb-2">🐕 자세 분석</h4>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
@@ -1194,7 +1194,7 @@ export default function AiAnalysisPage() {
                       )}
                       {mediaAnalysisResult.analysis.behavior.positive?.length > 0 && (
                         <div>
-                          <p className="font-medium text-green-600 dark:text-green-400">긍정적 행동:</p>
+                          <p className="font-medium text-success dark:text-success">긍정적 행동:</p>
                           <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
                             {mediaAnalysisResult.analysis.behavior.positive.map((pos: string, idx: number) => (
                               <li key={idx}>{pos}</li>
@@ -1204,7 +1204,7 @@ export default function AiAnalysisPage() {
                       )}
                       {mediaAnalysisResult.analysis.behavior.concerns?.length > 0 && (
                         <div>
-                          <p className="font-medium text-amber-600 dark:text-amber-400">우려사항:</p>
+                          <p className="font-medium text-warning dark:text-warning">우려사항:</p>
                           <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
                             {mediaAnalysisResult.analysis.behavior.concerns.map((concern: string, idx: number) => (
                               <li key={idx}>{concern}</li>
@@ -1218,7 +1218,7 @@ export default function AiAnalysisPage() {
 
                 {/* 건강 상태 */}
                 {mediaAnalysisResult?.analysis?.health && (
-                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <div className="bg-success/10 dark:bg-success/20 p-4 rounded-lg">
                     <h4 className="font-medium mb-2">💊 건강 상태</h4>
                     <div className="space-y-2 text-sm">
                       <p className="text-gray-700 dark:text-gray-300">
@@ -1226,7 +1226,7 @@ export default function AiAnalysisPage() {
                       </p>
                       {mediaAnalysisResult.analysis.health.warnings?.length > 0 && (
                         <div>
-                          <p className="font-medium text-red-600 dark:text-red-400">경고:</p>
+                          <p className="font-medium text-destructive dark:text-destructive">경고:</p>
                           <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
                             {mediaAnalysisResult.analysis.health.warnings.map((warning: string, idx: number) => (
                               <li key={idx}>{warning}</li>
@@ -1250,9 +1250,9 @@ export default function AiAnalysisPage() {
 
                 {/* 문제점 및 해결방안 */}
                 {mediaAnalysisResult?.analysis?.issues?.length > 0 && (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
+                  <div className="bg-warning/10 dark:bg-warning/20 p-4 rounded-lg">
                     <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      <AlertTriangle className="w-4 h-4 text-warning" />
                       발견된 문제점
                     </h4>
                     <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300">
@@ -1264,9 +1264,9 @@ export default function AiAnalysisPage() {
                 )}
 
                 {mediaAnalysisResult?.analysis?.solutions?.length > 0 && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
                     <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-blue-500" />
+                      <CheckCircle className="w-4 h-4 text-primary" />
                       해결방안
                     </h4>
                     <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300">

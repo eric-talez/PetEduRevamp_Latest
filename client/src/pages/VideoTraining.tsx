@@ -296,7 +296,7 @@ export default function VideoTraining() {
                 </p>
                 <p className="text-2xl font-bold">{displayedCourses.length}</p>
               </div>
-              <BookOpen className="w-8 h-8 text-blue-600" />
+              <BookOpen className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -308,11 +308,11 @@ export default function VideoTraining() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">발행된 강의</p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-2xl font-bold text-success">
                       {courses.filter(c => c.status === 'published').length}
                     </p>
                   </div>
-                  <Eye className="w-8 h-8 text-green-600" />
+                  <Eye className="w-8 h-8 text-success" />
                 </div>
               </CardContent>
             </Card>
@@ -322,11 +322,11 @@ export default function VideoTraining() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">초안 강의</p>
-                    <p className="text-2xl font-bold text-orange-600">
+                    <p className="text-2xl font-bold text-primary">
                       {courses.filter(c => c.status === 'draft').length}
                     </p>
                   </div>
-                  <Edit className="w-8 h-8 text-orange-600" />
+                  <Edit className="w-8 h-8 text-primary" />
                 </div>
               </CardContent>
             </Card>
@@ -437,7 +437,7 @@ export default function VideoTraining() {
                         <AlertDialogCancel>취소</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => handleDeleteCourse(course.id)}
-                          className="bg-red-600 hover:bg-red-700"
+                          className="bg-destructive hover:bg-destructive/90"
                         >
                           삭제
                         </AlertDialogAction>

@@ -48,11 +48,11 @@ const PasswordResetPage: React.FC = () => {
 
         {success ? (
           <div className="space-y-6">
-            <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-md">
+            <div className="bg-success/10 border border-success/30 text-success p-4 rounded-md">
               <p>비밀번호 재설정 안내 이메일이 발송되었습니다. 이메일을 확인해주세요.</p>
             </div>
             <Link href="/auth">
-              <a className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center justify-center">
+              <a className="w-full py-2 px-4 bg-primary hover:bg-primary/90 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors flex items-center justify-center">
                 로그인 페이지로 돌아가기
               </a>
             </Link>
@@ -60,7 +60,7 @@ const PasswordResetPage: React.FC = () => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">
+              <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive rounded-md text-sm">
                 {error}
               </div>
             )}
@@ -77,7 +77,7 @@ const PasswordResetPage: React.FC = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={isLoading}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
 
@@ -93,7 +93,7 @@ const PasswordResetPage: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 shadow-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
 
@@ -101,7 +101,7 @@ const PasswordResetPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-2 px-4 bg-primary hover:bg-primary/90 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isLoading ? "처리 중..." : "비밀번호 재설정 요청"}
               </button>

@@ -11,7 +11,7 @@ export default function InstituteFacilityPage() {
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">교육 시설 현황</h2>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          <button className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
             + 새 시설 등록
           </button>
         </div>
@@ -44,10 +44,10 @@ export default function InstituteFacilityPage() {
                   </div>
                 </div>
                 <div className="mt-4 flex space-x-2">
-                  <button className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  <button className="flex-1 px-3 py-2 bg-primary text-white text-sm rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                     상세보기
                   </button>
-                  <button className="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                  <button className="flex-1 px-3 py-2 bg-success text-white text-sm rounded-md hover:bg-success/90 focus:outline-none focus:ring-2 focus:ring-success focus:ring-offset-2">
                     예약 현황
                   </button>
                 </div>
@@ -94,7 +94,7 @@ export default function InstituteFacilityPage() {
                     <div className="text-sm text-gray-900 dark:text-white">{i * 3}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-success/10 text-success dark:bg-success/20 dark:text-success/70">
                       정상
                     </span>
                   </td>
@@ -102,7 +102,7 @@ export default function InstituteFacilityPage() {
                     2023-05-10
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a href="#" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                    <a href="#" className="text-primary hover:text-primary/90 dark:text-primary dark:hover:text-primary/90">
                       관리
                     </a>
                   </td>

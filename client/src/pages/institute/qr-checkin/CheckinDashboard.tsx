@@ -88,10 +88,10 @@ interface NoseLogResponse {
 }
 
 const TEMPERAMENT_MAP: Record<string, { label: string; color: string }> = {
-  A: { label: "A 사회성 양호", color: "bg-green-100 text-green-700" },
-  B: { label: "B 흥분 조절", color: "bg-yellow-100 text-yellow-700" },
-  C: { label: "C 짖음/경계", color: "bg-orange-100 text-orange-700" },
-  D: { label: "D 공격성", color: "bg-red-100 text-red-700" },
+  A: { label: "A 사회성 양호", color: "bg-success/10 text-success" },
+  B: { label: "B 흥분 조절", color: "bg-warning/10 text-warning" },
+  C: { label: "C 짖음/경계", color: "bg-primary/10 text-primary" },
+  D: { label: "D 공격성", color: "bg-destructive/10 text-destructive" },
   E: { label: "E 분리불안", color: "bg-primary/10 text-primary" },
 };
 
@@ -155,8 +155,8 @@ export default function CheckinDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <UserCheck className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center">
+              <UserCheck className="w-5 h-5 text-success" />
             </div>
             <div>
               <p className="text-sm text-gray-500">오늘</p>
@@ -166,8 +166,8 @@ export default function CheckinDashboard() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-gray-500">주간</p>
@@ -188,8 +188,8 @@ export default function CheckinDashboard() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-              <Users className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 bg-warning/10 rounded-full flex items-center justify-center">
+              <Users className="w-5 h-5 text-warning" />
             </div>
             <div>
               <p className="text-sm text-gray-500">누적 방문자</p>
@@ -213,16 +213,16 @@ export default function CheckinDashboard() {
                 <p className="text-2xl font-bold">{noseStats.total}</p>
                 <p className="text-xs text-gray-500">전체 인증</p>
               </div>
-              <div className="bg-green-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-green-600">{noseStats.success}</p>
+              <div className="bg-success/10 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-success">{noseStats.success}</p>
                 <p className="text-xs text-gray-500">성공</p>
               </div>
-              <div className="bg-red-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-red-600">{noseStats.fail}</p>
+              <div className="bg-destructive/10 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-destructive">{noseStats.fail}</p>
                 <p className="text-xs text-gray-500">실패</p>
               </div>
-              <div className="bg-blue-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-blue-600">{noseStats.successRate}%</p>
+              <div className="bg-primary/10 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{noseStats.successRate}%</p>
                 <p className="text-xs text-gray-500">성공률</p>
               </div>
             </div>
@@ -233,14 +233,14 @@ export default function CheckinDashboard() {
                 {displayedNoseLogs.map((log) => (
                   <div key={log.id} className="flex items-center justify-between border rounded-lg p-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <Fingerprint className={`w-4 h-4 ${log.matched ? 'text-green-500' : 'text-red-500'}`} />
+                      <Fingerprint className={`w-4 h-4 ${log.matched ? 'text-success' : 'text-destructive'}`} />
                       <span>{log.petName || '반려동물'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {log.manualApproval && (
                         <Badge variant="outline" className="text-xs">수동</Badge>
                       )}
-                      <Badge className={`text-xs ${log.matched ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      <Badge className={`text-xs ${log.matched ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                         {log.matched ? `일치 ${log.similarityScore}%` : `불일치 ${log.similarityScore}%`}
                       </Badge>
                       <span className="text-xs text-gray-400">
@@ -286,8 +286,8 @@ export default function CheckinDashboard() {
                 return (
                   <div key={session.id} className="border rounded-lg p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isUsed ? 'bg-green-100' : isExpired ? 'bg-gray-100' : 'bg-blue-100'}`}>
-                        <Shield className={`w-4 h-4 ${isUsed ? 'text-green-600' : isExpired ? 'text-gray-400' : 'text-blue-600'}`} />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isUsed ? 'bg-success/10' : isExpired ? 'bg-gray-100' : 'bg-primary/10'}`}>
+                        <Shield className={`w-4 h-4 ${isUsed ? 'text-success' : isExpired ? 'text-gray-400' : 'text-primary'}`} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -301,7 +301,7 @@ export default function CheckinDashboard() {
                             level && <span key={petId}>{temperamentBadge(level as string)}</span>
                           ))}
                           {Object.values(session.vaccineStatus || {}).some(v => v?.valid) && (
-                            <span className="text-xs text-green-600 flex items-center gap-0.5">
+                            <span className="text-xs text-success flex items-center gap-0.5">
                               <Syringe className="w-3 h-3" /> 접종완료
                             </span>
                           )}
@@ -386,10 +386,10 @@ export default function CheckinDashboard() {
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{checkin.ownerInfo?.name || checkin.ownerName || '비회원'}</span>
                           {checkin.isNewVisitor && (
-                            <Badge variant="outline" className="text-xs border-blue-400 text-blue-600">신규</Badge>
+                            <Badge variant="outline" className="text-xs border-primary/40 text-primary">신규</Badge>
                           )}
                           {checkin.hasPackage && (
-                            <Badge variant="outline" className="text-xs border-green-400 text-green-600">정기권</Badge>
+                            <Badge variant="outline" className="text-xs border-success/40 text-success">정기권</Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -415,7 +415,7 @@ export default function CheckinDashboard() {
                     <div className="mt-3 pl-13 space-y-1">
                       {checkin.todayConcern && (
                         <div className="flex items-start gap-2 text-sm">
-                          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                          <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
                           <span className="text-gray-600">{checkin.todayConcern}</span>
                         </div>
                       )}

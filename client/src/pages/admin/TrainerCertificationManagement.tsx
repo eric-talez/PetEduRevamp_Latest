@@ -295,17 +295,17 @@ export default function TrainerCertificationManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">대기중</Badge>;
+        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">대기중</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">승인됨</Badge>;
+        return <Badge variant="outline" className="bg-success/10 text-success border-success/30">승인됨</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">거부됨</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">거부됨</Badge>;
       case 'active':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">활성</Badge>;
+        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">활성</Badge>;
       case 'expired':
         return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">만료</Badge>;
       case 'revoked':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">취소</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">취소</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -314,11 +314,11 @@ export default function TrainerCertificationManagement() {
   const getLevelBadge = (level: string) => {
     switch (level) {
       case 'basic':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">기본</Badge>;
+        return <Badge className="bg-primary/10 text-primary border-primary/30">기본</Badge>;
       case 'advanced':
         return <Badge className="bg-primary/10 text-primary border-primary/30">전문</Badge>;
       case 'expert':
-        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">마스터</Badge>;
+        return <Badge className="bg-warning/10 text-warning border-warning/30">마스터</Badge>;
       default:
         return <Badge variant="outline">{level}</Badge>;
     }
@@ -358,8 +358,8 @@ export default function TrainerCertificationManagement() {
                 <p className="text-sm font-medium text-gray-600">전체 프로그램</p>
                 <p className="text-2xl font-bold text-gray-900">{programs.length}</p>
               </div>
-              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Award className="h-4 w-4 text-blue-600" />
+              <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <Award className="h-4 w-4 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -374,8 +374,8 @@ export default function TrainerCertificationManagement() {
                   {applications.filter(app => app.status === 'pending').length}
                 </p>
               </div>
-              <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Clock className="h-4 w-4 text-yellow-600" />
+              <div className="h-8 w-8 bg-warning/10 rounded-full flex items-center justify-center">
+                <Clock className="h-4 w-4 text-warning" />
               </div>
             </div>
           </CardContent>
@@ -390,8 +390,8 @@ export default function TrainerCertificationManagement() {
                   {certifications.filter(cert => cert.status === 'active').length}
                 </p>
               </div>
-              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+              <div className="h-8 w-8 bg-success/10 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-4 w-4 text-success" />
               </div>
             </div>
           </CardContent>
@@ -421,25 +421,25 @@ export default function TrainerCertificationManagement() {
         <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1">
           <TabsTrigger 
             value="overview" 
-            className="text-gray-700 dark:text-gray-300 data-[state=active]:text-blue-600 data-[state=active]:dark:text-blue-400 data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 font-medium"
+            className="text-gray-700 dark:text-gray-300 data-[state=active]:text-primary data-[state=active]:dark:text-primary data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 font-medium"
           >
             개요
           </TabsTrigger>
           <TabsTrigger 
             value="programs"
-            className="text-gray-700 dark:text-gray-300 data-[state=active]:text-blue-600 data-[state=active]:dark:text-blue-400 data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 font-medium"
+            className="text-gray-700 dark:text-gray-300 data-[state=active]:text-primary data-[state=active]:dark:text-primary data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 font-medium"
           >
             프로그램
           </TabsTrigger>
           <TabsTrigger 
             value="applications"
-            className="text-gray-700 dark:text-gray-300 data-[state=active]:text-blue-600 data-[state=active]:dark:text-blue-400 data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 font-medium"
+            className="text-gray-700 dark:text-gray-300 data-[state=active]:text-primary data-[state=active]:dark:text-primary data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 font-medium"
           >
             신청서
           </TabsTrigger>
           <TabsTrigger 
             value="certifications"
-            className="text-gray-700 dark:text-gray-300 data-[state=active]:text-blue-600 data-[state=active]:dark:text-blue-400 data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 font-medium"
+            className="text-gray-700 dark:text-gray-300 data-[state=active]:text-primary data-[state=active]:dark:text-primary data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 font-medium"
           >
             인증서
           </TabsTrigger>
@@ -460,7 +460,7 @@ export default function TrainerCertificationManagement() {
                   {programs && programs.length > 0 ? programs.map((program) => (
                     <div key={program.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-medium dark:text-white text-[#2b3245]">{program.name}</p>
+                        <p className="font-medium dark:text-white text-[hsl(var(--foreground))]">{program.name}</p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{program.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -489,7 +489,7 @@ export default function TrainerCertificationManagement() {
                   {applications && applications.length > 0 ? applications.slice(0, 5).map((application) => (
                     <div key={application.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-medium dark:text-white text-[#2b3245]">신청 ID: {application.id}</p>
+                        <p className="font-medium dark:text-white text-[hsl(var(--foreground))]">신청 ID: {application.id}</p>
                         <p className="text-sm text-muted-foreground">
                           {new Date(application.applicationDate).toLocaleDateString()}
                         </p>
@@ -516,7 +516,7 @@ export default function TrainerCertificationManagement() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">인증 프로그램 관리</h2>
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4 mr-2" />
                   새 프로그램 추가
                 </Button>
@@ -703,7 +703,7 @@ export default function TrainerCertificationManagement() {
                           <Button
                             size="sm"
                             onClick={() => handleSendConfirmationMessage(application)}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-primary hover:bg-primary/90"
                           >
                             <FileText className="h-4 w-4 mr-1" />
                             기관확인 발송
@@ -711,7 +711,7 @@ export default function TrainerCertificationManagement() {
                           <Button
                             size="sm"
                             onClick={() => handleTrainerAgreement(application.id, true)}
-                            className="bg-orange-600 hover:bg-orange-700"
+                            className="bg-primary hover:bg-primary/90"
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
                             훈련사합의
@@ -719,7 +719,7 @@ export default function TrainerCertificationManagement() {
                           <Button
                             size="sm"
                             onClick={() => handleApplicationReview(application.id, 'approve')}
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-success hover:bg-success/90"
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
                             최종승인
@@ -728,7 +728,7 @@ export default function TrainerCertificationManagement() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleApplicationReview(application.id, 'reject')}
-                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            className="text-destructive border-destructive/50 hover:bg-destructive/10"
                           >
                             <XCircle className="h-4 w-4 mr-1" />
                             거부
@@ -778,7 +778,7 @@ export default function TrainerCertificationManagement() {
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">점수:</p>
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <Star className="h-4 w-4 text-warning fill-warning" />
                         <span className="text-sm text-muted-foreground">{certification.score}/100</span>
                       </div>
                     </div>
@@ -801,7 +801,7 @@ export default function TrainerCertificationManagement() {
                         size="sm" 
                         variant="outline"
                         onClick={() => handleCertificationEdit(certification)}
-                        className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200"
+                        className="hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all duration-200"
                       >
                         <FileText className="h-4 w-4 mr-1" />
                         편집
@@ -811,7 +811,7 @@ export default function TrainerCertificationManagement() {
                           size="sm" 
                           variant="outline"
                           onClick={() => handleCertificationStatusChange(certification.id, 'revoke')}
-                          className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 hover:border-red-400 transition-all duration-200"
+                          className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive/90 hover:border-destructive/40 transition-all duration-200"
                         >
                           <XCircle className="h-4 w-4 mr-1" />
                           취소
@@ -822,7 +822,7 @@ export default function TrainerCertificationManagement() {
                           size="sm" 
                           variant="outline"
                           onClick={() => handleCertificationStatusChange(certification.id, 'activate')}
-                          className="text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-all duration-200"
+                          className="text-success border-success/40 hover:bg-success/10 hover:text-success/90 hover:border-success/40 transition-all duration-200"
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           활성화
@@ -1092,7 +1092,7 @@ export default function TrainerCertificationManagement() {
                         handleSendConfirmationMessage(selectedApplication);
                         setShowApplicationModal(false);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-primary hover:bg-primary/90"
                     >
                       <FileText className="h-4 w-4 mr-1" />
                       기관확인 발송
@@ -1102,7 +1102,7 @@ export default function TrainerCertificationManagement() {
                         handleApplicationReview(selectedApplication.id, 'approve');
                         setShowApplicationModal(false);
                       }}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-success hover:bg-success/90"
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
                       승인
@@ -1113,7 +1113,7 @@ export default function TrainerCertificationManagement() {
                         handleApplicationReview(selectedApplication.id, 'reject');
                         setShowApplicationModal(false);
                       }}
-                      className="text-red-600 border-red-600 hover:bg-red-50"
+                      className="text-destructive border-destructive/50 hover:bg-destructive/10"
                     >
                       <XCircle className="h-4 w-4 mr-1" />
                       거부
@@ -1135,14 +1135,14 @@ export default function TrainerCertificationManagement() {
           
           {selectedApplicationForConfirmation && (
             <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+              <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-lg">
+                <p className="text-sm text-primary dark:text-primary">
                   <strong>신청자:</strong> 사용자 ID {selectedApplicationForConfirmation.userId}
                 </p>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+                <p className="text-sm text-primary dark:text-primary">
                   <strong>신청일:</strong> {new Date(selectedApplicationForConfirmation.applicationDate).toLocaleDateString()}
                 </p>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+                <p className="text-sm text-primary dark:text-primary">
                   <strong>프로그램:</strong> ID {selectedApplicationForConfirmation.programId}
                 </p>
               </div>
@@ -1163,7 +1163,7 @@ export default function TrainerCertificationManagement() {
                 <h4 className="font-medium mb-2">인증 워크플로우</h4>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-primary rounded-full"></div>
                     <span className="text-sm">1. 기관 확인 발송</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1184,7 +1184,7 @@ export default function TrainerCertificationManagement() {
                 <Button
                   onClick={handleConfirmationSend}
                   disabled={!confirmationMessage.trim()}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   <FileText className="h-4 w-4 mr-1" />
                   확인 메시지 발송
@@ -1374,13 +1374,13 @@ function NewProgramForm({ onSuccess }: { onSuccess: () => void }) {
 function getStatusBadge(status: string) {
   switch (status) {
     case 'pending':
-      return <Badge variant="outline" className="text-yellow-600 border-yellow-600">대기중</Badge>;
+      return <Badge variant="outline" className="text-warning border-warning/50">대기중</Badge>;
     case 'approved':
-      return <Badge variant="default" className="bg-green-600">승인됨</Badge>;
+      return <Badge variant="default" className="bg-success">승인됨</Badge>;
     case 'rejected':
       return <Badge variant="destructive">거부됨</Badge>;
     case 'active':
-      return <Badge variant="default" className="bg-green-600">활성</Badge>;
+      return <Badge variant="default" className="bg-success">활성</Badge>;
     case 'expired':
       return <Badge variant="outline" className="text-gray-600 border-gray-600">만료</Badge>;
     case 'revoked':
@@ -1393,11 +1393,11 @@ function getStatusBadge(status: string) {
 function getLevelBadge(level: string) {
   switch (level) {
     case 'basic':
-      return <Badge variant="outline" className="text-blue-600 border-blue-600">기초</Badge>;
+      return <Badge variant="outline" className="text-primary border-primary/50">기초</Badge>;
     case 'advanced':
       return <Badge variant="outline" className="text-primary border-primary/60">고급</Badge>;
     case 'expert':
-      return <Badge variant="outline" className="text-red-600 border-red-600">전문가</Badge>;
+      return <Badge variant="outline" className="text-destructive border-destructive/50">전문가</Badge>;
     default:
       return <Badge variant="outline">{level}</Badge>;
   }

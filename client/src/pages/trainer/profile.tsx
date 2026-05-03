@@ -299,10 +299,10 @@ export default function TrainerProfile() {
     const monthsUntilExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30));
     
     if (monthsUntilExpiry <= 3) {
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">만료 임박</Badge>;
+      return <Badge variant="secondary" className="bg-warning/10 text-warning">만료 임박</Badge>;
     }
     
-    return <Badge variant="default" className="bg-green-100 text-green-800">유효</Badge>;
+    return <Badge variant="default" className="bg-success/10 text-success">유효</Badge>;
   };
 
   const getCategoryLabel = (category: string) => {
@@ -506,7 +506,7 @@ export default function TrainerProfile() {
 
               <div className="flex items-center space-x-8 pt-4 border-t">
                 <div className="flex items-center space-x-2">
-                  <Star className="h-5 w-5 text-yellow-500" />
+                  <Star className="h-5 w-5 text-warning" />
                   <span className="font-medium">{profile.rating}</span>
                   <span className="text-muted-foreground">({profile.totalReviews}개 리뷰)</span>
                 </div>
@@ -595,7 +595,7 @@ export default function TrainerProfile() {
                 {profile.certifications.map((cert) => (
                   <div key={cert.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
-                      <Award className="h-8 w-8 text-yellow-600" />
+                      <Award className="h-8 w-8 text-warning" />
                       <div>
                         <h4 className="font-medium">{cert.name}</h4>
                         <p className="text-sm text-muted-foreground">{cert.issuer}</p>

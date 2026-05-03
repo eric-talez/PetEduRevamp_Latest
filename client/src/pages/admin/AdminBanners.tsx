@@ -512,11 +512,11 @@ export default function AdminBanners() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">활성화</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">활성화</span>;
       case 'inactive':
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">비활성화</span>;
       case 'scheduled':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">예약됨</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">예약됨</span>;
       default:
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{status}</span>;
     }
@@ -526,13 +526,13 @@ export default function AdminBanners() {
   const getPositionIcon = (position: string) => {
     switch (position) {
       case 'hero':
-        return <span className="text-blue-500 text-xs">히어로</span>;
+        return <span className="text-primary text-xs">히어로</span>;
       case 'sidebar':
         return <span className="text-primary text-xs">사이드바</span>;
       case 'footer':
         return <span className="text-gray-500 text-xs">푸터</span>;
       case 'popup':
-        return <span className="text-amber-500 text-xs">팝업</span>;
+        return <span className="text-warning text-xs">팝업</span>;
       default:
         return <span className="text-gray-500 text-xs">{position}</span>;
     }
@@ -759,7 +759,7 @@ export default function AdminBanners() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteBanner(banner.id)}
-                                className="text-red-500"
+                                className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 삭제
@@ -898,7 +898,7 @@ export default function AdminBanners() {
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">링크</h3>
                 {selectedBanner.linkUrl ? (
                   <div className="flex items-center">
-                    <a href={selectedBanner.linkUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate max-w-[500px]">
+                    <a href={selectedBanner.linkUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate max-w-[500px]">
                       {selectedBanner.linkUrl}
                     </a>
                     <ExternalLink className="h-3 w-3 ml-1 text-muted-foreground" />

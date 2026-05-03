@@ -99,7 +99,7 @@ const MenuVisibilityControl: React.FC = () => {
   const roleConfigs: RoleMenuConfig = {
     user: {
       name: '일반 사용자',
-      color: 'bg-blue-500',
+      color: 'bg-primary',
       icon: <Users className="w-4 h-4" />,
       menuItems: [
         { id: 'home', name: '홈', path: '/', category: '메인', description: '메인 홈페이지', icon: 'Home' },
@@ -114,7 +114,7 @@ const MenuVisibilityControl: React.FC = () => {
     },
     trainer: {
       name: '훈련사',
-      color: 'bg-green-500',
+      color: 'bg-success',
       icon: <Shield className="w-4 h-4" />,
       menuItems: [
         { id: 'trainer-courses', name: '내 강좌', path: '/trainer/courses', category: '교육', description: '강좌 관리', icon: 'BookOpen' },
@@ -145,7 +145,7 @@ const MenuVisibilityControl: React.FC = () => {
     },
     admin: {
       name: '시스템 관리자',
-      color: 'bg-red-500',
+      color: 'bg-destructive',
       icon: <Settings className="w-4 h-4" />,
       menuItems: [
         { id: 'admin-dashboard', name: '통합 대시보드', path: '/admin/dashboard', category: '대시보드', description: '전체 시스템 현황', icon: 'BarChart3' },
@@ -289,18 +289,18 @@ const MenuVisibilityControl: React.FC = () => {
                   <Card key={category}>
                     <CardHeader className="pb-4">
                       <CardTitle className="text-lg flex items-center gap-2">
-                        {category === '메인' && <CheckCircle className="w-5 h-5 text-blue-500" />}
-                        {category === '학습' && <CheckCircle className="w-5 h-5 text-green-500" />}
-                        {category === '교육' && <CheckCircle className="w-5 h-5 text-green-500" />}
+                        {category === '메인' && <CheckCircle className="w-5 h-5 text-primary" />}
+                        {category === '학습' && <CheckCircle className="w-5 h-5 text-success" />}
+                        {category === '교육' && <CheckCircle className="w-5 h-5 text-success" />}
                         {category === '개인' && <CheckCircle className="w-5 h-5 text-primary" />}
-                        {category === '상거래' && <CheckCircle className="w-5 h-5 text-orange-500" />}
+                        {category === '상거래' && <CheckCircle className="w-5 h-5 text-primary" />}
                         {category === '소통' && <CheckCircle className="w-5 h-5 text-secondary-foreground" />}
                         {category === '도구' && <CheckCircle className="w-5 h-5 text-gray-500" />}
-                        {category === '인사' && <CheckCircle className="w-5 h-5 text-indigo-500" />}
+                        {category === '인사' && <CheckCircle className="w-5 h-5 text-primary" />}
                         {category === '운영' && <CheckCircle className="w-5 h-5 text-secondary-foreground" />}
-                        {category === '재정' && <CheckCircle className="w-5 h-5 text-yellow-500" />}
-                        {category === '관리' && <CheckCircle className="w-5 h-5 text-red-500" />}
-                        {category === '대시보드' && <CheckCircle className="w-5 h-5 text-blue-600" />}
+                        {category === '재정' && <CheckCircle className="w-5 h-5 text-warning" />}
+                        {category === '관리' && <CheckCircle className="w-5 h-5 text-destructive" />}
+                        {category === '대시보드' && <CheckCircle className="w-5 h-5 text-primary" />}
                         {category === '시스템' && <CheckCircle className="w-5 h-5 text-gray-600" />}
                         {category}
                         <Badge variant="secondary">
@@ -318,7 +318,7 @@ const MenuVisibilityControl: React.FC = () => {
                             <div className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                               <div className="flex items-center gap-3">
                                 {isVisible ? (
-                                  <Eye className="w-5 h-5 text-green-500" />
+                                  <Eye className="w-5 h-5 text-success" />
                                 ) : (
                                   <EyeOff className="w-5 h-5 text-gray-400" />
                                 )}
@@ -355,9 +355,9 @@ const MenuVisibilityControl: React.FC = () => {
             </div>
 
             {hasPendingChanges && (
-              <Card className="border-amber-200 bg-amber-50">
+              <Card className="border-warning/30 bg-warning/10">
                 <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 text-amber-800">
+                  <div className="flex items-center gap-2 text-warning">
                     <AlertCircle className="w-5 h-5" />
                     <p className="font-medium">
                       저장되지 않은 변경사항이 {Object.keys(pendingChanges).length}개 있습니다.

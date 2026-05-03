@@ -365,7 +365,7 @@ export default function CustomOrderPage() {
           <BadgeCheck className="w-5 h-5 mr-2 text-primary" />
           {product.name} 주문
         </h1>
-        <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+        <Badge className="bg-warning/10 text-warning border-warning/30">
           테일즈 인증 훈련사 전용
         </Badge>
       </div>
@@ -517,7 +517,7 @@ export default function CustomOrderPage() {
                   <div key={field.name}>
                     <Label htmlFor={field.name} className="text-base">
                       {field.label}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
                     </Label>
                     
                     {field.type === 'text' && (
@@ -566,7 +566,7 @@ export default function CustomOrderPage() {
                           className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md p-6 cursor-pointer hover:border-primary"
                         >
                           {uploadedFile ? (
-                            <div className="flex items-center text-green-600">
+                            <div className="flex items-center text-success">
                               <Check className="w-5 h-5 mr-2" />
                               <span>{uploadedFile.name}</span>
                             </div>
@@ -615,7 +615,7 @@ export default function CustomOrderPage() {
               <CardContent className="space-y-6">
                 <div>
                   <Label htmlFor="name" className="text-base">
-                    수령인 <span className="text-red-500">*</span>
+                    수령인 <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="name"
@@ -628,7 +628,7 @@ export default function CustomOrderPage() {
                 
                 <div>
                   <Label htmlFor="phone" className="text-base">
-                    연락처 <span className="text-red-500">*</span>
+                    연락처 <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="phone"
@@ -641,7 +641,7 @@ export default function CustomOrderPage() {
                 
                 <div>
                   <Label htmlFor="zipcode" className="text-base">
-                    우편번호 <span className="text-red-500">*</span>
+                    우편번호 <span className="text-destructive">*</span>
                   </Label>
                   <div className="flex gap-2 mt-2">
                     <Input
@@ -657,7 +657,7 @@ export default function CustomOrderPage() {
                 
                 <div>
                   <Label htmlFor="address1" className="text-base">
-                    주소 <span className="text-red-500">*</span>
+                    주소 <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="address1"
@@ -754,7 +754,7 @@ export default function CustomOrderPage() {
                         <p>입금은행: XXX은행</p>
                         <p>계좌번호: 123-456-789</p>
                         <p>예금주: (주)테일즈</p>
-                        <p className="text-red-500">
+                        <p className="text-destructive">
                           * 주문 후 3일 이내 미입금 시 자동으로 주문이 취소됩니다.
                         </p>
                       </div>
@@ -766,33 +766,33 @@ export default function CustomOrderPage() {
                   <h3 className="font-medium mb-2">주문 내용 확인</h3>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center">
-                      <Check className="w-4 h-4 mr-2 text-green-500" />
+                      <Check className="w-4 h-4 mr-2 text-success" />
                       상품: {product.name}
                     </li>
                     {selectedOptions.color && (
                       <li className="flex items-center">
-                        <Check className="w-4 h-4 mr-2 text-green-500" />
+                        <Check className="w-4 h-4 mr-2 text-success" />
                         색상: {selectedOptions.color}
                       </li>
                     )}
                     {selectedOptions.size && (
                       <li className="flex items-center">
-                        <Check className="w-4 h-4 mr-2 text-green-500" />
+                        <Check className="w-4 h-4 mr-2 text-success" />
                         사이즈: {selectedOptions.size}
                       </li>
                     )}
                     {selectedOptions.design && (
                       <li className="flex items-center">
-                        <Check className="w-4 h-4 mr-2 text-green-500" />
+                        <Check className="w-4 h-4 mr-2 text-success" />
                         디자인: {selectedOptions.design}
                       </li>
                     )}
                     <li className="flex items-center">
-                      <Check className="w-4 h-4 mr-2 text-green-500" />
+                      <Check className="w-4 h-4 mr-2 text-success" />
                       배송지: {deliveryInfo.zipcode} {deliveryInfo.address1} {deliveryInfo.address2}
                     </li>
                     <li className="flex items-center">
-                      <Check className="w-4 h-4 mr-2 text-green-500" />
+                      <Check className="w-4 h-4 mr-2 text-success" />
                       수령인: {deliveryInfo.name} ({deliveryInfo.phone})
                     </li>
                   </ul>
@@ -892,7 +892,7 @@ export default function CustomOrderPage() {
                 <span>{product.price.toLocaleString()}원</span>
               </div>
               
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-800">
+              <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning">
                 <div className="flex items-start">
                   <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
                   <span>

@@ -169,7 +169,7 @@ export default function WriteReviewPage() {
                 data-testid={`star-${i}`}
               >
                 <Star
-                  className={`h-8 w-8 ${(hoverRating || rating) >= i ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                  className={`h-8 w-8 ${(hoverRating || rating) >= i ? 'text-warning fill-current' : 'text-gray-300'}`}
                 />
               </button>
             ))}

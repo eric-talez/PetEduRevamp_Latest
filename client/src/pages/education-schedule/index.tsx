@@ -59,13 +59,13 @@ const EducationSchedulePage = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <Badge variant="success" className="bg-green-100 text-green-800">확정</Badge>;
+        return <Badge variant="success" className="bg-success/10 text-success">확정</Badge>;
       case 'scheduled':
-        return <Badge variant="default" className="bg-blue-100 text-blue-800">예약됨</Badge>;
+        return <Badge variant="default" className="bg-primary/10 text-primary">예약됨</Badge>;
       case 'pending':
-        return <Badge variant="warning" className="bg-yellow-100 text-yellow-800">대기중</Badge>;
+        return <Badge variant="warning" className="bg-warning/10 text-warning">대기중</Badge>;
       case 'cancelled':
-        return <Badge variant="danger" className="bg-red-100 text-red-800">취소됨</Badge>;
+        return <Badge variant="danger" className="bg-destructive/10 text-destructive">취소됨</Badge>;
       default:
         return <Badge variant="outline">알 수 없음</Badge>;
     }

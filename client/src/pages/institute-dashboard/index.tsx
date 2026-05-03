@@ -479,7 +479,7 @@ export default function InstituteDashboardPage() {
           <Building className="w-6 h-6 mr-2 text-primary" />
           {institute.name} 관리자
         </h1>
-        <Badge className="bg-blue-100 text-blue-800 border-blue-200 flex items-center">
+        <Badge className="bg-primary/10 text-primary border-primary/30 flex items-center">
           <BadgeCheck className="w-3.5 h-3.5 mr-1" />
           기관 코드: {institute.code}
         </Badge>
@@ -494,12 +494,12 @@ export default function InstituteDashboardPage() {
                 <p className="text-sm text-gray-500">소속 트레이너</p>
                 <h3 className="text-2xl font-bold">{institute.trainerCount}</h3>
               </div>
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Users className="w-5 h-5 text-primary" />
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-xs text-green-600 flex items-center">
+              <p className="text-xs text-success flex items-center">
                 <ChevronUp className="w-3 h-3 mr-1" />
                 전월 대비 2명 증가
               </p>
@@ -514,12 +514,12 @@ export default function InstituteDashboardPage() {
                 <p className="text-sm text-gray-500">총 학생 수</p>
                 <h3 className="text-2xl font-bold">{institute.studentCount}</h3>
               </div>
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <User className="w-5 h-5 text-amber-600" />
+              <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center">
+                <User className="w-5 h-5 text-warning" />
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-xs text-green-600 flex items-center">
+              <p className="text-xs text-success flex items-center">
                 <ChevronUp className="w-3 h-3 mr-1" />
                 전월 대비 15명 증가
               </p>
@@ -539,7 +539,7 @@ export default function InstituteDashboardPage() {
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-xs text-green-600 flex items-center">
+              <p className="text-xs text-success flex items-center">
                 <ChevronUp className="w-3 h-3 mr-1" />
                 전월 대비 8건 증가
               </p>
@@ -554,12 +554,12 @@ export default function InstituteDashboardPage() {
                 <p className="text-sm text-gray-500">월 매출</p>
                 <h3 className="text-2xl font-bold">₩12.8M</h3>
               </div>
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-success" />
               </div>
             </div>
             <div className="mt-2">
-              <p className="text-xs text-green-600 flex items-center">
+              <p className="text-xs text-success flex items-center">
                 <ChevronUp className="w-3 h-3 mr-1" />
                 전월 대비 12% 증가
               </p>
@@ -661,12 +661,12 @@ export default function InstituteDashboardPage() {
                         </TableCell>
                         <TableCell>
                           {trainer.status === 'active' && (
-                            <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                            <Badge variant="outline" className="bg-success/10 text-success border-success/30">
                               활성
                             </Badge>
                           )}
                           {trainer.status === 'pending' && (
-                            <Badge variant="outline" className="bg-yellow-50 text-yellow-600 border-yellow-200">
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
                               승인 대기
                             </Badge>
                           )}
@@ -804,29 +804,29 @@ export default function InstituteDashboardPage() {
                         </TableCell>
                         <TableCell>
                           {reservation.status === 'confirmed' && (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
                               확정됨
                             </Badge>
                           )}
                           {reservation.status === 'pending' && (
-                            <Badge variant="outline" className="bg-yellow-50 text-yellow-600 border-yellow-200">
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
                               대기 중
                             </Badge>
                           )}
                           {reservation.status === 'completed' && (
-                            <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                            <Badge variant="outline" className="bg-success/10 text-success border-success/30">
                               완료됨
                             </Badge>
                           )}
                           {reservation.status === 'cancelled' && (
-                            <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200">
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
                               취소됨
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           {reservation.paymentStatus === 'paid' && (
-                            <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                            <Badge variant="outline" className="bg-success/10 text-success border-success/30">
                               결제 완료
                             </Badge>
                           )}
@@ -836,7 +836,7 @@ export default function InstituteDashboardPage() {
                             </Badge>
                           )}
                           {reservation.paymentStatus === 'refunded' && (
-                            <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200">
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
                               환불됨
                             </Badge>
                           )}
@@ -860,7 +860,7 @@ export default function InstituteDashboardPage() {
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  className="h-8 text-xs text-red-500 hover:text-red-600"
+                                  className="h-8 text-xs text-destructive hover:text-destructive/90"
                                   onClick={() => handleReservationStatusChange(reservation.id, 'cancelled')}
                                 >
                                   <XCircle className="h-3.5 w-3.5 mr-1" />
@@ -1077,7 +1077,7 @@ export default function InstituteDashboardPage() {
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label htmlFor="trainer-name">
-                  이름 <span className="text-red-500">*</span>
+                  이름 <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="trainer-name"
@@ -1088,7 +1088,7 @@ export default function InstituteDashboardPage() {
               </div>
               <div>
                 <Label htmlFor="trainer-email">
-                  이메일 <span className="text-red-500">*</span>
+                  이메일 <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="trainer-email"
@@ -1100,7 +1100,7 @@ export default function InstituteDashboardPage() {
               </div>
               <div>
                 <Label htmlFor="trainer-phone">
-                  연락처 <span className="text-red-500">*</span>
+                  연락처 <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="trainer-phone"

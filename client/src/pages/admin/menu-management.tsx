@@ -74,14 +74,14 @@ export default function AdminMenuManagement() {
 
   const getRolesBadge = (roles: string[]) => {
     if (roles.includes('all')) {
-      return <Badge className="bg-green-100 text-green-800">모든 사용자</Badge>;
+      return <Badge className="bg-success/10 text-success">모든 사용자</Badge>;
     }
     return (
       <div className="flex gap-1 flex-wrap">
         {roles.map(role => {
           const roleMap: Record<string, { label: string; className: string }> = {
-            admin: { label: '관리자', className: 'bg-red-100 text-red-800' },
-            trainer: { label: '훈련사', className: 'bg-blue-100 text-blue-800' },
+            admin: { label: '관리자', className: 'bg-destructive/10 text-destructive' },
+            trainer: { label: '훈련사', className: 'bg-primary/10 text-primary' },
             'institute-admin': { label: '기관관리자', className: 'bg-primary/10 text-primary' },
             user: { label: '일반회원', className: 'bg-gray-100 text-gray-800' }
           };
@@ -259,7 +259,7 @@ export default function AdminMenuManagement() {
                         {getRolesBadge(item.roles)}
                         <div className="flex items-center gap-1">
                           {item.visible ? (
-                            <Eye className="h-4 w-4 text-green-600" />
+                            <Eye className="h-4 w-4 text-success" />
                           ) : (
                             <EyeOff className="h-4 w-4 text-gray-400" />
                           )}

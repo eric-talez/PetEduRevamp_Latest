@@ -154,7 +154,7 @@ export default function Courses() {
                 className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
                 onClick={() => handleCourseClick(course)}
               >
-                <div className="aspect-video bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center">
+                <div className="aspect-video bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                   <BookOpen className="w-12 h-12 text-gray-400" />
                 </div>
                 
@@ -234,7 +234,7 @@ export default function Courses() {
           {selectedCourse && (
             <div className="space-y-6">
               {/* 강의 기본 정보 */}
-              <div className="bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg">
+              <div className="bg-gradient-to-r from-primary to-secondary p-6 rounded-lg">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <img 
@@ -254,11 +254,11 @@ export default function Courses() {
                 
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <Clock className="w-5 h-5 text-blue-600" />
+                    <Clock className="w-5 h-5 text-primary" />
                     <span className="font-semibold">{selectedCourse.duration}시간</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <BookOpen className="w-5 h-5 text-green-600" />
+                    <BookOpen className="w-5 h-5 text-success" />
                     <span className="font-semibold">{selectedCourse.modules}개 강의</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
@@ -312,7 +312,7 @@ export default function Courses() {
                             {module.materials && module.materials.length > 0 && (
                               <div className="mb-3">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Package className="w-4 h-4 text-blue-600" />
+                                  <Package className="w-4 h-4 text-primary" />
                                   <span className="text-sm font-medium text-gray-700">준비물</span>
                                 </div>
                                 <div className="flex flex-wrap gap-1 ml-6">
@@ -328,9 +328,9 @@ export default function Courses() {
                             {/* 영상 정보 */}
                             <div className="mt-3">
                               {module.videoUrl || module.attachments?.some(att => att.type === 'video') ? (
-                                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                                  <Video className="w-4 h-4 text-blue-600" />
-                                  <span className="text-sm text-blue-800">영상 강의 준비됨</span>
+                                <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
+                                  <Video className="w-4 h-4 text-primary" />
+                                  <span className="text-sm text-primary">영상 강의 준비됨</span>
                                   <Button 
                                     size="sm" 
                                     variant="outline" 
@@ -447,7 +447,7 @@ export default function Courses() {
                 {selectedModule.materials && selectedModule.materials.length > 0 && (
                   <div className="mt-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Package className="w-4 h-4 text-blue-600" />
+                      <Package className="w-4 h-4 text-primary" />
                       <span className="font-medium text-gray-700">준비물</span>
                     </div>
                     <div className="flex flex-wrap gap-1">

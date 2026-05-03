@@ -72,13 +72,13 @@ function AchievementsPageContent() {
       return {
         title: '마스터',
         description: '탈레즈의 모든 기능을 능숙하게 활용하고 있습니다!',
-        icon: <Trophy className="h-12 w-12 text-amber-400" />
+        icon: <Trophy className="h-12 w-12 text-warning" />
       };
     } else if (unlockedPercentage >= 50) {
       return {
         title: '고급 사용자',
         description: '탈레즈의 다양한 기능을 활용하고 있습니다.',
-        icon: <Medal className="h-12 w-12 text-indigo-400" />
+        icon: <Medal className="h-12 w-12 text-primary" />
       };
     } else if (unlockedPercentage >= 25) {
       return {
@@ -90,7 +90,7 @@ function AchievementsPageContent() {
       return {
         title: '초보 사용자',
         description: '탈레즈와 함께하는 여정을 시작했습니다.',
-        icon: <Award className="h-12 w-12 text-amber-700" />
+        icon: <Award className="h-12 w-12 text-warning" />
       };
     }
   };
@@ -153,7 +153,7 @@ function AchievementsPageContent() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex items-center p-4 bg-muted rounded-lg">
-              <div className="w-12 h-12 rounded-full bg-amber-700 flex items-center justify-center mr-4">
+              <div className="w-12 h-12 rounded-full bg-warning flex items-center justify-center mr-4">
                 <Award className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -173,7 +173,7 @@ function AchievementsPageContent() {
             </div>
             
             <div className="flex items-center p-4 bg-muted rounded-lg">
-              <div className="w-12 h-12 rounded-full bg-amber-400 flex items-center justify-center mr-4">
+              <div className="w-12 h-12 rounded-full bg-warning/40 flex items-center justify-center mr-4">
                 <Award className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -183,7 +183,7 @@ function AchievementsPageContent() {
             </div>
             
             <div className="flex items-center p-4 bg-muted rounded-lg">
-              <div className="w-12 h-12 rounded-full bg-indigo-400 flex items-center justify-center mr-4">
+              <div className="w-12 h-12 rounded-full bg-primary/40 flex items-center justify-center mr-4">
                 <Award className="h-6 w-6 text-white" />
               </div>
               <div>

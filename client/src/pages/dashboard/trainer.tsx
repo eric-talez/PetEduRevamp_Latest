@@ -204,7 +204,7 @@ export default function TrainerDashboard({ onAction }: TrainerDashboardProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card className="p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary rounded-full flex items-center justify-center">
               <BookOpen className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -229,7 +229,7 @@ export default function TrainerDashboard({ onAction }: TrainerDashboardProps) {
         
         <Card className="p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center">
-            <div className="flex-shrink-0 h-12 w-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 h-12 w-12 bg-success/10 dark:bg-success/30 text-success dark:text-success rounded-full flex items-center justify-center">
               <Users className="h-6 w-6" />
             </div>
             <div className="ml-4">
@@ -352,7 +352,7 @@ export default function TrainerDashboard({ onAction }: TrainerDashboardProps) {
         <Card className="border border-gray-100 dark:border-gray-700">
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             <div className="p-5 flex items-center">
-              <div className="flex-shrink-0 h-10 w-10 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 h-10 w-10 bg-success/10 dark:bg-success/30 text-success dark:text-success rounded-full flex items-center justify-center">
                 <Users className="h-5 w-5" />
               </div>
               <div className="ml-4 flex-1">
@@ -369,7 +369,7 @@ export default function TrainerDashboard({ onAction }: TrainerDashboardProps) {
             </div>
             
             <div className="p-5 flex items-center">
-              <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 h-10 w-10 bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary rounded-full flex items-center justify-center">
                 <Award className="h-5 w-5" />
               </div>
               <div className="ml-4 flex-1">

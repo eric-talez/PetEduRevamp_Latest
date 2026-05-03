@@ -178,7 +178,7 @@ export default function AdminShopPage() {
   if (!isAuthenticated || userRole !== 'admin') {
     return (
       <div className="flex items-center justify-center h-screen">
-        <h1 className="text-2xl font-bold text-red-500">접근 권한이 없습니다</h1>
+        <h1 className="text-2xl font-bold text-destructive">접근 권한이 없습니다</h1>
       </div>
     );
   }
@@ -246,9 +246,9 @@ export default function AdminShopPage() {
 
   const getExposureTypeBadge = (type: string) => {
     const colors = {
-      homepage: 'bg-blue-100 text-blue-800',
-      category: 'bg-green-100 text-green-800',
-      search: 'bg-yellow-100 text-yellow-800',
+      homepage: 'bg-primary/10 text-primary',
+      category: 'bg-success/10 text-success',
+      search: 'bg-warning/10 text-warning',
       promotion: 'bg-primary/10 text-primary'
     };
     
@@ -381,13 +381,13 @@ export default function AdminShopPage() {
                         </TableCell>
                         <TableCell className="font-medium">{product.price.toLocaleString()}원</TableCell>
                         <TableCell>
-                          <span className={product.stock < 20 ? 'text-red-600 font-medium' : ''}>
+                          <span className={product.stock < 20 ? 'text-destructive font-medium' : ''}>
                             {product.stock}개
                           </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <TrendingUp size={14} className="text-green-600" />
+                            <TrendingUp size={14} className="text-success" />
                             <span>{product.sales}</span>
                           </div>
                         </TableCell>
@@ -410,11 +410,11 @@ export default function AdminShopPage() {
                               <Link size={14} />
                               노출연결
                             </Button>
-                            <Button variant="outline" size="sm" className="gap-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200">
+                            <Button variant="outline" size="sm" className="gap-1 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all duration-200">
                               <Pencil size={14} />
                               수정
                             </Button>
-                            <Button variant="outline" size="sm" className="gap-1 text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 hover:border-red-400 transition-all duration-200">
+                            <Button variant="outline" size="sm" className="gap-1 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive/90 hover:border-destructive/40 transition-all duration-200">
                               <Trash2 size={14} />
                               삭제
                             </Button>
@@ -435,8 +435,8 @@ export default function AdminShopPage() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Globe className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Globe className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-500">전체 노출</div>
@@ -448,8 +448,8 @@ export default function AdminShopPage() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Eye className="h-5 w-5 text-green-600" />
+                  <div className="p-2 bg-success/10 rounded-lg">
+                    <Eye className="h-5 w-5 text-success" />
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-500">활성 노출</div>
@@ -477,8 +477,8 @@ export default function AdminShopPage() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <Settings className="h-5 w-5 text-yellow-600" />
+                  <div className="p-2 bg-warning/10 rounded-lg">
+                    <Settings className="h-5 w-5 text-warning" />
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-500">총 클릭</div>
@@ -563,8 +563,8 @@ export default function AdminShopPage() {
                         <TableCell>{exposure.targetAudience}</TableCell>
                         <TableCell className="font-medium">{exposure.clickCount.toLocaleString()}</TableCell>
                         <TableCell>
-                          <span className={exposure.conversionRate >= 10 ? 'text-green-600 font-medium' : 
-                                         exposure.conversionRate >= 5 ? 'text-yellow-600' : 'text-red-600'}>
+                          <span className={exposure.conversionRate >= 10 ? 'text-success font-medium' : 
+                                         exposure.conversionRate >= 5 ? 'text-warning' : 'text-destructive'}>
                             {exposure.conversionRate}%
                           </span>
                         </TableCell>
@@ -588,7 +588,7 @@ export default function AdminShopPage() {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="gap-1 text-red-500 hover:text-red-700"
+                              className="gap-1 text-destructive hover:text-destructive/90"
                               onClick={() => removeExposure(exposure.id)}
                             >
                               <Trash2 size={14} />
@@ -625,7 +625,7 @@ export default function AdminShopPage() {
                 <div>
                   <h3 className="font-medium">{selectedProduct.name}</h3>
                   <p className="text-sm text-gray-500">{selectedProduct.description}</p>
-                  <p className="text-sm font-medium text-green-600">
+                  <p className="text-sm font-medium text-success">
                     {selectedProduct.price.toLocaleString()}원
                   </p>
                 </div>

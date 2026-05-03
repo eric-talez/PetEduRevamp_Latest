@@ -363,9 +363,9 @@ export default function JournalsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'sent':
-        return <Badge variant="outline" className="text-blue-600">전송됨</Badge>;
+        return <Badge variant="outline" className="text-primary">전송됨</Badge>;
       case 'read':
-        return <Badge variant="outline" className="text-green-600">읽음</Badge>;
+        return <Badge variant="outline" className="text-success">읽음</Badge>;
       case 'replied':
         return <Badge variant="outline" className="text-primary">답변됨</Badge>;
       default:
@@ -377,7 +377,7 @@ export default function JournalsPage() {
     return Array.from({ length: 5 }, (_, i) => (
       <Star 
         key={i} 
-        className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+        className={`h-4 w-4 ${i < rating ? 'fill-warning text-warning' : 'text-gray-300'}`}
       />
     ));
   };
@@ -562,7 +562,7 @@ export default function JournalsPage() {
           <Card 
             key={journal.id}
             className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary ${
-              !journal.isRead && user?.role === 'pet-owner' ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' : ''
+              !journal.isRead && user?.role === 'pet-owner' ? 'bg-primary/10 dark:bg-primary/20 border-primary/30 dark:border-primary/50' : ''
             }`}
             onClick={() => handleJournalClick(journal)}
           >
@@ -714,7 +714,7 @@ export default function JournalsPage() {
                         <BookOpen className="h-4 w-4" />
                         <Label className="font-medium">집에서 할 숙제</Label>
                       </div>
-                      <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap p-3 bg-warning/10 dark:bg-warning/20 rounded-lg border border-warning/30 dark:border-warning/50">
                         {selectedJournal.homeworkInstructions}
                       </p>
                     </div>
@@ -726,7 +726,7 @@ export default function JournalsPage() {
                         <Target className="h-4 w-4" />
                         <Label className="font-medium">다음 목표</Label>
                       </div>
-                      <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap p-3 bg-success/10 dark:bg-success/20 rounded-lg border border-success/30 dark:border-success/50">
                         {selectedJournal.nextGoals}
                       </p>
                     </div>

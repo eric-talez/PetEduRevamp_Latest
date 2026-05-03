@@ -87,7 +87,7 @@ interface StreamListResponse {
   };
 }
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--destructive))', 'hsl(var(--secondary))', 'hsl(var(--primary))', 'hsl(var(--secondary))'];
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: '예정',
@@ -304,8 +304,8 @@ export default function AdminLiveStreamingMetrics() {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Line type="monotone" dataKey="streams" name="수업 수" stroke="#6366f1" />
-                      <Line type="monotone" dataKey="views" name="시청 수" stroke="#10b981" />
+                      <Line type="monotone" dataKey="streams" name="수업 수" stroke="hsl(var(--primary))" />
+                      <Line type="monotone" dataKey="views" name="시청 수" stroke="hsl(var(--success))" />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -364,7 +364,7 @@ export default function AdminLiveStreamingMetrics() {
                       <XAxis dataKey="label" />
                       <YAxis allowDecimals={false} />
                       <Tooltip />
-                      <Bar dataKey="count" fill="#6366f1" name="수업 수" />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" name="수업 수" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -416,7 +416,7 @@ export default function AdminLiveStreamingMetrics() {
                     <XAxis dataKey="eventType" />
                     <YAxis allowDecimals={false} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#10b981" />
+                    <Bar dataKey="count" fill="hsl(var(--success))" />
                   </BarChart>
                 </ResponsiveContainer>
               )}

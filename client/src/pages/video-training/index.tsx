@@ -626,7 +626,7 @@ export default function VideoTraining() {
                       {video.duration}
                     </div>
                     {video.isPremium && (
-                      <div className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
+                      <div className="absolute top-2 right-2 bg-warning text-white text-xs px-2 py-1 rounded-full flex items-center">
                         <Lock className="h-3 w-3 mr-1" />
                         프리미엄
                       </div>
@@ -654,7 +654,7 @@ export default function VideoTraining() {
                     </p>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center">
-                        <Star className="h-4 w-4 text-amber-500 mr-1" />
+                        <Star className="h-4 w-4 text-warning mr-1" />
                         <span className="text-sm">{video.rating}</span>
                         <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">
                           ({video.reviews})
@@ -695,7 +695,7 @@ export default function VideoTraining() {
                         {video.duration}
                       </div>
                       {video.isPremium && (
-                        <div className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
+                        <div className="absolute top-2 right-2 bg-warning text-white text-xs px-2 py-1 rounded-full flex items-center">
                           <Lock className="h-3 w-3 mr-1" />
                           프리미엄
                         </div>
@@ -723,7 +723,7 @@ export default function VideoTraining() {
                       </p>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center">
-                          <Star className="h-4 w-4 text-amber-500 mr-1" />
+                          <Star className="h-4 w-4 text-warning mr-1" />
                           <span className="text-sm">{video.rating}</span>
                           <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">
                             ({video.reviews})
@@ -776,7 +776,7 @@ export default function VideoTraining() {
                 
                 {previewEnded && selectedVideo.isPremium && !isAuthenticated && (
                   <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white p-4">
-                    <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+                    <AlertCircle className="h-12 w-12 text-destructive mb-4" />
                     <h3 className="text-xl font-bold mb-2">미리보기가 종료되었습니다</h3>
                     <p className="text-gray-300 text-center mb-4">
                       이 프리미엄 콘텐츠의 전체 영상을 시청하려면 로그인하고 구독을 시작하세요.
@@ -789,7 +789,7 @@ export default function VideoTraining() {
                 
                 {selectedVideo.isPremium && !isAuthenticated && isPlaying && !previewEnded && (
                   <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white rounded-lg px-3 py-1 text-sm flex items-center">
-                    <AlertCircle className="h-4 w-4 text-amber-500 mr-1" />
+                    <AlertCircle className="h-4 w-4 text-warning mr-1" />
                     미리보기 남은 시간: {formatRemainingTime()}
                   </div>
                 )}
@@ -815,7 +815,7 @@ export default function VideoTraining() {
                       {selectedVideo.level}
                     </Badge>
                     {selectedVideo.isPremium && (
-                      <Badge variant="default" className="bg-amber-500">
+                      <Badge variant="default" className="bg-warning">
                         <Lock className="h-3 w-3 mr-1" />
                         프리미엄
                       </Badge>

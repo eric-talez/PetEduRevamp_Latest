@@ -352,7 +352,7 @@ export default function FacilitiesPage() {
       case 'training': return <Building className="h-5 w-5" />;
       case 'cafe': return <Coffee className="h-5 w-5" />;
       case 'pension': return <Home className="h-5 w-5" />;
-      case 'hospital': return <Building className="h-5 w-5 text-red-500" />;
+      case 'hospital': return <Building className="h-5 w-5 text-destructive" />;
       case 'grooming': return <Star className="h-5 w-5" />;
       default: return <MapPin className="h-5 w-5" />;
     }
@@ -459,22 +459,22 @@ export default function FacilitiesPage() {
       const infoContent = `
         <div style="padding:10px; min-width:200px;">
           <h4 style="margin:0 0 5px 0; font-weight:bold;">${facility.name}</h4>
-          <p style="margin:0 0 5px 0; font-size:12px; color:#666;">${getTypeName(facility.type)}</p>
+          <p style="margin:0 0 5px 0; font-size:12px; color:hsl(var(--muted-foreground));">${getTypeName(facility.type)}</p>
           <p style="margin:0 0 5px 0; font-size:12px;">${facility.address}</p>
           <div style="display:flex; align-items:center; margin:5px 0;">
-            <span style="color:#ffc107;">★</span>
+            <span style="color:hsl(var(--warning));">★</span>
             <span style="font-size:12px; margin-left:2px;">${facility.rating} (${facility.reviewCount})</span>
-            <span style="font-size:12px; margin-left:10px; color:#007bff;">${facility.distance}km</span>
+            <span style="font-size:12px; margin-left:10px; color:hsl(var(--primary));">${facility.distance}km</span>
           </div>
           <button 
             onclick="window.open('tel:${facility.phone}')" 
-            style="background:#007bff; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; margin-right:5px;"
+            style="background:hsl(var(--primary)); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; margin-right:5px;"
           >
             전화
           </button>
           <button 
             onclick="window.location.href='/reservation/${facility.id}'" 
-            style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer;"
+            style="background:hsl(var(--success)); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer;"
           >
             예약
           </button>
@@ -603,7 +603,7 @@ export default function FacilitiesPage() {
                   className="w-full h-48 object-cover"
                 />
                 {facility.isPartner && (
-                  <Badge className="absolute top-2 right-2 bg-blue-600">인증 파트너</Badge>
+                  <Badge className="absolute top-2 right-2 bg-primary">인증 파트너</Badge>
                 )}
                 <div className="absolute bottom-2 left-2">
                   <Badge variant="secondary" className="bg-white/90">
@@ -619,7 +619,7 @@ export default function FacilitiesPage() {
                     <h3 className="font-semibold text-lg">{facility.name}</h3>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <Star className="h-4 w-4 fill-warning text-warning" />
                     <span className="text-sm font-medium">{facility.rating}</span>
                     <span className="text-xs text-gray-500">({facility.reviewCount})</span>
                   </div>
@@ -633,7 +633,7 @@ export default function FacilitiesPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="h-4 w-4 text-gray-400" />
                     <span className="text-gray-600">{facility.address}</span>
-                    <span className="text-blue-600 font-medium">{facility.distance}km</span>
+                    <span className="text-primary font-medium">{facility.distance}km</span>
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm">
@@ -736,7 +736,7 @@ export default function FacilitiesPage() {
                         className="w-full h-48 object-cover rounded-lg"
                       />
                       {selectedFacility.isPartner && (
-                        <Badge className="absolute top-2 right-2 bg-blue-600">인증 파트너</Badge>
+                        <Badge className="absolute top-2 right-2 bg-primary">인증 파트너</Badge>
                       )}
                     </div>
 
@@ -746,7 +746,7 @@ export default function FacilitiesPage() {
                         <h3 className="font-semibold text-lg">{selectedFacility.name}</h3>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <Star className="h-4 w-4 fill-warning text-warning" />
                         <span className="text-sm font-medium">{selectedFacility.rating}</span>
                       </div>
                     </div>

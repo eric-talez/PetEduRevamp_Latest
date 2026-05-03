@@ -12,11 +12,11 @@ export default function ShopPage() {
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-8 my-4">
         <p className="text-lg mb-4">쇼핑 페이지 테스트 중</p>
         <p className="mb-2">정상적으로 렌더링되었습니다!</p>
-        <p className="text-green-600 dark:text-green-400 font-bold">
+        <p className="text-success dark:text-success font-bold">
           Simple Shop 컴포넌트 (shop/simple.tsx)
         </p>
       </div>
-      <div className="bg-blue-100 dark:bg-blue-900 shadow rounded-lg p-4">
+      <div className="bg-primary/10 dark:bg-primary/20 shadow rounded-lg p-4">
         <p>현재 URL: {window.location.href}</p>
         <p>현재 경로명: {window.location.pathname}</p>
       </div>

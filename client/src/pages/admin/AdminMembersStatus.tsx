@@ -119,10 +119,10 @@ export default function AdminMembersStatus() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'institute-admin': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400';
-      case 'trainer': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'pet-owner': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'admin': return 'bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive';
+      case 'institute-admin': return 'bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning';
+      case 'trainer': return 'bg-success/10 text-success dark:bg-success/20 dark:text-success';
+      case 'pet-owner': return 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
@@ -162,7 +162,7 @@ export default function AdminMembersStatus() {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-destructive mb-4">{error}</p>
           <Button onClick={fetchMembersStatus}>
             <RefreshCw className="w-4 h-4 mr-2" />
             다시 시도
@@ -288,7 +288,7 @@ export default function AdminMembersStatus() {
                             </div>
                             <div className="flex items-center gap-2">
                               {member.isVerified && (
-                                <Shield className="w-4 h-4 text-green-500" />
+                                <Shield className="w-4 h-4 text-success" />
                               )}
                               <Badge className={getRoleColor(member.role)}>
                                 {getRoleLabel(member.role)}
@@ -370,7 +370,7 @@ export default function AdminMembersStatus() {
                   {data?.trainerConnections?.map((connection: any, index) => (
                     <div key={index} className="border rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <GraduationCap className="w-5 h-5 text-green-600" />
+                        <GraduationCap className="w-5 h-5 text-success" />
                         <h4 className="font-semibold">{connection.trainerName} 훈련사</h4>
                         <Badge variant="outline">
                           {connection.connectedOwners.length}명 연결
@@ -379,7 +379,7 @@ export default function AdminMembersStatus() {
                       <div className="grid gap-2 ml-7">
                         {connection.connectedOwners.map((owner: any) => (
                           <div key={owner.id} className="flex items-center gap-2 text-sm">
-                            <Heart className="w-4 h-4 text-blue-500" />
+                            <Heart className="w-4 h-4 text-primary" />
                             <span>{owner.name}</span>
                             <span className="text-muted-foreground">({owner.email})</span>
                           </div>

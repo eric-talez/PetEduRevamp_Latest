@@ -46,8 +46,8 @@ export default function Community() {
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-6">커뮤니티</h1>
-        <div className="bg-red-100 p-4 rounded-lg">
-          <p className="text-red-700">에러 발생: {error.message}</p>
+        <div className="bg-destructive/10 p-4 rounded-lg">
+          <p className="text-destructive">에러 발생: {error.message}</p>
         </div>
       </div>
     );
@@ -72,13 +72,13 @@ export default function Community() {
       </section>
       
       {/* 디버깅 정보 표시 */}
-      <div className="mb-4 p-4 bg-yellow-100 rounded-lg">
+      <div className="mb-4 p-4 bg-warning/10 rounded-lg">
         <p>로딩 상태: {isLoading ? '로딩 중...' : '로딩 완료'}</p>
         <p>전체 게시글 수: {posts.length}</p>
         <p>필터링된 게시글 수: {filteredPosts.length}</p>
         <p>검색어: "{searchTerm}"</p>
         {posts.length > 0 && (
-          <div className="mt-4 p-2 bg-blue-100 rounded">
+          <div className="mt-4 p-2 bg-primary/10 rounded">
             <p className="font-semibold">첫 번째 게시글:</p>
             <p>제목: {posts[0].title}</p>
             <p>작성자: {posts[0].author?.name || '익명'}</p>
@@ -597,7 +597,7 @@ export default function Community() {
             
             <div className="flex flex-col space-y-4">
               <div className="flex gap-4 items-start pb-4 border-b border-gray-100 dark:border-gray-800">
-                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center">
                   <span className="text-white font-medium text-sm">김</span>
                 </div>
                 <div>
@@ -614,7 +614,7 @@ export default function Community() {
               </div>
               
               <div className="flex gap-4 items-start">
-                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
                   <span className="text-white font-medium text-sm">박</span>
                 </div>
                 <div>

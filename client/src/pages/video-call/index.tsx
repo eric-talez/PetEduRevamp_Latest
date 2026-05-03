@@ -614,7 +614,7 @@ export default function VideoCallPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-base flex items-center gap-2">
-                      <Radio className="w-5 h-5 text-red-500 animate-pulse" />
+                      <Radio className="w-5 h-5 text-destructive animate-pulse" />
                       진행중인 라이브
                     </CardTitle>
                     <CardDescription className="text-xs">현재 진행중인 라이브 스트리밍에 참여하세요.</CardDescription>
@@ -632,12 +632,12 @@ export default function VideoCallPage() {
                 ) : liveStreams.filter(s => s.status === 'live').length > 0 ? (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {liveStreams.filter(s => s.status === 'live').map((stream) => (
-                      <Card key={stream.id} className="overflow-hidden border-red-200 dark:border-red-800" data-testid={`stream-card-${stream.id}`}>
+                      <Card key={stream.id} className="overflow-hidden border-destructive/30 dark:border-destructive/50" data-testid={`stream-card-${stream.id}`}>
                         <div className="relative">
                           <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                             <Video className="w-12 h-12 text-primary/40" />
                           </div>
-                          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="absolute top-2 left-2 bg-destructive text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                             LIVE
                           </span>
@@ -780,7 +780,7 @@ export default function VideoCallPage() {
                             <Button 
                               variant="ghost"
                               size="sm"
-                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive/90"
                               onClick={() => deleteStream(stream.id)}
                               data-testid={`btn-delete-ended-${stream.id}`}
                             >
@@ -1050,16 +1050,16 @@ export default function VideoCallPage() {
                           </div>
                         </div>
 
-                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2 text-xs">회의 정보</h4>
+                        <div className="mt-4 p-3 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                          <h4 className="font-medium text-primary dark:text-primary/70 mb-2 text-xs">회의 정보</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                             <div>
-                              <p className="text-blue-700 dark:text-blue-300 font-medium">회의 번호:</p>
-                              <p className="font-mono text-blue-900 dark:text-blue-100">{videoClass.zoomPMI}</p>
+                              <p className="text-primary dark:text-primary font-medium">회의 번호:</p>
+                              <p className="font-mono text-primary dark:text-primary/70">{videoClass.zoomPMI}</p>
                             </div>
                             <div>
-                              <p className="text-blue-700 dark:text-blue-300 font-medium">비밀번호:</p>
-                              <p className="font-mono text-blue-900 dark:text-blue-100">{videoClass.zoomPMIPassword}</p>
+                              <p className="text-primary dark:text-primary font-medium">비밀번호:</p>
+                              <p className="font-mono text-primary dark:text-primary/70">{videoClass.zoomPMIPassword}</p>
                             </div>
                           </div>
                         </div>
@@ -1165,7 +1165,7 @@ ${videoClass.title}
           <Card className="mb-6 border-primary/20">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Radio className="w-5 h-5 text-red-500" />
+                <Radio className="w-5 h-5 text-destructive" />
                 라이브 스트리밍 시작
               </CardTitle>
               <CardDescription className="text-xs">실시간으로 많은 수강생들에게 강의를 진행하세요.</CardDescription>
@@ -1284,7 +1284,7 @@ ${videoClass.title}
                 <Button
                   onClick={createLiveStream}
                   disabled={isCreatingStream || !streamFormData.title.trim()}
-                  className="bg-red-500 hover:bg-red-600"
+                  className="bg-destructive hover:bg-destructive/90"
                   data-testid="btn-create-live"
                 >
                   {isCreatingStream ? (

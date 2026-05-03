@@ -32,9 +32,9 @@ export function ActivitySelector({
   // 카테고리별 아이콘 색상
   const categoryColors = {
     training: 'text-primary dark:text-primary',
-    play: 'text-green-500 dark:text-green-400',
-    care: 'text-blue-500 dark:text-blue-400',
-    health: 'text-red-500 dark:text-red-400'
+    play: 'text-success dark:text-success',
+    care: 'text-primary dark:text-primary',
+    health: 'text-destructive dark:text-destructive'
   };
   
   return (

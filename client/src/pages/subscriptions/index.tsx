@@ -85,17 +85,17 @@ function formatDate(value: string | null) {
 function statusLabel(status: string) {
   switch (status) {
     case "active":
-      return { label: "활성", color: "bg-green-100 text-green-800" };
+      return { label: "활성", color: "bg-success/10 text-success" };
     case "trialing":
-      return { label: "체험 중", color: "bg-blue-100 text-blue-800" };
+      return { label: "체험 중", color: "bg-primary/10 text-primary" };
     case "past_due":
-      return { label: "결제 실패 (재시도 중)", color: "bg-amber-100 text-amber-800" };
+      return { label: "결제 실패 (재시도 중)", color: "bg-warning/10 text-warning" };
     case "canceled":
       return { label: "해지됨", color: "bg-gray-200 text-gray-700" };
     case "incomplete":
-      return { label: "결제 진행 중", color: "bg-blue-100 text-blue-800" };
+      return { label: "결제 진행 중", color: "bg-primary/10 text-primary" };
     case "unpaid":
-      return { label: "미납", color: "bg-red-100 text-red-800" };
+      return { label: "미납", color: "bg-destructive/10 text-destructive" };
     default:
       return { label: status || "-", color: "bg-gray-100 text-gray-800" };
   }
@@ -304,7 +304,7 @@ export default function SubscriptionsPage() {
                       <ul className="space-y-1">
                         {subscription.plan.benefits.map((b, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm">
-                            <CheckCircle className="mt-0.5 h-4 w-4 text-green-500" />
+                            <CheckCircle className="mt-0.5 h-4 w-4 text-success" />
                             <span>{b}</span>
                           </li>
                         ))}
@@ -380,11 +380,11 @@ export default function SubscriptionsPage() {
                           {formatPrice((inv.amount || 0) / ((inv.currency || "krw").toLowerCase() === "krw" ? 1 : 100), inv.currency)}
                         </span>
                         {inv.status === "paid" ? (
-                          <Badge className="bg-green-100 text-green-800">결제 완료</Badge>
+                          <Badge className="bg-success/10 text-success">결제 완료</Badge>
                         ) : inv.status === "open" ? (
-                          <Badge className="bg-amber-100 text-amber-800">미결제</Badge>
+                          <Badge className="bg-warning/10 text-warning">미결제</Badge>
                         ) : inv.status === "uncollectible" || inv.failureMessage ? (
-                          <Badge className="bg-red-100 text-red-800">결제 실패</Badge>
+                          <Badge className="bg-destructive/10 text-destructive">결제 실패</Badge>
                         ) : (
                           <Badge variant="outline">{inv.status}</Badge>
                         )}
@@ -393,7 +393,7 @@ export default function SubscriptionsPage() {
                             href={inv.hostedInvoiceUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-xs text-blue-600 hover:underline"
+                            className="text-xs text-primary hover:underline"
                           >
                             영수증 보기
                           </a>
@@ -445,7 +445,7 @@ export default function SubscriptionsPage() {
                         <ul className="mt-3 space-y-1">
                           {plan.benefits.slice(0, 4).map((b, i) => (
                             <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
-                              <CheckCircle className="mt-0.5 h-3 w-3 text-green-500" />
+                              <CheckCircle className="mt-0.5 h-3 w-3 text-success" />
                               <span>{b}</span>
                             </li>
                           ))}

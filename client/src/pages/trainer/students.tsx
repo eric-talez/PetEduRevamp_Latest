@@ -499,7 +499,7 @@ export default function TrainerStudentsPage() {
                         <div>
                           <h3 className="font-semibold">{trainer.name}</h3>
                           <div className="flex items-center gap-1">
-                            <Star className="h-3 w-3 text-yellow-400" />
+                            <Star className="h-3 w-3 text-warning" />
                             <span className="text-sm text-gray-600">{trainer.averageRating}</span>
                           </div>
                         </div>
@@ -776,7 +776,7 @@ function StudentDetailDialog({
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full" 
+                      className="bg-primary h-2 rounded-full" 
                       style={{ width: `${student.course.progress}%` }}
                     ></div>
                   </div>
@@ -785,20 +785,20 @@ function StudentDetailDialog({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4 mt-6">
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
+              <div className="text-center p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                <div className="text-2xl font-bold text-primary">
                   {student.attendance.totalSessions}
                 </div>
                 <div className="text-sm text-gray-600">총 세션</div>
               </div>
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
+              <div className="text-center p-4 bg-success/10 dark:bg-success/20 rounded-lg">
+                <div className="text-2xl font-bold text-success">
                   {student.attendance.attendedSessions}
                 </div>
                 <div className="text-sm text-gray-600">참석</div>
               </div>
-              <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-center p-4 bg-warning/10 dark:bg-warning/20 rounded-lg">
+                <div className="text-2xl font-bold text-warning">
                   {student.attendance.attendanceRate}%
                 </div>
                 <div className="text-sm text-gray-600">출석률</div>
@@ -818,8 +818,8 @@ function StudentDetailDialog({
                 </div>
                 <div className="text-sm text-gray-600">종합 평점</div>
               </div>
-              <div className="text-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-indigo-600">
+              <div className="text-center p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                <div className="text-2xl font-bold text-primary">
                   {student.performance.behaviorScore}
                 </div>
                 <div className="text-sm text-gray-600">행동 점수</div>
@@ -847,20 +847,20 @@ function StudentDetailDialog({
 
           <TabsContent value="payment" className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="text-lg font-bold text-blue-600">
+              <div className="text-center p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
+                <div className="text-lg font-bold text-primary">
                   {student.payments.totalAmount.toLocaleString()}원
                 </div>
                 <div className="text-sm text-gray-600">총 금액</div>
               </div>
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-lg font-bold text-green-600">
+              <div className="text-center p-4 bg-success/10 dark:bg-success/20 rounded-lg">
+                <div className="text-lg font-bold text-success">
                   {student.payments.paidAmount.toLocaleString()}원
                 </div>
                 <div className="text-sm text-gray-600">결제완료</div>
               </div>
-              <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <div className="text-lg font-bold text-red-600">
+              <div className="text-center p-4 bg-destructive/10 dark:bg-destructive/20 rounded-lg">
+                <div className="text-lg font-bold text-destructive">
                   {student.payments.pendingAmount.toLocaleString()}원
                 </div>
                 <div className="text-sm text-gray-600">미납금</div>

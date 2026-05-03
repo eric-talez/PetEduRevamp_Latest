@@ -86,7 +86,7 @@ export default function Certificates() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {certificates.map((cert) => (
             <Card key={cert.courseId} className="overflow-hidden" data-testid={`certificate-${cert.courseId}`}>
-              <div className="relative h-32 bg-gradient-to-br from-amber-200 to-amber-500 flex items-center justify-center">
+              <div className="relative h-32 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                 <Award className="w-16 h-16 text-white" />
               </div>
               <CardHeader>

@@ -388,10 +388,10 @@ export default function HealthDiaryPage() {
       </div>
 
       {(upcomingData?.vaccinations?.length || upcomingData?.medications?.length) ? (
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+        <Card className="border-warning/30 bg-warning/10 dark:bg-warning/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Bell className="w-5 h-5 text-amber-600" />
+              <Bell className="w-5 h-5 text-warning" />
               다가오는 일정 (30일 이내)
             </CardTitle>
           </CardHeader>
@@ -609,7 +609,7 @@ export default function HealthDiaryPage() {
                     <YAxis unit="kg" />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="체중" stroke="#3b82f6" strokeWidth={2} connectNulls />
+                    <Line type="monotone" dataKey="체중" stroke="hsl(var(--primary))" strokeWidth={2} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -627,7 +627,7 @@ export default function HealthDiaryPage() {
                     <XAxis dataKey="date" />
                     <YAxis unit="분" />
                     <Tooltip />
-                    <Bar dataKey="운동" fill="#10b981" />
+                    <Bar dataKey="운동" fill="hsl(var(--success))" />
                   </BarChart>
                 </ResponsiveContainer>
               )}

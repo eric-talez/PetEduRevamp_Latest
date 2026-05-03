@@ -103,8 +103,8 @@ const RecommendationCard = ({ item, onClick }: { item: RecommendationItem; onCli
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'course': return 'bg-blue-100 text-blue-800';
-      case 'trainer': return 'bg-green-100 text-green-800';
+      case 'course': return 'bg-primary/10 text-primary';
+      case 'trainer': return 'bg-success/10 text-success';
       case 'community': return 'bg-primary/10 text-primary';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -156,7 +156,7 @@ const RecommendationCard = ({ item, onClick }: { item: RecommendationItem; onCli
           {item.rating && (
             <div className="flex items-center gap-2">
               <div className="flex items-center">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <Star className="w-4 h-4 fill-warning text-warning" />
                 <span className="text-sm font-medium ml-1">{item.rating}</span>
               </div>
               <span className="text-xs text-muted-foreground">평점</span>
@@ -272,7 +272,7 @@ const RecommendationDetailModal = ({
           <div className="grid grid-cols-2 gap-4">
             {item.rating && (
               <div className="flex items-center gap-2">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <Star className="w-4 h-4 fill-warning text-warning" />
                 <span className="font-medium">{item.rating}점</span>
               </div>
             )}

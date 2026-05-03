@@ -107,9 +107,9 @@ export default function RegisterForm() {
   if (registrationSuccess) {
     return (
       <div className="space-y-4 py-4">
-        <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-          <Clock className="h-5 w-5 text-amber-600" />
-          <AlertDescription className="text-amber-800 dark:text-amber-200">
+        <Alert className="border-warning/50 bg-warning/10 dark:bg-warning/20">
+          <Clock className="h-5 w-5 text-warning" />
+          <AlertDescription className="text-warning dark:text-warning/70">
             <p className="font-semibold mb-2">회원가입 신청이 완료되었습니다!</p>
             <p>관리자의 승인 후 로그인하실 수 있습니다.</p>
             <p className="text-sm mt-2">승인 완료 시 이메일로 알려드립니다.</p>
@@ -128,15 +128,15 @@ export default function RegisterForm() {
 
   return (
     <form onSubmit={handleRegister} className="space-y-4">
-      <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
-        <AlertCircle className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
+      <Alert className="border-primary/30 bg-primary/10 dark:bg-primary/20">
+        <AlertCircle className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-primary dark:text-primary/70 text-sm">
           회원가입 후 관리자 승인이 필요합니다.
         </AlertDescription>
       </Alert>
 
       <div className="space-y-2">
-        <Label htmlFor="email">이메일 <span className="text-red-500">*</span></Label>
+        <Label htmlFor="email">이메일 <span className="text-destructive">*</span></Label>
         <Input
           id="email"
           type="email"
@@ -148,7 +148,7 @@ export default function RegisterForm() {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="name">이름 <span className="text-red-500">*</span></Label>
+        <Label htmlFor="name">이름 <span className="text-destructive">*</span></Label>
         <Input
           id="name"
           type="text"
@@ -160,7 +160,7 @@ export default function RegisterForm() {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="password">비밀번호 <span className="text-red-500">*</span></Label>
+        <Label htmlFor="password">비밀번호 <span className="text-destructive">*</span></Label>
         <div className="relative">
           <Input
             id="password"
@@ -181,7 +181,7 @@ export default function RegisterForm() {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="confirm-password">비밀번호 확인 <span className="text-red-500">*</span></Label>
+        <Label htmlFor="confirm-password">비밀번호 확인 <span className="text-destructive">*</span></Label>
         <Input
           id="confirm-password"
           type="password"
@@ -193,7 +193,7 @@ export default function RegisterForm() {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="user-role">가입 유형 <span className="text-red-500">*</span></Label>
+        <Label htmlFor="user-role">가입 유형 <span className="text-destructive">*</span></Label>
         <Select
           value={userRole}
           onValueChange={(value) => setUserRole(value as UserRole)}

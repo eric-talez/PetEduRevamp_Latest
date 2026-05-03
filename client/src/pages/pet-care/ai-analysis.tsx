@@ -18,14 +18,14 @@ export default function AIAnalysisPage() {
               <h3 className="font-medium">스트레스 지수</h3>
               <div className="flex items-center justify-between mt-2">
                 <span>낮음</span>
-                <div className="w-2/3 h-2 bg-green-200 rounded-full" />
+                <div className="w-2/3 h-2 bg-success/20 rounded-full" />
               </div>
             </div>
             <div className="p-3 bg-gray-50 rounded-lg">
               <h3 className="font-medium">활동성</h3>
               <div className="flex items-center justify-between mt-2">
                 <span>높음</span>
-                <div className="w-2/3 h-2 bg-blue-400 rounded-full" />
+                <div className="w-2/3 h-2 bg-primary/40 rounded-full" />
               </div>
             </div>
           </div>
@@ -41,14 +41,14 @@ export default function AIAnalysisPage() {
               <h3 className="font-medium">체중 변화</h3>
               <div className="flex items-center justify-between mt-2">
                 <span>정상</span>
-                <div className="w-2/3 h-2 bg-green-300 rounded-full" />
+                <div className="w-2/3 h-2 bg-success/40 rounded-full" />
               </div>
             </div>
             <div className="p-3 bg-gray-50 rounded-lg">
               <h3 className="font-medium">식사량</h3>
               <div className="flex items-center justify-between mt-2">
                 <span>적정</span>
-                <div className="w-2/3 h-2 bg-green-300 rounded-full" />
+                <div className="w-2/3 h-2 bg-success/40 rounded-full" />
               </div>
             </div>
           </div>
@@ -64,14 +64,14 @@ export default function AIAnalysisPage() {
               <h3 className="font-medium">기본 훈련</h3>
               <div className="flex items-center justify-between mt-2">
                 <span>85%</span>
-                <div className="w-2/3 h-2 bg-blue-500 rounded-full" />
+                <div className="w-2/3 h-2 bg-primary rounded-full" />
               </div>
             </div>
             <div className="p-3 bg-gray-50 rounded-lg">
               <h3 className="font-medium">특수 훈련</h3>
               <div className="flex items-center justify-between mt-2">
                 <span>40%</span>
-                <div className="w-2/3 h-2 bg-blue-300 rounded-full" />
+                <div className="w-2/3 h-2 bg-primary/40 rounded-full" />
               </div>
             </div>
           </div>

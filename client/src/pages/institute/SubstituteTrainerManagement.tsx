@@ -168,32 +168,32 @@ export default function SubstituteTrainerManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'assigned': return 'bg-blue-500';
-      case 'in_progress': return 'bg-orange-500';
-      case 'completed': return 'bg-green-500';
-      case 'cancelled': return 'bg-red-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'approved': return 'bg-green-500';
-      case 'rejected': return 'bg-red-500';
+      case 'assigned': return 'bg-primary';
+      case 'in_progress': return 'bg-primary';
+      case 'completed': return 'bg-success';
+      case 'cancelled': return 'bg-destructive';
+      case 'pending': return 'bg-warning';
+      case 'approved': return 'bg-success';
+      case 'rejected': return 'bg-destructive';
       default: return 'bg-gray-500';
     }
   };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'failed': return 'bg-red-500';
+      case 'paid': return 'bg-success';
+      case 'pending': return 'bg-warning';
+      case 'failed': return 'bg-destructive';
       default: return 'bg-gray-500';
     }
   };
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'urgent': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'normal': return 'bg-blue-500';
-      case 'low': return 'bg-green-500';
+      case 'urgent': return 'bg-destructive';
+      case 'high': return 'bg-primary';
+      case 'normal': return 'bg-primary';
+      case 'low': return 'bg-success';
       default: return 'bg-gray-500';
     }
   };
@@ -286,8 +286,8 @@ export default function SubstituteTrainerManagement() {
                   </div>
 
                   <div className="flex items-center gap-2 mb-4">
-                    <DollarSign className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">
+                    <DollarSign className="h-4 w-4 text-success" />
+                    <span className="text-sm font-medium text-success">
                       {assignment.compensation.toLocaleString()}원
                     </span>
                   </div>
@@ -438,7 +438,7 @@ export default function SubstituteTrainerManagement() {
                 <CardTitle className="text-lg">이번 달 대체 수업</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-3xl font-bold text-primary">
                   {assignments.length}
                 </div>
                 <p className="text-sm text-gray-600">건</p>
@@ -450,7 +450,7 @@ export default function SubstituteTrainerManagement() {
                 <CardTitle className="text-lg">대기 중인 요청</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-600">
+                <div className="text-3xl font-bold text-primary">
                   {requests.filter(r => r.status === 'pending').length}
                 </div>
                 <p className="text-sm text-gray-600">건</p>
@@ -462,7 +462,7 @@ export default function SubstituteTrainerManagement() {
                 <CardTitle className="text-lg">지급 대기 수수료</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-3xl font-bold text-success">
                   {assignments
                     .filter(a => a.paymentStatus === 'pending')
                     .reduce((sum, a) => sum + a.compensation, 0)

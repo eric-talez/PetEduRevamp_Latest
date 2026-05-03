@@ -267,9 +267,9 @@ export default function MessagingTestPage() {
   // 상태별 아이콘
   const getStatusIcon = (status: 'pass' | 'fail' | 'pending') => {
     switch (status) {
-      case 'pass': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'fail': return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'pending': return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'pass': return <CheckCircle className="h-4 w-4 text-success" />;
+      case 'fail': return <XCircle className="h-4 w-4 text-destructive" />;
+      case 'pending': return <AlertCircle className="h-4 w-4 text-warning" />;
     }
   };
 
@@ -277,7 +277,7 @@ export default function MessagingTestPage() {
   const getConnectionBadge = () => {
     switch (connectionStatus) {
       case 'connected':
-        return <Badge variant="default" className="bg-green-500">연결됨</Badge>;
+        return <Badge variant="default" className="bg-success">연결됨</Badge>;
       case 'connecting':
         return <Badge variant="secondary">연결 중...</Badge>;
       case 'disconnected':

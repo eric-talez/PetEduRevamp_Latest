@@ -248,7 +248,7 @@ export default function ShopIndex() {
                   e.preventDefault();
                   setLocation('/shop');
                 }}>
-                  <h1 className="text-2xl font-bold text-[#03c75a]">테일즈 쇼핑</h1>
+                  <h1 className="text-2xl font-bold text-[hsl(var(--success))]">테일즈 쇼핑</h1>
                 </a>
               </div>
               
@@ -257,7 +257,7 @@ export default function ShopIndex() {
                 <form onSubmit={handleSearch} className="flex w-full relative">
                   <div className="relative flex-1">
                     <Input
-                      className="pr-10 rounded-full border-[#03c75a] focus-visible:ring-[#03c75a] h-12 text-base pl-5"
+                      className="pr-10 rounded-full border-[hsl(var(--success))] focus-visible:ring-[hsl(var(--success))] h-12 text-base pl-5"
                       placeholder="반려동물 용품을 검색해보세요"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -266,7 +266,7 @@ export default function ShopIndex() {
                     />
                     <button 
                       type="submit" 
-                      className="absolute right-0 top-0 h-full px-4 bg-[#03c75a] hover:bg-[#02b04a] text-white rounded-r-full flex items-center justify-center"
+                      className="absolute right-0 top-0 h-full px-4 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white rounded-r-full flex items-center justify-center"
                     >
                       <Search className="h-5 w-5" />
                     </button>
@@ -306,15 +306,15 @@ export default function ShopIndex() {
                                 handleSearch(new Event('submit') as any);
                               }}
                             >
-                              <span className={`w-5 text-sm font-bold ${item.rank <= 3 ? 'text-[#03c75a]' : 'text-gray-500'}`}>
+                              <span className={`w-5 text-sm font-bold ${item.rank <= 3 ? 'text-[hsl(var(--success))]' : 'text-gray-500'}`}>
                                 {item.rank}
                               </span>
-                              <span className="text-sm flex-1 truncate group-hover:text-[#03c75a]">
+                              <span className="text-sm flex-1 truncate group-hover:text-[hsl(var(--success))]">
                                 {item.term}
                               </span>
-                              <span className={`text-xs ${item.change === 'up' ? 'text-red-500' : 
-                                item.change === 'down' ? 'text-blue-500' : 
-                                item.change === 'new' ? 'text-[#03c75a] font-bold' : 'text-gray-400'}`}>
+                              <span className={`text-xs ${item.change === 'up' ? 'text-destructive' : 
+                                item.change === 'down' ? 'text-primary' : 
+                                item.change === 'new' ? 'text-[hsl(var(--success))] font-bold' : 'text-gray-400'}`}>
                                 {item.change === 'up' ? '↑' : 
                                   item.change === 'down' ? '↓' : 
                                   item.change === 'new' ? 'NEW' : '-'}
@@ -330,36 +330,36 @@ export default function ShopIndex() {
               
               {/* 네이버 쇼핑 스타일 우측 아이콘 */}
               <div className="flex items-center space-x-4 ml-6">
-                <button className="text-gray-600 dark:text-gray-300 hover:text-[#03c75a] flex flex-col items-center">
+                <button className="text-gray-600 dark:text-gray-300 hover:text-[hsl(var(--success))] flex flex-col items-center">
                   <Bell className="h-5 w-5" />
                   <span className="text-xs mt-1">알림</span>
                 </button>
                 <button 
-                  className="text-gray-600 dark:text-gray-300 hover:text-[#03c75a] flex flex-col items-center relative"
+                  className="text-gray-600 dark:text-gray-300 hover:text-[hsl(var(--success))] flex flex-col items-center relative"
                   onClick={() => setLocation('/shop/wishlist')}
                 >
                   <Heart className="h-5 w-5" />
                   <span className="text-xs mt-1">찜</span>
                   {wishlist.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                       {wishlist.length}
                     </span>
                   )}
                 </button>
                 <button 
-                  className="text-gray-600 dark:text-gray-300 hover:text-[#03c75a] flex flex-col items-center relative"
+                  className="text-gray-600 dark:text-gray-300 hover:text-[hsl(var(--success))] flex flex-col items-center relative"
                   onClick={() => setLocation('/shop/cart')}
                 >
                   <ShoppingCart className="h-5 w-5" />
                   <span className="text-xs mt-1">장바구니</span>
                   {cartItemsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                       {cartItemsCount}
                     </span>
                   )}
                 </button>
                 <button 
-                  className="text-gray-600 dark:text-gray-300 hover:text-[#03c75a] flex flex-col items-center"
+                  className="text-gray-600 dark:text-gray-300 hover:text-[hsl(var(--success))] flex flex-col items-center"
                   onClick={() => authState.isAuthenticated ? setLocation('/my-page') : setLocation('/auth')}
                 >
                   <User className="h-5 w-5" />
@@ -378,7 +378,7 @@ export default function ShopIndex() {
               <div className="flex items-center space-x-6 overflow-x-auto no-scrollbar">
                 <a 
                   href="#" 
-                  className="text-sm font-bold text-[#03c75a] border-b-2 border-[#03c75a] pb-2 flex items-center whitespace-nowrap"
+                  className="text-sm font-bold text-[hsl(var(--success))] border-b-2 border-[hsl(var(--success))] pb-2 flex items-center whitespace-nowrap"
                   onClick={(e) => {
                     e.preventDefault();
                     setLocation('/shop');
@@ -392,7 +392,7 @@ export default function ShopIndex() {
                   <a 
                     key={category.id}
                     href={`/shop/category/${category.id}`}
-                    className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[#03c75a] whitespace-nowrap pb-2 border-b-2 border-transparent hover:border-[#03c75a] transition-colors"
+                    className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[hsl(var(--success))] whitespace-nowrap pb-2 border-b-2 border-transparent hover:border-[hsl(var(--success))] transition-colors"
                     onClick={(e) => {
                       e.preventDefault();
                       setLocation(`/shop/category/${category.id}`);
@@ -406,7 +406,7 @@ export default function ShopIndex() {
               {/* 카테고리 드롭다운 */}
               <div className="relative group">
                 <button 
-                  className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[#03c75a] whitespace-nowrap"
+                  className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[hsl(var(--success))] whitespace-nowrap"
                 >
                   전체 카테고리
                   <ChevronDown className="h-4 w-4 ml-1" />
@@ -418,7 +418,7 @@ export default function ShopIndex() {
                       <a 
                         key={category.id}
                         href={`/shop/category/${category.id}`}
-                        className="flex items-center p-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[#03c75a]"
+                        className="flex items-center p-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[hsl(var(--success))]"
                         onClick={(e) => {
                           e.preventDefault();
                           setLocation(`/shop/category/${category.id}`);
@@ -458,7 +458,7 @@ export default function ShopIndex() {
                           <h2 className="text-xl md:text-3xl font-bold mb-2 md:mb-3">{slider.title}</h2>
                           <p className="text-sm md:text-lg mb-4 md:mb-6">{slider.subtitle}</p>
                           <Button 
-                            className="bg-[#03c75a] hover:bg-[#02b04a] text-white rounded-full px-6"
+                            className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white rounded-full px-6"
                             onClick={(e) => {
                               e.preventDefault();
                               const categoryMap: { [key: number]: string } = {
@@ -502,7 +502,7 @@ export default function ShopIndex() {
                   {sliders.map((_, index) => (
                     <button
                       key={index}
-                      className={`w-2.5 h-2.5 rounded-full ${index === currentSlide ? 'bg-[#03c75a]' : 'bg-gray-300'}`}
+                      className={`w-2.5 h-2.5 rounded-full ${index === currentSlide ? 'bg-[hsl(var(--success))]' : 'bg-gray-300'}`}
                       onClick={() => setCurrentSlide(index)}
                     ></button>
                   ))}
@@ -564,7 +564,7 @@ export default function ShopIndex() {
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">로그인하고 다양한 혜택을 받아보세요!</p>
                       <Button 
-                        className="w-full bg-[#03c75a] hover:bg-[#02b04a] text-white"
+                        className="w-full bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white"
                         onClick={() => setLocation('/auth')}
                       >
                         로그인 / 회원가입
@@ -608,7 +608,7 @@ export default function ShopIndex() {
         <section className="category-section bg-white dark:bg-gray-800 py-8">
           <div className="container mx-auto px-4">
             <h2 className="text-xl font-bold mb-6 flex items-center">
-              <Tag className="h-5 w-5 text-[#03c75a] mr-2" />
+              <Tag className="h-5 w-5 text-[hsl(var(--success))] mr-2" />
               인기 카테고리
             </h2>
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-4">
@@ -616,7 +616,7 @@ export default function ShopIndex() {
                 <a 
                   key={category.id}
                   href={`/shop/category/${category.id}`}
-                  className="flex flex-col items-center hover:text-[#03c75a] transition-colors"
+                  className="flex flex-col items-center hover:text-[hsl(var(--success))] transition-colors"
                   onClick={(e) => {
                     e.preventDefault();
                     setLocation(`/shop/category/${category.id}`);
@@ -637,10 +637,10 @@ export default function ShopIndex() {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold flex items-center">
-                <Bookmark className="h-5 w-5 text-[#03c75a] mr-2" />
+                <Bookmark className="h-5 w-5 text-[hsl(var(--success))] mr-2" />
                 인기 기획전
               </h2>
-              <a href="#" className="text-sm text-[#03c75a] hover:underline flex items-center">
+              <a href="#" className="text-sm text-[hsl(var(--success))] hover:underline flex items-center">
                 더보기 <ChevronDown className="h-4 w-4 ml-1 transform rotate-270" />
               </a>
             </div>
@@ -673,10 +673,10 @@ export default function ShopIndex() {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold flex items-center">
-                <RefreshCw className="h-5 w-5 text-[#03c75a] mr-2" />
+                <RefreshCw className="h-5 w-5 text-[hsl(var(--success))] mr-2" />
                 오늘의 특가
               </h2>
-              <a href="#" className="text-sm text-[#03c75a] hover:underline flex items-center">
+              <a href="#" className="text-sm text-[hsl(var(--success))] hover:underline flex items-center">
                 더보기 <ChevronDown className="h-4 w-4 ml-1 transform rotate-270" />
               </a>
             </div>
@@ -698,19 +698,19 @@ export default function ShopIndex() {
                       onClick={() => toggleWishlist(product.id)}
                     >
                       <Heart 
-                        className={`h-4 w-4 ${wishlist.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+                        className={`h-4 w-4 ${wishlist.includes(product.id) ? 'fill-destructive text-destructive' : 'text-gray-400 hover:text-destructive'}`} 
                       />
                     </button>
                     
                     {/* 배지 영역 */}
                     <div className="absolute top-3 left-3 flex flex-col gap-1">
                       {product.discountRate > 0 && (
-                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                        <span className="bg-destructive text-white text-xs font-bold px-2 py-1 rounded">
                           {product.discountRate}% 할인
                         </span>
                       )}
                       {product.isNew && (
-                        <span className="bg-[#03c75a] text-white text-xs font-bold px-2 py-1 rounded">
+                        <span className="bg-[hsl(var(--success))] text-white text-xs font-bold px-2 py-1 rounded">
                           신상품
                         </span>
                       )}
@@ -718,13 +718,13 @@ export default function ShopIndex() {
                   </div>
                   
                   <div className="p-4">
-                    <div className="text-xs text-[#03c75a] font-medium mb-1">{product.brand}</div>
-                    <h3 className="font-medium text-sm mb-2 line-clamp-2 h-10 group-hover:text-[#03c75a]">{product.name}</h3>
+                    <div className="text-xs text-[hsl(var(--success))] font-medium mb-1">{product.brand}</div>
+                    <h3 className="font-medium text-sm mb-2 line-clamp-2 h-10 group-hover:text-[hsl(var(--success))]">{product.name}</h3>
                     
                     <div className="mb-2">
                       <div className="flex items-center">
                         {product.discountRate > 0 && (
-                          <span className="text-red-500 text-sm font-bold mr-2">{product.discountRate}%</span>
+                          <span className="text-destructive text-sm font-bold mr-2">{product.discountRate}%</span>
                         )}
                         <span className="text-lg font-bold">{(product.price * (1 - product.discountRate/100)).toLocaleString()}원</span>
                       </div>
@@ -735,7 +735,7 @@ export default function ShopIndex() {
                     
                     <div className="flex items-center text-sm text-gray-500 mb-2">
                       <div className="flex items-center">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <Star className="h-3 w-3 fill-warning text-warning" />
                         <span className="ml-1 text-xs">{product.rating}</span>
                       </div>
                       <span className="mx-1">·</span>
@@ -753,12 +753,12 @@ export default function ShopIndex() {
                     {product.targetInfo && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {product.targetInfo.petTypes?.map((pet: string, idx: number) => (
-                          <span key={idx} className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded border border-green-200">
+                          <span key={idx} className="bg-success/10 text-success text-[10px] px-1.5 py-0.5 rounded border border-success/30">
                             {pet}
                           </span>
                         ))}
                         {product.targetInfo.sizes?.slice(0, 2).map((size: string, idx: number) => (
-                          <span key={idx} className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded border border-blue-200">
+                          <span key={idx} className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded border border-primary/30">
                             {size}
                           </span>
                         ))}
@@ -771,7 +771,7 @@ export default function ShopIndex() {
                     )}
                     
                     <Button 
-                      className="w-full mt-3 bg-[#03c75a] hover:bg-[#02b04a] text-white"
+                      className="w-full mt-3 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white"
                       size="sm"
                       onClick={() => addToCart(product)}
                     >
@@ -789,10 +789,10 @@ export default function ShopIndex() {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold flex items-center">
-                <Star className="h-5 w-5 text-[#03c75a] mr-2" />
+                <Star className="h-5 w-5 text-[hsl(var(--success))] mr-2" />
                 인기 상품
               </h2>
-              <a href="#" className="text-sm text-[#03c75a] hover:underline flex items-center">
+              <a href="#" className="text-sm text-[hsl(var(--success))] hover:underline flex items-center">
                 더보기 <ChevronDown className="h-4 w-4 ml-1 transform rotate-270" />
               </a>
             </div>
@@ -814,19 +814,19 @@ export default function ShopIndex() {
                       onClick={() => toggleWishlist(product.id)}
                     >
                       <Heart 
-                        className={`h-4 w-4 ${wishlist.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-red-500'}`} 
+                        className={`h-4 w-4 ${wishlist.includes(product.id) ? 'fill-destructive text-destructive' : 'text-gray-400 hover:text-destructive'}`} 
                       />
                     </button>
                     
                     {/* 배지 영역 */}
                     <div className="absolute top-3 left-3 flex flex-col gap-1">
                       {product.discountRate > 0 && (
-                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                        <span className="bg-destructive text-white text-xs font-bold px-2 py-1 rounded">
                           {product.discountRate}% 할인
                         </span>
                       )}
                       {product.isNew && (
-                        <span className="bg-[#03c75a] text-white text-xs font-bold px-2 py-1 rounded">
+                        <span className="bg-[hsl(var(--success))] text-white text-xs font-bold px-2 py-1 rounded">
                           신상품
                         </span>
                       )}
@@ -834,13 +834,13 @@ export default function ShopIndex() {
                   </div>
                   
                   <div className="p-4">
-                    <div className="text-xs text-[#03c75a] font-medium mb-1">{product.brand}</div>
-                    <h3 className="font-medium text-sm mb-2 line-clamp-2 h-10 group-hover:text-[#03c75a]">{product.name}</h3>
+                    <div className="text-xs text-[hsl(var(--success))] font-medium mb-1">{product.brand}</div>
+                    <h3 className="font-medium text-sm mb-2 line-clamp-2 h-10 group-hover:text-[hsl(var(--success))]">{product.name}</h3>
                     
                     <div className="mb-2">
                       <div className="flex items-center">
                         {product.discountRate > 0 && (
-                          <span className="text-red-500 text-sm font-bold mr-2">{product.discountRate}%</span>
+                          <span className="text-destructive text-sm font-bold mr-2">{product.discountRate}%</span>
                         )}
                         <span className="text-lg font-bold">{(product.price * (1 - product.discountRate/100)).toLocaleString()}원</span>
                       </div>
@@ -851,7 +851,7 @@ export default function ShopIndex() {
                     
                     <div className="flex items-center text-sm text-gray-500 mb-2">
                       <div className="flex items-center">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <Star className="h-3 w-3 fill-warning text-warning" />
                         <span className="ml-1 text-xs">{product.rating}</span>
                       </div>
                       <span className="mx-1">·</span>
@@ -869,12 +869,12 @@ export default function ShopIndex() {
                     {product.targetInfo && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {product.targetInfo.petTypes?.map((pet: string, idx: number) => (
-                          <span key={idx} className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded border border-green-200">
+                          <span key={idx} className="bg-success/10 text-success text-[10px] px-1.5 py-0.5 rounded border border-success/30">
                             {pet}
                           </span>
                         ))}
                         {product.targetInfo.sizes?.slice(0, 2).map((size: string, idx: number) => (
-                          <span key={idx} className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded border border-blue-200">
+                          <span key={idx} className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded border border-primary/30">
                             {size}
                           </span>
                         ))}
@@ -887,7 +887,7 @@ export default function ShopIndex() {
                     )}
                     
                     <Button 
-                      className="w-full mt-3 bg-[#03c75a] hover:bg-[#02b04a] text-white"
+                      className="w-full mt-3 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white"
                       size="sm"
                       onClick={() => addToCart(product)}
                     >
@@ -905,21 +905,21 @@ export default function ShopIndex() {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center">
-                <Shield className="h-10 w-10 text-[#03c75a] mr-4" />
+                <Shield className="h-10 w-10 text-[hsl(var(--success))] mr-4" />
                 <div>
                   <h3 className="font-bold mb-1">안전한 결제</h3>
                   <p className="text-sm text-gray-500">다양한 결제 수단과 보안 시스템</p>
                 </div>
               </div>
               <div className="flex items-center">
-                <Truck className="h-10 w-10 text-[#03c75a] mr-4" />
+                <Truck className="h-10 w-10 text-[hsl(var(--success))] mr-4" />
                 <div>
                   <h3 className="font-bold mb-1">빠른 배송</h3>
                   <p className="text-sm text-gray-500">3만원 이상 무료배송</p>
                 </div>
               </div>
               <div className="flex items-center">
-                <RefreshCw className="h-10 w-10 text-[#03c75a] mr-4" />
+                <RefreshCw className="h-10 w-10 text-[hsl(var(--success))] mr-4" />
                 <div>
                   <h3 className="font-bold mb-1">쉬운 교환/반품</h3>
                   <p className="text-sm text-gray-500">고객만족 100% 보장제</p>
@@ -934,7 +934,7 @@ export default function ShopIndex() {
           <div className="grid grid-cols-5 h-16">
             <a 
               href="/shop" 
-              className="flex flex-col items-center justify-center text-[#03c75a]"
+              className="flex flex-col items-center justify-center text-[hsl(var(--success))]"
               onClick={(e) => {
                 e.preventDefault();
                 setLocation('/shop');
@@ -976,7 +976,7 @@ export default function ShopIndex() {
               <ShoppingCart className="h-5 w-5" />
               <span className="text-xs mt-1">장바구니</span>
               {cartItemsCount > 0 && (
-                <span className="absolute -top-1 right-5 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                <span className="absolute -top-1 right-5 bg-destructive text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                   {cartItemsCount}
                 </span>
               )}

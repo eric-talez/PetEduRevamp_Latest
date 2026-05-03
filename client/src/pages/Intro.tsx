@@ -65,7 +65,7 @@ export default function Intro() {
   const logos = getAllLogos();
 
   return (
-    <div className="min-h-screen bg-[#141414] relative overflow-hidden">
+    <div className="min-h-screen bg-[hsl(var(--foreground))] relative overflow-hidden">
       {/* 기관 로고들을 배경으로 배치 */}
       <div className="absolute inset-0">
         {logos.map((logo, index) => (

@@ -638,10 +638,10 @@ export default function ConsultationStatusPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'in-progress': return 'bg-yellow-100 text-yellow-800';
+      case 'scheduled': return 'bg-primary/10 text-primary';
+      case 'completed': return 'bg-success/10 text-success';
+      case 'cancelled': return 'bg-destructive/10 text-destructive';
+      case 'in-progress': return 'bg-warning/10 text-warning';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -830,7 +830,7 @@ export default function ConsultationStatusPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-semibold">{consultation.topic}</h3>
-                      <Badge className="bg-blue-100 text-blue-800">
+                      <Badge className="bg-primary/10 text-primary">
                         <Clock className="h-4 w-4" />
                         <span className="ml-1">예정됨</span>
                       </Badge>
@@ -875,7 +875,7 @@ export default function ConsultationStatusPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-semibold">{consultation.topic}</h3>
-                      <Badge className="bg-green-100 text-green-800">
+                      <Badge className="bg-success/10 text-success">
                         <CheckCircle className="h-4 w-4" />
                         <span className="ml-1">완료됨</span>
                       </Badge>
@@ -1121,7 +1121,7 @@ export default function ConsultationStatusPage() {
 
             {/* 예약 정보 요약 */}
             {selectedTrainer && selectedDate && selectedTime && (
-              <div className="p-4 bg-blue-50 rounded-lg">
+              <div className="p-4 bg-primary/10 rounded-lg">
                 <h4 className="font-medium mb-2">예약 정보 확인</h4>
                 <div className="space-y-1 text-sm">
                   <p><span className="font-medium">훈련사:</span> {availableTrainers.find(t => t.id === selectedTrainer)?.name}</p>
@@ -1220,20 +1220,20 @@ export default function ConsultationStatusPage() {
                 <div className="flex items-center gap-2 mt-2">
                   {selectedConsultation.status === 'scheduled' && (
                     <>
-                      <Clock className="h-5 w-5 text-blue-500" />
-                      <Badge className="bg-blue-100 text-blue-800">예정됨</Badge>
+                      <Clock className="h-5 w-5 text-primary" />
+                      <Badge className="bg-primary/10 text-primary">예정됨</Badge>
                     </>
                   )}
                   {selectedConsultation.status === 'completed' && (
                     <>
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <Badge className="bg-green-100 text-green-800">완료됨</Badge>
+                      <CheckCircle className="h-5 w-5 text-success" />
+                      <Badge className="bg-success/10 text-success">완료됨</Badge>
                     </>
                   )}
                   {selectedConsultation.status === 'cancelled' && (
                     <>
-                      <AlertCircle className="h-5 w-5 text-red-500" />
-                      <Badge className="bg-red-100 text-red-800">취소됨</Badge>
+                      <AlertCircle className="h-5 w-5 text-destructive" />
+                      <Badge className="bg-destructive/10 text-destructive">취소됨</Badge>
                     </>
                   )}
                   {selectedConsultation.status === 'in-progress' && (
@@ -1247,7 +1247,7 @@ export default function ConsultationStatusPage() {
 
               {/* 화상상담 정보 (화상상담인 경우) */}
               {selectedConsultation.type === 'video' && selectedConsultation.status === 'scheduled' && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="p-4 bg-primary/10 dark:bg-primary/20 rounded-lg">
                   <Label className="text-sm font-medium text-gray-900 dark:text-white">화상상담 접속 정보</Label>
                   <div className="space-y-3 mt-3">
                     <div className="flex items-center justify-between">
@@ -1262,13 +1262,13 @@ export default function ConsultationStatusPage() {
                         {selectedConsultation.meetingPassword || 'talez2025'}
                       </code>
                     </div>
-                    <div className="flex items-start gap-2 mt-3 p-3 bg-blue-100 dark:bg-blue-800/30 rounded">
-                      <Video className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-                      <div className="text-xs text-blue-800 dark:text-blue-200">
-                        <p className="font-medium text-blue-900 dark:text-blue-100">화상상담 참여 안내</p>
-                        <p className="mt-1 text-blue-800 dark:text-blue-200">• 예약 시간 15분 전부터 접속 가능합니다</p>
-                        <p className="text-blue-800 dark:text-blue-200">• 안정적인 인터넷 연결을 확인해주세요</p>
-                        <p className="text-blue-800 dark:text-blue-200">• 조용한 환경에서 참여를 권장합니다</p>
+                    <div className="flex items-start gap-2 mt-3 p-3 bg-primary/10 dark:bg-primary/30 rounded">
+                      <Video className="h-4 w-4 text-primary dark:text-primary mt-0.5" />
+                      <div className="text-xs text-primary dark:text-primary/70">
+                        <p className="font-medium text-primary dark:text-primary/70">화상상담 참여 안내</p>
+                        <p className="mt-1 text-primary dark:text-primary/70">• 예약 시간 15분 전부터 접속 가능합니다</p>
+                        <p className="text-primary dark:text-primary/70">• 안정적인 인터넷 연결을 확인해주세요</p>
+                        <p className="text-primary dark:text-primary/70">• 조용한 환경에서 참여를 권장합니다</p>
                       </div>
                     </div>
                   </div>
@@ -1289,8 +1289,8 @@ export default function ConsultationStatusPage() {
               <div className="border-t pt-4">
                 <Label className="text-sm font-medium text-muted-foreground">훈련사 정보</Label>
                 <div className="flex items-center gap-4 mt-2 p-4 bg-muted rounded-lg">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="h-6 w-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <User className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">{selectedConsultation.trainerName}</p>
@@ -1298,7 +1298,7 @@ export default function ConsultationStatusPage() {
                     <div className="flex items-center gap-2 mt-1">
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <div key={star} className="w-3 h-3 text-yellow-400">⭐</div>
+                          <div key={star} className="w-3 h-3 text-warning">⭐</div>
                         ))}
                       </div>
                       <span className="text-xs text-muted-foreground">4.9점 (127개 리뷰)</span>
@@ -1404,7 +1404,7 @@ export default function ConsultationStatusPage() {
                   <button
                     key={star}
                     onClick={() => setReviewForm({...reviewForm, rating: star})}
-                    className={`text-2xl ${star <= reviewForm.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                    className={`text-2xl ${star <= reviewForm.rating ? 'text-warning' : 'text-gray-300'}`}
                   >
                     ⭐
                   </button>

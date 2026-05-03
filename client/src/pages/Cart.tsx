@@ -107,7 +107,7 @@ export default function Cart() {
                                 }
                               </p>
                               {!item.inStock && (
-                                <span className="text-xs text-red-500 mt-1">품절</span>
+                                <span className="text-xs text-destructive mt-1">품절</span>
                               )}
                             </div>
                           </div>
@@ -142,7 +142,7 @@ export default function Cart() {
                               </p>
                             </div>
                             <button
-                              className="text-gray-500 hover:text-red-500"
+                              className="text-gray-500 hover:text-destructive"
                               onClick={() => removeFromCart(item.id)}
                             >
                               <Trash2 className="h-5 w-5" />
@@ -173,7 +173,7 @@ export default function Cart() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">할인</span>
-                  <span className="font-medium text-red-500">-2,000원</span>
+                  <span className="font-medium text-destructive">-2,000원</span>
                 </div>
               </div>
               

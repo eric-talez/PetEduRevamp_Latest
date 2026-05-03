@@ -15,12 +15,12 @@ export default function PaymentFailed() {
 
   return (
     <div className="container mx-auto py-12 px-4">
-      <Card className="max-w-2xl mx-auto border-red-200 dark:border-red-800">
+      <Card className="max-w-2xl mx-auto border-destructive/30 dark:border-destructive/50">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
-            <XCircle className="h-10 w-10 text-red-600 dark:text-red-400" />
+          <div className="mx-auto mb-4 w-16 h-16 bg-destructive/10 dark:bg-destructive/20 rounded-full flex items-center justify-center">
+            <XCircle className="h-10 w-10 text-destructive dark:text-destructive" />
           </div>
-          <CardTitle className="text-2xl text-red-600 dark:text-red-400">결제에 실패했습니다</CardTitle>
+          <CardTitle className="text-2xl text-destructive dark:text-destructive">결제에 실패했습니다</CardTitle>
           <CardDescription className="text-base mt-2">
             결제가 정상적으로 처리되지 않았습니다.
           </CardDescription>
@@ -93,22 +93,22 @@ export default function PaymentFailed() {
             </div>
           </div>
 
-          <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+          <div className="bg-warning/10 dark:bg-warning/20 border border-warning/30 dark:border-warning/50 rounded-lg p-4">
+            <p className="text-sm text-warning dark:text-warning/70">
               💡 <strong>팁</strong>: 문제가 계속될 경우, 다른 결제 수단을 시도하거나 
               고객센터로 문의해주세요. 영업일 기준 24시간 내에 답변드리겠습니다.
             </p>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">
+          <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/50 rounded-lg p-4">
+            <h4 className="font-semibold text-sm mb-2 text-primary dark:text-primary/70">
               자주 묻는 질문
             </h4>
-            <details className="text-sm text-blue-800 dark:text-blue-200">
+            <details className="text-sm text-primary dark:text-primary/70">
               <summary className="cursor-pointer font-medium mb-2">
                 결제가 실패했는데 카드에서 금액이 빠져나갔어요
               </summary>
-              <p className="pl-4 text-blue-700 dark:text-blue-300">
+              <p className="pl-4 text-primary dark:text-primary">
                 결제가 실패한 경우 승인된 금액은 자동으로 취소되며, 
                 은행에 따라 1-3영업일 내에 환불됩니다.
               </p>

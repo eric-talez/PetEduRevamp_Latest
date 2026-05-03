@@ -567,13 +567,13 @@ export default function ProductDetailPage() {
         <div>
           <div className="flex flex-wrap gap-2 mb-2">
             {product.isNew && (
-              <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">신상품</Badge>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">신상품</Badge>
             )}
             {product.isBestSeller && (
-              <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">베스트셀러</Badge>
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">베스트셀러</Badge>
             )}
             {product.isOnSale && (
-              <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200">세일</Badge>
+              <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">세일</Badge>
             )}
           </div>
 
@@ -586,9 +586,9 @@ export default function ProductDetailPage() {
                   key={star}
                   className={`w-4 h-4 ${
                     star <= Math.floor(product.rating)
-                      ? 'text-yellow-400 fill-yellow-400'
+                      ? 'text-warning fill-warning'
                       : star <= product.rating
-                      ? 'text-yellow-400 fill-yellow-400 opacity-50'
+                      ? 'text-warning fill-warning opacity-50'
                       : 'text-gray-300'
                   }`}
                 />
@@ -613,7 +613,7 @@ export default function ProductDetailPage() {
             )}
 
             {isReferralApplied && (
-              <div className="mt-1 text-sm text-green-600 flex items-center">
+              <div className="mt-1 text-sm text-success flex items-center">
                 <Check className="w-4 h-4 mr-1" />
                 추천인 코드 {referralDiscount}% 할인 적용됨
               </div>
@@ -719,14 +719,14 @@ export default function ProductDetailPage() {
             </div>
 
             {product.discountRate && (
-              <div className="flex justify-between mb-2 text-red-500">
+              <div className="flex justify-between mb-2 text-destructive">
                 <span>상품 할인</span>
                 <span>-{Math.round(product.price * product.discountRate / 100).toLocaleString()}원</span>
               </div>
             )}
 
             {isReferralApplied && (
-              <div className="flex justify-between mb-2 text-green-600">
+              <div className="flex justify-between mb-2 text-success">
                 <span>추천인 할인</span>
                 <span>-{Math.round(discountedPrice * referralDiscount / 100).toLocaleString()}원</span>
               </div>
@@ -877,7 +877,7 @@ export default function ProductDetailPage() {
                           key={star}
                           className={`w-4 h-4 ${
                             star <= product.rating
-                              ? 'text-yellow-400 fill-yellow-400'
+                              ? 'text-warning fill-warning'
                               : 'text-gray-300'
                           }`}
                         />
@@ -903,7 +903,7 @@ export default function ProductDetailPage() {
                           <div className="flex items-center">
                             <span className="font-medium mr-2">{review.userName}</span>
                             {review.verified && (
-                              <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 flex items-center h-5">
+                              <Badge variant="outline" className="bg-success/10 text-success border-success/30 flex items-center h-5">
                                 <Check className="w-3 h-3 mr-1" />
                                 구매 확인
                               </Badge>
@@ -921,7 +921,7 @@ export default function ProductDetailPage() {
                             key={star}
                             className={`w-4 h-4 ${
                               star <= review.rating
-                                ? 'text-yellow-400 fill-yellow-400'
+                                ? 'text-warning fill-warning'
                                 : 'text-gray-300'
                             }`}
                           />
@@ -990,7 +990,7 @@ export default function ProductDetailPage() {
                               key={star}
                               className={`w-3 h-3 ${
                                 star <= relatedProduct.rating
-                                  ? 'text-yellow-400 fill-yellow-400'
+                                  ? 'text-warning fill-warning'
                                   : 'text-gray-300'
                               }`}
                             />

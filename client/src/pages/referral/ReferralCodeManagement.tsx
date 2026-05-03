@@ -440,7 +440,7 @@ export default function ReferralCodeManagement() {
                           <TableCell>{code.discount}%</TableCell>
                           <TableCell>
                             <div className="flex items-center">
-                              <span className="font-medium text-blue-600">{code.profitShare}%</span>
+                              <span className="font-medium text-primary">{code.profitShare}%</span>
                               <span className="text-xs text-muted-foreground ml-1">훈련사</span>
                             </div>
                           </TableCell>
@@ -516,14 +516,14 @@ export default function ReferralCodeManagement() {
             <>
               {isTrainer && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+                  <Card className="bg-gradient-to-br from-primary to-secondary dark:from-primary dark:to-secondary border-primary/30 dark:border-primary/50">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg flex items-center">
-                        <Percent className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" /> 수익 현황
+                        <Percent className="mr-2 h-5 w-5 text-primary dark:text-primary" /> 수익 현황
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      <div className="text-3xl font-bold text-primary dark:text-primary">
                         {(264000).toLocaleString()}원
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -568,14 +568,14 @@ export default function ReferralCodeManagement() {
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
+                  <Card className="bg-gradient-to-br from-primary to-secondary dark:from-primary dark:to-secondary border-warning/30 dark:border-warning/50">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg flex items-center">
-                        <Calendar className="mr-2 h-5 w-5 text-amber-600 dark:text-amber-400" /> 추천 현황
+                        <Calendar className="mr-2 h-5 w-5 text-warning dark:text-warning" /> 추천 현황
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
+                      <div className="text-3xl font-bold text-warning dark:text-warning">
                         4
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -651,9 +651,9 @@ export default function ReferralCodeManagement() {
                             <TableCell>
                               {product.trainerShare && product.platformShare ? (
                                 <div className="flex items-center space-x-1">
-                                  <span className="text-green-600 dark:text-green-400">{product.trainerShare}%</span>
+                                  <span className="text-success dark:text-success">{product.trainerShare}%</span>
                                   <span className="text-gray-400">/</span>
-                                  <span className="text-blue-600 dark:text-blue-400">{product.platformShare}%</span>
+                                  <span className="text-primary dark:text-primary">{product.platformShare}%</span>
                                   <span className="text-xs text-gray-500 ml-1">(훈련사/플랫폼)</span>
                                 </div>
                               ) : (
@@ -664,7 +664,7 @@ export default function ReferralCodeManagement() {
                           {isTrainer && (
                             <TableCell>
                               {product.trainerShare ? (
-                                <div className="font-medium text-green-600 dark:text-green-400">
+                                <div className="font-medium text-success dark:text-success">
                                   {product.trainerShare}%
                                   {product.estimatedProfit && product.status === "approved" && (
                                     <span className="text-xs text-gray-500 block">
@@ -689,7 +689,7 @@ export default function ReferralCodeManagement() {
                                 </Button>
                               )}
                               {product.status === "approved" && product.referralLink && (
-                                <Button size="sm" variant="outline" className="text-blue-600 border-blue-300">
+                                <Button size="sm" variant="outline" className="text-primary border-primary/40">
                                   <Link className="h-4 w-4 mr-1" />
                                   링크
                                 </Button>
@@ -802,7 +802,7 @@ export default function ReferralCodeManagement() {
                     <Input
                       value="HPT101-TR001"
                       readOnly
-                      className="font-medium text-blue-600"
+                      className="font-medium text-primary"
                     />
                     <Button variant="outline" size="sm">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -956,10 +956,10 @@ export default function ReferralCodeManagement() {
                   />
                 </div>
                 
-                <div className="mt-2 bg-blue-50 dark:bg-blue-950 p-3 rounded-md text-sm">
-                  <p className="text-blue-600 dark:text-blue-400 font-medium mb-1">수익 배분 정보</p>
+                <div className="mt-2 bg-primary/10 dark:bg-primary/20 p-3 rounded-md text-sm">
+                  <p className="text-primary dark:text-primary font-medium mb-1">수익 배분 정보</p>
                   <div className="flex items-center space-x-2">
-                    <Percent className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                    <Percent className="h-4 w-4 text-primary dark:text-primary" />
                     <span>훈련사 <span className="font-medium">{selectedItem?.profitShare || 70}%</span></span>
                     <span className="text-gray-400">/</span>
                     <span>기관 <span className="font-medium">{100 - (selectedItem?.profitShare || 70)}%</span></span>
@@ -1242,11 +1242,11 @@ export default function ReferralCodeManagement() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex items-center space-x-1.5">
-                      <Tag size={16} className="text-blue-500" />
+                      <Tag size={16} className="text-primary" />
                       <span className="text-sm">할인율: <span className="font-medium">{selectedItem.discount}%</span></span>
                     </div>
                     <div className="flex items-center space-x-1.5">
-                      <Calendar size={16} className="text-blue-500" />
+                      <Calendar size={16} className="text-primary" />
                       <span className="text-sm">만료: <span className="font-medium">{selectedItem.expiryDate || "제한없음"}</span></span>
                     </div>
                   </div>
@@ -1301,17 +1301,17 @@ export default function ReferralCodeManagement() {
                   </div>
                 </div>
                 
-                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md">
-                  <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">수익 배분 정보</h3>
+                <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-md">
+                  <h3 className="text-sm font-medium text-primary dark:text-primary mb-2">수익 배분 정보</h3>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="bg-white dark:bg-gray-800 p-2 rounded-md text-center">
-                      <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                      <div className="text-xl font-bold text-success dark:text-success">
                         {selectedItem.profitShare}%
                       </div>
                       <div className="text-xs text-gray-500">훈련사 수익</div>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-2 rounded-md text-center">
-                      <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                      <div className="text-xl font-bold text-primary dark:text-primary">
                         {100 - (selectedItem.profitShare || 0)}%
                       </div>
                       <div className="text-xs text-gray-500">기관 수익</div>
@@ -1391,7 +1391,7 @@ export default function ReferralCodeManagement() {
                   {selectedItem.trainerShare && (
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium text-gray-500">훈련사 몫</h3>
-                      <p className="text-green-600 dark:text-green-400">
+                      <p className="text-success dark:text-success">
                         {selectedItem.trainerShare}% 
                         {selectedItem.estimatedProfit && (
                           <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">
@@ -1404,7 +1404,7 @@ export default function ReferralCodeManagement() {
                   {selectedItem.platformShare && (
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium text-gray-500">플랫폼 몫</h3>
-                      <p className="text-blue-600 dark:text-blue-400">
+                      <p className="text-primary dark:text-primary">
                         {selectedItem.platformShare}%
                         {selectedItem.estimatedProfit && (
                           <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">

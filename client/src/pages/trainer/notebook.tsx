@@ -520,7 +520,7 @@ export default function TrainerNotebookPage() {
                     }}
                     className={`flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
                       activeTab === 'basic' 
-                        ? 'bg-white shadow-sm text-blue-700 border border-blue-200' 
+                        ? 'bg-white shadow-sm text-primary border border-primary/30' 
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
@@ -536,7 +536,7 @@ export default function TrainerNotebookPage() {
                     }}
                     className={`flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
                       activeTab === 'activities' 
-                        ? 'bg-white shadow-sm text-blue-700 border border-blue-200' 
+                        ? 'bg-white shadow-sm text-primary border border-primary/30' 
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
@@ -552,7 +552,7 @@ export default function TrainerNotebookPage() {
                     }}
                     className={`flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
                       activeTab === 'media' 
-                        ? 'bg-white shadow-sm text-blue-700 border border-blue-200' 
+                        ? 'bg-white shadow-sm text-primary border border-primary/30' 
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
@@ -568,7 +568,7 @@ export default function TrainerNotebookPage() {
                     }}
                     className={`flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
                       activeTab === 'ai' 
-                        ? 'bg-white shadow-sm text-blue-700 border border-blue-200' 
+                        ? 'bg-white shadow-sm text-primary border border-primary/30' 
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
@@ -586,10 +586,10 @@ export default function TrainerNotebookPage() {
                 {activeTab === 'basic' && (
                   <div className="space-y-4">
                     {streamId && (
-                      <div className="border border-blue-200 bg-blue-50 rounded-lg p-4" data-testid="stream-attendees-block">
+                      <div className="border border-primary/30 bg-primary/10 rounded-lg p-4" data-testid="stream-attendees-block">
                         <div className="flex items-center gap-2 mb-3">
-                          <Users className="h-4 w-4 text-blue-700" />
-                          <h3 className="text-sm font-semibold text-blue-900">
+                          <Users className="h-4 w-4 text-primary" />
+                          <h3 className="text-sm font-semibold text-primary">
                             화상수업 참여자 ({streamAttendees?.total ?? 0}명)
                           </h3>
                           <Badge variant="secondary">스트림 #{streamId}</Badge>
@@ -601,7 +601,7 @@ export default function TrainerNotebookPage() {
                             {streamAttendees.attendees.map((a) => (
                               <div
                                 key={a.id}
-                                className="flex items-center gap-2 bg-white rounded border border-blue-100 px-3 py-2"
+                                className="flex items-center gap-2 bg-white rounded border border-primary/30 px-3 py-2"
                                 data-testid={`attendee-${a.userId}`}
                               >
                                 <Avatar className="h-7 w-7">
@@ -746,7 +746,7 @@ export default function TrainerNotebookPage() {
                       {/* 배변 활동 */}
                       <div className="border rounded-lg p-4">
                         <h3 className="font-medium mb-3 flex items-center">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                          <div className="w-3 h-3 bg-primary rounded-full mr-2"></div>
                           배변 활동
                         </h3>
                         <div className="grid grid-cols-6 gap-2 text-xs">
@@ -786,7 +786,7 @@ export default function TrainerNotebookPage() {
                       {/* 산책 활동 */}
                       <div className="border rounded-lg p-4">
                         <h3 className="font-medium mb-3 flex items-center">
-                          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                          <div className="w-3 h-3 bg-success rounded-full mr-2"></div>
                           산책 활동
                         </h3>
                         <div className="grid grid-cols-6 gap-2 text-xs">
@@ -873,7 +873,7 @@ export default function TrainerNotebookPage() {
                       {/* 식사 활동 */}
                       <div className="border rounded-lg p-4">
                         <h3 className="font-medium mb-3 flex items-center">
-                          <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                          <div className="w-3 h-3 bg-primary rounded-full mr-2"></div>
                           식사 활동
                         </h3>
                         <div className="grid grid-cols-6 gap-2 text-xs">
@@ -961,12 +961,12 @@ export default function TrainerNotebookPage() {
                 {/* AI Helper Tab */}
                 {activeTab === 'ai' && (
                   <div className="space-y-4">
-                    <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
+                    <div className="p-4 border border-primary/30 rounded-lg bg-primary/10">
                       <div className="flex items-center mb-2">
-                        <Brain className="h-5 w-5 text-blue-600 mr-2" />
-                        <h3 className="font-medium text-blue-900">AI 알림장 도우미</h3>
+                        <Brain className="h-5 w-5 text-primary mr-2" />
+                        <h3 className="font-medium text-primary">AI 알림장 도우미</h3>
                       </div>
-                      <p className="text-sm text-blue-700 mb-4">
+                      <p className="text-sm text-primary mb-4">
                         AI가 입력된 정보를 바탕으로 알림장 내용을 자동으로 생성해드립니다.
                       </p>
                       <Button 
@@ -1012,7 +1012,7 @@ export default function TrainerNotebookPage() {
                       임시저장
                     </Button>
                     <Button 
-                      className="px-4 bg-blue-600 hover:bg-blue-700"
+                      className="px-4 bg-primary hover:bg-primary/90"
                       onClick={handleSubmitNotebook}
                     >
                       <Send className="h-4 w-4 mr-2" />
@@ -1044,7 +1044,7 @@ export default function TrainerNotebookPage() {
                     <p className="text-sm text-gray-600">총 알림장</p>
                     <p className="text-2xl font-bold">{journals?.length || 0}</p>
                   </div>
-                  <FileText className="h-8 w-8 text-blue-500" />
+                  <FileText className="h-8 w-8 text-primary" />
                 </div>
               </CardContent>
             </Card>
@@ -1053,11 +1053,11 @@ export default function TrainerNotebookPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">전송됨</p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-2xl font-bold text-success">
                       {journals?.filter(j => j.status === 'sent' || j.status === 'read').length || 0}
                     </p>
                   </div>
-                  <Send className="h-8 w-8 text-green-500" />
+                  <Send className="h-8 w-8 text-success" />
                 </div>
               </CardContent>
             </Card>
@@ -1066,11 +1066,11 @@ export default function TrainerNotebookPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">임시저장</p>
-                    <p className="text-2xl font-bold text-yellow-600">
+                    <p className="text-2xl font-bold text-warning">
                       {journals?.filter(j => j.status === 'draft').length || 0}
                     </p>
                   </div>
-                  <Edit className="h-8 w-8 text-yellow-500" />
+                  <Edit className="h-8 w-8 text-warning" />
                 </div>
               </CardContent>
             </Card>
@@ -1156,7 +1156,7 @@ export default function TrainerNotebookPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-5 w-5 text-green-600" />
+                          <FileText className="h-5 w-5 text-success" />
                           <h3 className="text-lg font-semibold">{journal.title}</h3>
                           {getStatusBadge(journal.status)}
                         </div>
@@ -1192,14 +1192,14 @@ export default function TrainerNotebookPage() {
                                 <Star
                                   key={i}
                                   className={`h-4 w-4 ${
-                                    i < journal.progressRating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                    i < journal.progressRating ? 'text-warning fill-current' : 'text-gray-300'
                                   }`}
                                 />
                               ))}
                             </div>
                           </div>
                           {journal.readAt && (
-                            <div className="flex items-center gap-1 text-green-600">
+                            <div className="flex items-center gap-1 text-success">
                               <CheckCircle className="h-4 w-4" />
                               <span>읽음: {new Date(journal.readAt).toLocaleDateString()}</span>
                             </div>
@@ -1207,7 +1207,7 @@ export default function TrainerNotebookPage() {
                         </div>
 
                         {journal.replyMessage && (
-                          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <div className="mt-3 p-3 bg-primary/10 dark:bg-primary/20 rounded-lg">
                             <p className="text-sm">
                               <MessageSquare className="h-4 w-4 inline mr-1" />
                               <strong>학부모 답장:</strong> {journal.replyMessage}
@@ -1308,7 +1308,7 @@ export default function TrainerNotebookPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <User className="h-5 w-5 text-blue-600" />
+                          <User className="h-5 w-5 text-primary" />
                           <h3 className="text-lg font-semibold">{student.name}</h3>
                           {student.lastJournal ? (
                             <Badge variant="success">최근 작성: {student.lastJournal}</Badge>
@@ -1376,7 +1376,7 @@ export default function TrainerNotebookPage() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <FileText className="h-6 w-6 text-green-600" />
+                  <FileText className="h-6 w-6 text-success" />
                   {selectedJournal.title}
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-2">
@@ -1385,7 +1385,7 @@ export default function TrainerNotebookPage() {
                     작성: {new Date(selectedJournal.createdAt).toLocaleDateString()}
                   </span>
                   {selectedJournal.readAt && (
-                    <span className="text-sm text-green-600">
+                    <span className="text-sm text-success">
                       읽음: {new Date(selectedJournal.readAt).toLocaleDateString()}
                     </span>
                   )}
@@ -1432,7 +1432,7 @@ export default function TrainerNotebookPage() {
                         <Star
                           key={i}
                           className={`h-5 w-5 ${
-                            i < selectedJournal.progressRating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                            i < selectedJournal.progressRating ? 'text-warning fill-current' : 'text-gray-300'
                           }`}
                         />
                       ))}
@@ -1451,13 +1451,13 @@ export default function TrainerNotebookPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold mb-2">숙제 및 집에서 할 일</h4>
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded text-sm">
+                    <div className="p-3 bg-primary/10 dark:bg-primary/20 rounded text-sm">
                       {selectedJournal.homeworkInstructions}
                     </div>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">다음 훈련 목표</h4>
-                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded text-sm">
+                    <div className="p-3 bg-success/10 dark:bg-success/20 rounded text-sm">
                       {selectedJournal.nextGoals}
                     </div>
                   </div>

@@ -96,8 +96,8 @@ export default function AdminSettings() {
   });
 
   // 색상 설정 상태
-  const [primaryColor, setPrimaryColor] = useState('#7C3AED');
-  const [secondaryColor, setSecondaryColor] = useState('#10B981');
+  const [primaryColor, setPrimaryColor] = useState('hsl(var(--secondary))');
+  const [secondaryColor, setSecondaryColor] = useState('hsl(var(--success))');
 
   // 현재 색상 설정 조회
   const { data: colorSettings } = useQuery({
@@ -112,8 +112,8 @@ export default function AdminSettings() {
   useEffect(() => {
     if (colorSettings && (colorSettings as any).settings) {
       const settings = (colorSettings as any).settings;
-      const primary = settings.primary || '#7C3AED';
-      const secondary = settings.secondary || '#10B981';
+      const primary = settings.primary || 'hsl(var(--secondary))';
+      const secondary = settings.secondary || 'hsl(var(--success))';
 
       setPrimaryColor(primary);
       setSecondaryColor(secondary);
@@ -1174,7 +1174,7 @@ export default function AdminSettings() {
                               });
                             }
                           }}
-                          className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                          className="text-destructive hover:text-destructive/90 border-destructive/40 hover:border-destructive/40"
                         >
                           <XCircle className="h-4 w-4 mr-1" />
                           전체 삭제
@@ -1183,7 +1183,7 @@ export default function AdminSettings() {
                           variant="outline" 
                           size="sm"
                           onClick={() => refetchLogos()}
-                          className="text-blue-600 hover:text-blue-700 border-blue-300 hover:border-blue-400"
+                          className="text-primary hover:text-primary/90 border-primary/40 hover:border-primary/40"
                         >
                           <RefreshCw className="h-4 w-4 mr-1" />
                           새로고침
@@ -1194,11 +1194,11 @@ export default function AdminSettings() {
                     {/* 로고 상태 개요 */}
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                       {[
-                        { key: 'main', label: '메인', color: 'bg-blue-100 text-blue-800' },
+                        { key: 'main', label: '메인', color: 'bg-primary/10 text-primary' },
                         { key: 'mainDark', label: '메인(다크)', color: 'bg-slate-100 text-slate-800' },
-                        { key: 'compact', label: '컴팩트', color: 'bg-green-100 text-green-800' },
+                        { key: 'compact', label: '컴팩트', color: 'bg-success/10 text-success' },
                         { key: 'compactDark', label: '컴팩트(다크)', color: 'bg-primary/10 text-primary' },
-                        { key: 'favicon', label: '파비콘', color: 'bg-orange-100 text-orange-800' }
+                        { key: 'favicon', label: '파비콘', color: 'bg-primary/10 text-primary' }
                       ].map((logo) => (
                         <div key={logo.key} className="text-center p-3 border rounded-lg bg-card">
                           <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${logo.color}`}>
@@ -1206,7 +1206,7 @@ export default function AdminSettings() {
                           </div>
                           <div className="mt-2 text-sm">
                             {currentLogos?.[logo.key as keyof typeof currentLogos] ? (
-                              <span className="text-green-600 font-medium">✓ 등록됨</span>
+                              <span className="text-success font-medium">✓ 등록됨</span>
                             ) : (
                               <span className="text-gray-400">미등록</span>
                             )}
@@ -1216,18 +1216,18 @@ export default function AdminSettings() {
                     </div>
 
                     {/* 메인 로고 (라이트 모드) - 향상된 UI */}
-                    <Card className="border-2 border-blue-200 bg-blue-50/30">
+                    <Card className="border-2 border-primary/30 bg-primary/30">
                       <CardHeader className="pb-3">
                         <div className="flex items-center space-x-2">
-                          <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
+                          <div className="h-3 w-3 bg-primary rounded-full"></div>
                           <CardTitle className="text-lg">메인 로고 (라이트 모드)</CardTitle>
-                          <div className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">180×60px 권장</div>
+                          <div className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">180×60px 권장</div>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-start space-x-6">
                           <div className="space-y-2">
-                            <div className="h-20 w-40 bg-white rounded-lg border-2 border-dashed border-blue-300 flex items-center justify-center group hover:border-blue-500 transition-all duration-200 hover:shadow-md">
+                            <div className="h-20 w-40 bg-white rounded-lg border-2 border-dashed border-primary/40 flex items-center justify-center group hover:border-primary/50 transition-all duration-200 hover:shadow-md">
                               {currentLogos?.main ? (
                                 <img 
                                   src={currentLogos.main} 
@@ -1235,7 +1235,7 @@ export default function AdminSettings() {
                                   className="max-h-full max-w-full object-contain rounded"
                                 />
                               ) : (
-                                <div className="text-center text-blue-400 group-hover:text-blue-600 transition-colors">
+                                <div className="text-center text-primary group-hover:text-primary/90 transition-colors">
                                   <ImageIcon className="h-8 w-8 mx-auto mb-1" />
                                   <div className="text-xs font-medium">로고 업로드</div>
                                 </div>
@@ -1262,7 +1262,7 @@ export default function AdminSettings() {
                                     size="sm"
                                     onClick={() => handleLogoDelete('main')}
                                     disabled={logoDeleteMutation.isPending}
-                                    className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                                    className="text-destructive hover:text-destructive/90 border-destructive/40 hover:border-destructive/40"
                                   >
                                     <XCircle className="h-4 w-4 mr-1" />
                                     삭제
@@ -1326,7 +1326,7 @@ export default function AdminSettings() {
                                   size="sm"
                                   onClick={() => handleLogoDelete('mainDark')}
                                   disabled={logoDeleteMutation.isPending}
-                                  className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                                  className="text-destructive hover:text-destructive/90 border-destructive/40 hover:border-destructive/40"
                                 >
                                   <XCircle className="h-4 w-4 mr-1" />
                                   삭제
@@ -1344,18 +1344,18 @@ export default function AdminSettings() {
                   </Card>
 
                     {/* 컴팩트 로고 (라이트 모드) - 향상된 UI */}
-                    <Card className="border-2 border-green-200 bg-green-50/30">
+                    <Card className="border-2 border-success/30 bg-success/30">
                       <CardHeader className="pb-3">
                         <div className="flex items-center space-x-2">
-                          <div className="h-3 w-3 bg-green-500 rounded-full"></div>
+                          <div className="h-3 w-3 bg-success rounded-full"></div>
                           <CardTitle className="text-lg">컴팩트 로고 (라이트 모드)</CardTitle>
-                          <div className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">40×40px 권장</div>
+                          <div className="text-xs px-2 py-1 bg-success/10 text-success rounded-full">40×40px 권장</div>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-start space-x-6">
                           <div className="space-y-2">
-                            <div className="h-16 w-16 bg-white rounded-lg border-2 border-dashed border-green-300 flex items-center justify-center group hover:border-green-500 transition-all duration-200 hover:shadow-md">
+                            <div className="h-16 w-16 bg-white rounded-lg border-2 border-dashed border-success/40 flex items-center justify-center group hover:border-success/50 transition-all duration-200 hover:shadow-md">
                               {currentLogos?.compact ? (
                                 <img 
                                   src={currentLogos.compact} 
@@ -1363,7 +1363,7 @@ export default function AdminSettings() {
                                   className="max-h-full max-w-full object-contain rounded"
                                 />
                               ) : (
-                                <div className="text-center text-green-400 group-hover:text-green-600 transition-colors">
+                                <div className="text-center text-success group-hover:text-success/90 transition-colors">
                                   <ImageIcon className="h-6 w-6 mx-auto mb-1" />
                                   <div className="text-xs font-medium">로고 업로드</div>
                                 </div>
@@ -1390,7 +1390,7 @@ export default function AdminSettings() {
                                     size="sm"
                                     onClick={() => handleLogoDelete('compact')}
                                     disabled={logoDeleteMutation.isPending}
-                                    className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                                    className="text-destructive hover:text-destructive/90 border-destructive/40 hover:border-destructive/40"
                                   >
                                     <XCircle className="h-4 w-4 mr-1" />
                                     삭제
@@ -1419,7 +1419,7 @@ export default function AdminSettings() {
                       <CardContent>
                         <div className="flex items-start space-x-6">
                           <div className="space-y-2">
-                            <div className="h-16 w-16 bg-slate-800 rounded-lg border-2 border-dashed border-primary/50 flex items-center justify-center group hover:border-primary transition-all duration-200 hover:shadow-md">
+                            <div className="h-16 w-16 bg-slate-800 rounded-lg border-2 border-dashed border-primary/50 flex items-center justify-center group hover:border-primary/90 transition-all duration-200 hover:shadow-md">
                               {currentLogos?.compactDark ? (
                                 <img 
                                   src={currentLogos.compactDark} 
@@ -1454,7 +1454,7 @@ export default function AdminSettings() {
                                     size="sm"
                                     onClick={() => handleLogoDelete('compactDark')}
                                     disabled={logoDeleteMutation.isPending}
-                                    className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                                    className="text-destructive hover:text-destructive/90 border-destructive/40 hover:border-destructive/40"
                                   >
                                     <XCircle className="h-4 w-4 mr-1" />
                                     삭제
@@ -1472,18 +1472,18 @@ export default function AdminSettings() {
                     </Card>
 
                     {/* 파비콘 - 향상된 UI */}
-                    <Card className="border-2 border-orange-200 bg-orange-50/30">
+                    <Card className="border-2 border-primary/30 bg-primary/30">
                       <CardHeader className="pb-3">
                         <div className="flex items-center space-x-2">
-                          <div className="h-3 w-3 bg-orange-500 rounded-full"></div>
+                          <div className="h-3 w-3 bg-primary rounded-full"></div>
                           <CardTitle className="text-lg">파비콘</CardTitle>
-                          <div className="text-xs px-2 py-1 bg-orange-100 text-orange-800 rounded-full">32×32px 권장</div>
+                          <div className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">32×32px 권장</div>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-start space-x-6">
                           <div className="space-y-2">
-                            <div className="h-12 w-12 bg-white rounded-lg border-2 border-dashed border-orange-300 flex items-center justify-center group hover:border-orange-500 transition-all duration-200 hover:shadow-md">
+                            <div className="h-12 w-12 bg-white rounded-lg border-2 border-dashed border-primary/40 flex items-center justify-center group hover:border-primary/50 transition-all duration-200 hover:shadow-md">
                               {currentLogos?.favicon ? (
                                 <img 
                                   src={currentLogos.favicon} 
@@ -1491,7 +1491,7 @@ export default function AdminSettings() {
                                   className="max-h-full max-w-full object-contain rounded"
                                 />
                               ) : (
-                                <div className="text-center text-orange-400 group-hover:text-orange-600 transition-colors">
+                                <div className="text-center text-primary group-hover:text-primary/90 transition-colors">
                                   <ImageIcon className="h-5 w-5 mx-auto mb-0.5" />
                                   <div className="text-xs font-medium">ICO</div>
                                 </div>
@@ -1518,7 +1518,7 @@ export default function AdminSettings() {
                                     size="sm"
                                     onClick={() => handleLogoDelete('favicon')}
                                     disabled={logoDeleteMutation.isPending}
-                                    className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                                    className="text-destructive hover:text-destructive/90 border-destructive/40 hover:border-destructive/40"
                                   >
                                     <XCircle className="h-4 w-4 mr-1" />
                                     삭제
@@ -1536,10 +1536,10 @@ export default function AdminSettings() {
                     </Card>
 
                     {/* 로고 관리 요약 */}
-                    <Alert className="border-blue-200 bg-blue-50/50">
-                      <CheckCircle className="h-4 w-4 text-blue-600" />
-                      <AlertTitle className="text-blue-900">로고 관리 완료 ✨</AlertTitle>
-                      <AlertDescription className="text-blue-800">
+                    <Alert className="border-primary/30 bg-primary/50">
+                      <CheckCircle className="h-4 w-4 text-primary" />
+                      <AlertTitle className="text-primary">로고 관리 완료 ✨</AlertTitle>
+                      <AlertDescription className="text-primary">
                         <div className="space-y-2">
                           <p>로고 업로드가 완료되면 즉시 시스템에 반영됩니다.</p>
                           <div className="grid grid-cols-2 gap-2 text-sm mt-3">
@@ -2218,7 +2218,7 @@ export default function AdminSettings() {
                     <div className="grid grid-cols-4 gap-4">
                       <Card className="p-4">
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">
+                          <div className="text-2xl font-bold text-success">
                             {aiFixStats?.todayFixed || 0}
                           </div>
                           <div className="text-sm text-muted-foreground">오늘 처리된 에러</div>
@@ -2226,7 +2226,7 @@ export default function AdminSettings() {
                       </Card>
                       <Card className="p-4">
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">
+                          <div className="text-2xl font-bold text-primary">
                             {aiFixStats?.totalFixed || 0}
                           </div>
                           <div className="text-sm text-muted-foreground">총 처리된 에러</div>
@@ -2234,7 +2234,7 @@ export default function AdminSettings() {
                       </Card>
                       <Card className="p-4">
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-orange-600">
+                          <div className="text-2xl font-bold text-primary">
                             {aiFixStats?.realProcessed?.total || 0}
                           </div>
                           <div className="text-sm text-muted-foreground">실제 수정된 파일</div>
@@ -2256,7 +2256,7 @@ export default function AdminSettings() {
                         {aiFixLogs && aiFixLogs.length > 0 ? (
                           aiFixLogs.map((log: any) => (
                             <div key={log.id} className="text-sm">
-                              <span className={`font-medium ${log.success ? 'text-green-600' : 'text-red-600'}`}>
+                              <span className={`font-medium ${log.success ? 'text-success' : 'text-destructive'}`}>
                                 [{log.success ? '수정완료' : '수정실패'}]
                               </span>
                               <span className="ml-2">{log.errorType} 에러 - {log.originalError.substring(0, 50)}...</span>
@@ -2301,24 +2301,24 @@ export default function AdminSettings() {
 
                       {/* 진행 상황 표시 */}
                       {checkProgress.isRunning && (
-                        <Card className="p-4 bg-blue-50 border-blue-200">
+                        <Card className="p-4 bg-primary/10 border-primary/30">
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
-                              <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
-                              <span className="text-sm font-medium text-blue-800">
+                              <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+                              <span className="text-sm font-medium text-primary">
                                 {checkProgress.currentStep}
                               </span>
                             </div>
                             
                             {checkProgress.totalCount > 0 && (
                               <div className="space-y-2">
-                                <div className="flex justify-between text-xs text-blue-600">
+                                <div className="flex justify-between text-xs text-primary">
                                   <span>진행률</span>
                                   <span>{checkProgress.processedCount}/{checkProgress.totalCount}</span>
                                 </div>
-                                <div className="w-full bg-blue-200 rounded-full h-2">
+                                <div className="w-full bg-primary/20 rounded-full h-2">
                                   <div 
-                                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                    className="bg-primary h-2 rounded-full transition-all duration-300" 
                                     style={{ 
                                       width: `${(checkProgress.processedCount / checkProgress.totalCount) * 100}%` 
                                     }}

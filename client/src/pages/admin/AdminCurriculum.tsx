@@ -1870,14 +1870,14 @@ export default function AdminCurriculum() {
           <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
             <TabsTrigger 
               value="curriculum" 
-              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-blue-400 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-primary text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               <BookOpen className="w-4 h-4" />
               커리큘럼 & 영상 관리
             </TabsTrigger>
             <TabsTrigger 
               value="revenue-management" 
-              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-blue-400 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-primary text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               <DollarSign className="w-4 h-4" />
               수익 정산
@@ -1887,10 +1887,10 @@ export default function AdminCurriculum() {
           <TabsContent value="curriculum" className="space-y-6">
 
         {/* 간단한 커리큘럼 생성 프로세스 */}
-        <Card className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border-2 border-dashed border-blue-300 dark:border-blue-600 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="bg-gradient-to-r from-primary to-secondary dark:from-primary/20 dark:to-secondary/20 border-2 border-dashed border-primary/40 dark:border-primary/50 shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <Plus className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <Plus className="w-6 h-6 text-primary dark:text-primary" />
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">새 커리큘럼 만들기</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-300 font-normal">커리큘럼 생성부터 영상 등록까지 한 번에!</p>
@@ -1901,7 +1901,7 @@ export default function AdminCurriculum() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button 
                 onClick={handleStartCreation}
-                className="h-20 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="h-20 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="새 커리큘럼 직접 작성하기"
               >
                 <div className="text-center">
@@ -1913,25 +1913,25 @@ export default function AdminCurriculum() {
               <Button 
                 onClick={handleAutoRegister}
                 variant="outline" 
-                className="h-20 border-2 border-green-300 dark:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                className="h-20 border-2 border-success/40 dark:border-success/50 hover:bg-success/10 dark:hover:bg-success/20 shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-success focus:ring-offset-2"
                 aria-label="파일 업로드로 커리큘럼 생성하기"
               >
                 <div className="text-center">
-                  <Package className="w-6 h-6 mx-auto mb-2 text-green-600 dark:text-green-400" />
-                  <div className="font-semibold text-green-700 dark:text-green-300">파일 업로드</div>
-                  <div className="text-xs text-green-600 dark:text-green-400">HWP/HWPX/XLSX 자동 분석</div>
+                  <Package className="w-6 h-6 mx-auto mb-2 text-success dark:text-success" />
+                  <div className="font-semibold text-success dark:text-success">파일 업로드</div>
+                  <div className="text-xs text-success dark:text-success">HWP/HWPX/XLSX 자동 분석</div>
                 </div>
               </Button>
               <Button 
                 onClick={handleDownloadTemplate}
                 variant="outline" 
-                className="h-20 border-2 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="h-20 border-2 border-primary/40 dark:border-primary/50 hover:bg-primary/10 dark:hover:bg-primary/20 shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="커리큘럼 작성 양식 다운로드"
               >
                 <div className="text-center">
-                  <Download className="w-6 h-6 mx-auto mb-2 text-blue-600 dark:text-blue-400" />
-                  <div className="font-semibold text-blue-700 dark:text-blue-300">양식 다운로드</div>
-                  <div className="text-xs text-blue-600 dark:text-blue-400">엑셀 표준 양식</div>
+                  <Download className="w-6 h-6 mx-auto mb-2 text-primary dark:text-primary" />
+                  <div className="font-semibold text-primary dark:text-primary">양식 다운로드</div>
+                  <div className="text-xs text-primary dark:text-primary">엑셀 표준 양식</div>
                 </div>
               </Button>
             </div>
@@ -1945,14 +1945,14 @@ export default function AdminCurriculum() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-                    <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <BookOpen className="w-5 h-5 text-primary dark:text-primary" />
                     등록된 커리큘럼
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button 
                       onClick={handleStartCreation}
                       size="sm"
-                      className="flex items-center gap-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      className="flex items-center gap-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-primary focus:ring-offset-2"
                       aria-label="쉬운 커리큘럼 생성 시작하기"
                     >
                       <Plus className="w-4 h-4 mr-1" />
@@ -1991,7 +1991,7 @@ export default function AdminCurriculum() {
                           <span className="text-sm text-gray-500 dark:text-gray-400">
                             {template.modules.length}개 모듈
                           </span>
-                          <span className="text-sm font-medium text-green-600">
+                          <span className="text-sm font-medium text-success">
                             ₩{template.price.toLocaleString()}
                           </span>
                         </div>
@@ -2007,7 +2007,7 @@ export default function AdminCurriculum() {
                     <div className="mt-4 flex gap-2">
                       <Button 
                         onClick={() => createFromTemplate(template)}
-                        className="flex items-center gap-1 shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="flex items-center gap-1 shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         size="sm"
                         aria-label={`${template.title} 템플릿으로 커리큘럼 생성`}
                       >
@@ -2037,14 +2037,14 @@ export default function AdminCurriculum() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-                    <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <BookOpen className="w-5 h-5 text-primary dark:text-primary" />
                     등록된 커리큘럼 (관리중)
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button 
                       onClick={handleStartCreation}
                       size="sm"
-                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      className="bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-primary focus:ring-offset-2"
                       aria-label="쉬운 방법으로 커리큘럼 생성하기"
                     >
                       <Plus className="w-4 h-4 mr-1" />
@@ -2097,7 +2097,7 @@ export default function AdminCurriculum() {
                             setSelectedCurriculum(curriculum);
                             setIsEditing(true);
                           }}
-                          className="flex items-center gap-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200"
+                          className="flex items-center gap-1 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all duration-200"
                         >
                           <Edit className="w-3 h-3" />
                           수정
@@ -2110,7 +2110,7 @@ export default function AdminCurriculum() {
                               e.stopPropagation();
                               unpublishCurriculum(curriculum.id);
                             }}
-                            className="flex items-center gap-1 text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-400 transition-all duration-200"
+                            className="flex items-center gap-1 text-primary border-primary/40 hover:bg-primary/10 hover:text-primary/90 hover:border-primary/40 transition-all duration-200"
                           >
                             <XCircle className="w-3 h-3" />
                             초기화
@@ -2123,7 +2123,7 @@ export default function AdminCurriculum() {
                               e.stopPropagation();
                               publishCurriculum(curriculum.id);
                             }}
-                            className="flex items-center gap-1 text-green-600 border-green-300"
+                            className="flex items-center gap-1 text-success border-success/40"
                           >
                             <Send className="w-3 h-3" />
                             발행신청
@@ -2136,7 +2136,7 @@ export default function AdminCurriculum() {
                             e.stopPropagation();
                             deleteCurriculum(curriculum.id);
                           }}
-                          className="flex items-center gap-1 text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 hover:border-red-400 transition-all duration-200"
+                          className="flex items-center gap-1 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive/90 hover:border-destructive/40 transition-all duration-200"
                         >
                           <Trash2 className="w-3 h-3" />
                           삭제
@@ -2152,14 +2152,14 @@ export default function AdminCurriculum() {
                     <h4 className="font-medium mb-3 text-gray-900 dark:text-white">고급 커리큘럼 생성</h4>
                     <div className="space-y-4">
                       {/* 파일 업로드 섹션 */}
-                      <div className="p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                      <div className="p-3 border-2 border-dashed border-primary/40 rounded-lg bg-primary/10 dark:bg-primary/20">
                         <div className="text-center">
-                          <Upload className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">파일에서 커리큘럼 생성</p>
-                          <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
+                          <Upload className="w-8 h-8 mx-auto mb-2 text-primary" />
+                          <p className="text-sm font-medium text-primary dark:text-primary mb-1">파일에서 커리큘럼 생성</p>
+                          <p className="text-xs text-primary dark:text-primary mb-3">
                             한글파일(.hwp), 워드(.docx), 엑셀(.xlsx/.xls), 텍스트(.txt) 파일을 업로드하세요
                           </p>
-                          <p className="text-xs text-green-600 dark:text-green-400 mb-3">
+                          <p className="text-xs text-success dark:text-success mb-3">
                             💡 엑셀 파일: 회차별 유료/무료 정보 자동 추출
                           </p>
                           <input
@@ -2178,7 +2178,7 @@ export default function AdminCurriculum() {
                             className={`inline-flex items-center px-4 py-2 text-white text-sm font-medium rounded-md transition-colors ${
                               isAnalyzing 
                                 ? 'bg-gray-400 cursor-not-allowed' 
-                                : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                                : 'bg-primary hover:bg-primary/90 cursor-pointer'
                             }`}
                           >
                             {isAnalyzing ? (
@@ -2195,7 +2195,7 @@ export default function AdminCurriculum() {
                           </label>
                           {(isProcessingFile || isAnalyzing) && (
                             <div className="mt-2">
-                              <div className="text-xs text-blue-600 flex items-center gap-2">
+                              <div className="text-xs text-primary flex items-center gap-2">
                                 <RotateCcw className="w-3 h-3 animate-spin" />
                                 {isAnalyzing ? 'AI가 파일을 분석하여 커리큘럼을 생성중입니다...' : '파일 처리 중...'}
                               </div>
@@ -2205,7 +2205,7 @@ export default function AdminCurriculum() {
                             </div>
                           )}
                           {uploadedFile && (
-                            <div className="mt-2 text-xs text-green-600">
+                            <div className="mt-2 text-xs text-success">
                               업로드됨: {uploadedFile.name}
                             </div>
                           )}
@@ -2318,7 +2318,7 @@ export default function AdminCurriculum() {
                       </div>
                       
                       <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <Button onClick={createCustomCurriculum} size="sm" disabled={isProcessingFile} className="bg-green-600 hover:bg-green-700">
+                        <Button onClick={createCustomCurriculum} size="sm" disabled={isProcessingFile} className="bg-success hover:bg-success/90">
                           <Save className="w-4 h-4 mr-1" />
                           커리큘럼 생성
                         </Button>
@@ -2454,7 +2454,7 @@ export default function AdminCurriculum() {
                       </Button>
                       <Button
                         onClick={() => selectedCurriculum && publishCurriculum(selectedCurriculum.id)}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-success hover:bg-success/90"
                         disabled={selectedCurriculum?.status === 'published'}
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
@@ -2471,7 +2471,7 @@ export default function AdminCurriculum() {
                             console.error('[저장 버튼] selectedCurriculum이 없습니다!');
                           }
                         }}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                        className="flex items-center gap-2 bg-primary hover:bg-primary/90"
                       >
                         <Save className="w-4 h-4" />
                         저장
@@ -2484,9 +2484,9 @@ export default function AdminCurriculum() {
 
             {/* 영상 업로드 모달 */}
             {isAddingVideo && selectedModule && (
-              <Card className="mt-6 border-green-200 bg-green-50">
+              <Card className="mt-6 border-success/30 bg-success/10">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-700">
+                  <CardTitle className="flex items-center gap-2 text-success">
                     <Video className="w-5 h-5" />
                     영상 업로드 - {selectedModule.title}
                   </CardTitle>
@@ -2533,15 +2533,15 @@ export default function AdminCurriculum() {
                             }
                           }
                         }}
-                        className="block w-full text-base text-gray-700 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-base file:font-medium file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
+                        className="block w-full text-base text-gray-700 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-base file:font-medium file:bg-primary/10 dark:file:bg-primary/20 file:text-primary dark:file:text-primary hover:file:bg-primary/10 dark:hover:file:bg-primary"
                       />
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         지원 형식: MP4, AVI, MOV (최대 500MB) - 여러 파일 선택 가능
                       </p>
                       {newVideo.videoFile && (
-                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded text-sm">
-                          <span className="font-medium text-blue-800 dark:text-blue-200">선택된 파일:</span> <span className="text-blue-700 dark:text-blue-300">{newVideo.videoFile.name}</span>
-                          <span className="text-blue-600 dark:text-blue-400 ml-2">
+                        <div className="mt-2 p-2 bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/50 rounded text-sm">
+                          <span className="font-medium text-primary dark:text-primary/70">선택된 파일:</span> <span className="text-primary dark:text-primary">{newVideo.videoFile.name}</span>
+                          <span className="text-primary dark:text-primary ml-2">
                             ({(newVideo.videoFile.size / (1024 * 1024)).toFixed(1)}MB)
                           </span>
                         </div>
@@ -2556,7 +2556,7 @@ export default function AdminCurriculum() {
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                            className="bg-success h-2 rounded-full transition-all duration-300"
                             style={{ width: `${videoUploadProgress}%` }}
                           ></div>
                         </div>
@@ -2686,17 +2686,17 @@ export default function AdminCurriculum() {
                           
                           {/* 영상 등록 현황 */}
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                            <div className="bg-blue-50 p-3 rounded-lg">
-                              <div className="text-xs text-blue-600 font-medium mb-1">총 모듈</div>
-                              <div className="text-lg font-bold text-blue-700">{totalModules}개</div>
+                            <div className="bg-primary/10 p-3 rounded-lg">
+                              <div className="text-xs text-primary font-medium mb-1">총 모듈</div>
+                              <div className="text-lg font-bold text-primary">{totalModules}개</div>
                             </div>
-                            <div className="bg-green-50 p-3 rounded-lg">
-                              <div className="text-xs text-green-600 font-medium mb-1">영상 등록 모듈</div>
-                              <div className="text-lg font-bold text-green-700">{modulesWithVideos}개</div>
+                            <div className="bg-success/10 p-3 rounded-lg">
+                              <div className="text-xs text-success font-medium mb-1">영상 등록 모듈</div>
+                              <div className="text-lg font-bold text-success">{modulesWithVideos}개</div>
                             </div>
-                            <div className="bg-orange-50 p-3 rounded-lg">
-                              <div className="text-xs text-orange-600 font-medium mb-1">총 영상</div>
-                              <div className="text-lg font-bold text-orange-700">{totalVideos}개</div>
+                            <div className="bg-primary/10 p-3 rounded-lg">
+                              <div className="text-xs text-primary font-medium mb-1">총 영상</div>
+                              <div className="text-lg font-bold text-primary">{totalVideos}개</div>
                             </div>
                             <div className="bg-primary/5 p-3 rounded-lg">
                               <div className="text-xs text-primary font-medium mb-1">준비된 영상</div>
@@ -2705,10 +2705,10 @@ export default function AdminCurriculum() {
                           </div>
 
                           {/* 수익 정산 정보 */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gradient-to-r from-indigo-50 to-primary/5 rounded-lg border">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gradient-to-r from-primary to-secondary/5 rounded-lg border">
                             <div className="text-center">
-                              <div className="text-xs text-indigo-600 font-medium mb-1">총 수익</div>
-                              <div className="text-lg font-bold text-indigo-700">
+                              <div className="text-xs text-primary font-medium mb-1">총 수익</div>
+                              <div className="text-lg font-bold text-primary">
                                 ₩{(curriculum.totalRevenue || 0).toLocaleString()}
                               </div>
                               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -2716,8 +2716,8 @@ export default function AdminCurriculum() {
                               </div>
                             </div>
                             <div className="text-center">
-                              <div className="text-xs text-green-600 font-medium mb-1">훈련사 수익</div>
-                              <div className="text-lg font-bold text-green-700">
+                              <div className="text-xs text-success font-medium mb-1">훈련사 수익</div>
+                              <div className="text-lg font-bold text-success">
                                 ₩{((curriculum.totalRevenue || 0) * (curriculum.revenueShare?.trainerShare || 70) / 100).toLocaleString()}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -2725,8 +2725,8 @@ export default function AdminCurriculum() {
                               </div>
                             </div>
                             <div className="text-center">
-                              <div className="text-xs text-blue-600 font-medium mb-1">플랫폼 수익</div>
-                              <div className="text-lg font-bold text-blue-700">
+                              <div className="text-xs text-primary font-medium mb-1">플랫폼 수익</div>
+                              <div className="text-lg font-bold text-primary">
                                 ₩{((curriculum.totalRevenue || 0) * (curriculum.revenueShare?.platformShare || 30) / 100).toLocaleString()}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -2767,7 +2767,7 @@ export default function AdminCurriculum() {
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                className="bg-primary h-2 rounded-full transition-all duration-300" 
                                 style={{ width: `${videoProgress}%` }}
                               ></div>
                             </div>
@@ -2781,7 +2781,7 @@ export default function AdminCurriculum() {
                                 {modules.slice(0, 6).map((module, index) => (
                                   <div key={module.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                                     <div className="flex items-start gap-3">
-                                      <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded font-medium flex-shrink-0">
+                                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded font-medium flex-shrink-0">
                                         {index + 1}강
                                       </span>
                                       <div className="flex-1">
@@ -2793,7 +2793,7 @@ export default function AdminCurriculum() {
                                             {module.videos.map((video, videoIndex) => (
                                               <div key={video.id || videoIndex} className="flex items-center gap-3 bg-white dark:bg-gray-700 rounded p-2">
                                                 {/* 영상 썸네일 */}
-                                                <div className="w-16 h-10 bg-gradient-to-br from-blue-500 to-primary rounded flex items-center justify-center flex-shrink-0">
+                                                <div className="w-16 h-10 bg-gradient-to-br from-primary to-secondary rounded flex items-center justify-center flex-shrink-0">
                                                   <Video className="w-4 h-4 text-white" />
                                                 </div>
                                                 
@@ -2837,7 +2837,7 @@ export default function AdminCurriculum() {
                                                   <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="h-6 px-2 text-xs text-red-600 border-red-300 hover:bg-red-50"
+                                                    className="h-6 px-2 text-xs text-destructive border-destructive/40 hover:bg-destructive/10"
                                                     onClick={() => deleteVideoFromModule(module.id, video.id)}
                                                   >
                                                     <Trash2 className="w-3 h-3" />
@@ -2921,7 +2921,7 @@ export default function AdminCurriculum() {
                           <Button 
                             size="sm"
                             onClick={() => publishCurriculum(curriculum.id)}
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-success hover:bg-success/90"
                           >
                             <CheckCircle className="w-4 h-4 mr-1" />
                             발행
@@ -2960,20 +2960,20 @@ export default function AdminCurriculum() {
 
             {/* 전체 수익 요약 */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+              <Card className="bg-gradient-to-r from-primary to-secondary text-white">
                 <CardContent className="p-6 text-center">
                   <div className="text-2xl font-bold mb-2">
                     ₩{((curriculums as CurriculumData[] | undefined) || []).reduce((sum, c) => sum + (c.totalRevenue || 0), 0).toLocaleString()}
                   </div>
-                  <div className="text-blue-100">총 수익</div>
+                  <div className="text-primary/70">총 수익</div>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+              <Card className="bg-gradient-to-r from-primary to-secondary text-white">
                 <CardContent className="p-6 text-center">
                   <div className="text-2xl font-bold mb-2">
                     ₩{((curriculums as CurriculumData[] | undefined) || []).reduce((sum, c) => sum + ((c.totalRevenue || 0) * (c.revenueShare?.trainerShare || 70) / 100), 0).toLocaleString()}
                   </div>
-                  <div className="text-green-100">훈련사 수익</div>
+                  <div className="text-success/70">훈련사 수익</div>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-r from-primary/50 to-primary text-white">
@@ -2984,12 +2984,12 @@ export default function AdminCurriculum() {
                   <div className="text-primary-foreground">플랫폼 수익</div>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+              <Card className="bg-gradient-to-r from-primary to-secondary text-white">
                 <CardContent className="p-6 text-center">
                   <div className="text-2xl font-bold mb-2">
                     {((curriculums as CurriculumData[] | undefined) || []).reduce((sum, c) => sum + (c.enrollmentCount || 0), 0)}
                   </div>
-                  <div className="text-orange-100">총 등록 학생</div>
+                  <div className="text-primary/70">총 등록 학생</div>
                 </CardContent>
               </Card>
             </div>
@@ -3038,10 +3038,10 @@ export default function AdminCurriculum() {
                           <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right text-gray-900 dark:text-white">
                             {curriculum.enrollmentCount || 0}명
                           </td>
-                          <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right font-bold text-blue-600">
+                          <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right font-bold text-primary">
                             ₩{(curriculum.totalRevenue || 0).toLocaleString()}
                           </td>
-                          <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right font-medium text-green-600">
+                          <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right font-medium text-success">
                             ₩{trainerRevenue.toLocaleString()}
                           </td>
                           <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-right font-medium text-primary">
@@ -3049,7 +3049,7 @@ export default function AdminCurriculum() {
                           </td>
                           <td className="border border-gray-200 dark:border-gray-700 px-4 py-3 text-center">
                             <div className="text-sm">
-                              <div className="text-green-600">{curriculum.revenueShare?.trainerShare || 70}%</div>
+                              <div className="text-success">{curriculum.revenueShare?.trainerShare || 70}%</div>
                               <div className="text-primary">{curriculum.revenueShare?.platformShare || 30}%</div>
                             </div>
                           </td>
@@ -3095,7 +3095,7 @@ export default function AdminCurriculum() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-700 dark:text-gray-300">훈련사 수익:</span>
-                        <span className="font-medium text-green-600">70%</span>
+                        <span className="font-medium text-success">70%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-700 dark:text-gray-300">플랫폼 수익:</span>
@@ -3108,7 +3108,7 @@ export default function AdminCurriculum() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-700 dark:text-gray-300">훈련사 수익:</span>
-                        <span className="font-medium text-green-600">75%</span>
+                        <span className="font-medium text-success">75%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-700 dark:text-gray-300">플랫폼 수익:</span>
@@ -3117,8 +3117,8 @@ export default function AdminCurriculum() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-700">
+                <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+                  <p className="text-sm text-primary">
                     <strong>정산 안내:</strong> 매월 말일 자동 정산되며, 훈련사에게는 등록된 계좌로 입금됩니다. 
                     세금계산서는 별도 발행됩니다.
                   </p>
@@ -3134,7 +3134,7 @@ export default function AdminCurriculum() {
                 <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">승인 대기 중인 영상강의</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {videoLectures.filter(lecture => lecture.status === 'pending').map((lecture) => (
-                    <Card key={lecture.id} className="border-orange-200 dark:border-orange-800">
+                    <Card key={lecture.id} className="border-primary/30 dark:border-primary/50">
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div>
@@ -3176,7 +3176,7 @@ export default function AdminCurriculum() {
                             size="sm" 
                             variant="default"
                             onClick={() => handleApproveLecture(lecture.id)}
-                            className="bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                            className="bg-success hover:bg-success/90 text-white shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-success focus:ring-offset-2"
                             aria-label={`${lecture.title} 강의 승인`}
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
@@ -3186,7 +3186,7 @@ export default function AdminCurriculum() {
                             size="sm" 
                             variant="destructive"
                             onClick={() => handleRejectLecture(lecture.id)}
-                            className="bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            className="bg-destructive hover:bg-destructive/90 text-white shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-destructive focus:ring-offset-2"
                             aria-label={`${lecture.title} 강의 반려`}
                           >
                             <XCircle className="h-4 w-4 mr-1" />
@@ -3223,13 +3223,13 @@ export default function AdminCurriculum() {
                 )}
               </div>
             ) : (
-              <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+              <Card className="bg-primary/10 dark:bg-primary/20 border-primary/30 dark:border-primary/50">
                 <CardContent className="p-6 text-center">
-                  <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-                  <h3 className="font-medium text-orange-700 dark:text-orange-300 mb-2">
+                  <AlertCircle className="h-12 w-12 text-primary mx-auto mb-4" />
+                  <h3 className="font-medium text-primary dark:text-primary mb-2">
                     관리자 전용 기능
                   </h3>
-                  <p className="text-orange-600 dark:text-orange-400">
+                  <p className="text-primary dark:text-primary">
                     강의 승인 기능은 관리자만 사용할 수 있습니다.
                   </p>
                 </CardContent>
@@ -3244,7 +3244,7 @@ export default function AdminCurriculum() {
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-                  <Video className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <Video className="h-5 w-5 text-primary dark:text-primary" />
                   {selectedLecture.title}
                 </DialogTitle>
               </DialogHeader>
@@ -3367,14 +3367,14 @@ export default function AdminCurriculum() {
             
             <div className="space-y-6">
               {/* 파일 업로드 섹션 */}
-              <div className="p-4 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+              <div className="p-4 border-2 border-dashed border-primary/40 rounded-lg bg-primary/10 dark:bg-primary/20">
                 <div className="text-center">
-                  <Upload className="w-10 h-10 mx-auto mb-3 text-blue-500" />
-                  <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">파일에서 커리큘럼 생성</h3>
-                  <p className="text-sm text-blue-600 dark:text-blue-400 mb-4">
+                  <Upload className="w-10 h-10 mx-auto mb-3 text-primary" />
+                  <h3 className="text-lg font-semibold text-primary dark:text-primary mb-2">파일에서 커리큘럼 생성</h3>
+                  <p className="text-sm text-primary dark:text-primary mb-4">
                     Excel 파일(.xlsx, .xls), 한글파일(.hwp, .hwpx), 워드파일(.docx, .doc) 지원
                   </p>
-                  <p className="text-sm text-green-600 dark:text-green-400 mb-4">
+                  <p className="text-sm text-success dark:text-success mb-4">
                     💡 Excel 파일: 회차별 세부 정보 및 가격 정보 자동 추출
                   </p>
                   <input
@@ -3396,7 +3396,7 @@ export default function AdminCurriculum() {
                     className={`inline-flex items-center px-6 py-3 text-white text-sm font-medium rounded-lg transition-colors shadow-sm hover:shadow-md ${
                       isAnalyzing 
                         ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                        : 'bg-primary hover:bg-primary/90 cursor-pointer'
                     }`}
                   >
                     {isAnalyzing ? (
@@ -3540,7 +3540,7 @@ export default function AdminCurriculum() {
                 <Button
                   onClick={handleAdvancedCreateCurriculum}
                   disabled={!newCurriculum.title || !newCurriculum.description || !newCurriculum.category}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   커리큘럼 생성
@@ -3563,7 +3563,7 @@ export default function AdminCurriculum() {
               
               <div className="space-y-6">
                 {/* 커리큘럼 기본 정보 */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+                <div className="bg-gradient-to-r from-primary to-secondary p-6 rounded-lg">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">{previewCurriculum.title}</h2>
@@ -3584,7 +3584,7 @@ export default function AdminCurriculum() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-600 mb-1">
+                      <div className="text-2xl font-bold text-primary mb-1">
                         ₩{previewCurriculum.price.toLocaleString()}
                       </div>
                       <Badge variant={previewCurriculum.difficulty === 'beginner' ? 'default' : 
@@ -3611,16 +3611,16 @@ export default function AdminCurriculum() {
                             <div className="flex justify-between items-start mb-3">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <span className="bg-blue-100 text-blue-600 text-sm font-medium px-2 py-1 rounded">
+                                  <span className="bg-primary/10 text-primary text-sm font-medium px-2 py-1 rounded">
                                     {index + 1}강
                                   </span>
                                   <h4 className="font-semibold">{module.title || '제목 없음'}</h4>
                                   {module.isFree ? (
-                                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                    <Badge variant="secondary" className="text-xs bg-success/10 text-success">
                                       무료
                                     </Badge>
                                   ) : (
-                                    <Badge variant="default" className="text-xs bg-blue-100 text-blue-800">
+                                    <Badge variant="default" className="text-xs bg-primary/10 text-primary">
                                       유료 (₩{module.price?.toLocaleString() || '0'})
                                     </Badge>
                                   )}
@@ -3632,7 +3632,7 @@ export default function AdminCurriculum() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleModuleSelect(module)}
-                                  className="flex items-center gap-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200"
+                                  className="flex items-center gap-1 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all duration-200"
                                 >
                                   <Edit className="w-3 h-3" />
                                   수정
@@ -3643,11 +3643,11 @@ export default function AdminCurriculum() {
                               {/* 학습 목표 */}
                               {module.objectives && Array.isArray(module.objectives) && module.objectives.length > 0 && (
                                 <div className="mb-3">
-                                  <h5 className="text-sm font-medium text-blue-700 mb-2">🎯 학습 목표:</h5>
+                                  <h5 className="text-sm font-medium text-primary mb-2">🎯 학습 목표:</h5>
                                   <ul className="space-y-1">
                                     {module.objectives.map((objective, objIndex) => (
                                       <li key={objIndex} className="flex items-center gap-2 text-sm text-gray-600">
-                                        <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                                        <div className="w-1 h-1 bg-primary rounded-full"></div>
                                         <span>{objective}</span>
                                       </li>
                                     ))}
@@ -3658,7 +3658,7 @@ export default function AdminCurriculum() {
                               {/* 강의 내용 */}
                               {module.content && (
                                 <div className="mb-3">
-                                  <h5 className="text-sm font-medium text-green-700 mb-2">📚 강의 내용:</h5>
+                                  <h5 className="text-sm font-medium text-success mb-2">📚 강의 내용:</h5>
                                   <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{module.content}</p>
                                 </div>
                               )}
@@ -3675,8 +3675,8 @@ export default function AdminCurriculum() {
                                   
                                   {module.detailedContent.mainTopics && Array.isArray(module.detailedContent.mainTopics) && module.detailedContent.mainTopics.length > 0 && (
                                     <div>
-                                      <h6 className="text-xs font-medium text-orange-700 mb-1">📖 주요 토픽:</h6>
-                                      <ul className="text-xs text-gray-600 bg-orange-50 p-2 rounded space-y-1">
+                                      <h6 className="text-xs font-medium text-primary mb-1">📖 주요 토픽:</h6>
+                                      <ul className="text-xs text-gray-600 bg-primary/10 p-2 rounded space-y-1">
                                         {module.detailedContent.mainTopics.map((topic, topicIndex) => (
                                           <li key={topicIndex} className="flex items-start gap-1">
                                             <span>•</span>
@@ -3689,8 +3689,8 @@ export default function AdminCurriculum() {
                                   
                                   {module.detailedContent.practicalExercises && Array.isArray(module.detailedContent.practicalExercises) && module.detailedContent.practicalExercises.length > 0 && (
                                     <div>
-                                      <h6 className="text-xs font-medium text-red-700 mb-1">🏃‍♂️ 실습:</h6>
-                                      <ul className="text-xs text-gray-600 bg-red-50 p-2 rounded space-y-1">
+                                      <h6 className="text-xs font-medium text-destructive mb-1">🏃‍♂️ 실습:</h6>
+                                      <ul className="text-xs text-gray-600 bg-destructive/10 p-2 rounded space-y-1">
                                         {module.detailedContent.practicalExercises.map((exercise, exerciseIndex) => (
                                           <li key={exerciseIndex} className="flex items-start gap-1">
                                             <span>•</span>
@@ -3727,7 +3727,7 @@ export default function AdminCurriculum() {
                               {module.videos && Array.isArray(module.videos) && module.videos.length > 0 && (
                                 <div className="mt-3 pt-3 border-t">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <Video className="w-4 h-4 text-green-600" />
+                                    <Video className="w-4 h-4 text-success" />
                                     <span className="text-sm font-medium text-gray-700">
                                       등록된 영상: {module.videos.length}개
                                     </span>
@@ -3735,7 +3735,7 @@ export default function AdminCurriculum() {
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {module.videos.slice(0, 4).map((video) => (
                                       <div key={video.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded text-xs">
-                                        <Play className="w-3 h-3 text-blue-500" />
+                                        <Play className="w-3 h-3 text-primary" />
                                         <span className="font-medium truncate">{video.title}</span>
                                         <Badge 
                                           variant={video.status === 'ready' ? 'default' : 'secondary'}
@@ -3781,7 +3781,7 @@ export default function AdminCurriculum() {
                           publishCurriculum(previewCurriculum.id);
                           setShowPreviewModal(false);
                         }}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-success hover:bg-success/90"
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         강의로 발행
@@ -3813,14 +3813,14 @@ export default function AdminCurriculum() {
                 <div key={step} className="flex items-center">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                     step <= creationStep 
-                      ? 'bg-blue-600 text-white' 
+                      ? 'bg-primary text-white' 
                       : 'bg-gray-200 text-gray-500'
                   }`}>
                     {step}
                   </div>
                   {step < 3 && (
                     <div className={`w-12 h-1 mx-2 ${
-                      step < creationStep ? 'bg-blue-600' : 'bg-gray-200'
+                      step < creationStep ? 'bg-primary' : 'bg-gray-200'
                     }`} />
                   )}
                 </div>
@@ -4003,7 +4003,7 @@ export default function AdminCurriculum() {
                   <Button
                     onClick={handleNextStep}
                     disabled={!validateCurrentStep()}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     다음
                   </Button>
@@ -4011,7 +4011,7 @@ export default function AdminCurriculum() {
                   <Button
                     onClick={handleCreateCurriculum}
                     disabled={!validateCurrentStep()}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-success hover:bg-success/90"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
                     커리큘럼 생성
@@ -4044,21 +4044,21 @@ export default function AdminCurriculum() {
                   onChange={(e) => setSelectedFiles(e.target.files)}
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
-                <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h4 className="text-sm font-medium text-yellow-800 mb-2">📋 엑셀 파일 양식 안내</h4>
-                  <div className="text-xs text-yellow-700 space-y-1">
+                <div className="mt-2 p-3 bg-warning/10 border border-warning/30 rounded-lg">
+                  <h4 className="text-sm font-medium text-warning mb-2">📋 엑셀 파일 양식 안내</h4>
+                  <div className="text-xs text-warning space-y-1">
                     <p><strong>컬럼 순서:</strong> 회차 | 제목 | 내용 | 설명 | 준비물 | 유료/무료</p>
                     <p><strong>유료/무료 컬럼:</strong> "유료" 또는 "무료"로 입력</p>
                     <p><strong>첫 번째 행:</strong> 커리큘럼 제목 (필수)</p>
                     <p><strong>두 번째 행:</strong> 커리큘럼 설명 (선택사항)</p>
                     <p><strong>세 번째 행부터:</strong> 각 회차별 모듈 정보</p>
                   </div>
-                  <div className="mt-2 pt-2 border-t border-yellow-200">
-                    <p className="text-xs text-yellow-600">
+                  <div className="mt-2 pt-2 border-t border-warning/30">
+                    <p className="text-xs text-warning">
                       <strong>⚠️ 주의:</strong> 양식이 맞지 않으면 오류가 발생할 수 있습니다. 
                       <button 
                         onClick={handleDownloadTemplate}
-                        className="text-blue-600 hover:text-blue-800 underline ml-1"
+                        className="text-primary hover:text-primary/90 underline ml-1"
                       >
                         표준 양식 다운로드
                       </button>
@@ -4099,7 +4099,7 @@ export default function AdminCurriculum() {
               <Button
                 onClick={processAutoRegister}
                 disabled={!selectedFiles || selectedFiles.length === 0 || isProcessingFile}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
               >
                 {isProcessingFile ? (
                   <>
@@ -4409,7 +4409,7 @@ export default function AdminCurriculum() {
                       <div className="space-y-2">
                         {(newModule.attachments || []).map((attachment, index) => (
                           <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                            <FileText className="w-4 h-4 text-blue-500" />
+                            <FileText className="w-4 h-4 text-primary" />
                             <span className="text-sm flex-1">{attachment.name}</span>
                             <Button
                               type="button"
@@ -4551,13 +4551,13 @@ export default function AdminCurriculum() {
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-2xl font-bold text-primary">
                       ₩{selectedProduct.price.toLocaleString()}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
-                          <div key={i} className={`w-4 h-4 ${i < Math.floor(selectedProduct.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                          <div key={i} className={`w-4 h-4 ${i < Math.floor(selectedProduct.rating) ? 'text-warning' : 'text-gray-300'}`}>
                             ⭐
                           </div>
                         ))}
@@ -4607,7 +4607,7 @@ export default function AdminCurriculum() {
                     닫기
                   </Button>
                   <Button 
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    className="flex-1 bg-primary hover:bg-primary/90"
                     onClick={() => {
                       // 실제 구매 페이지로 이동하는 로직 구현
                       toast({
@@ -4755,7 +4755,7 @@ export default function AdminCurriculum() {
               <div>
                 <label className="block text-sm font-medium mb-2">강의 자료 첨부</label>
                 <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary/50 hover:bg-primary/10 transition-colors"
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                 >
@@ -4773,7 +4773,7 @@ export default function AdminCurriculum() {
                   >
                     <Upload className="w-8 h-8 text-gray-400" />
                     <div className="text-sm">
-                      <span className="font-medium text-blue-600">파일 선택</span>
+                      <span className="font-medium text-primary">파일 선택</span>
                       <span className="text-gray-500"> 또는 드래그 앤 드롭</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -4790,11 +4790,11 @@ export default function AdminCurriculum() {
                       <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <div className="flex-shrink-0">
                           {attachment.type?.startsWith('video/') ? (
-                            <Video className="w-5 h-5 text-red-500" />
+                            <Video className="w-5 h-5 text-destructive" />
                           ) : attachment.type?.startsWith('image/') ? (
-                            <FileText className="w-5 h-5 text-green-500" />
+                            <FileText className="w-5 h-5 text-success" />
                           ) : (
-                            <FileText className="w-5 h-5 text-blue-500" />
+                            <FileText className="w-5 h-5 text-primary" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -4830,7 +4830,7 @@ export default function AdminCurriculum() {
               </Button>
               <Button
                 onClick={handleSaveModule}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
               >
                 <Save className="w-4 h-4 mr-2" />
                 저장
@@ -4844,7 +4844,7 @@ export default function AdminCurriculum() {
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-blue-500" />
+                <GraduationCap className="w-5 h-5 text-primary" />
                 AI 커리큘럼 분석 결과
               </DialogTitle>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -4908,35 +4908,35 @@ export default function AdminCurriculum() {
 
                 {/* 가격 정보 */}
                 {aiAnalysisResult.pricing && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 flex items-center gap-2">
+                  <div className="bg-warning/10 dark:bg-warning/20 p-4 rounded-lg border border-warning/30 dark:border-warning/50">
+                    <h3 className="font-semibold text-warning dark:text-warning/70 mb-2 flex items-center gap-2">
                       <DollarSign className="w-4 h-4" />
                       AI 가격 제안
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300">제안 가격</p>
-                        <p className="text-lg font-bold text-yellow-800 dark:text-yellow-200">
+                        <p className="text-sm text-warning dark:text-warning">제안 가격</p>
+                        <p className="text-lg font-bold text-warning dark:text-warning/70">
                           ₩{aiAnalysisResult.pricing.suggestedPrice?.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300">가격 범위</p>
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <p className="text-sm text-warning dark:text-warning">가격 범위</p>
+                        <p className="text-sm text-warning dark:text-warning/70">
                           ₩{aiAnalysisResult.pricing.priceRange?.min?.toLocaleString()} - 
                           ₩{aiAnalysisResult.pricing.priceRange?.max?.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300">신뢰도</p>
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <p className="text-sm text-warning dark:text-warning">신뢰도</p>
+                        <p className="text-sm text-warning dark:text-warning/70">
                           {Math.round((aiAnalysisResult.pricing.confidence || 0) * 100)}%
                         </p>
                       </div>
                     </div>
                     <div className="mt-3">
-                      <p className="text-base text-yellow-700 dark:text-yellow-300 mb-1">가격 산정 근거:</p>
-                      <p className="text-base text-yellow-800 dark:text-yellow-200">
+                      <p className="text-base text-warning dark:text-warning mb-1">가격 산정 근거:</p>
+                      <p className="text-base text-warning dark:text-warning/70">
                         {aiAnalysisResult.pricing.reasoning}
                       </p>
                     </div>
@@ -5013,7 +5013,7 @@ export default function AdminCurriculum() {
                             <div className="text-sm text-gray-600 dark:text-gray-400">
                               {module.objectives.map((objective, objIndex) => (
                                 <div key={objIndex} className="flex items-start gap-1">
-                                  <span className="text-blue-500 mt-1">•</span>
+                                  <span className="text-primary mt-1">•</span>
                                   <span>{objective}</span>
                                 </div>
                               ))}
@@ -5098,7 +5098,7 @@ export default function AdminCurriculum() {
                         });
                       }
                     }}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-primary hover:bg-primary/90"
                     data-testid="button-ai-preview-apply"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
@@ -5144,7 +5144,7 @@ export default function AdminCurriculum() {
                         });
                       }
                     }}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-success hover:bg-success/90"
                     data-testid="button-ai-preview-save"
                   >
                     <Save className="w-4 h-4 mr-2" />

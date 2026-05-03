@@ -211,11 +211,11 @@ export default function InstituteDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <GraduationCap className="h-8 w-8 text-blue-600" />
+              <GraduationCap className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">총 훈련사</p>
                 <p className="text-2xl font-bold">{stats.totalTrainers}명</p>
-                <p className="text-xs text-green-600">활성 {stats.activeTrainers}명</p>
+                <p className="text-xs text-success">활성 {stats.activeTrainers}명</p>
               </div>
             </div>
           </CardContent>
@@ -224,11 +224,11 @@ export default function InstituteDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-green-600" />
+              <Users className="h-8 w-8 text-success" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">총 수강생</p>
                 <p className="text-2xl font-bold">{stats.totalStudents}명</p>
-                <p className="text-xs text-green-600">이달 +{stats.newStudentsThisMonth}명</p>
+                <p className="text-xs text-success">이달 +{stats.newStudentsThisMonth}명</p>
               </div>
             </div>
           </CardContent>
@@ -250,7 +250,7 @@ export default function InstituteDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-amber-600" />
+              <DollarSign className="h-8 w-8 text-warning" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">이달 수익</p>
                 <p className="text-2xl font-bold">{(stats.monthlyRevenue / 10000).toFixed(0)}만원</p>
@@ -266,7 +266,7 @@ export default function InstituteDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <UserCheck className="h-8 w-8 text-indigo-600" />
+              <UserCheck className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">대기 신청</p>
                 <p className="text-2xl font-bold">{stats.pendingApplications}건</p>
@@ -278,7 +278,7 @@ export default function InstituteDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <Award className="h-8 w-8 text-orange-600" />
+              <Award className="h-8 w-8 text-primary" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">수료 완료</p>
                 <p className="text-2xl font-bold">{stats.completedCourses}건</p>
@@ -294,7 +294,7 @@ export default function InstituteDashboard() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">평균 평점</p>
                 <p className="text-2xl font-bold">{stats.avgRating}</p>
-                <p className="text-xs text-yellow-600">★★★★★</p>
+                <p className="text-xs text-warning">★★★★★</p>
               </div>
             </div>
           </CardContent>

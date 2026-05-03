@@ -50,8 +50,8 @@ export function TemplateSelector({
         >
           <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 mb-3">
             {template.id === 'daily' && <FileText className="h-5 w-5 text-primary" />}
-            {template.id === 'play' && <FileText className="h-5 w-5 text-green-500" />}
-            {template.id === 'care' && <FileText className="h-5 w-5 text-blue-500" />}
+            {template.id === 'play' && <FileText className="h-5 w-5 text-success" />}
+            {template.id === 'care' && <FileText className="h-5 w-5 text-primary" />}
           </div>
           <span className="font-medium">{template.title}</span>
           <span className="text-xs text-gray-500 mt-1 text-center">

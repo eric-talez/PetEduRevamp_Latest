@@ -120,7 +120,7 @@ export default function TrainerReviews() {
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+          className={`h-4 w-4 ${i < rating ? 'text-warning fill-current' : 'text-gray-300'}`}
         />
       ))}
       <span className="ml-1 text-sm text-muted-foreground">({rating})</span>
@@ -153,7 +153,7 @@ export default function TrainerReviews() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center">
-            <Star className="h-8 w-8 text-yellow-500" />
+            <Star className="h-8 w-8 text-warning" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">평균 평점</p>
               <p className="text-2xl font-bold" data-testid="stat-average">{averageRating}</p>
@@ -162,7 +162,7 @@ export default function TrainerReviews() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center">
-            <MessageSquare className="h-8 w-8 text-blue-600" />
+            <MessageSquare className="h-8 w-8 text-primary" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">총 리뷰</p>
               <p className="text-2xl font-bold" data-testid="stat-total">{totalReviews}개</p>
@@ -171,7 +171,7 @@ export default function TrainerReviews() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center">
-            <Reply className="h-8 w-8 text-green-600" />
+            <Reply className="h-8 w-8 text-success" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">답변 완료</p>
               <p className="text-2xl font-bold">{repliedCount}개</p>
@@ -244,12 +244,12 @@ export default function TrainerReviews() {
                   </div>
                   <div className="text-right space-y-1">
                     {review.reply ? (
-                      <Badge className="bg-green-100 text-green-700 border-green-200">답변 완료</Badge>
+                      <Badge className="bg-success/10 text-success border-success/30">답변 완료</Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">답변 대기</Badge>
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">답변 대기</Badge>
                     )}
                     {review.reportCount > 0 && (
-                      <div className="flex items-center text-xs text-orange-600 justify-end">
+                      <div className="flex items-center text-xs text-primary justify-end">
                         <Flag className="h-3 w-3 mr-1" /> 신고 {review.reportCount}
                       </div>
                     )}
@@ -284,15 +284,15 @@ export default function TrainerReviews() {
                 )}
 
                 {review.reply ? (
-                  <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                  <div className="bg-primary/10 p-4 rounded-lg border-l-4 border-primary/50">
                     <div className="flex items-center space-x-2 mb-2">
-                      <Reply className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-700">트레이너 답변</span>
-                      <span className="text-xs text-blue-600">
+                      <Reply className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">트레이너 답변</span>
+                      <span className="text-xs text-primary">
                         {format(new Date(review.reply.createdAt), 'yyyy.MM.dd')}
                       </span>
                     </div>
-                    <p className="text-sm text-blue-700">{review.reply.content}</p>
+                    <p className="text-sm text-primary">{review.reply.content}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">

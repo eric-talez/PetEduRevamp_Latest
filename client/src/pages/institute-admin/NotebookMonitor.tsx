@@ -100,10 +100,10 @@ export default function NotebookMonitorPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'sent': return 'bg-blue-500';
-      case 'read': return 'bg-green-500';
+      case 'sent': return 'bg-primary';
+      case 'read': return 'bg-success';
       case 'replied': return 'bg-primary/50';
-      case 'draft': return 'bg-yellow-500';
+      case 'draft': return 'bg-warning';
       default: return 'bg-gray-500';
     }
   };
@@ -239,7 +239,7 @@ export default function NotebookMonitorPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">총 알림장</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{notebookStatus?.totalJournals || 0}</p>
               </div>
-              <FileText className="h-8 w-8 text-blue-500" />
+              <FileText className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -251,7 +251,7 @@ export default function NotebookMonitorPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">활성 훈련사</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{filteredStats.length}</p>
               </div>
-              <Users className="h-8 w-8 text-green-500" />
+              <Users className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -279,7 +279,7 @@ export default function NotebookMonitorPage() {
                   {filteredStats.reduce((sum, stat) => sum + stat.readJournals, 0)}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <CheckCircle className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -308,8 +308,8 @@ export default function NotebookMonitorPage() {
                 <div key={trainer.trainerId} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                        <User className="h-5 w-5 text-primary dark:text-primary" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-white">{trainer.trainerName}</h3>
@@ -319,10 +319,10 @@ export default function NotebookMonitorPage() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="text-blue-600 border-blue-200">
+                      <Badge variant="outline" className="text-primary border-primary/30">
                         전송: {trainer.sentJournals}
                       </Badge>
-                      <Badge variant="outline" className="text-green-600 border-green-200">
+                      <Badge variant="outline" className="text-success border-success/30">
                         읽음: {trainer.readJournals}
                       </Badge>
                       <Button
@@ -344,7 +344,7 @@ export default function NotebookMonitorPage() {
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${trainer.totalJournals > 0 ? (trainer.sentJournals / trainer.totalJournals) * 100 : 0}%` }}
                       />
                     </div>
@@ -357,7 +357,7 @@ export default function NotebookMonitorPage() {
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
-                        className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                        className="bg-success h-2 rounded-full transition-all duration-300"
                         style={{ width: `${trainer.sentJournals > 0 ? (trainer.readJournals / trainer.sentJournals) * 100 : 0}%` }}
                       />
                     </div>
@@ -393,13 +393,13 @@ export default function NotebookMonitorPage() {
               <div className="grid grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-600">{selectedTrainer.totalJournals}</div>
+                    <div className="text-2xl font-bold text-primary">{selectedTrainer.totalJournals}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">총 알림장</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600">{selectedTrainer.sentJournals}</div>
+                    <div className="text-2xl font-bold text-success">{selectedTrainer.sentJournals}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">전송됨</div>
                   </CardContent>
                 </Card>

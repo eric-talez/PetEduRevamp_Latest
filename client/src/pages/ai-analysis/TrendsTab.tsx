@@ -33,7 +33,7 @@ const MOOD_LABELS: Record<string, string> = {
   happy: '행복', sad: '슬픔', anxious: '불안', calm: '평온',
   energetic: '활발', tired: '피곤', unknown: '미상',
 };
-const MOOD_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#94a3b8'];
+const MOOD_COLORS = ['hsl(var(--success))', 'hsl(var(--primary))', 'hsl(var(--warning))', 'hsl(var(--destructive))', 'hsl(var(--secondary))', 'hsl(var(--primary))', 'hsl(var(--muted-foreground))'];
 
 function fetchJson(url: string) {
   return fetch(url, { credentials: 'include' }).then((r) => r.json());
@@ -106,7 +106,7 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
         import('jspdf'),
       ]);
       const canvas = await html2canvas(exportRef.current, {
-        backgroundColor: '#ffffff',
+        backgroundColor: 'hsl(var(--background))',
         scale: 2,
         useCORS: true,
         logging: false,
@@ -151,8 +151,8 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
   };
 
   const renderInsightIcon = (severity: string) => {
-    if (severity === 'positive') return <TrendingUp className="w-4 h-4 text-green-600" />;
-    if (severity === 'negative') return <TrendingDown className="w-4 h-4 text-red-600" />;
+    if (severity === 'positive') return <TrendingUp className="w-4 h-4 text-success" />;
+    if (severity === 'negative') return <TrendingDown className="w-4 h-4 text-destructive" />;
     return <Minus className="w-4 h-4 text-gray-500" />;
   };
 
@@ -322,7 +322,7 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <Sparkles className="w-4 h-4 text-warning" />
                   자동 인사이트
                 </CardTitle>
                 <CardDescription>이전 동일 기간과 비교해 변화가 큰 지표를 자동으로 강조합니다.</CardDescription>
@@ -333,9 +333,9 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
                     key={i}
                     className={`flex items-start gap-2 p-3 rounded-md border ${
                       ins.severity === 'positive'
-                        ? 'bg-green-50 border-green-200'
+                        ? 'bg-success/10 border-success/30'
                         : ins.severity === 'negative'
-                        ? 'bg-red-50 border-red-200'
+                        ? 'bg-destructive/10 border-destructive/30'
                         : 'bg-gray-50 border-gray-200'
                     }`}
                     data-testid={`insight-${ins.metric}`}
@@ -362,8 +362,8 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="avgStress" stroke="#ef4444" name="스트레스 점수" />
-                    <Line type="monotone" dataKey="avgEnergy" stroke="#3b82f6" name="활동성" />
+                    <Line type="monotone" dataKey="avgStress" stroke="hsl(var(--destructive))" name="스트레스 점수" />
+                    <Line type="monotone" dataKey="avgEnergy" stroke="hsl(var(--primary))" name="활동성" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -384,10 +384,10 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="poopNormal" stackId="poop" fill="#22c55e" name="정상 배변" />
-                    <Bar dataKey="poopAbnormal" stackId="poop" fill="#ef4444" name="이상 배변" />
-                    <Bar dataKey="mealNormal" stackId="meal" fill="#3b82f6" name="정상 식사" />
-                    <Bar dataKey="mealAbnormal" stackId="meal" fill="#f59e0b" name="이상 식사" />
+                    <Bar dataKey="poopNormal" stackId="poop" fill="hsl(var(--success))" name="정상 배변" />
+                    <Bar dataKey="poopAbnormal" stackId="poop" fill="hsl(var(--destructive))" name="이상 배변" />
+                    <Bar dataKey="mealNormal" stackId="meal" fill="hsl(var(--primary))" name="정상 식사" />
+                    <Bar dataKey="mealAbnormal" stackId="meal" fill="hsl(var(--warning))" name="이상 식사" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -439,8 +439,8 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
                     <div
                       key={d.metric}
                       className={`flex items-center justify-between text-sm p-2 rounded ${
-                        d.severity === 'positive' ? 'bg-green-50' :
-                        d.severity === 'negative' ? 'bg-red-50' : 'bg-gray-50'
+                        d.severity === 'positive' ? 'bg-success/10' :
+                        d.severity === 'negative' ? 'bg-destructive/10' : 'bg-gray-50'
                       }`}
                       data-testid={`diff-${d.metric}`}
                     >
@@ -464,7 +464,7 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <Sparkles className="w-4 h-4 text-warning" />
                       주요 변화 하이라이트
                     </CardTitle>
                   </CardHeader>
@@ -473,7 +473,7 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
                       <div
                         key={i}
                         className={`p-2 rounded text-sm border ${
-                          h.severity === 'positive' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                          h.severity === 'positive' ? 'bg-success/10 border-success/30' : 'bg-destructive/10 border-destructive/30'
                         }`}
                         data-testid={`highlight-${h.metric}`}
                       >
@@ -516,7 +516,7 @@ export function TrendsTab({ petId, petName, analyses }: TrendsTabProps) {
               />
             </div>
             {analyses.length < 2 && (
-              <p className="text-xs text-amber-600">비교에는 최소 2개의 분석 기록이 필요합니다.</p>
+              <p className="text-xs text-warning">비교에는 최소 2개의 분석 기록이 필요합니다.</p>
             )}
 
             {compareQuery.isLoading && (
@@ -556,7 +556,7 @@ function SummaryStat({
           {suffix && <span className="text-sm font-normal ml-1">{suffix}</span>}
         </div>
         {!isFlat && delta !== null && (
-          <div className={`text-xs mt-1 flex items-center gap-1 ${isImprovement ? 'text-green-600' : 'text-red-600'}`}>
+          <div className={`text-xs mt-1 flex items-center gap-1 ${isImprovement ? 'text-success' : 'text-destructive'}`}>
             {isImprovement ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             이전 대비 {delta > 0 ? '+' : ''}{delta}
           </div>
@@ -621,7 +621,7 @@ function ComparisonPanel({ title, data }: { title: string; data: any }) {
         </div>
         {r.redFlags?.length > 0 && (
           <div className="pt-2 border-t">
-            <div className="text-xs text-amber-600 mb-1">주의사항</div>
+            <div className="text-xs text-warning mb-1">주의사항</div>
             <ul className="text-xs list-disc list-inside space-y-0.5">
               {r.redFlags.slice(0, 3).map((f: string, i: number) => <li key={i}>{f}</li>)}
             </ul>
