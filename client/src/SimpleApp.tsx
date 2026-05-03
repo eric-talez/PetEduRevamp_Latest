@@ -1423,6 +1423,17 @@ function AuthenticatedRoutes() {
           }}
         </Route>
 
+        <Route path="/admin/live-streaming-metrics">
+          {() => {
+            const AdminLiveStreamingMetrics = lazy(() => import('./pages/admin/AdminLiveStreamingMetrics'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedAdminRoute component={AdminLiveStreamingMetrics} />
+              </Suspense>
+            );
+          }}
+        </Route>
+
         <Route path="/admin/revenue">
           {() => {
             const AdminRevenue = lazy(() => import('./pages/admin/AdminRevenue'));
