@@ -42,6 +42,8 @@ class Storage {
   pricingRules: any[] = [];
   trainingJournals: any[] = [];
   notebookShareTokens: any[] = [];
+  journalComments: any[] = [];
+  journalReactions: any[] = [];
   posts: any[] = [];
   coursePurchases: any[] = [];
   courseProgress: any[] = [];
@@ -2724,6 +2726,73 @@ class Storage {
       return true;
     }
     return false;
+  }
+
+  // ====== 알림장 댓글 ======
+  getJournalComments(journalId: number): any[] {
+    return (this.journalComments || [])
+      .filter(c => c.journalId === journalId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+
+  getJournalCommentById(commentId: number): any | null {
+    return (this.journalComments || []).find(c => c.id === commentId) || null;
+  }
+
+  getJournalCommentCounts(journalIds: number[]): Record<number, number> {
+    const counts: Record<number, number> = {};
+    journalIds.forEach(id => { counts[id] = 0; });
+    (this.journalComments || []).forEach(c => {
+      if (counts[c.journalId] !== undefined) counts[c.journalId]++;
+    });
+    return counts;
+  }
+
+  createJournalComment(data: { journalId: number; authorId: number; content: string; parentCommentId?: number | null }): any {
+    if (!this.journalComments) this.journalComments = [];
+    const id = (this.journalComments.reduce((m, c) => Math.max(m, c.id || 0), 0) || 0) + 1;
+    const comment = {
+      id,
+      journalId: data.journalId,
+      authorId: data.authorId,
+      content: data.content,
+      parentCommentId: data.parentCommentId ?? null,
+      createdAt: new Date().toISOString(),
+    };
+    this.journalComments.push(comment);
+    return comment;
+  }
+
+  deleteJournalComment(commentId: number): boolean {
+    const idx = (this.journalComments || []).findIndex(c => c.id === commentId);
+    if (idx === -1) return false;
+    this.journalComments.splice(idx, 1);
+    return true;
+  }
+
+  // ====== 알림장 이모지 반응 ======
+  getJournalReactions(journalId: number): any[] {
+    return (this.journalReactions || []).filter(r => r.journalId === journalId);
+  }
+
+  toggleJournalReaction(journalId: number, userId: number, emoji: string): { added: boolean } {
+    if (!this.journalReactions) this.journalReactions = [];
+    const idx = this.journalReactions.findIndex(
+      r => r.journalId === journalId && r.userId === userId && r.emoji === emoji,
+    );
+    if (idx !== -1) {
+      this.journalReactions.splice(idx, 1);
+      return { added: false };
+    }
+    const id = (this.journalReactions.reduce((m, r) => Math.max(m, r.id || 0), 0) || 0) + 1;
+    this.journalReactions.push({
+      id,
+      journalId,
+      userId,
+      emoji,
+      createdAt: new Date().toISOString(),
+    });
+    return { added: true };
   }
 
   // 페이지네이션과 필터링을 지원하는 훈련 일지 조회

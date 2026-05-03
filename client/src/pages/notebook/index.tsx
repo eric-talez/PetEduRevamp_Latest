@@ -50,6 +50,7 @@ import { useAuth } from '@/lib/auth-compat';
 import { secureRequest, getCSRFToken } from '@/lib/csrf';
 import NotebookBannerImage from '@assets/stock_images/pet_training_journal_3a3d5b29.jpg';
 import { PageBanner } from '@/components/PageBanner';
+import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
 
 // 알림장 엔트리 타입 정의
 interface NotebookEntry {
@@ -2440,6 +2441,11 @@ export default function NotebookPage() {
                   <h4 className="font-medium text-warning mb-2">특별 노트</h4>
                   <p className="text-warning">{selectedEntry.notes}</p>
                 </div>
+              )}
+
+              {/* 댓글 & 이모지 반응 */}
+              {Number.isFinite(Number(selectedEntry.id)) && (
+                <JournalCommentSection journalId={Number(selectedEntry.id)} />
               )}
             </div>
           </DialogContent>

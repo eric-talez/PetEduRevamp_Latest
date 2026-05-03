@@ -5112,6 +5112,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== 알림장 댓글 / 이모지 반응 =====
+  const ALLOWED_REACTION_EMOJIS = ['👍', '❤️', '🎉', '😍', '👏', '🐶'];
+
+  const buildJournalCommentsResponse = (journalId: number, currentUserId: number) => {
+    const comments = storage.getJournalComments(journalId).map((c: any) => {
+      const author = storage.getUser(c.authorId);
+      return {
+        id: c.id,
+        journalId: c.journalId,
+        authorId: c.authorId,
+        authorName: author?.name || author?.username || '사용자',
+        authorRole: author?.role || null,
+        authorAvatar: author?.profileImage || author?.avatar || null,
+        content: c.content,
+        parentCommentId: c.parentCommentId ?? null,
+        createdAt: c.createdAt,
+        canDelete: c.authorId === currentUserId,
+      };
+    });
+
+    const reactionRows = storage.getJournalReactions(journalId);
+    const reactionMap: Record<string, { count: number; mine: boolean }> = {};
+    ALLOWED_REACTION_EMOJIS.forEach(e => { reactionMap[e] = { count: 0, mine: false }; });
+    reactionRows.forEach((r: any) => {
+      if (!reactionMap[r.emoji]) reactionMap[r.emoji] = { count: 0, mine: false };
+      reactionMap[r.emoji].count++;
+      if (r.userId === currentUserId) reactionMap[r.emoji].mine = true;
+    });
+
+    return { comments, reactions: reactionMap, total: comments.length };
+  };
+
+  // 댓글/반응 조회
+  app.get('/api/notebook/entries/:id/comments', requireAuth(), async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '댓글에 접근할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      res.json({ success: true, ...buildJournalCommentsResponse(journalId, currentUser.id) });
+    } catch (error) {
+      logServerError('[알림장 댓글] 조회 실패:', error, req);
+      res.status(500).json({ error: '댓글 조회 중 오류가 발생했습니다.', code: 'COMMENTS_FETCH_FAILED' });
+    }
+  });
+
+  // 댓글 카운트 (목록 뱃지용)
+  app.get('/api/notebook/comments/counts', requireAuth(), async (req, res) => {
+    try {
+      const raw = String(req.query.journalIds || '').trim();
+      if (!raw) return res.json({ success: true, counts: {} });
+      const ids = raw.split(',').map(s => parseInt(s, 10)).filter(n => Number.isFinite(n));
+      if (ids.length === 0) return res.json({ success: true, counts: {} });
+      const currentUser = req.session.user!;
+      const accessible = ids.filter(id => {
+        const j = storage.getTrainingJournalById(id);
+        return j && storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, j);
+      });
+      res.json({ success: true, counts: storage.getJournalCommentCounts(accessible) });
+    } catch (error) {
+      logServerError('[알림장 댓글] 카운트 조회 실패:', error, req);
+      res.status(500).json({ error: '카운트 조회 실패', code: 'COMMENTS_COUNT_FAILED' });
+    }
+  });
+
+  // 댓글 작성
+  app.post('/api/notebook/entries/:id/comments', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '댓글을 작성할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+
+      const { insertJournalCommentSchema } = await import('../shared/schema');
+      const parsed = insertJournalCommentSchema.safeParse({
+        journalId,
+        content: req.body?.content,
+        parentCommentId: req.body?.parentCommentId ?? null,
+      });
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0]?.message || '입력값이 올바르지 않습니다.', code: 'INVALID_INPUT' });
+      }
+
+      const comment = storage.createJournalComment({
+        journalId,
+        authorId: currentUser.id,
+        content: parsed.data.content,
+        parentCommentId: parsed.data.parentCommentId ?? null,
+      });
+
+      // 알림 발송: 작성자가 보호자면 트레이너에게, 트레이너면 보호자에게
+      try {
+        const isTrainer = currentUser.id === journal.trainerId;
+        const recipientId = isTrainer ? journal.petOwnerId : journal.trainerId;
+        if (recipientId && recipientId !== currentUser.id) {
+          const author = storage.getUser(currentUser.id);
+          const authorName = author?.name || author?.username || '사용자';
+          const journalTitle = journal.title || '훈련 알림장';
+          const preview = parsed.data.content.length > 60
+            ? parsed.data.content.slice(0, 60) + '…'
+            : parsed.data.content;
+          await notificationService.sendNotification({
+            userId: recipientId,
+            type: 'message',
+            title: `${authorName}님의 새 알림장 댓글`,
+            message: `[${journalTitle}] ${preview}`,
+            data: { journalId, commentId: comment.id },
+            actionUrl: isTrainer ? `/notebook?journalId=${journalId}` : `/trainer/notebook?journalId=${journalId}`,
+          });
+        }
+      } catch (notifErr) {
+        logServerError('[알림장 댓글] 알림 발송 실패:', notifErr, req);
+      }
+
+      res.status(201).json({ success: true, comment, ...buildJournalCommentsResponse(journalId, currentUser.id) });
+    } catch (error) {
+      logServerError('[알림장 댓글] 작성 실패:', error, req);
+      res.status(500).json({ error: '댓글 작성 중 오류가 발생했습니다.', code: 'COMMENT_CREATE_FAILED' });
+    }
+  });
+
+  // 댓글 삭제 (작성자 본인만)
+  app.delete('/api/notebook/comments/:commentId', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.commentId, 10);
+      if (!Number.isFinite(commentId)) {
+        return res.status(400).json({ error: '올바른 댓글 ID가 필요합니다.', code: 'INVALID_COMMENT_ID' });
+      }
+      const currentUser = req.session.user!;
+      const comment = storage.getJournalCommentById(commentId);
+      if (!comment) {
+        return res.status(404).json({ error: '해당 댓글을 찾을 수 없습니다.', code: 'COMMENT_NOT_FOUND' });
+      }
+      if (comment.authorId !== currentUser.id && currentUser.role !== 'admin') {
+        return res.status(403).json({ error: '본인이 작성한 댓글만 삭제할 수 있습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      storage.deleteJournalComment(commentId);
+      res.json({ success: true, ...buildJournalCommentsResponse(comment.journalId, currentUser.id) });
+    } catch (error) {
+      logServerError('[알림장 댓글] 삭제 실패:', error, req);
+      res.status(500).json({ error: '댓글 삭제 중 오류가 발생했습니다.', code: 'COMMENT_DELETE_FAILED' });
+    }
+  });
+
+  // 이모지 반응 토글
+  app.post('/api/notebook/entries/:id/reactions', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const emoji = String(req.body?.emoji || '').trim();
+      if (!ALLOWED_REACTION_EMOJIS.includes(emoji)) {
+        return res.status(400).json({ error: '허용되지 않는 이모지입니다.', code: 'INVALID_EMOJI', allowed: ALLOWED_REACTION_EMOJIS });
+      }
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '반응을 남길 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      const result = storage.toggleJournalReaction(journalId, currentUser.id, emoji);
+      res.json({ success: true, added: result.added, ...buildJournalCommentsResponse(journalId, currentUser.id) });
+    } catch (error) {
+      logServerError('[알림장 반응] 토글 실패:', error, req);
+      res.status(500).json({ error: '반응 처리 중 오류가 발생했습니다.', code: 'REACTION_TOGGLE_FAILED' });
+    }
+  });
+
   // 6. 특정 펫의 훈련 일지 조회
   app.get("/api/pets/:petId/notebook", requireAuth(), async (req, res) => {
     try {

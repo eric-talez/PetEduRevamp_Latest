@@ -1079,7 +1079,7 @@ export const notebookShareTokens = pgTable("notebook_share_tokens", {
 });
 export type NotebookShareToken = typeof notebookShareTokens.$inferSelect;
 
-// 알림장 댓글 테이블 - 견주의 응답
+// 알림장 댓글 테이블 - 견주/훈련사의 양방향 응답
 export const journalComments: any = pgTable("journal_comments", {
   id: serial("id").primaryKey(),
   journalId: integer("journal_id").references(() => trainingJournals.id).notNull(),
@@ -1089,6 +1089,34 @@ export const journalComments: any = pgTable("journal_comments", {
   parentCommentId: integer("parent_comment_id"), // 대댓글 - 순환 참조 제거
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// 알림장 이모지 반응 테이블 - 사용자별 반응 (journal+user+emoji 유일)
+export const journalReactions = pgTable("journal_reactions", {
+  id: serial("id").primaryKey(),
+  journalId: integer("journal_id").references(() => trainingJournals.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  emoji: varchar("emoji", { length: 16 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertJournalCommentSchema = createInsertSchema(journalComments).omit({
+  id: true,
+  authorId: true,
+  createdAt: true,
+}).extend({
+  content: z.string().trim().min(1, '댓글 내용을 입력해주세요').max(2000, '댓글은 최대 2000자까지 입력할 수 있습니다'),
+});
+
+export const insertJournalReactionSchema = createInsertSchema(journalReactions).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+}).extend({
+  emoji: z.string().min(1).max(16),
+});
+
+export type JournalReaction = typeof journalReactions.$inferSelect;
+export type InsertJournalReaction = z.infer<typeof insertJournalReactionSchema>;
 
 // 알림장 서비스 요청 테이블 - 견주가 추가 서비스 요청
 export const journalServiceRequests = pgTable("journal_service_requests", {

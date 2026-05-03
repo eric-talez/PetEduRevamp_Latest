@@ -41,6 +41,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
 
 interface Journal {
   id: number;
@@ -1472,6 +1473,9 @@ export default function TrainerNotebookPage() {
                     </div>
                   </div>
                 )}
+
+                {/* 댓글 & 이모지 반응 */}
+                <JournalCommentSection journalId={selectedJournal.id} />
               </div>
 
               <DialogFooter>
