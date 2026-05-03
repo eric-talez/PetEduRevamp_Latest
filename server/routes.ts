@@ -19304,14 +19304,22 @@ export function registerTrainerCertificationRoutes(app: Express) {
         },
       });
 
-      // 트레이너 정산 항목 자동 취소 (요청 본문에 sourceType/sourceId 포함된 경우)
+      // 트레이너 정산 항목 자동 취소
+      // 보안: 클라이언트가 보낸 sourceType/sourceId는 신뢰할 수 없으므로
+      // 관리자(admin)만 settlement 캐스케이드 취소를 트리거할 수 있도록 제한.
+      // 일반 사용자의 결제 취소는 그대로 동작하지만 정산 항목은 별도 관리자 처리 또는
+      // paymentKey→source 매핑이 추가될 때까지 자동 취소하지 않음.
       try {
+        const callerRole = (req as any).user?.role || (req.session as any)?.user?.role;
+        const isAdmin = callerRole === 'admin';
         const sourceType = req.body?.sourceType as ('course' | 'order' | 'lesson' | undefined);
         const sourceId = req.body?.sourceId ? Number(req.body.sourceId) : undefined;
-        if (sourceType && sourceId) {
+        if (isAdmin && sourceType && sourceId) {
           const { cancelTrainerSettlementItem } = await import('./routes/trainer-settlements');
           const n = await cancelTrainerSettlementItem(sourceType, sourceId, `토스 환불(${paymentKey})`);
-          console.log(`[정산 자동 취소] ${sourceType}#${sourceId} → ${n}건 취소`);
+          console.log(`[정산 자동 취소] ${sourceType}#${sourceId} → ${n}건 취소 (admin)`);
+        } else if (sourceType && sourceId) {
+          console.log(`[정산 자동 취소] 비관리자 요청 - 정산 캐스케이드 스킵 (paymentKey=${paymentKey})`);
         }
       } catch (cancelErr) {
         logServerError('[정산 자동 취소] 오류:', cancelErr, req);
