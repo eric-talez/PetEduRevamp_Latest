@@ -14,16 +14,164 @@ import {
 import { logServerError } from '../middleware/audit-logger';
 
 const SENDGRID_KEY = process.env.SENDGRID_API_KEY;
-const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "no-reply@talez.app";
+const SENDGRID_FROM_EMAIL_RAW = process.env.SENDGRID_FROM_EMAIL;
+const FROM_EMAIL = SENDGRID_FROM_EMAIL_RAW || "no-reply@talez.app";
 const FROM_NAME = process.env.SENDGRID_FROM_NAME || "TALEZ";
 const MAX_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 60_000;
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const FAILURE_ALERT_THRESHOLD = 5;
+const FAILURE_ALERT_COOLDOWN_MS = 30 * 60_000;
+
+const configWarnings: string[] = [];
+if (!SENDGRID_KEY) {
+  configWarnings.push("SENDGRID_API_KEY 미설정");
+}
+if (!SENDGRID_FROM_EMAIL_RAW) {
+  configWarnings.push("SENDGRID_FROM_EMAIL 미설정 (기본 발신자 사용)");
+}
 
 if (SENDGRID_KEY) {
   sgMail.setApiKey(SENDGRID_KEY);
   console.log("✅ SendGrid 초기화 완료");
+} else if (IS_PRODUCTION) {
+  console.error(
+    "❌ [PROD] SENDGRID_API_KEY 미설정 - 이메일이 발송되지 않습니다. 즉시 키를 설정하세요."
+  );
 } else {
   console.warn("⚠️ SENDGRID_API_KEY 미설정 - 이메일은 큐에만 적재됩니다");
+}
+
+if (IS_PRODUCTION && !SENDGRID_FROM_EMAIL_RAW) {
+  console.error(
+    "❌ [PROD] SENDGRID_FROM_EMAIL 미설정 - 발신자 도메인 인증 누락 위험. 즉시 설정하세요."
+  );
+}
+
+interface EmailFailureSample {
+  at: Date;
+  recipient: string;
+  templateKey: string;
+  error: string;
+}
+
+const failureState = {
+  consecutiveFailures: 0,
+  totalFailuresSinceBoot: 0,
+  totalSentSinceBoot: 0,
+  lastFailureAt: null as Date | null,
+  lastSuccessAt: null as Date | null,
+  lastAlertAt: null as Date | null,
+  recentFailures: [] as EmailFailureSample[],
+  criticalActive: false,
+};
+
+export interface EmailServiceStatus {
+  configured: boolean;
+  apiKeyPresent: boolean;
+  fromEmailConfigured: boolean;
+  fromEmail: string;
+  environment: string;
+  warnings: string[];
+  consecutiveFailures: number;
+  totalFailuresSinceBoot: number;
+  totalSentSinceBoot: number;
+  lastFailureAt: string | null;
+  lastSuccessAt: string | null;
+  lastAlertAt: string | null;
+  recentFailures: Array<{ at: string; recipient: string; templateKey: string; error: string }>;
+  critical: boolean;
+  failureAlertThreshold: number;
+}
+
+export function getEmailServiceStatus(): EmailServiceStatus {
+  const critical =
+    (IS_PRODUCTION && (!SENDGRID_KEY || !SENDGRID_FROM_EMAIL_RAW)) ||
+    failureState.criticalActive;
+  return {
+    configured: Boolean(SENDGRID_KEY),
+    apiKeyPresent: Boolean(SENDGRID_KEY),
+    fromEmailConfigured: Boolean(SENDGRID_FROM_EMAIL_RAW),
+    fromEmail: FROM_EMAIL,
+    environment: process.env.NODE_ENV || "development",
+    warnings: configWarnings.slice(),
+    consecutiveFailures: failureState.consecutiveFailures,
+    totalFailuresSinceBoot: failureState.totalFailuresSinceBoot,
+    totalSentSinceBoot: failureState.totalSentSinceBoot,
+    lastFailureAt: failureState.lastFailureAt?.toISOString() || null,
+    lastSuccessAt: failureState.lastSuccessAt?.toISOString() || null,
+    lastAlertAt: failureState.lastAlertAt?.toISOString() || null,
+    recentFailures: failureState.recentFailures.map((f) => ({
+      at: f.at.toISOString(),
+      recipient: f.recipient,
+      templateKey: f.templateKey,
+      error: f.error,
+    })),
+    critical,
+    failureAlertThreshold: FAILURE_ALERT_THRESHOLD,
+  };
+}
+
+async function notifyAdminsOfEmailFailure(reason: string): Promise<void> {
+  try {
+    const admins = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.role, "admin"));
+    if (admins.length === 0) {
+      console.error("[email] 관리자 알림 실패: 관리자 사용자가 없습니다");
+      return;
+    }
+    const { notificationService } = await import("../notifications/notification-service");
+    for (const a of admins) {
+      try {
+        await notificationService.sendNotification({
+          userId: a.id,
+          type: "system",
+          title: "⚠️ 이메일 발송 장애 감지",
+          message: reason,
+          actionUrl: "/admin/email-notifications",
+          data: { source: "email-service", severity: "critical" },
+        });
+      } catch (err) {
+        logServerError(`[email] 관리자(id=${a.id}) 알림 전송 실패`, err);
+      }
+    }
+    console.error(`🚨 [email] 관리자 ${admins.length}명에게 발송 장애 알림 전송: ${reason}`);
+  } catch (err) {
+    logServerError("[email] 관리자 알림 처리 중 오류", err);
+  }
+}
+
+function recordSendSuccess(): void {
+  failureState.consecutiveFailures = 0;
+  failureState.totalSentSinceBoot += 1;
+  failureState.lastSuccessAt = new Date();
+  if (failureState.criticalActive) {
+    failureState.criticalActive = false;
+    console.log("✅ [email] 발송이 정상화되어 critical 상태가 해제되었습니다");
+  }
+}
+
+function recordSendFailure(sample: EmailFailureSample): void {
+  failureState.consecutiveFailures += 1;
+  failureState.totalFailuresSinceBoot += 1;
+  failureState.lastFailureAt = sample.at;
+  failureState.recentFailures.unshift(sample);
+  if (failureState.recentFailures.length > 10) {
+    failureState.recentFailures.length = 10;
+  }
+  const now = Date.now();
+  const cooled =
+    !failureState.lastAlertAt ||
+    now - failureState.lastAlertAt.getTime() > FAILURE_ALERT_COOLDOWN_MS;
+  if (failureState.consecutiveFailures >= FAILURE_ALERT_THRESHOLD && cooled) {
+    failureState.lastAlertAt = new Date();
+    failureState.criticalActive = true;
+    void notifyAdminsOfEmailFailure(
+      `최근 ${failureState.consecutiveFailures}건 연속 이메일 발송 실패. 마지막 오류: ${sample.error}`
+    );
+  }
 }
 
 const DEFAULT_TEMPLATES: Array<{
@@ -265,15 +413,22 @@ async function deliver(logId: number): Promise<void> {
   const html = renderTemplate(template.bodyHtml || "", vars);
 
   if (!SENDGRID_KEY) {
+    const errMsg = "SENDGRID_API_KEY 미설정";
     await db
       .update(emailLogs)
       .set({
         status: "failed",
-        lastError: "SENDGRID_API_KEY 미설정",
+        lastError: errMsg,
         attempts: (log.attempts || 0) + 1,
         updatedAt: new Date(),
       })
       .where(eq(emailLogs.id, logId));
+    recordSendFailure({
+      at: new Date(),
+      recipient: log.recipient,
+      templateKey: log.templateKey,
+      error: errMsg,
+    });
     return;
   }
 
@@ -303,19 +458,29 @@ async function deliver(logId: number): Promise<void> {
         updatedAt: new Date(),
       })
       .where(eq(emailLogs.id, logId));
+    recordSendSuccess();
   } catch (err: any) {
     const attempts = (log.attempts || 0) + 1;
     const failed = attempts >= MAX_ATTEMPTS;
+    const errMsg = err?.message || String(err);
     await db
       .update(emailLogs)
       .set({
         status: failed ? "failed" : "queued",
         attempts,
-        lastError: err?.message || String(err),
+        lastError: errMsg,
         updatedAt: new Date(),
       })
       .where(eq(emailLogs.id, logId));
-    logServerError(`[email] 발송 실패 (logId=${logId}, attempts=${attempts}):`, err?.message);
+    logServerError(`[email] 발송 실패 (logId=${logId}, attempts=${attempts}):`, errMsg);
+    if (failed) {
+      recordSendFailure({
+        at: new Date(),
+        recipient: log.recipient,
+        templateKey: log.templateKey,
+        error: errMsg,
+      });
+    }
   }
 }
 

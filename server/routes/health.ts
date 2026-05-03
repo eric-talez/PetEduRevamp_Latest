@@ -381,8 +381,13 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
 
   app.get('/api/health', async (req, res) => {
     try {
-      const health = {
-        status: 'ok',
+      const { getEmailServiceStatus } = await import('../services/email-service');
+      const emailStatus = getEmailServiceStatus();
+      const emailOk = !emailStatus.critical;
+      const overall = emailOk ? 'ok' : 'degraded';
+
+      const health: any = {
+        status: overall,
         timestamp: new Date().toISOString(),
         version: '1.0.0',
         uptime: process.uptime(),
@@ -396,8 +401,16 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
         services: {
           database: 'connected',
           cache: 'active',
-          websocket: 'running'
-        }
+          websocket: 'running',
+          email: emailOk ? 'ok' : 'critical',
+        },
+        email: {
+          configured: emailStatus.configured,
+          fromEmailConfigured: emailStatus.fromEmailConfigured,
+          critical: emailStatus.critical,
+          consecutiveFailures: emailStatus.consecutiveFailures,
+          warnings: emailStatus.warnings,
+        },
       };
 
       // 프로덕션에서는 민감한 정보 제거
@@ -406,7 +419,7 @@ export function registerHealthRoutes(app: Express, storage: IStorage) {
         delete health.memory.external;
       }
 
-      res.json(health);
+      res.status(emailOk ? 200 : 503).json(health);
     } catch (error) {
       res.status(503).json({
         status: 'error',

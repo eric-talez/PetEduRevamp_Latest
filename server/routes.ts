@@ -13023,14 +13023,35 @@ app.get('/api/search', async (req, res) => {
   });
 
   // Health check endpoint
-  app.get("/api/health", (req, res) => {
-    res.json({ 
-      status: "ok", 
-      timestamp: new Date(),
-      version: "1.0.0",
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development'
-    });
+  app.get("/api/health", async (req, res) => {
+    try {
+      const { getEmailServiceStatus } = await import("./services/email-service");
+      const emailStatus = getEmailServiceStatus();
+      const emailOk = !emailStatus.critical;
+      res.status(emailOk ? 200 : 503).json({
+        status: emailOk ? "ok" : "degraded",
+        timestamp: new Date(),
+        version: "1.0.0",
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || "development",
+        services: { email: emailOk ? "ok" : "critical" },
+        email: {
+          configured: emailStatus.configured,
+          fromEmailConfigured: emailStatus.fromEmailConfigured,
+          critical: emailStatus.critical,
+          consecutiveFailures: emailStatus.consecutiveFailures,
+          warnings: emailStatus.warnings,
+        },
+      });
+    } catch (err) {
+      res.json({
+        status: "ok",
+        timestamp: new Date(),
+        version: "1.0.0",
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || "development",
+      });
+    }
   });
 
   // Stripe 결제 시스템 API

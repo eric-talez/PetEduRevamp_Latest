@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, RefreshCw, Send, Eye } from "lucide-react";
+import { Mail, RefreshCw, Send, Eye, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getCSRFToken } from "@/lib/csrf";
 
 interface Template {
@@ -67,6 +68,24 @@ async function getCsrfHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+interface EmailServiceStatus {
+  configured: boolean;
+  apiKeyPresent: boolean;
+  fromEmailConfigured: boolean;
+  fromEmail: string;
+  environment: string;
+  warnings: string[];
+  consecutiveFailures: number;
+  totalFailuresSinceBoot: number;
+  totalSentSinceBoot: number;
+  lastFailureAt: string | null;
+  lastSuccessAt: string | null;
+  lastAlertAt: string | null;
+  recentFailures: Array<{ at: string; recipient: string; templateKey: string; error: string }>;
+  critical: boolean;
+  failureAlertThreshold: number;
+}
+
 export default function AdminEmailNotifications() {
   const { toast } = useToast();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -81,6 +100,16 @@ export default function AdminEmailNotifications() {
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [previewSubject, setPreviewSubject] = useState<string>("");
   const [testTo, setTestTo] = useState("");
+  const [serviceStatus, setServiceStatus] = useState<EmailServiceStatus | null>(null);
+
+  async function loadStatus() {
+    try {
+      const r = await fetch("/api/admin/email-status", { credentials: "include" });
+      if (!r.ok) return;
+      const d = await r.json();
+      setServiceStatus(d);
+    } catch {}
+  }
 
   async function loadTemplates() {
     setLoadingTpl(true);
@@ -120,6 +149,9 @@ export default function AdminEmailNotifications() {
   useEffect(() => {
     loadTemplates();
     loadLogs();
+    loadStatus();
+    const id = setInterval(loadStatus, 30_000);
+    return () => clearInterval(id);
   }, []);
 
   const templateMap = useMemo(() => {
@@ -226,6 +258,54 @@ export default function AdminEmailNotifications() {
         <Mail className="w-6 h-6" />
         <h1 className="text-2xl font-bold">이메일 알림 (SendGrid)</h1>
       </div>
+
+      {serviceStatus && (serviceStatus.critical || serviceStatus.warnings.length > 0) && (
+        <Alert
+          variant={serviceStatus.critical ? "destructive" : "default"}
+          data-testid="banner-email-status"
+          className={serviceStatus.critical ? "" : "border-yellow-400 bg-yellow-50 text-yellow-900"}
+        >
+          <AlertTriangle className="w-4 h-4" />
+          <AlertTitle>
+            {serviceStatus.critical
+              ? "SendGrid 미설정 또는 발송 장애"
+              : "SendGrid 설정 경고"}
+          </AlertTitle>
+          <AlertDescription>
+            <div className="space-y-1 text-sm">
+              <div>
+                환경: <code>{serviceStatus.environment}</code> · API 키:{" "}
+                <b>{serviceStatus.apiKeyPresent ? "설정됨" : "미설정"}</b> · 발신자:{" "}
+                <b>{serviceStatus.fromEmailConfigured ? serviceStatus.fromEmail : "미설정 (기본값 사용 중)"}</b>
+              </div>
+              {serviceStatus.warnings.length > 0 && (
+                <ul className="list-disc list-inside">
+                  {serviceStatus.warnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              )}
+              {serviceStatus.consecutiveFailures > 0 && (
+                <div>
+                  연속 발송 실패: <b>{serviceStatus.consecutiveFailures}</b>건 (임계값{" "}
+                  {serviceStatus.failureAlertThreshold}건 시 관리자 알림 전송)
+                </div>
+              )}
+              {serviceStatus.lastFailureAt && (
+                <div className="text-xs">
+                  마지막 실패: {new Date(serviceStatus.lastFailureAt).toLocaleString("ko-KR")}
+                </div>
+              )}
+              {serviceStatus.lastAlertAt && (
+                <div className="text-xs">
+                  마지막 관리자 알림 발송:{" "}
+                  {new Date(serviceStatus.lastAlertAt).toLocaleString("ko-KR")}
+                </div>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="templates">
         <TabsList>

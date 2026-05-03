@@ -13,6 +13,7 @@ import {
   listEmailLogs,
   resendEmail,
   previewTemplate,
+  getEmailServiceStatus,
 } from "../services/email-service";
 
 function requireAuthUser(req: Request, res: Response): number | null {
@@ -109,6 +110,12 @@ export function registerEmailNotificationRoutes(app: Express) {
         .where(eq(emailNotificationPreferences.id, existing[0].id));
     }
     res.json({ success: true, category, enabled });
+  });
+
+  // ----- 관리자: 서비스 상태 -----
+  app.get("/api/admin/email-status", async (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    res.json(getEmailServiceStatus());
   });
 
   // ----- 관리자: 템플릿 -----
