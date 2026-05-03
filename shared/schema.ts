@@ -303,6 +303,9 @@ export const aiAnalysisShareTokens = pgTable("ai_analysis_share_tokens", {
   createdBy: integer("created_by").references(() => users.id),
   expiresAt: timestamp("expires_at").notNull(),
   revokedAt: timestamp("revoked_at"),
+  accessCount: integer("access_count").default(0).notNull(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  lastAccessedIp: varchar("last_accessed_ip", { length: 64 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 export type AiAnalysisShareToken = typeof aiAnalysisShareTokens.$inferSelect;

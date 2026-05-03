@@ -6337,6 +6337,33 @@ class HybridStorage extends Storage {
     }
   }
 
+  async recordAiAnalysisShareTokenAccess(token: string, ip?: string | null) {
+    try {
+      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      const safeIp = (ip || '').toString().slice(0, 64) || null;
+      await db.update(aiAnalysisShareTokens).set({
+        accessCount: sql`${aiAnalysisShareTokens.accessCount} + 1`,
+        lastAccessedAt: new Date(),
+        lastAccessedIp: safeIp,
+      }).where(eq(aiAnalysisShareTokens.token, token));
+    } catch (err) {
+      logServerError('[Share Token] 접근 로그 업데이트 실패:', err);
+    }
+  }
+
+  async cleanupExpiredAiAnalysisShareTokens(olderThanDays = 7) {
+    try {
+      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
+      const result = await db.delete(aiAnalysisShareTokens)
+        .where(sql`${aiAnalysisShareTokens.expiresAt} < ${cutoff} OR (${aiAnalysisShareTokens.revokedAt} IS NOT NULL AND ${aiAnalysisShareTokens.revokedAt} < ${cutoff})`);
+      return result;
+    } catch (err) {
+      logServerError('[Share Token] 만료 토큰 정리 실패:', err);
+      return null;
+    }
+  }
+
   // =============================================================================
   // 알림장 공유 토큰 (PDF 외부 공유 링크) - 인메모리 저장
   // =============================================================================

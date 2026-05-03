@@ -779,6 +779,21 @@ async function startServer() {
         console.warn('[Push Scheduler] 스케줄러 시작 실패:', error);
       }
 
+      // AI 분석 공유 토큰 정리 스케줄러 (만료/철회 7일 경과 토큰 삭제)
+      try {
+        const { storage } = await import('./storage');
+        const runCleanup = () => {
+          storage.cleanupExpiredAiAnalysisShareTokens(7).catch((e) => {
+            console.warn('[Share Token Cleanup] 실패:', e);
+          });
+        };
+        setTimeout(runCleanup, 60 * 1000);
+        setInterval(runCleanup, 6 * 60 * 60 * 1000);
+        console.log('🧹 AI 분석 공유 토큰 정리 스케줄러 시작 (6시간 주기)');
+      } catch (error) {
+        console.warn('[Share Token Cleanup] 스케줄러 시작 실패:', error);
+      }
+
       if (process.env.NODE_ENV === 'production') {
         console.log('🚀 Server running on port 5000 in PRODUCTION mode');
         console.log('📊 Production monitoring active');

@@ -11559,6 +11559,8 @@ app.get('/api/search', async (req, res) => {
       }
       const result = await buildAnalysisPdfBuffer(record.analysisId);
       if (!result) return res.status(404).json({ success: false, error: '분석 결과를 찾을 수 없습니다.' });
+      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || null;
+      void storage.recordAiAnalysisShareTokenAccess(req.params.token, clientIp);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', contentDisposition('inline', pdfFilename(result.pet?.name, record.analysisId)));
       res.setHeader('Cache-Control', 'private, no-store');
