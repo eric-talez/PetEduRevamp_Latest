@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { randomBytes } from "crypto";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, desc, or, ilike } from "drizzle-orm";
-import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles } from "../shared/schema";
+import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
 import { registerDashboardRoutes } from "./routes/dashboard";
@@ -291,6 +291,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { eventRoutes } from "./routes/events";
 import { eventUpdater } from "./services/eventUpdater";
+import { parsePaymentIntentForPersistence, assertPaymentOwnership, isUniqueViolation } from "./services/payment-validation";
 import { 
   createPetSchema, 
   updatePetValidationSchema, 
@@ -790,6 +791,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 표준화 API 응답 형식 미들웨어 적용
   app.use(extendResponse);
+
+  // 결제 멱등성 컬럼 마이그레이션 (서버 시작 시 안전하게 보장)
+  try {
+    await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_intent_id text`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS orders_payment_intent_id_unique ON orders(payment_intent_id) WHERE payment_intent_id IS NOT NULL`);
+    await db.execute(sql`ALTER TABLE course_purchases ADD COLUMN IF NOT EXISTS payment_intent_id text`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS course_purchases_payment_intent_id_unique ON course_purchases(payment_intent_id) WHERE payment_intent_id IS NOT NULL`);
+    console.log('✅ 결제 멱등성 컬럼 마이그레이션 완료');
+  } catch (migrationError) {
+    console.error('⚠️ 결제 멱등성 컬럼 마이그레이션 실패:', migrationError);
+  }
 
   // 인증 관련 라우트는 setupAuth()에서 처리됩니다 (/api/auth/* 경로)
 
@@ -12352,8 +12364,12 @@ app.get('/api/search', async (req, res) => {
         return res.status(400).json({ error: '결제 금액과 구매 항목 ID가 필요합니다.' });
       }
 
-      // 메타데이터 생성
-      const metadata: any = {};
+      // 메타데이터 생성 (userId 포함 - webhook에서 DB 저장 시 필요)
+      const metadata: Record<string, string> = {};
+      const requestUserId = req.user?.id;
+      if (requestUserId !== undefined && requestUserId !== null) {
+        metadata.userId = String(requestUserId);
+      }
       if (itemType === 'product') {
         metadata.productId = itemId;
         metadata.productName = itemName || '상품 구매';
@@ -12392,11 +12408,131 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
+  // 결제 성공 시 DB에 구매 기록을 트랜잭션으로 저장 (멱등성 보장)
+  type CoursePurchaseRow = typeof coursePurchases.$inferSelect;
+  type OrderRow = typeof orders.$inferSelect;
+  type PersistResult =
+    | { type: 'course'; record: CoursePurchaseRow; duplicated: boolean; itemName?: string }
+    | { type: 'product'; record: OrderRow; duplicated: boolean; itemName?: string }
+    | { type: string; record: null; duplicated: false; itemName?: string };
+  async function persistSuccessfulPayment(
+    paymentIntent: Stripe.PaymentIntent,
+    sessionUserId?: number | string
+  ): Promise<PersistResult> {
+    const parsed = parsePaymentIntentForPersistence(paymentIntent, sessionUserId);
+    if (!parsed.ok) {
+      throw new Error(parsed.error);
+    }
+    const { type: itemType, userId: userIdNum, itemId, itemName, amount } = parsed;
+
+    if (itemType === 'course') {
+      const courseId = itemId;
+
+      // 멱등성: 이미 동일 paymentIntent 기록 존재 시 재사용
+      const existing = await db.select().from(coursePurchases)
+        .where(eq(coursePurchases.paymentIntentId, paymentIntent.id)).limit(1);
+      if (existing.length > 0) {
+        return { type: 'course', record: existing[0], duplicated: true };
+      }
+
+      let result: CoursePurchaseRow;
+      try {
+        result = await db.transaction(async (tx) => {
+        const [purchase] = await tx.insert(coursePurchases).values({
+          userId: userIdNum,
+          courseId,
+          purchaseAmount: amount.toString(),
+          paymentMethod: 'stripe',
+          paymentStatus: 'completed',
+          paymentIntentId: paymentIntent.id,
+          accessGranted: true,
+        }).returning();
+
+        // 수강 권한(progress) 레코드도 동시에 생성 (없을 때만)
+        const progress = await tx.select().from(courseProgress)
+          .where(and(eq(courseProgress.userId, userIdNum), eq(courseProgress.courseId, courseId)))
+          .limit(1);
+        if (progress.length === 0) {
+          await tx.insert(courseProgress).values({
+            userId: userIdNum,
+            courseId,
+            totalLessons: 1,
+            status: 'active',
+          });
+        }
+
+        return purchase;
+        });
+      } catch (txError) {
+        // 동시성 인한 유니크 충돌 → 기존 레코드를 다시 조회해 중복으로 응답 (멱등 보장)
+        if (isUniqueViolation(txError)) {
+          const retry = await db.select().from(coursePurchases)
+            .where(eq(coursePurchases.paymentIntentId, paymentIntent.id)).limit(1);
+          if (retry.length > 0) {
+            return { type: 'course', record: retry[0], duplicated: true, itemName };
+          }
+        }
+        throw txError;
+      }
+
+      return { type: 'course', record: result, duplicated: false, itemName };
+    }
+
+    if (itemType === 'product') {
+      const productId = itemId;
+
+      const existing = await db.select().from(orders)
+        .where(eq(orders.paymentIntentId, paymentIntent.id)).limit(1);
+      if (existing.length > 0) {
+        return { type: 'product', record: existing[0], duplicated: true };
+      }
+
+      const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      let result: OrderRow;
+      try {
+        result = await db.transaction(async (tx) => {
+          const [order] = await tx.insert(orders).values({
+            userId: userIdNum,
+            orderNumber,
+            status: 'completed',
+            totalAmount: amount.toString(),
+            paymentMethod: 'stripe',
+            paymentStatus: 'paid',
+            paymentIntentId: paymentIntent.id,
+          }).returning();
+
+          await tx.insert(orderItems).values({
+            orderId: order.id,
+            productId,
+            quantity: 1,
+            price: amount.toString(),
+            totalPrice: amount.toString(),
+          });
+
+          return order;
+        });
+      } catch (txError) {
+        if (isUniqueViolation(txError)) {
+          const retry = await db.select().from(orders)
+            .where(eq(orders.paymentIntentId, paymentIntent.id)).limit(1);
+          if (retry.length > 0) {
+            return { type: 'product', record: retry[0], duplicated: true, itemName };
+          }
+        }
+        throw txError;
+      }
+
+      return { type: 'product', record: result, duplicated: false, itemName };
+    }
+
+    return { type: itemType, record: null, duplicated: false };
+  }
+
   // 결제 상태 확인 및 강의/상품 등록
   app.post('/api/confirm-payment', async (req, res) => {
     try {
       const { paymentIntentId } = req.body;
-      const userId = req.user?.id;
+      const sessionUserId = req.user?.id;
 
       if (!paymentIntentId) {
         return res.status(400).json({ error: 'paymentIntentId가 필요합니다.' });
@@ -12410,30 +12546,37 @@ app.get('/api/search', async (req, res) => {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       
       if (paymentIntent.status === 'succeeded') {
-        // metadata에서 구매 정보 추출
-        const metadata = paymentIntent.metadata;
+        const metadata = paymentIntent.metadata || {};
         const itemType = metadata.type || 'course';
         const itemId = metadata.courseId || metadata.productId;
         const itemName = metadata.courseTitle || metadata.productName;
 
+        // 소유권 검증: paymentIntent.metadata.userId와 세션 사용자 일치 여부 확인
+        const ownership = assertPaymentOwnership(metadata.userId, sessionUserId);
+        if (!ownership.ok) {
+          console.warn('[결제 확인] 소유권 검증 실패:', {
+            paymentIntentId,
+            metadataUserId: metadata.userId,
+            sessionUserId,
+          });
+          return res.status(ownership.status).json({ error: ownership.error });
+        }
+        const userId = ownership.authoritativeUserId;
+
+        let saveResult: PersistResult | null = null;
+        try {
+          saveResult = await persistSuccessfulPayment(paymentIntent, userId);
+        } catch (persistError) {
+          console.error('[결제 확인] DB 저장 실패:', persistError);
+          const message = persistError instanceof Error ? persistError.message : '결제 기록 저장에 실패했습니다.';
+          return res.status(500).json({
+            error: message,
+            code: 'PAYMENT_PERSIST_FAILED'
+          });
+        }
+
         if (itemType === 'course') {
-          // 강의 등록 처리
-          const enrollment = {
-            id: Date.now().toString(),
-            userId: userId || 'guest',
-            courseId: itemId,
-            paymentIntentId: paymentIntentId,
-            amount: paymentIntent.amount / 100, // 원 단위로 변환
-            status: 'enrolled',
-            enrolledAt: new Date(),
-            progress: 0,
-            courseTitle: itemName
-          };
-
-          console.log('[강의 등록] 결제 완료 후 강의 등록:', enrollment);
-
-          // 강의 등록 알림 발송
-          if (userId) {
+          if (userId && !saveResult?.duplicated) {
             try {
               await notificationService.sendNotification({
                 userId: typeof userId === 'string' ? parseInt(userId) : userId,
@@ -12441,36 +12584,24 @@ app.get('/api/search', async (req, res) => {
                 title: '강의 등록 완료',
                 message: `"${itemName}"강의에 성공적으로 등록되었습니다.`,
                 actionUrl: `/my-courses`,
-                data: { courseId: itemId, enrollmentId: enrollment.id }
+                data: { courseId: itemId, purchaseId: saveResult?.record?.id }
               });
             } catch (notifyError) {
               console.error('[강의 등록] 알림 발송 실패:', notifyError);
             }
           }
 
-          res.json({
+          return res.json({
             success: true,
-            message: '결제가 완료되어 강의에 등록되었습니다.',
-            enrollment: enrollment,
+            message: saveResult?.duplicated
+              ? '이미 등록된 결제입니다.'
+              : '결제가 완료되어 강의에 등록되었습니다.',
+            enrollment: saveResult?.record,
+            duplicated: !!saveResult?.duplicated,
             type: 'course'
           });
         } else if (itemType === 'product') {
-          // 상품 주문 처리
-          const order = {
-            id: Date.now().toString(),
-            userId: userId || 'guest',
-            productId: itemId,
-            paymentIntentId: paymentIntentId,
-            amount: paymentIntent.amount / 100,
-            status: 'completed',
-            orderedAt: new Date(),
-            productName: itemName
-          };
-
-          console.log('[상품 주문] 결제 완료 후 주문 생성:', order);
-
-          // 주문 완료 알림 발송
-          if (userId) {
+          if (userId && !saveResult?.duplicated) {
             try {
               await notificationService.sendNotification({
                 userId: typeof userId === 'string' ? parseInt(userId) : userId,
@@ -12478,17 +12609,20 @@ app.get('/api/search', async (req, res) => {
                 title: '주문 완료',
                 message: `"${itemName}" 주문이 성공적으로 완료되었습니다.`,
                 actionUrl: `/my-orders`,
-                data: { orderId: order.id, productId: itemId }
+                data: { orderId: saveResult?.record?.id, productId: itemId }
               });
             } catch (notifyError) {
               console.error('[주문 완료] 알림 발송 실패:', notifyError);
             }
           }
 
-          res.json({
+          return res.json({
             success: true,
-            message: '결제가 완료되어 주문이 생성되었습니다.',
-            order: order,
+            message: saveResult?.duplicated
+              ? '이미 처리된 주문입니다.'
+              : '결제가 완료되어 주문이 생성되었습니다.',
+            order: saveResult?.record,
+            duplicated: !!saveResult?.duplicated,
             type: 'product'
           });
         } else {
@@ -12543,22 +12677,38 @@ app.get('/api/search', async (req, res) => {
         case 'payment_intent.succeeded': {
           const paymentIntent = event.data.object as Stripe.PaymentIntent;
           console.log('💳 결제 성공:', paymentIntent.id);
-          
-          // 메타데이터에서 구매 정보 추출
-          const { type, courseId, productId } = paymentIntent.metadata;
-          
-          if (type === 'course' && courseId) {
-            // 강의 구매 완료 처리
-            console.log(`🎓 강의 구매 완료 처리: ${courseId}`);
-            // TODO: 데이터베이스에 구매 기록 저장
-            // TODO: 사용자에게 강의 액세스 권한 부여
-          } else if (type === 'product' && productId) {
-            // 상품 구매 완료 처리
-            console.log(`🛒 상품 구매 완료 처리: ${productId}`);
-            // TODO: 데이터베이스에 주문 기록 저장
-            // TODO: 재고 업데이트
+
+          const metadataUserId = paymentIntent.metadata?.userId;
+          if (!metadataUserId) {
+            console.warn('[Webhook] paymentIntent에 userId 메타데이터가 없어 DB 저장을 건너뜁니다:', paymentIntent.id);
+          } else {
+            try {
+              const result = await persistSuccessfulPayment(paymentIntent, metadataUserId);
+              console.log(`[Webhook] 결제 기록 저장 완료 (${result.type}, duplicated=${result.duplicated}):`, paymentIntent.id);
+
+              // 사용자에게 알림
+              if (!result.duplicated && result.record) {
+                try {
+                  const userIdNum = parseInt(metadataUserId);
+                  await notificationService.sendNotification({
+                    userId: userIdNum,
+                    type: 'system',
+                    title: result.type === 'course' ? '강의 등록 완료' : '주문 완료',
+                    message: `결제가 정상 처리되었습니다. (${paymentIntent.id})`,
+                    actionUrl: result.type === 'course' ? '/my-courses' : '/my-orders',
+                    data: { paymentIntentId: paymentIntent.id }
+                  });
+                } catch (notifyError) {
+                  console.error('[Webhook] 알림 발송 실패:', notifyError);
+                }
+              }
+            } catch (persistError) {
+              console.error('[Webhook] 결제 기록 저장 실패:', persistError);
+              // Stripe에 500 반환하면 재시도되므로 의도적으로 실패 신호 반환
+              return res.status(500).json({ error: 'persist_failed' });
+            }
           }
-          
+
           break;
         }
 
@@ -14036,7 +14186,8 @@ app.get('/api/search', async (req, res) => {
       }
 
       // 데이터베이스에서 상태 업데이트
-      if (applicationType === 'trainer') {
+      // 주의: trainer + approved 분기는 아래 db.transaction 내부에서 함께 원자적으로 처리됨
+      if (applicationType === 'trainer' && status !== 'approved') {
         await db
           .update(trainerApplications)
           .set({
@@ -14065,29 +14216,112 @@ app.get('/api/search', async (req, res) => {
       // 승인된 경우 실제 훈련사/기관으로 등록
       if (status === 'approved') {
         if (applicationType === 'trainer') {
-          const trainerData = {
-            id: Date.now(),
-            name: application.name,
-            email: application.email,
-            phone: application.phone,
-            bio: application.motivation || '',
-            specialties: [],
-            experience: application.experience || '',
-            certifications: [],
-            price: 0,
-            location: '',
-            address: '',
-            profileImage: application.resume || '',
-            rating: 0,
-            reviewCount: 0,
-            featured: false,
-            isActive: true,
-            createdAt: new Date().toISOString()
-          };
+          // 트랜잭션으로 신청 상태 업데이트 + 트레이너 생성 + 사용자 권한 업데이트 + 기관 연결까지 원자적으로 묶음
+          try {
+            await db.transaction(async (tx) => {
+              // 0) 신청 상태를 트랜잭션 내부에서 갱신 (실패 시 함께 롤백됨)
+              await tx.update(trainerApplications).set({
+                status,
+                reviewNotes: notes || '',
+                reviewedBy: req.user?.id || null,
+                reviewedAt: new Date(),
+                updatedAt: new Date(),
+              }).where(eq(trainerApplications.id, applicationId));
 
-          await storage.createTrainer(trainerData);
-          console.log('[훈련사 승인] 실제 서비스에 반영됨:', trainerData.name);
-          
+              // 신청자 이메일로 사용자 조회 (없으면 trainers만 생성, role 업데이트는 생략)
+              const matchedUsers = await tx.select().from(users)
+                .where(eq(users.email, application.email)).limit(1);
+              const matchedUser = matchedUsers[0];
+
+              // 중복 방지: 이미 trainers에 등록된 동일 사용자/이메일 존재하는지 확인
+              const existingByUser = matchedUser
+                ? await tx.select().from(trainers).where(eq(trainers.userId, matchedUser.id)).limit(1)
+                : [];
+              const existingByEmail = await tx.select().from(trainers)
+                .where(eq(trainers.email, application.email)).limit(1);
+
+              const expNum = parseInt(String(application.experience || '0').replace(/[^0-9]/g, '')) || 0;
+
+              type TrainerRow = typeof trainers.$inferSelect;
+              let trainerRow: TrainerRow | null = existingByUser[0] || existingByEmail[0] || null;
+
+              if (!trainerRow) {
+                const [created] = await tx.insert(trainers).values({
+                  userId: matchedUser?.id ?? null,
+                  name: application.name,
+                  email: application.email,
+                  phone: application.phone,
+                  bio: application.motivation || '',
+                  specialties: [],
+                  experience: expNum,
+                  certification: application.certifications || null,
+                  certifications: [],
+                  price: '0',
+                  profileImage: application.resume || null,
+                  rating: '0',
+                  reviewCount: 0,
+                  featured: false,
+                  verified: true,
+                  isActive: true,
+                  status: 'active',
+                }).returning();
+                trainerRow = created;
+                console.log('[훈련사 승인] trainers 레코드 생성:', trainerRow.id);
+              } else {
+                console.log('[훈련사 승인] trainers 레코드 이미 존재 - 재사용:', trainerRow.id);
+                // 기존 레코드의 userId가 비어있고 매칭된 사용자가 있으면 연결
+                if (!trainerRow.userId && matchedUser?.id) {
+                  await tx.update(trainers).set({ userId: matchedUser.id, verified: true, isActive: true })
+                    .where(eq(trainers.id, trainerRow.id));
+                }
+              }
+
+              // 사용자 role을 trainer로 업데이트 (이미 admin/trainer면 유지)
+              if (matchedUser && matchedUser.role !== 'trainer' && matchedUser.role !== 'admin') {
+                await tx.update(users).set({
+                  role: 'trainer',
+                  isVerified: true,
+                  approvalStatus: 'approved',
+                  approvedAt: new Date(),
+                  approvedBy: req.user?.id || null,
+                  updatedAt: new Date(),
+                }).where(eq(users.id, matchedUser.id));
+                console.log('[훈련사 승인] users.role -> trainer:', matchedUser.id);
+              }
+
+              // 기관 연결 정보가 있다면 trainer_institutes 테이블에 연결 (중복 방지)
+              if (application.hasAffiliation && application.affiliationName) {
+                try {
+                  const affiliation = JSON.parse(application.affiliationName);
+                  if (affiliation?.id && trainerRow?.id) {
+                    const linked = await tx.select().from(trainerInstitutes)
+                      .where(and(
+                        eq(trainerInstitutes.trainerId, trainerRow.id),
+                        eq(trainerInstitutes.instituteId, affiliation.id)
+                      )).limit(1);
+                    if (linked.length === 0) {
+                      await tx.insert(trainerInstitutes).values({
+                        trainerId: trainerRow.id,
+                        instituteId: affiliation.id,
+                        joinDate: new Date(),
+                      });
+                      console.log('[훈련사 승인] trainer_institutes 연결 생성:', { trainerId: trainerRow.id, instituteId: affiliation.id });
+                    }
+                  }
+                } catch (parseErr) {
+                  console.log('[훈련사 승인] affiliationName JSON 아님 (수동입력):', application.affiliationName);
+                }
+              }
+            });
+          } catch (txError) {
+            console.error('[훈련사 승인] 트랜잭션 실패 - DB 원자성으로 신청 상태 자동 롤백됨:', txError);
+            return res.status(500).json({
+              success: false,
+              message: '훈련사 승인 중 데이터 생성에 실패하여 롤백되었습니다.',
+              error: (txError as Error).message,
+            });
+          }
+
         } else if (applicationType === 'institute') {
           const instituteData = {
             id: Date.now(),
@@ -17183,59 +17417,128 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const { status, reviewNotes } = req.body;
       const reviewerId = req.session?.user?.id || 1; // 현재 로그인한 관리자 ID
 
-      const updatedApplication = await storage.updateTrainerApplicationStatus(
-        applicationId,
-        status,
-        reviewNotes,
-        reviewerId
-      );
+      // 거부 케이스는 단순 상태 갱신만 수행
+      let updatedApplication: any;
+      if (status !== 'approved') {
+        updatedApplication = await storage.updateTrainerApplicationStatus(
+          applicationId,
+          status,
+          reviewNotes,
+          reviewerId
+        );
+      } else {
+        // 승인된 경우: 신청 상태 갱신 + trainers 레코드 생성 + 사용자 role 변경 + 기관 연결을
+        // 단일 트랜잭션으로 원자적 처리. 실패 시 DB 원자성으로 신청 상태도 함께 롤백됨.
+        let createdTrainerId: number | null = null;
+        try {
+          updatedApplication = await db.transaction(async (tx) => {
+            // 0) 신청 상태 갱신을 트랜잭션 내부에서 수행
+            const [updated] = await tx.update(trainerApplications).set({
+              status,
+              reviewNotes,
+              reviewedBy: reviewerId,
+              reviewedAt: new Date(),
+              updatedAt: new Date(),
+            }).where(eq(trainerApplications.id, applicationId)).returning();
 
-      // 승인된 경우 훈련사 인증 기록 생성 및 기관 연결
-      if (status === 'approved') {
-        await storage.createTrainerCertification({
-          applicationId: applicationId,
-          trainerId: updatedApplication.id, // 실제로는 사용자 ID와 매핑 필요
-          certificationLevel: 'basic',
-          issuedBy: reviewerId,
-          expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1년 후 만료
-          isActive: true
-        });
+            const updatedApp = updated;
+            const matchedUsers = await tx.select().from(users)
+              .where(eq(users.email, updatedApp.email)).limit(1);
+            const matchedUser = matchedUsers[0];
 
-        // 기관 연결: affiliationName에 저장된 JSON 파싱하여 trainer_institutes에 연결
-        // 참고: 현재 trainerApplications는 trainers 테이블과 직접 연결되지 않음
-        // TODO: 훈련사 신청 승인 시 trainers 테이블에 레코드 생성 후 연결 필요
-        if (updatedApplication.hasAffiliation && updatedApplication.affiliationName) {
-          try {
-            // affiliationName이 JSON 형태인지 확인 (기관 코드로 검증된 경우)
-            const affiliationData = JSON.parse(updatedApplication.affiliationName);
-            if (affiliationData.id) {
-              // 현재는 application.id를 사용 (향후 실제 trainer.id로 변경 필요)
-              // 참고: 훈련사 레코드가 별도로 생성되면 해당 ID를 사용해야 함
-              const trainerId = updatedApplication.trainerId || updatedApplication.id;
-              
-              console.log(`[훈련사 승인] 기관 연결 예정 정보 저장됨:`, {
-                applicationId: applicationId,
-                trainerId: trainerId,
-                instituteId: affiliationData.id,
-                instituteName: affiliationData.name,
-                instituteCode: affiliationData.code
-              });
-              
-              // 기관 연결 시도 (trainerId가 실제 trainers 테이블의 ID인 경우에만 성공)
+            const existingByUser = matchedUser
+              ? await tx.select().from(trainers).where(eq(trainers.userId, matchedUser.id)).limit(1)
+              : [];
+            const existingByEmail = await tx.select().from(trainers)
+              .where(eq(trainers.email, updatedApp.email)).limit(1);
+
+            const expNum = parseInt(String(updatedApp.experience || '0').replace(/[^0-9]/g, '')) || 0;
+            type TrainerRow = typeof trainers.$inferSelect;
+            let trainerRow: TrainerRow | null = existingByUser[0] || existingByEmail[0] || null;
+
+            if (!trainerRow) {
+              const [created] = await tx.insert(trainers).values({
+                userId: matchedUser?.id ?? null,
+                name: updatedApp.name,
+                email: updatedApp.email,
+                phone: updatedApp.phone,
+                bio: updatedApp.motivation || '',
+                specialties: [],
+                experience: expNum,
+                certification: updatedApp.certifications || null,
+                certifications: [],
+                price: '0',
+                profileImage: updatedApp.resume || null,
+                rating: '0',
+                reviewCount: 0,
+                featured: false,
+                verified: true,
+                isActive: true,
+                status: 'active',
+              }).returning();
+              trainerRow = created;
+            } else if (!trainerRow.userId && matchedUser?.id) {
+              await tx.update(trainers).set({ userId: matchedUser.id, verified: true, isActive: true })
+                .where(eq(trainers.id, trainerRow.id));
+            }
+            createdTrainerId = trainerRow.id;
+
+            if (matchedUser && matchedUser.role !== 'trainer' && matchedUser.role !== 'admin') {
+              await tx.update(users).set({
+                role: 'trainer',
+                isVerified: true,
+                approvalStatus: 'approved',
+                approvedAt: new Date(),
+                approvedBy: reviewerId,
+                updatedAt: new Date(),
+              }).where(eq(users.id, matchedUser.id));
+            }
+
+            if (updatedApp.hasAffiliation && updatedApp.affiliationName) {
               try {
-                const linked = await storage.linkTrainerToInstitute(trainerId, affiliationData.id);
-                if (linked) {
-                  console.log(`[훈련사 승인] 기관 연결 완료: 훈련사 ${trainerId} -> 기관 ${affiliationData.name} (${affiliationData.code})`);
+                const affiliationData = JSON.parse(updatedApp.affiliationName);
+                if (affiliationData?.id && trainerRow?.id) {
+                  const linked = await tx.select().from(trainerInstitutes)
+                    .where(and(
+                      eq(trainerInstitutes.trainerId, trainerRow.id),
+                      eq(trainerInstitutes.instituteId, affiliationData.id)
+                    )).limit(1);
+                  if (linked.length === 0) {
+                    await tx.insert(trainerInstitutes).values({
+                      trainerId: trainerRow.id,
+                      instituteId: affiliationData.id,
+                      joinDate: new Date(),
+                    });
+                  }
+                  console.log(`[훈련사 승인] 기관 연결 완료: trainer ${trainerRow.id} -> institute ${affiliationData.id}`);
                 }
-              } catch (linkError) {
-                console.log(`[훈련사 승인] 기관 연결 실패 (훈련사 레코드 없음 가능성): ${linkError}`);
-                // 연결 실패해도 승인 프로세스는 계속 진행
+              } catch (parseError) {
+                console.log(`[훈련사 승인] affiliationName JSON 아님: ${updatedApp.affiliationName}`);
               }
             }
-          } catch (parseError) {
-            // JSON이 아닌 경우 일반 텍스트로 저장된 것 (수동 입력)
-            console.log(`[훈련사 승인] affiliationName이 JSON이 아님 (수동 입력): ${updatedApplication.affiliationName}`);
+            return updatedApp;
+          });
+
+          // 인증 기록은 트랜잭션 외부에서 (실패해도 승인은 유효)
+          try {
+            await storage.createTrainerCertification({
+              applicationId: applicationId,
+              trainerId: createdTrainerId || updatedApplication.id,
+              certificationLevel: 'basic',
+              issuedBy: reviewerId,
+              expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+              isActive: true
+            });
+          } catch (certError) {
+            console.error('[훈련사 승인] 인증 기록 생성 실패(무시):', certError);
           }
+        } catch (txError) {
+          console.error('[훈련사 승인] 트랜잭션 실패 - DB 원자성으로 신청 상태 자동 롤백됨:', txError);
+          return res.status(500).json({
+            success: false,
+            message: '훈련사 승인 중 데이터 생성에 실패하여 롤백되었습니다.',
+            error: (txError as Error).message,
+          });
         }
       }
 
