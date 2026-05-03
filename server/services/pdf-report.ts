@@ -235,16 +235,8 @@ export function generateAnalysisPdf(data: AnalysisPdfData): Promise<Buffer> {
       });
       doc.y = metricBoxY + metricBoxHeight + 12;
 
-      // 일별 케어 활동 차트 (식사/배변/산책)
+      // 일별 케어 활동 차트 (식사/배변/산책) — 막대 + 추이 라인 + 요약 표
       if (careDates.length > 0) {
-        const chartLeft = doc.page.margins.left;
-        const chartWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-        const chartHeight = 130;
-        if (doc.y + chartHeight + 40 > doc.page.height - doc.page.margins.bottom) doc.addPage();
-
-        doc.fillColor("#111827").fontSize(13).text("일별 케어 활동");
-        doc.moveDown(0.3);
-        const chartTop = doc.y;
         const series: { key: string; label: string; color: string }[] = [
           { key: "meal", label: "식사", color: "#3B82F6" },
           { key: "poop", label: "배변", color: "#F59E0B" },
@@ -265,52 +257,150 @@ export function generateAnalysisPdf(data: AnalysisPdfData): Promise<Buffer> {
           series.forEach((s) => { if (counts[d][s.key] > maxCount) maxCount = counts[d][s.key]; });
         });
 
-        doc.save();
-        doc.rect(chartLeft, chartTop, chartWidth, chartHeight).stroke("#E5E7EB");
-        doc.restore();
-        const innerLeft = chartLeft + 30;
-        const innerTop = chartTop + 8;
-        const innerHeight = chartHeight - 28;
-        const innerWidth = chartWidth - 40;
-        const groupWidth = innerWidth / careDates.length;
-        const barWidth = Math.max(3, (groupWidth - 6) / series.length);
+        const drawChart = (title: string, mode: "bar" | "line", height: number) => {
+          const chartLeft = doc.page.margins.left;
+          const chartWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+          if (doc.y + height + 50 > doc.page.height - doc.page.margins.bottom) doc.addPage();
 
-        doc.fontSize(7).fillColor("#9CA3AF");
-        for (let g = 0; g <= 4; g++) {
-          const y = innerTop + (innerHeight * g) / 4;
-          const value = Math.round(maxCount - (maxCount * g) / 4);
+          doc.fillColor("#111827").fontSize(13).text(title);
+          doc.moveDown(0.3);
+          const chartTop = doc.y;
+
           doc.save();
-          doc.strokeColor("#F3F4F6").lineWidth(0.5).moveTo(innerLeft, y).lineTo(innerLeft + innerWidth, y).stroke();
+          doc.rect(chartLeft, chartTop, chartWidth, height).stroke("#E5E7EB");
           doc.restore();
-          doc.text(String(value), chartLeft + 4, y - 3, { width: 22, align: "right" });
-        }
 
-        careDates.forEach((d, di) => {
-          const groupX = innerLeft + di * groupWidth + 3;
-          series.forEach((s, si) => {
-            const v = counts[d][s.key];
-            const h = (v / maxCount) * innerHeight;
-            const x = groupX + si * barWidth;
-            const y = innerTop + innerHeight - h;
+          const innerLeft = chartLeft + 30;
+          const innerTop = chartTop + 8;
+          const innerHeight = height - 28;
+          const innerWidth = chartWidth - 40;
+
+          for (let g = 0; g <= 4; g++) {
+            const y = innerTop + (innerHeight * g) / 4;
+            const value = Math.round(maxCount - (maxCount * g) / 4);
             doc.save();
-            doc.rect(x, y, barWidth - 1, h).fill(s.color);
+            doc.strokeColor("#F3F4F6").lineWidth(0.5).moveTo(innerLeft, y).lineTo(innerLeft + innerWidth, y).stroke();
             doc.restore();
-          });
-          const labelText = d.slice(5);
-          doc.fontSize(7).fillColor("#6B7280").text(labelText, groupX - 5, innerTop + innerHeight + 4, { width: groupWidth, align: "center" });
-        });
+            doc.fillColor("#9CA3AF").fontSize(7).text(String(value), chartLeft + 4, y - 3, { width: 22, align: "right" });
+          }
 
-        let legendX = chartLeft;
-        const legendY = chartTop + chartHeight + 6;
-        doc.fontSize(8);
-        series.forEach((s) => {
-          doc.save();
-          doc.rect(legendX, legendY, 8, 8).fill(s.color);
-          doc.restore();
-          doc.fillColor("#374151").text(s.label, legendX + 12, legendY, { continued: false });
-          legendX += 60;
+          if (mode === "bar") {
+            const groupWidth = innerWidth / careDates.length;
+            const barWidth = Math.max(3, (groupWidth - 6) / series.length);
+            careDates.forEach((d, di) => {
+              const groupX = innerLeft + di * groupWidth + 3;
+              series.forEach((s, si) => {
+                const v = counts[d][s.key];
+                const h = (v / maxCount) * innerHeight;
+                const x = groupX + si * barWidth;
+                const y = innerTop + innerHeight - h;
+                doc.save();
+                doc.rect(x, y, barWidth - 1, h).fill(s.color);
+                doc.restore();
+              });
+              const labelText = d.slice(5);
+              doc.fontSize(7).fillColor("#6B7280").text(labelText, groupX - 5, innerTop + innerHeight + 4, { width: groupWidth, align: "center" });
+            });
+          } else {
+            const stepX = careDates.length > 1 ? innerWidth / (careDates.length - 1) : 0;
+            const pointFor = (d: string, key: string, di: number) => {
+              const v = counts[d][key];
+              const x = careDates.length > 1 ? innerLeft + di * stepX : innerLeft + innerWidth / 2;
+              const y = innerTop + innerHeight - (v / maxCount) * innerHeight;
+              return { x, y };
+            };
+            series.forEach((s) => {
+              doc.save();
+              doc.strokeColor(s.color).lineWidth(1.5);
+              careDates.forEach((d, di) => {
+                const p = pointFor(d, s.key, di);
+                if (di === 0) doc.moveTo(p.x, p.y);
+                else doc.lineTo(p.x, p.y);
+              });
+              doc.stroke();
+              doc.restore();
+              careDates.forEach((d, di) => {
+                const p = pointFor(d, s.key, di);
+                doc.save();
+                doc.circle(p.x, p.y, 2).fill(s.color);
+                doc.restore();
+              });
+            });
+            careDates.forEach((d, di) => {
+              const x = careDates.length > 1 ? innerLeft + di * stepX : innerLeft + innerWidth / 2;
+              const labelText = d.slice(5);
+              doc.fontSize(7).fillColor("#6B7280").text(labelText, x - 18, innerTop + innerHeight + 4, { width: 36, align: "center" });
+            });
+          }
+
+          let legendX = chartLeft;
+          const legendY = chartTop + height + 6;
+          doc.fontSize(8);
+          series.forEach((s) => {
+            doc.save();
+            doc.rect(legendX, legendY, 8, 8).fill(s.color);
+            doc.restore();
+            doc.fillColor("#374151").text(s.label, legendX + 12, legendY, { continued: false });
+            legendX += 60;
+          });
+          doc.y = legendY + 16;
+          doc.moveDown(0.4);
+        };
+
+        drawChart("일별 케어 활동 (막대)", "bar", 130);
+        drawChart("기간별 활동 추이 (라인)", "line", 130);
+
+        // 핵심 지표 요약 테이블 (총 횟수/일평균/최대/활동일)
+        if (doc.y + 110 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+        doc.fillColor("#111827").fontSize(13).text("핵심 지표 요약");
+        doc.moveDown(0.3);
+        const tableLeft = doc.page.margins.left;
+        const tableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+        const cols = [
+          { label: "항목", w: 0.28 },
+          { label: "총 횟수", w: 0.18 },
+          { label: "일평균", w: 0.18 },
+          { label: "최대/일", w: 0.18 },
+          { label: "활동일", w: 0.18 },
+        ];
+        const colX: number[] = [];
+        let cx = tableLeft;
+        cols.forEach((c) => { colX.push(cx); cx += tableWidth * c.w; });
+        const rowH = 22;
+        let ty = doc.y;
+
+        doc.save();
+        doc.rect(tableLeft, ty, tableWidth, rowH).fill("#F3F4F6");
+        doc.restore();
+        doc.fillColor("#111827").fontSize(10);
+        cols.forEach((c, i) => {
+          doc.text(c.label, colX[i] + 6, ty + 6, { width: tableWidth * c.w - 12 });
         });
-        doc.y = legendY + 16;
+        ty += rowH;
+
+        const totalDays = careDates.length || 1;
+        series.forEach((s) => {
+          const values = careDates.map((d) => counts[d][s.key] || 0);
+          const total = values.reduce((a, b) => a + b, 0);
+          const avg = total / totalDays;
+          const max = values.reduce((a, b) => Math.max(a, b), 0);
+          const activeDays = values.filter((v) => v > 0).length;
+
+          doc.save();
+          doc.rect(tableLeft, ty, tableWidth, rowH).stroke("#E5E7EB");
+          doc.restore();
+
+          doc.save();
+          doc.rect(colX[0] + 6, ty + 7, 8, 8).fill(s.color);
+          doc.restore();
+          doc.fillColor("#111827").fontSize(10).text(s.label, colX[0] + 20, ty + 6, { width: tableWidth * cols[0].w - 26 });
+          doc.fillColor("#374151").text(`${total}회`, colX[1] + 6, ty + 6, { width: tableWidth * cols[1].w - 12 });
+          doc.text(`${avg.toFixed(1)}회`, colX[2] + 6, ty + 6, { width: tableWidth * cols[2].w - 12 });
+          doc.text(`${max}회`, colX[3] + 6, ty + 6, { width: tableWidth * cols[3].w - 12 });
+          doc.text(`${activeDays}/${totalDays}일`, colX[4] + 6, ty + 6, { width: tableWidth * cols[4].w - 12 });
+          ty += rowH;
+        });
+        doc.y = ty + 8;
         doc.moveDown(0.4);
       }
 
