@@ -1072,6 +1072,21 @@ function AuthenticatedRoutes() {
 
         {/* 중복 경로 제거: /trainer-earnings는 /trainer/earnings로 통합되었습니다 */}
 
+        <Route path="/pet-care/health-diary">
+          {() => {
+            const HealthDiary = lazy(() => import('./pages/pet-care/health-diary'));
+            return (
+              <Suspense fallback={
+                <div className="p-8 flex justify-center items-center">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              }>
+                <ProtectedRoute component={HealthDiary} requiredRoles={['pet-owner', 'trainer', 'admin']} />
+              </Suspense>
+            );
+          }}
+        </Route>
+
         <Route path="/notebook">
           {() => {
             const Notebook = lazy(() => import('./pages/notebook'));

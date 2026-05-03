@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { randomBytes } from "crypto";
@@ -9925,6 +9925,307 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
+// =============================================================================
+// 반려견 건강 다이어리 API
+// =============================================================================
+
+  type DiaryAccess = {
+    userId: number;
+    pet: any;
+    isOwner: boolean;
+    isAdmin: boolean;
+    isAssignedTrainer: boolean;
+  };
+  const requireDiaryAccess = async (req: Request, res: Response, petId: number): Promise<DiaryAccess | null> => {
+    const session = (req as Request & { session?: { user?: { id?: number; role?: string } } }).session;
+    const userId = session?.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      return null;
+    }
+    const pet = await storage.getPet(petId);
+    if (!pet) {
+      res.status(404).json({ success: false, error: '반려동물을 찾을 수 없습니다' });
+      return null;
+    }
+    const role = session?.user?.role;
+    const isOwner = pet.ownerId === userId;
+    const isAdmin = role === 'admin';
+    const isAssignedTrainer = role === 'trainer' && pet.assignedTrainerId === userId && !!pet.diaryShareWithTrainer;
+    if (!isOwner && !isAdmin && !isAssignedTrainer) {
+      res.status(403).json({ success: false, error: '권한이 없습니다' });
+      return null;
+    }
+    return { userId, pet, isOwner, isAdmin, isAssignedTrainer };
+  };
+
+  // 다이어리(돌봄 일지) 목록 조회 - 반려동물별 + 날짜 범위
+  app.get("/api/diary/care-logs", async (req, res) => {
+    try {
+      const petId = parseInt(req.query.petId as string);
+      if (!petId || isNaN(petId)) {
+        return res.status(400).json({ success: false, error: '반려동물 ID가 필요합니다' });
+      }
+      const access = await requireDiaryAccess(req, res, petId);
+      if (!access) return;
+
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      const logs = (startDate && endDate)
+        ? await storage.getCareLogsByDateRange(petId, startDate, endDate)
+        : await storage.getCareLogsByPetId(petId);
+
+      res.json({ success: true, logs });
+    } catch (error) {
+      console.error('[다이어리] 조회 오류:', error);
+      res.status(500).json({ success: false, error: '다이어리 조회 중 오류' });
+    }
+  });
+
+  // 다이어리 항목 생성
+  app.post("/api/diary/care-logs", async (req, res) => {
+    try {
+      const { petId, date } = req.body || {};
+      if (!petId || !date) {
+        return res.status(400).json({ success: false, error: 'petId, date는 필수입니다' });
+      }
+      const access = await requireDiaryAccess(req, res, parseInt(petId));
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) {
+        return res.status(403).json({ success: false, error: '보호자만 작성할 수 있습니다' });
+      }
+
+      const allowed = ['date','note','poopStatus','mealStatus','walkStatus','mood','energyLevel','weightKg','exerciseMinutes','mealAmountG','medications','tags','media'];
+      const payload: Record<string, unknown> = { petId: parseInt(petId), userId: access.userId };
+      for (const k of allowed) if (req.body[k] !== undefined) payload[k] = req.body[k];
+
+      const created = await storage.createCareLog(payload);
+      res.status(201).json({ success: true, log: created });
+    } catch (error) {
+      console.error('[다이어리] 생성 오류:', error);
+      res.status(500).json({ success: false, error: '다이어리 생성 중 오류' });
+    }
+  });
+
+  // 다이어리 항목 수정
+  app.patch("/api/diary/care-logs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session?.user?.id;
+      if (!userId) return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      const existing = (await storage.getCareLogsByIds([id]))[0];
+      if (!existing) return res.status(404).json({ success: false, error: '항목을 찾을 수 없습니다' });
+      const access = await requireDiaryAccess(req, res, existing.petId);
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) {
+        return res.status(403).json({ success: false, error: '보호자만 수정할 수 있습니다' });
+      }
+      const allowed = ['date','note','poopStatus','mealStatus','walkStatus','mood','energyLevel','weightKg','exerciseMinutes','mealAmountG','medications','tags','media'];
+      const updates: Record<string, unknown> = {};
+      for (const k of allowed) if (req.body[k] !== undefined) updates[k] = req.body[k];
+      const updated = await storage.updateCareLog(id, updates);
+      res.json({ success: true, log: updated });
+    } catch (error) {
+      console.error('[다이어리] 수정 오류:', error);
+      res.status(500).json({ success: false, error: '다이어리 수정 중 오류' });
+    }
+  });
+
+  // 다이어리 항목 삭제
+  app.delete("/api/diary/care-logs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session?.user?.id;
+      if (!userId) return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      const existing = (await storage.getCareLogsByIds([id]))[0];
+      if (!existing) return res.status(404).json({ success: false, error: '항목을 찾을 수 없습니다' });
+      const access = await requireDiaryAccess(req, res, existing.petId);
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) {
+        return res.status(403).json({ success: false, error: '보호자만 삭제할 수 있습니다' });
+      }
+      const ok = await storage.deleteCareLog(id);
+      res.json({ success: ok });
+    } catch (error) {
+      console.error('[다이어리] 삭제 오류:', error);
+      res.status(500).json({ success: false, error: '다이어리 삭제 중 오류' });
+    }
+  });
+
+  // 트레이너 공유 토글
+  app.patch("/api/diary/share/:petId", async (req, res) => {
+    try {
+      const petId = parseInt(req.params.petId);
+      const userId = req.session?.user?.id;
+      if (!userId) return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      const pet = await storage.getPet(petId);
+      if (!pet) return res.status(404).json({ success: false, error: '반려동물을 찾을 수 없습니다' });
+      if (pet.ownerId !== userId && req.session?.user?.role !== 'admin') {
+        return res.status(403).json({ success: false, error: '권한이 없습니다' });
+      }
+      const enabled = !!req.body.enabled;
+      const updated = await storage.updatePet(petId, { diaryShareWithTrainer: enabled });
+      res.json({ success: true, pet: updated });
+    } catch (error) {
+      console.error('[다이어리] 공유 토글 오류:', error);
+      res.status(500).json({ success: false, error: '공유 설정 변경 중 오류' });
+    }
+  });
+
+  // CSV 내보내기
+  app.get("/api/diary/export", async (req, res) => {
+    try {
+      const petId = parseInt(req.query.petId as string);
+      if (!petId || isNaN(petId)) return res.status(400).json({ success: false, error: '반려동물 ID가 필요합니다' });
+      const access = await requireDiaryAccess(req, res, petId);
+      if (!access) return;
+      const logs = await storage.getCareLogsByPetId(petId);
+      const meds = await storage.getMedicationsByPetId(petId);
+      const vacs = await storage.getVaccinationsByPetId(petId);
+
+      const escape = (v: any) => {
+        if (v === null || v === undefined) return '';
+        const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+        if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+        return s;
+      };
+
+      const lines: string[] = [];
+      lines.push('# 다이어리 - 일일 기록');
+      lines.push(['date','weightKg','exerciseMinutes','mealAmountG','mealStatus','poopStatus','walkStatus','mood','energyLevel','note','tags'].join(','));
+      logs.sort((a:any,b:any)=> a.date.localeCompare(b.date));
+      for (const l of logs) {
+        lines.push([l.date,l.weightKg,l.exerciseMinutes,l.mealAmountG,l.mealStatus,l.poopStatus,l.walkStatus,l.mood,l.energyLevel,l.note,l.tags].map(escape).join(','));
+      }
+      lines.push('');
+      lines.push('# 예방접종');
+      lines.push(['vaccineDate','vaccineName','status','hospitalName','nextDueDate','notes'].join(','));
+      for (const v of vacs) {
+        lines.push([v.vaccineDate,v.vaccineName,v.status,v.hospitalName,v.nextDueDate,v.notes].map(escape).join(','));
+      }
+      lines.push('');
+      lines.push('# 약 복용');
+      lines.push(['dueDate','name','dosage','status','frequency','notes'].join(','));
+      for (const m of meds) {
+        lines.push([m.dueDate,m.name,m.dosage,m.status,m.frequency,m.notes].map(escape).join(','));
+      }
+
+      const filename = `diary-pet-${petId}-${new Date().toISOString().slice(0,10)}.csv`;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send('\uFEFF' + lines.join('\n'));
+    } catch (error) {
+      console.error('[다이어리] CSV 오류:', error);
+      res.status(500).json({ success: false, error: 'CSV 내보내기 중 오류' });
+    }
+  });
+
+  // 약 복용 일정 CRUD
+  app.get("/api/diary/medications", async (req, res) => {
+    try {
+      const petId = parseInt(req.query.petId as string);
+      if (!petId || isNaN(petId)) return res.status(400).json({ success: false, error: '반려동물 ID가 필요합니다' });
+      const access = await requireDiaryAccess(req, res, petId);
+      if (!access) return;
+      const items = await storage.getMedicationsByPetId(petId);
+      res.json({ success: true, medications: items });
+    } catch (error) {
+      console.error('[약복용] 조회 오류:', error);
+      res.status(500).json({ success: false, error: '조회 중 오류' });
+    }
+  });
+
+  app.post("/api/diary/medications", async (req, res) => {
+    try {
+      const { petId, name, dueDate } = req.body || {};
+      if (!petId || !name || !dueDate) return res.status(400).json({ success: false, error: 'petId, name, dueDate 필수' });
+      const access = await requireDiaryAccess(req, res, parseInt(petId));
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) return res.status(403).json({ success: false, error: '보호자만 작성 가능' });
+
+      const allowed = ['name','dosage','frequency','dueDate','status','notes','reminderEnabled'];
+      const payload: Record<string, unknown> = { petId: parseInt(petId), userId: access.userId };
+      for (const k of allowed) if (req.body[k] !== undefined) payload[k] = req.body[k];
+      const created = await storage.createMedication(payload);
+
+      // 인앱 알림 생성 (예정된 약 복용)
+      try {
+        if (payload.reminderEnabled !== false) {
+          storage.createNotification({
+            userId: access.userId,
+            type: 'health',
+            title: '약 복용 일정 등록',
+            message: `${access.pet.name}의 ${payload.name} 일정이 ${payload.dueDate}로 등록되었습니다.`,
+            actionUrl: `/pet-care/health-diary?petId=${petId}`,
+            metadata: { petId, medicationId: created.id, dueDate: payload.dueDate },
+            isRead: false,
+          });
+        }
+      } catch (e) { console.warn('알림 생성 실패', e); }
+
+      res.status(201).json({ success: true, medication: created });
+    } catch (error) {
+      console.error('[약복용] 생성 오류:', error);
+      res.status(500).json({ success: false, error: '생성 중 오류' });
+    }
+  });
+
+  app.patch("/api/diary/medications/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session?.user?.id;
+      if (!userId) return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      const existing = await storage.getMedicationById(id);
+      if (!existing) return res.status(404).json({ success: false, error: '항목을 찾을 수 없습니다' });
+      const access = await requireDiaryAccess(req, res, existing.petId);
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) return res.status(403).json({ success: false, error: '권한 없음' });
+      const allowed = ['name','dosage','frequency','dueDate','status','notes','reminderEnabled'];
+      const updates: Record<string, unknown> = {};
+      for (const k of allowed) if (req.body?.[k] !== undefined) updates[k] = req.body[k];
+      const updated = await storage.updateMedication(id, updates);
+      res.json({ success: true, medication: updated });
+    } catch (error) {
+      console.error('[약복용] 수정 오류:', error);
+      res.status(500).json({ success: false, error: '수정 중 오류' });
+    }
+  });
+
+  app.delete("/api/diary/medications/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session?.user?.id;
+      if (!userId) return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      const existing = await storage.getMedicationById(id);
+      if (!existing) return res.status(404).json({ success: false, error: '항목을 찾을 수 없습니다' });
+      const access = await requireDiaryAccess(req, res, existing.petId);
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) return res.status(403).json({ success: false, error: '권한 없음' });
+      const ok = await storage.deleteMedication(id);
+      res.json({ success: ok });
+    } catch (error) {
+      console.error('[약복용] 삭제 오류:', error);
+      res.status(500).json({ success: false, error: '삭제 중 오류' });
+    }
+  });
+
+  // 다가오는 알림 (접종/약) 통합
+  app.get("/api/diary/upcoming", async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      const days = req.query.days ? parseInt(req.query.days as string) : 30;
+      const [vacs, meds] = await Promise.all([
+        storage.getUpcomingVaccinations(userId, days),
+        storage.getUpcomingMedications(userId, days),
+      ]);
+      res.json({ success: true, vaccinations: vacs, medications: meds });
+    } catch (error) {
+      console.error('[다이어리] 다가오는 일정 오류:', error);
+      res.status(500).json({ success: false, error: '조회 중 오류' });
+    }
+  });
+
 // AI 분석 기록 조회
   app.get("/api/ai-analysis/history", async (req, res) => {
     try {
@@ -17960,6 +18261,12 @@ export function registerTrainerCertificationRoutes(app: Express) {
   app.get('/api/vaccinations/user/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      const session = (req as Request & { session?: { user?: { id?: number; role?: string } } }).session;
+      const sessionUserId = session?.user?.id;
+      if (!sessionUserId) return res.status(401).json({ success: false, message: '로그인이 필요합니다' });
+      if (sessionUserId !== userId && session?.user?.role !== 'admin') {
+        return res.status(403).json({ success: false, message: '권한이 없습니다' });
+      }
       const vaccinations = await storage.getVaccinationsByUserId(userId);
       res.json({ success: true, vaccinations });
     } catch (error: any) {
@@ -17974,6 +18281,8 @@ export function registerTrainerCertificationRoutes(app: Express) {
   app.get('/api/vaccinations/pet/:petId', async (req, res) => {
     try {
       const petId = parseInt(req.params.petId);
+      const access = await requireDiaryAccess(req, res, petId);
+      if (!access) return;
       const vaccinations = await storage.getVaccinationsByPetId(petId);
       res.json({ success: true, vaccinations });
     } catch (error: any) {
@@ -17988,6 +18297,12 @@ export function registerTrainerCertificationRoutes(app: Express) {
   app.get('/api/vaccinations/upcoming/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      const session = (req as Request & { session?: { user?: { id?: number; role?: string } } }).session;
+      const sessionUserId = session?.user?.id;
+      if (!sessionUserId) return res.status(401).json({ success: false, message: '로그인이 필요합니다' });
+      if (sessionUserId !== userId && session?.user?.role !== 'admin') {
+        return res.status(403).json({ success: false, message: '권한이 없습니다' });
+      }
       const days = req.query.days ? parseInt(req.query.days as string) : 30;
       const vaccinations = await storage.getUpcomingVaccinations(userId, days);
       res.json({ success: true, vaccinations });
@@ -18007,6 +18322,8 @@ export function registerTrainerCertificationRoutes(app: Express) {
       if (!vaccination) {
         return res.status(404).json({ success: false, message: '예방접종 스케줄을 찾을 수 없습니다.' });
       }
+      const access = await requireDiaryAccess(req, res, vaccination.petId);
+      if (!access) return;
       res.json({ success: true, vaccination });
     } catch (error: any) {
       console.error('[Vaccinations] 예방접종 조회 오류:', error);
@@ -18021,7 +18338,27 @@ export function registerTrainerCertificationRoutes(app: Express) {
     try {
       const { insertVaccinationSchema } = await import('../shared/schema');
       const validatedData = insertVaccinationSchema.parse(req.body);
-      const newVaccination = await storage.createVaccination(validatedData);
+      const access = await requireDiaryAccess(req, res, validatedData.petId);
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) {
+        return res.status(403).json({ success: false, message: '보호자만 등록할 수 있습니다.' });
+      }
+      const newVaccination = await storage.createVaccination({ ...validatedData, userId: access.userId });
+      // 인앱 알림 생성
+      try {
+        const pet = await storage.getPet(newVaccination.petId);
+        if (pet && newVaccination.userId) {
+          storage.createNotification({
+            userId: newVaccination.userId,
+            type: 'health',
+            title: '예방접종 일정 등록',
+            message: `${pet.name}의 ${newVaccination.vaccineName} 접종이 ${newVaccination.vaccineDate}로 예정되었습니다.`,
+            actionUrl: `/pet-care/health-diary?petId=${pet.id}`,
+            metadata: { petId: pet.id, vaccinationId: newVaccination.id },
+            isRead: false,
+          });
+        }
+      } catch (e) { console.warn('[Vaccinations] 알림 생성 실패', e); }
       res.status(201).json({ success: true, vaccination: newVaccination });
     } catch (error: any) {
       console.error('[Vaccinations] 예방접종 생성 오류:', error);
@@ -18038,6 +18375,15 @@ export function registerTrainerCertificationRoutes(app: Express) {
   app.patch('/api/vaccinations/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const existing = await storage.getVaccinationById(id);
+      if (!existing) {
+        return res.status(404).json({ success: false, message: '예방접종 스케줄을 찾을 수 없습니다.' });
+      }
+      const access = await requireDiaryAccess(req, res, existing.petId);
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) {
+        return res.status(403).json({ success: false, message: '보호자만 수정할 수 있습니다.' });
+      }
       const { updateVaccinationSchema } = await import('../shared/schema');
       const validatedData = updateVaccinationSchema.parse(req.body);
       const updatedVaccination = await storage.updateVaccination(id, validatedData);
@@ -18060,6 +18406,15 @@ export function registerTrainerCertificationRoutes(app: Express) {
   app.delete('/api/vaccinations/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const existing = await storage.getVaccinationById(id);
+      if (!existing) {
+        return res.status(404).json({ success: false, message: '예방접종 스케줄을 찾을 수 없습니다.' });
+      }
+      const access = await requireDiaryAccess(req, res, existing.petId);
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) {
+        return res.status(403).json({ success: false, message: '보호자만 삭제할 수 있습니다.' });
+      }
       const deleted = await storage.deleteVaccination(id);
       if (!deleted) {
         return res.status(404).json({ success: false, message: '예방접종 스케줄을 찾을 수 없습니다.' });

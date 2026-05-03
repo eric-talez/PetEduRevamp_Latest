@@ -154,6 +154,7 @@ export const pets = pgTable("pets", {
   lastNotebookEntry: text("last_notebook_entry"),
   temperamentLevel: varchar("temperament_level", { length: 1 }),
   isActive: boolean("is_active").default(true),
+  diaryShareWithTrainer: boolean("diary_share_with_trainer").default(false), // 다이어리 트레이너 공유 여부
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -176,11 +177,39 @@ export const careLogs = pgTable("care_logs", {
   walkStatus: varchar("walk_status", { length: 20 }), // normal, short, long, hyper, limp, unknown
   mood: varchar("mood", { length: 20 }), // happy, sad, anxious, calm, energetic, tired, unknown
   energyLevel: integer("energy_level"), // 1-5 범위
+  weightKg: decimal("weight_kg", { precision: 5, scale: 2 }), // 체중 기록 (kg)
+  exerciseMinutes: integer("exercise_minutes"), // 운동 시간 (분)
+  mealAmountG: integer("meal_amount_g"), // 식사량 (g)
+  medications: jsonb("medications"), // 그날 복용한 약 [{name, dosage}]
   media: jsonb("media"), // [{id, url, type, width, height, caption}, ...]
   tags: jsonb("tags"), // 추가 태그들
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// 약 복용 일정 테이블 (다이어리)
+export const petMedications = pgTable("pet_medications", {
+  id: serial("id").primaryKey(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  dosage: varchar("dosage", { length: 100 }),
+  frequency: varchar("frequency", { length: 100 }),
+  dueDate: date("due_date").notNull(),
+  status: varchar("status", { length: 20 }).default("scheduled"), // scheduled, completed, cancelled
+  notes: text("notes"),
+  reminderEnabled: boolean("reminder_enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPetMedicationSchema = createInsertSchema(petMedications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPetMedication = z.infer<typeof insertPetMedicationSchema>;
+export type PetMedication = typeof petMedications.$inferSelect;
 
 // AI 분석 결과 테이블  
 export const aiAnalyses = pgTable("ai_analyses", {

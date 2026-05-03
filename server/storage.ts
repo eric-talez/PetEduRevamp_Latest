@@ -89,6 +89,7 @@ class Storage {
   ];
   aiAnalyses: any[] = [];
   vaccinations: any[] = []; // 예방접종 스케줄 저장소
+  petMedications: any[] = []; // 약 복용 일정 저장소
   // 대체 훈련사 시스템 데이터 저장소
   substituteClassPosts: any[] = [];
   substituteClassApplications: any[] = [];
@@ -5478,6 +5479,63 @@ class HybridStorage extends Storage {
       return false;
     }
     this.careLogs.splice(index, 1);
+    return true;
+  }
+
+  // =============================================================================
+  // 반려견 건강 다이어리: 약 복용 일정 (Medications)
+  // =============================================================================
+
+  async getMedicationsByPetId(petId: number): Promise<any[]> {
+    return this.petMedications.filter(m => m.petId === petId)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }
+
+  async getMedicationById(id: number): Promise<any | null> {
+    return this.petMedications.find(m => m.id === id) || null;
+  }
+
+  async getUpcomingMedications(userId: number, days: number = 30): Promise<any[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + days);
+    return this.petMedications.filter(m => {
+      if (m.userId !== userId) return false;
+      if (m.status === 'completed' || m.status === 'cancelled') return false;
+      const due = new Date(m.dueDate);
+      return due >= today && due <= futureDate;
+    }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }
+
+  async createMedication(data: any): Promise<any> {
+    const newMed = {
+      id: this.petMedications.length ? Math.max(...this.petMedications.map(m => m.id || 0)) + 1 : 1,
+      status: 'scheduled',
+      reminderEnabled: true,
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.petMedications.push(newMed);
+    return newMed;
+  }
+
+  async updateMedication(id: number, updates: any): Promise<any> {
+    const idx = this.petMedications.findIndex(m => m.id === id);
+    if (idx === -1) throw new Error('Medication not found');
+    this.petMedications[idx] = {
+      ...this.petMedications[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    return this.petMedications[idx];
+  }
+
+  async deleteMedication(id: number): Promise<boolean> {
+    const idx = this.petMedications.findIndex(m => m.id === id);
+    if (idx === -1) return false;
+    this.petMedications.splice(idx, 1);
     return true;
   }
 
