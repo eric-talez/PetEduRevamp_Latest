@@ -47,10 +47,11 @@ export default function WriteReviewPage() {
         fd.append('image', file);
         const res = await fetch('/api/upload/image', { method: 'POST', body: fd, credentials: 'include' });
         const data = await res.json();
-        if (!res.ok || !data.success || !data.imageUrl) {
-          throw new Error(data.message || '이미지 업로드 실패');
+        const url = data?.url || data?.imageUrl || data?.file?.url;
+        if (!res.ok || !data?.success || !url) {
+          throw new Error(data?.message || data?.error || '이미지 업로드 실패');
         }
-        uploaded.push(data.imageUrl);
+        uploaded.push(url);
       }
       setPhotos((p) => [...p, ...uploaded]);
     } catch (e) {
