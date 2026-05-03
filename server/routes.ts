@@ -10762,6 +10762,95 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
+  // 트레이너용 담당 펫 다이어리 모아보기 (최신 7일 요약)
+  app.get("/api/diary/trainer-overview", async (req, res) => {
+    try {
+      const session = (req as Request & { session?: { user?: { id?: number; role?: string } } }).session;
+      const userId = session?.user?.id;
+      const role = session?.user?.role;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: '로그인이 필요합니다' });
+      }
+      if (role !== 'trainer' && role !== 'admin') {
+        return res.status(403).json({ success: false, error: '트레이너 권한이 필요합니다' });
+      }
+
+      const allPets: any[] = (storage as any).getPetsByTrainerId
+        ? (storage as any).getPetsByTrainerId(userId)
+        : ((storage as any).pets || []).filter((p: any) => p.assignedTrainerId === userId || p.trainerId === userId);
+      const sharedPets = allPets.filter(p => !!p.diaryShareWithTrainer);
+
+      const today = new Date();
+      const start = new Date(today);
+      start.setDate(start.getDate() - 6);
+      const fmt = (d: Date) => d.toISOString().slice(0, 10);
+      const startStr = fmt(start);
+      const endStr = fmt(today);
+
+      const overview = await Promise.all(sharedPets.map(async (pet: any) => {
+        const logs = await storage.getCareLogsByDateRange(pet.id, startStr, endStr);
+        const sortedLogs = [...logs].sort((a: any, b: any) => a.date.localeCompare(b.date));
+        const owner = (storage as any).users?.find((u: any) => u.id === pet.ownerId);
+
+        const weights = sortedLogs.map((l: any) => Number(l.weightKg)).filter((n: number) => !isNaN(n) && n > 0);
+        const exercises = sortedLogs.map((l: any) => Number(l.exerciseMinutes)).filter((n: number) => !isNaN(n) && n >= 0);
+        const totalExerciseMinutes = exercises.reduce((s, n) => s + n, 0);
+        const avgExerciseMinutes = exercises.length > 0 ? Math.round(totalExerciseMinutes / exercises.length) : 0;
+        const latestWeight = weights.length > 0 ? weights[weights.length - 1] : (pet.weight ?? null);
+        const firstWeight = weights.length > 0 ? weights[0] : null;
+        const weightDelta = (firstWeight !== null && latestWeight !== null) ? Number((latestWeight - firstWeight).toFixed(2)) : null;
+
+        const notes = sortedLogs
+          .filter((l: any) => (l.note && String(l.note).trim()) || (Array.isArray(l.tags) && l.tags.length > 0))
+          .slice(-3)
+          .map((l: any) => ({ date: l.date, note: l.note || '', tags: l.tags || [], mood: l.mood, energyLevel: l.energyLevel }));
+
+        const lastLog = sortedLogs.length > 0 ? sortedLogs[sortedLogs.length - 1] : null;
+
+        return {
+          pet: {
+            id: pet.id,
+            name: pet.name,
+            breed: pet.breed,
+            species: pet.species,
+            imageUrl: pet.imageUrl,
+            ownerId: pet.ownerId,
+            ownerName: owner?.name || null,
+            trainingStatus: pet.trainingStatus,
+            trainingType: pet.trainingType,
+          },
+          summary: {
+            logCount: sortedLogs.length,
+            latestWeightKg: latestWeight,
+            weightDeltaKg: weightDelta,
+            totalExerciseMinutes,
+            avgExerciseMinutes,
+            lastLogDate: lastLog?.date || null,
+            recentNotes: notes,
+          },
+        };
+      }));
+
+      overview.sort((a, b) => {
+        const da = a.summary.lastLogDate || '';
+        const db = b.summary.lastLogDate || '';
+        return db.localeCompare(da);
+      });
+
+      res.json({
+        success: true,
+        rangeStart: startStr,
+        rangeEnd: endStr,
+        totalAssignedPets: allPets.length,
+        sharedPetCount: sharedPets.length,
+        overview,
+      });
+    } catch (error) {
+      logServerError('[다이어리] 트레이너 오버뷰 오류:', error, req);
+      res.status(500).json({ success: false, error: '트레이너 다이어리 조회 중 오류' });
+    }
+  });
+
   // CSV 내보내기
   app.get("/api/diary/export", async (req, res) => {
     try {
