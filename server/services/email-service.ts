@@ -279,7 +279,11 @@ const DEFAULT_TEMPLATES: Array<{
     name: "알림장 주간 리포트",
     subject: "[TALEZ] {{petName}} {{periodLabel}} 알림장 리포트가 도착했어요",
     bodyHtml:
-      "<h2>{{name}}님, {{petName}}의 한 주 훈련 기록이에요 🐾</h2><p>이번 주({{periodKey}}) 작성된 알림장 <b>{{journalCount}}건</b>과 숙제 완료 현황({{homeworkCompleted}}/{{homeworkTotal}})을 PDF로 정리해 보내드려요.</p><p>첨부된 리포트를 확인해보시고, 다음 주 훈련 목표도 함께 점검해보세요.</p>",
+      "<h2>{{name}}님, {{petName}}의 한 주 훈련 기록이에요 🐾</h2>"
+      + "<p>이번 주({{periodKey}}) 작성된 알림장 <b>{{journalCount}}건</b>, 숙제 완료 {{homeworkCompleted}}/{{homeworkTotal}}, 담당 트레이너: {{trainerNames}}.</p>"
+      + "<p>첨부된 PDF 리포트를 열어 자세한 내용을 확인해보세요.</p>"
+      + "<p><a href=\"{{viewUrl}}\" style=\"display:inline-block;padding:10px 18px;background:#0F766E;color:#fff;border-radius:6px;text-decoration:none;\">알림장 자세히 보기</a></p>"
+      + "<p style=\"font-size:12px;color:#6B7280;margin-top:32px;\">자동 발송이 더 이상 필요하지 않으시면 <a href=\"{{unsubscribeUrl}}\">설정에서 구독을 해지</a>할 수 있어요.</p>",
     description: "매주 월요일 오전 9시(KST) 자동 발송되는 주간 알림장 리포트",
     variables: {
       name: "보호자 이름",
@@ -287,8 +291,11 @@ const DEFAULT_TEMPLATES: Array<{
       periodKey: "주차 키",
       periodLabel: "기간 라벨",
       journalCount: "알림장 수",
+      trainerNames: "담당 트레이너",
       homeworkCompleted: "완료한 숙제 수",
       homeworkTotal: "전체 숙제 수",
+      viewUrl: "알림장 자세히 보기 링크",
+      unsubscribeUrl: "구독 해지 링크",
     },
   },
   {
@@ -297,7 +304,11 @@ const DEFAULT_TEMPLATES: Array<{
     name: "알림장 월간 리포트",
     subject: "[TALEZ] {{petName}} {{periodLabel}} 알림장 리포트가 도착했어요",
     bodyHtml:
-      "<h2>{{name}}님, {{petName}}의 지난 달 훈련 기록이에요 🐾</h2><p>지난 달({{periodKey}}) 작성된 알림장 <b>{{journalCount}}건</b>과 숙제 완료 현황({{homeworkCompleted}}/{{homeworkTotal}})을 PDF로 정리해 보내드려요.</p>",
+      "<h2>{{name}}님, {{petName}}의 지난 달 훈련 기록이에요 🐾</h2>"
+      + "<p>지난 달({{periodKey}}) 작성된 알림장 <b>{{journalCount}}건</b>, 숙제 완료 {{homeworkCompleted}}/{{homeworkTotal}}, 담당 트레이너: {{trainerNames}}.</p>"
+      + "<p>첨부된 PDF 리포트를 열어 한 달 진행 상황을 확인해보세요.</p>"
+      + "<p><a href=\"{{viewUrl}}\" style=\"display:inline-block;padding:10px 18px;background:#0F766E;color:#fff;border-radius:6px;text-decoration:none;\">알림장 자세히 보기</a></p>"
+      + "<p style=\"font-size:12px;color:#6B7280;margin-top:32px;\">자동 발송이 더 이상 필요하지 않으시면 <a href=\"{{unsubscribeUrl}}\">설정에서 구독을 해지</a>할 수 있어요.</p>",
     description: "매월 1일 오전 9시(KST) 자동 발송되는 월간 알림장 리포트",
     variables: {
       name: "보호자 이름",
@@ -305,8 +316,11 @@ const DEFAULT_TEMPLATES: Array<{
       periodKey: "월 키",
       periodLabel: "기간 라벨",
       journalCount: "알림장 수",
+      trainerNames: "담당 트레이너",
       homeworkCompleted: "완료한 숙제 수",
       homeworkTotal: "전체 숙제 수",
+      viewUrl: "알림장 자세히 보기 링크",
+      unsubscribeUrl: "구독 해지 링크",
     },
   },
   {

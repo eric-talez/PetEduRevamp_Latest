@@ -5,19 +5,46 @@ import { queueEmail, registerAttachmentBuilder } from "./email-service";
 import { generateNotebookReportPdf } from "./notebook-report-pdf";
 import { storage } from "../storage";
 import { logServerError } from "../middleware/audit-logger";
+import type {
+  NotebookComment,
+  NotebookHomeworkItem,
+  NotebookJournal,
+  NotebookOwner,
+  NotebookPet,
+  NotebookStorageLike,
+} from "./notebook-report-types";
 
 const WEEKLY_KEY = "notebook_weekly_report";
 const MONTHLY_KEY = "notebook_monthly_report";
 
-async function buildPdfFromVars(vars: Record<string, any>): Promise<Buffer> {
+const APP_BASE_URL =
+  process.env.PUBLIC_APP_URL ||
+  process.env.OAUTH_CALLBACK_BASE_URL ||
+  "https://hitalez.com";
+
+function store(): NotebookStorageLike {
+  return storage as unknown as NotebookStorageLike;
+}
+
+function reportViewUrl(petId: number, periodType: "weekly" | "monthly"): string {
+  return `${APP_BASE_URL.replace(/\/$/, "")}/notebook?petId=${petId}&period=${periodType}`;
+}
+function unsubscribeUrl(petId: number, periodType: "weekly" | "monthly"): string {
+  return `${APP_BASE_URL.replace(/\/$/, "")}/settings?section=notebookReports&petId=${petId}&period=${periodType}`;
+}
+
+async function buildPdfFromVars(vars: Record<string, unknown>): Promise<Buffer> {
   const petId = Number(vars.petId);
-  const periodStart = new Date(vars.periodStartIso);
-  const periodEnd = new Date(vars.periodEndIso);
+  const periodStart = new Date(String(vars.periodStartIso));
+  const periodEnd = new Date(String(vars.periodEndIso));
   const periodType: "weekly" | "monthly" = vars.periodType === "monthly" ? "monthly" : "weekly";
 
-  const pet = (storage as any).getPet?.(petId) || { id: petId, name: vars.petName || "반려동물" };
-  const ownerId = Number(vars.ownerId || pet.ownerId);
-  const owner = ownerId ? ((storage as any).getUser?.(ownerId) || { id: ownerId, name: vars.ownerName || "보호자" }) : {};
+  const s = store();
+  const pet: NotebookPet = s.getPet?.(petId) ?? { id: petId, name: String(vars.petName ?? "반려동물") };
+  const ownerId = Number(vars.ownerId ?? pet.ownerId ?? 0);
+  const owner: NotebookOwner = ownerId
+    ? (s.getUser?.(ownerId) ?? { id: ownerId, name: String(vars.ownerName ?? "보호자") })
+    : { id: 0 };
 
   const data = collectPeriodData(petId, periodStart, periodEnd);
   return generateNotebookReportPdf({
@@ -28,6 +55,8 @@ async function buildPdfFromVars(vars: Record<string, any>): Promise<Buffer> {
     owner,
     journals: data.journals,
     homeworkItems: data.homeworkItems,
+    comments: data.comments,
+    trainerNames: data.trainerNames,
   });
 }
 
@@ -54,33 +83,47 @@ registerAttachmentBuilder(MONTHLY_KEY, async (vars) => {
 export function ensureNotebookReportNotifierLoaded(): void { /* import side-effect */ }
 
 export interface PeriodData {
-  journals: any[];
-  homeworkItems: any[];
+  journals: NotebookJournal[];
+  homeworkItems: NotebookHomeworkItem[];
+  comments: NotebookComment[];
+  trainerNames: string[];
+}
+
+function isPublishedJournal(j: NotebookJournal): boolean {
+  // 보호자에게 공개 가능한 상태만 포함. status 가 비어있는 레거시 데이터는 안전하게 제외.
+  if (!j.status) return false;
+  if (j.status === "draft") return false;
+  return true;
 }
 
 export function collectPeriodData(petId: number, periodStart: Date, periodEnd: Date): PeriodData {
-  const journals: any[] = ((storage as any).trainingJournals || []).filter((j: any) => {
+  const s = store();
+  const journals: NotebookJournal[] = (s.trainingJournals || []).filter((j) => {
     if (j.petId !== petId) return false;
+    if (!isPublishedJournal(j)) return false;
     const d = new Date(j.trainingDate || j.createdAt || 0);
     if (isNaN(d.getTime())) return false;
     return d >= periodStart && d < periodEnd;
   });
-  const journalIds = new Set(journals.map(j => j.id));
-  const homeworkItems: any[] = ((storage as any).notebookHomeworkItems || []).filter((h: any) => journalIds.has(h.journalId));
-  return { journals, homeworkItems };
+  const journalIds = new Set(journals.map((j) => j.id));
+  const homeworkItems: NotebookHomeworkItem[] = (s.notebookHomeworkItems || []).filter((h) => journalIds.has(h.journalId));
+  const allComments: NotebookComment[] = s.journalComments || [];
+  const comments: NotebookComment[] = allComments.filter((c) => journalIds.has(c.journalId));
+  const trainerNames = Array.from(new Set(
+    journals.map((j) => j.trainerName).filter((n): n is string => typeof n === "string" && n.length > 0)
+  ));
+  return { journals, homeworkItems, comments, trainerNames };
 }
 
 export function getWeeklyPeriod(now: Date): { start: Date; end: Date; key: string } {
   // 이전 주 (월~일) — KST 기준
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  const dow = kst.getUTCDay(); // 0=Sun..6=Sat
-  const daysSinceMonday = (dow + 6) % 7; // Mon=0
+  const dow = kst.getUTCDay();
+  const daysSinceMonday = (dow + 6) % 7;
   const thisMondayKst = new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate() - daysSinceMonday));
   const lastMondayKst = new Date(thisMondayKst.getTime() - 7 * 24 * 60 * 60 * 1000);
-  // KST → UTC
   const start = new Date(lastMondayKst.getTime() - 9 * 60 * 60 * 1000);
   const end = new Date(thisMondayKst.getTime() - 9 * 60 * 60 * 1000);
-  // ISO week label (rough): YYYY-Www
   const tmp = new Date(lastMondayKst.getTime());
   tmp.setUTCDate(tmp.getUTCDate() + 4 - ((tmp.getUTCDay() + 6) % 7));
   const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
@@ -90,7 +133,6 @@ export function getWeeklyPeriod(now: Date): { start: Date; end: Date; key: strin
 }
 
 export function getMonthlyPeriod(now: Date): { start: Date; end: Date; key: string } {
-  // 이전 달 1일~말일 (KST)
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
   const thisMonthFirstKst = new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), 1));
   const lastMonthFirstKst = new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth() - 1, 1));
@@ -116,13 +158,11 @@ export async function triggerNotebookReportEmail(args: SendReportArgs): Promise<
     const templateKey = args.periodType === "weekly" ? WEEKLY_KEY : MONTHLY_KEY;
     const periodKey = `${args.periodKey}-pet${args.petId}`;
 
-    // 데이터 사전 조회 — 없으면 스킵
     const data = collectPeriodData(args.petId, args.periodStart, args.periodEnd);
     if (data.journals.length === 0) {
       return { sent: false, reason: "no-journals" };
     }
 
-    // 멱등성: 동일 periodKey 가 이미 큐/발송 됐는지 확인
     try {
       const prior = await db
         .select({ id: emailLogs.id, status: emailLogs.status })
@@ -141,8 +181,8 @@ export async function triggerNotebookReportEmail(args: SendReportArgs): Promise<
       logServerError("[notebookReport] dedupe lookup failed", err);
     }
 
-    // 수신자 이메일 확인
-    const owner = (storage as any).getUser?.(args.ownerId);
+    const s = store();
+    const owner: NotebookOwner | undefined = s.getUser?.(args.ownerId);
     let recipient = owner?.email || "";
     if (!recipient) {
       const u = await db.select({ email: users.email }).from(users).where(eq(users.id, args.ownerId)).limit(1);
@@ -150,7 +190,7 @@ export async function triggerNotebookReportEmail(args: SendReportArgs): Promise<
     }
     if (!recipient) return { sent: false, reason: "no-recipient" };
 
-    const pet = (storage as any).getPet?.(args.petId);
+    const pet: NotebookPet | undefined = s.getPet?.(args.petId);
     await queueEmail({
       templateKey,
       userId: args.ownerId,
@@ -167,8 +207,11 @@ export async function triggerNotebookReportEmail(args: SendReportArgs): Promise<
         periodEndIso: args.periodEnd.toISOString(),
         periodLabel: args.periodType === "weekly" ? "주간" : "월간",
         journalCount: data.journals.length,
-        homeworkCompleted: data.homeworkItems.filter(h => h.completed).length,
+        trainerNames: data.trainerNames.join(", ") || "-",
+        homeworkCompleted: data.homeworkItems.filter((h) => h.completed).length,
         homeworkTotal: data.homeworkItems.length,
+        viewUrl: reportViewUrl(args.petId, args.periodType),
+        unsubscribeUrl: unsubscribeUrl(args.petId, args.periodType),
       },
     });
     return { sent: true };
@@ -178,10 +221,10 @@ export async function triggerNotebookReportEmail(args: SendReportArgs): Promise<
   }
 }
 
-/**
- * 주어진 기간에 대해, 활성화된 모든 (user,pet) prefs 를 순회하며 발송.
- */
-export async function dispatchPeriodReports(periodType: "weekly" | "monthly", now: Date = new Date()): Promise<{ attempted: number; sent: number; skipped: number }> {
+export async function dispatchPeriodReports(
+  periodType: "weekly" | "monthly",
+  now: Date = new Date(),
+): Promise<{ attempted: number; sent: number; skipped: number }> {
   const { start, end, key } = periodType === "weekly" ? getWeeklyPeriod(now) : getMonthlyPeriod(now);
 
   const enabledColumn = periodType === "weekly"
@@ -193,16 +236,19 @@ export async function dispatchPeriodReports(periodType: "weekly" | "monthly", no
     prefs = await db
       .select({ userId: notebookReportPreferences.userId, petId: notebookReportPreferences.petId })
       .from(notebookReportPreferences)
-      .where(eq(enabledColumn as any, true));
+      .where(eq(enabledColumn, true));
   } catch (err) {
     logServerError("[notebookReport] prefs query failed", err);
     return { attempted: 0, sent: 0, skipped: 0 };
   }
 
-  // 명시 prefs 가 없는 경우 weekly 기본 ON 정책: 알림장이 있는 모든 (pet,owner) 도 포함
+  // 주간: 명시적 prefs 가 없는 (owner,pet) 도 기본 ON 정책으로 포함.
+  // 단, 명시적으로 weeklyEnabled = false 인 경우 제외.
   if (periodType === "weekly") {
-    const prefSet = new Set(prefs.map(p => `${p.userId}:${p.petId}`));
-    const journalsInPeriod: any[] = ((storage as any).trainingJournals || []).filter((j: any) => {
+    const s = store();
+    const prefSet = new Set(prefs.map((p) => `${p.userId}:${p.petId}`));
+    const journalsInPeriod: NotebookJournal[] = (s.trainingJournals || []).filter((j) => {
+      if (!isPublishedJournal(j)) return false;
       const d = new Date(j.trainingDate || j.createdAt || 0);
       return !isNaN(d.getTime()) && d >= start && d < end;
     });
@@ -210,14 +256,18 @@ export async function dispatchPeriodReports(periodType: "weekly" | "monthly", no
     for (const j of journalsInPeriod) {
       if (!j.petId || seen.has(j.petId)) continue;
       seen.add(j.petId);
-      const pet = (storage as any).getPet?.(j.petId);
+      const pet = s.getPet?.(j.petId);
       if (!pet?.ownerId) continue;
       const sigKey = `${pet.ownerId}:${j.petId}`;
       if (prefSet.has(sigKey)) continue;
-      // 명시적으로 weekly OFF 인지 확인
       try {
-        const row = await db.select().from(notebookReportPreferences)
-          .where(and(eq(notebookReportPreferences.userId, pet.ownerId), eq(notebookReportPreferences.petId, j.petId)))
+        const row = await db
+          .select()
+          .from(notebookReportPreferences)
+          .where(and(
+            eq(notebookReportPreferences.userId, pet.ownerId),
+            eq(notebookReportPreferences.petId, j.petId),
+          ))
           .limit(1);
         if (row[0] && row[0].weeklyEnabled === false) continue;
       } catch { /* noop */ }
