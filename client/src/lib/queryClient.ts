@@ -8,8 +8,14 @@ interface ApiError extends Error {
   fieldErrors?: Record<string, string[]>;
 }
 
+let lastSessionExpiredAt = 0;
+const SESSION_EXPIRED_DEDUP_MS = 2000;
+
 function dispatchSessionExpired(reason: string, message?: string) {
   if (typeof window === "undefined") return;
+  const now = Date.now();
+  if (now - lastSessionExpiredAt < SESSION_EXPIRED_DEDUP_MS) return;
+  lastSessionExpiredAt = now;
   window.dispatchEvent(
     new CustomEvent("session-expired", {
       detail: { reason, message },
@@ -17,12 +23,52 @@ function dispatchSessionExpired(reason: string, message?: string) {
   );
 }
 
+// 로그인/인증 관련 엔드포인트는 401이 정상 응답일 수 있으므로 제외
+const AUTH_ENDPOINT_PATTERNS = [
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/signup",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/auth/verify",
+  "/api/csrf",
+];
+
+function isAuthEndpoint(url: string): boolean {
+  return AUTH_ENDPOINT_PATTERNS.some((pattern) => url.includes(pattern));
+}
+
+function hasLocalAuth(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return !!window.localStorage.getItem("petedu_auth");
+  } catch {
+    return false;
+  }
+}
+
+function maybeDispatchUnauthorized(
+  url: string,
+  errorCode: string | undefined,
+  reason: string | undefined,
+  message: string | undefined,
+) {
+  if (errorCode === "SESSION_EXPIRED" || errorCode === "IDLE_TIMEOUT") {
+    dispatchSessionExpired(reason || "session-expired", message);
+    return;
+  }
+  // 코드가 없어도 사용자가 로그인 상태로 인식 중이면 세션 만료로 간주
+  if (!isAuthEndpoint(url) && hasLocalAuth()) {
+    dispatchSessionExpired(reason || "session-expired", message);
+  }
+}
+
 function dispatchUserActivity() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("user-activity"));
 }
 
-async function throwIfResNotOk(res: Response) {
+async function throwIfResNotOk(res: Response, requestUrl?: string) {
   if (!res.ok) {
     // 응답이 JSON인지 확인
     const contentType = res.headers.get("content-type");
@@ -45,11 +91,8 @@ async function throwIfResNotOk(res: Response) {
       errorMessage = await res.text() || res.statusText;
     }
 
-    if (
-      res.status === 401 &&
-      (errorCode === "SESSION_EXPIRED" || errorCode === "IDLE_TIMEOUT")
-    ) {
-      dispatchSessionExpired(reason || "session-expired", errorMessage);
+    if (res.status === 401) {
+      maybeDispatchUnauthorized(requestUrl || res.url || "", errorCode, reason, errorMessage);
     }
 
     const error = new Error(`${res.status}: ${errorMessage}`) as ApiError;
@@ -113,11 +156,8 @@ export const apiRequest = async (method: string, url: string, data?: any): Promi
         console.warn('[apiRequest] 오류 응답 파싱 실패:', parseError);
       }
 
-      if (
-        response.status === 401 &&
-        (errorCode === "SESSION_EXPIRED" || errorCode === "IDLE_TIMEOUT")
-      ) {
-        dispatchSessionExpired(reason || "session-expired", errorMessage);
+      if (response.status === 401) {
+        maybeDispatchUnauthorized(url, errorCode, reason, errorMessage);
       }
 
       throw new Error(errorMessage);
@@ -142,21 +182,26 @@ export const getQueryFn: <T>(options: {
       credentials: "include",
     });
 
+    const requestUrl = queryKey[0] as string;
     if (res.status === 401) {
-      // SESSION_EXPIRED/IDLE_TIMEOUT 코드면 전역 이벤트 dispatch
+      // 401 응답을 분석해 세션 만료 이벤트 dispatch (코드가 없어도 로그인 상태면 발화)
+      let code: string | undefined;
+      let reason: string | undefined;
+      let message: string | undefined;
       try {
         const cloned = res.clone();
         const data = await cloned.json();
-        if (data?.code === "SESSION_EXPIRED" || data?.code === "IDLE_TIMEOUT") {
-          dispatchSessionExpired(data?.reason || "session-expired", data?.message);
-        }
+        code = data?.code;
+        reason = data?.reason;
+        message = data?.message;
       } catch {
         /* noop */
       }
+      maybeDispatchUnauthorized(requestUrl, code, reason, message);
       if (unauthorizedBehavior === "returnNull") return null;
     }
 
-    await throwIfResNotOk(res);
+    await throwIfResNotOk(res, requestUrl);
     if (res.ok) dispatchUserActivity();
     return await res.json();
   };
