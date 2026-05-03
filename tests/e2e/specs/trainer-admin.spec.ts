@@ -16,21 +16,9 @@ async function assertNotFallbackPage(page: import("@playwright/test").Page, cont
   ).toHaveCount(0);
 }
 
-type ProjectName = "mobile-iphone-se" | "tablet-ipad" | "desktop";
 type PageDef = {
   name: string;
   url: string;
-  skipOn?: Partial<Record<ProjectName, string>>;
-};
-
-// 트레이너/관리자 레이아웃은 모바일·태블릿(<1024px)에서 본문 하단 패딩 부재로
-// MobileBottomNav 와 푸터/리스트 항목이 30~40px 가량 겹친다 (follow-up #82 에서 수정).
-const PROTECTED_PADDING_SKIP =
-  "follow-up #82 — 트레이너/관리자 레이아웃의 모바일/태블릿 본문 하단 패딩 부재";
-
-const mobileSkip: Partial<Record<ProjectName, string>> = {
-  "mobile-iphone-se": PROTECTED_PADDING_SKIP,
-  "tablet-ipad": PROTECTED_PADDING_SKIP,
 };
 
 test.describe("트레이너 진입 — 반응형 회귀", () => {
@@ -40,18 +28,16 @@ test.describe("트레이너 진입 — 반응형 회귀", () => {
   });
 
   const PAGES: PageDef[] = [
-    { name: "trainer-home", url: "/", skipOn: mobileSkip },
-    { name: "trainer-students", url: "/trainer/students", skipOn: mobileSkip },
+    { name: "trainer-home", url: "/" },
+    { name: "trainer-students", url: "/trainer/students" },
     // 트레이너 수익(정산) 페이지 — 라우트 명은 /trainer/earnings
-    { name: "trainer-earnings", url: "/trainer/earnings", skipOn: mobileSkip },
+    { name: "trainer-earnings", url: "/trainer/earnings" },
     // 트레이너용 알림장(노트북) — SimpleApp 라우트 `/trainer/notebook`
-    { name: "trainer-notebook", url: "/trainer/notebook", skipOn: mobileSkip },
+    { name: "trainer-notebook", url: "/trainer/notebook" },
   ];
 
   for (const p of PAGES) {
     test(`${p.name} (${p.url}) — 진입 + 반응형 검증`, async ({ page }, testInfo) => {
-      const reason = p.skipOn?.[testInfo.project.name as ProjectName];
-      test.skip(!!reason, reason || "");
       await runResponsiveChecks(page, testInfo, p.url);
       await assertNotFallbackPage(page, p.url);
     });
@@ -65,18 +51,16 @@ test.describe("관리자 진입 — 반응형 회귀", () => {
   });
 
   const PAGES: PageDef[] = [
-    { name: "admin-home", url: "/admin", skipOn: mobileSkip },
-    { name: "admin-users", url: "/admin/users", skipOn: mobileSkip },
+    { name: "admin-home", url: "/admin" },
+    { name: "admin-users", url: "/admin/users" },
     // 관리자 주요 탭: 사용자/수익/훈련(트레이너)/지역
-    { name: "admin-revenue", url: "/admin/revenue", skipOn: mobileSkip },
-    { name: "admin-trainers", url: "/admin/trainers", skipOn: mobileSkip },
-    { name: "admin-locations", url: "/admin/location-management", skipOn: mobileSkip },
+    { name: "admin-revenue", url: "/admin/revenue" },
+    { name: "admin-trainers", url: "/admin/trainers" },
+    { name: "admin-locations", url: "/admin/location-management" },
   ];
 
   for (const p of PAGES) {
     test(`${p.name} (${p.url}) — 진입 + 반응형 검증`, async ({ page }, testInfo) => {
-      const reason = p.skipOn?.[testInfo.project.name as ProjectName];
-      test.skip(!!reason, reason || "");
       await runResponsiveChecks(page, testInfo, p.url);
       await assertNotFallbackPage(page, p.url);
     });

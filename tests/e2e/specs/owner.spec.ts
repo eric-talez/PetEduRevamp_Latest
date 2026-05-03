@@ -9,40 +9,15 @@ type PageDef = {
   skipOn?: Partial<Record<ProjectName, string>>;
 };
 
-// 보호자 레이아웃은 모바일/태블릿(<1024px)에서 본문 하단 패딩 부재로 거의 모든
-// 페이지의 푸터 링크가 MobileBottomNav 와 ~37px 가량 겹친다 (follow-up #82 에서 수정).
-// 회귀 회복 시 아래 사유 문자열을 검색해 일괄 제거하기 쉽도록 상수화.
-const OWNER_PADDING_SKIP =
-  "follow-up #82 — 보호자 레이아웃의 모바일/태블릿 본문 하단 패딩 부재로 푸터 링크가 MobileBottomNav 와 겹침";
 const CHATBOT_COMPOSER_SKIP =
   "follow-up #84 — 챗봇 composer fixed 영역이 MobileBottomNav 와 겹침";
 
 const OWNER_PAGES: PageDef[] = [
-  {
-    name: "profile",
-    url: "/profile",
-    skipOn: { "mobile-iphone-se": OWNER_PADDING_SKIP, "tablet-ipad": OWNER_PADDING_SKIP },
-  },
-  {
-    name: "my-courses",
-    url: "/my-courses",
-    skipOn: { "mobile-iphone-se": OWNER_PADDING_SKIP, "tablet-ipad": OWNER_PADDING_SKIP },
-  },
-  {
-    name: "my-pets",
-    url: "/my-pets",
-    skipOn: { "mobile-iphone-se": OWNER_PADDING_SKIP, "tablet-ipad": OWNER_PADDING_SKIP },
-  },
-  {
-    name: "notifications",
-    url: "/notifications",
-    skipOn: { "mobile-iphone-se": OWNER_PADDING_SKIP, "tablet-ipad": OWNER_PADDING_SKIP },
-  },
-  {
-    name: "ai-analysis",
-    url: "/ai-analysis",
-    skipOn: { "mobile-iphone-se": OWNER_PADDING_SKIP, "tablet-ipad": OWNER_PADDING_SKIP },
-  },
+  { name: "profile", url: "/profile" },
+  { name: "my-courses", url: "/my-courses" },
+  { name: "my-pets", url: "/my-pets" },
+  { name: "notifications", url: "/notifications" },
+  { name: "ai-analysis", url: "/ai-analysis" },
   {
     name: "chatbot",
     url: "/chatbot",
@@ -53,11 +28,7 @@ const OWNER_PAGES: PageDef[] = [
   },
   // 알림장(저널) — 라우트 미등록 시 SimpleApp 의 NotFound 페이지로 폴백되며,
   // 그 경우에도 반응형 검증(가로 스크롤/네비 겹침)은 의미가 있다.
-  {
-    name: "journals",
-    url: "/journals",
-    skipOn: { "mobile-iphone-se": OWNER_PADDING_SKIP, "tablet-ipad": OWNER_PADDING_SKIP },
-  },
+  { name: "journals", url: "/journals" },
 ];
 
 test.describe("로그인 보호자 흐름 — 페이지별 반응형 회귀", () => {

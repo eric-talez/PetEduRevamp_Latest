@@ -62,7 +62,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         id="main-content" // 스킵 링크 대상 ID 추가
         aria-label="메인 콘텐츠" // 스크린 리더용 레이블
         tabIndex={-1} // 포커스 가능하게 만들기
-        className={`pt-16 transition-all duration-300 outline-none ${
+        className={`pt-16 pb-[calc(env(safe-area-inset-bottom)+64px)] lg:pb-0 transition-all duration-300 outline-none ${
           isAuthenticated && !isMobile ? 'lg:ml-64' : ''
         } ${
           isAuthenticated && isMobile && sidebarOpen ? 'ml-0' : ''
