@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/101</span>
+                <span class='fraction'>0/102</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/97</span>
+                <span class='fraction'>0/98</span>
             </div>
         
             
@@ -480,7 +480,8 @@
 <a name='L415'></a><a href='#L415'>415</a>
 <a name='L416'></a><a href='#L416'>416</a>
 <a name='L417'></a><a href='#L417'>417</a>
-<a name='L418'></a><a href='#L418'>418</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L418'></a><a href='#L418'>418</a>
+<a name='L419'></a><a href='#L419'>419</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -489,6 +490,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -906,6 +908,7 @@ import {
   InsertSettlement,
   InsertSettlementItem 
 } from '../../shared/payment-schema';
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 export interface PaymentProcessingResult {
   success: boolean;
@@ -985,7 +988,7 @@ export interface SettlementGenerationResult {
       };
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('수수료 계산 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('수수료 계산 오류:', error);</span>
       // 오류 시 기본 수수료 적용
       const defaultFeeAmount = <span class="cstat-no" title="statement not covered" >Math.round(amount * 0.1);</span>
 <span class="cstat-no" title="statement not covered" >      return {</span>
@@ -1083,7 +1086,7 @@ export interface SettlementGenerationResult {
 &nbsp;
       // 매출 통계 업데이트 (비동기)
 <span class="cstat-no" title="statement not covered" >      this.updateRevenueStats(targetType, paymentData.payeeId, paymentData.grossAmount, feeCalculation.feeAmount)</span>
-        .catch(<span class="fstat-no" title="function not covered" >error </span>=&gt; <span class="cstat-no" title="statement not covered" >console.error('매출 통계 업데이트 오류:', error))</span>;
+        .catch(<span class="fstat-no" title="function not covered" >error </span>=&gt; <span class="cstat-no" title="statement not covered" >logServerError('매출 통계 업데이트 오류:', error))</span>;
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return {</span>
         success: true,
@@ -1093,7 +1096,7 @@ export interface SettlementGenerationResult {
       };
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('결제 처리 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('결제 처리 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      return {</span>
         success: false,
         errorMessage: `결제 처리 중 오류가 발생했습니다: ${error}`,
@@ -1194,7 +1197,7 @@ export interface SettlementGenerationResult {
       };
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('정산 생성 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('정산 생성 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      return {</span>
         success: false,
         errorMessage: `정산 생성 중 오류가 발생했습니다: ${error}`,
@@ -1226,13 +1229,13 @@ export interface SettlementGenerationResult {
           });
 <span class="cstat-no" title="statement not covered" >          console.log(`정산 ${settlementId} 지급 완료`);</span>
         } catch (error) {
-<span class="cstat-no" title="statement not covered" >          console.error(`정산 ${settlementId} 지급 실패:`, error);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError(`정산 ${settlementId} 지급 실패:`, error);</span>
         }
       }, 5000);
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return true;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('정산 승인 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('정산 승인 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      return false;</span>
     }
   }
@@ -1247,7 +1250,7 @@ export interface SettlementGenerationResult {
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      return await this.storage.getFeePolicies(targetType, targetId);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('수수료 정책 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('수수료 정책 조회 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      return [];</span>
     }
   }
@@ -1275,7 +1278,7 @@ export interface SettlementGenerationResult {
         transactionCount: 1
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('매출 통계 업데이트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('매출 통계 업데이트 오류:', error);</span>
     }
   }
 &nbsp;
@@ -1310,7 +1313,7 @@ export interface SettlementGenerationResult {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return true;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('환불 처리 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('환불 처리 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      return false;</span>
     }
   }
@@ -1321,7 +1324,7 @@ export interface SettlementGenerationResult {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

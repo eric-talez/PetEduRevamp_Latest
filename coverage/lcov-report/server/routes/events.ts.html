@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/159</span>
+                <span class='fraction'>0/160</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/157</span>
+                <span class='fraction'>0/158</span>
             </div>
         
             
@@ -412,7 +412,9 @@
 <a name='L347'></a><a href='#L347'>347</a>
 <a name='L348'></a><a href='#L348'>348</a>
 <a name='L349'></a><a href='#L349'>349</a>
-<a name='L350'></a><a href='#L350'>350</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L350'></a><a href='#L350'>350</a>
+<a name='L351'></a><a href='#L351'>351</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -766,6 +768,7 @@
 <span class="cstat-no" title="statement not covered" >import multer from 'multer';</span>
 <span class="cstat-no" title="statement not covered" >import path from 'path';</span>
 <span class="cstat-no" title="statement not covered" >import fs from 'fs';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 const router = <span class="cstat-no" title="statement not covered" >Router();</span>
 &nbsp;
@@ -872,7 +875,7 @@ interface EventData {
     
 <span class="cstat-no" title="statement not covered" >    res.json(events);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('이벤트 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('이벤트 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '이벤트 데이터를 불러오는데 실패했습니다.' });</span>
   }
 });
@@ -901,7 +904,7 @@ interface EventData {
       message: '썸네일이 성공적으로 업로드되었습니다.'
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('썸네일 업로드 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('썸네일 업로드 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '썸네일 업로드에 실패했습니다.' });</span>
   }
 });
@@ -933,7 +936,7 @@ interface EventData {
     
 <span class="cstat-no" title="statement not covered" >    res.json({ success: true, message: '썸네일이 삭제되었습니다.' });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('썸네일 삭제 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('썸네일 삭제 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '썸네일 삭제에 실패했습니다.' });</span>
   }
 });
@@ -950,7 +953,7 @@ interface EventData {
     
 <span class="cstat-no" title="statement not covered" >    res.json(event);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('이벤트 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('이벤트 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '이벤트 데이터를 불러오는데 실패했습니다.' });</span>
   }
 });
@@ -969,7 +972,7 @@ interface EventData {
     
 <span class="cstat-no" title="statement not covered" >    res.status(201).json(newEvent);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('이벤트 생성 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('이벤트 생성 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '이벤트 생성에 실패했습니다.' });</span>
   }
 });
@@ -993,7 +996,7 @@ interface EventData {
     
 <span class="cstat-no" title="statement not covered" >    res.json(updatedEvent);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('이벤트 업데이트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('이벤트 업데이트 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '이벤트 업데이트에 실패했습니다.' });</span>
   }
 });
@@ -1014,7 +1017,7 @@ interface EventData {
     
 <span class="cstat-no" title="statement not covered" >    res.json({ message: '이벤트가 삭제되었습니다.' });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('이벤트 삭제 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('이벤트 삭제 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '이벤트 삭제에 실패했습니다.' });</span>
   }
 });
@@ -1057,7 +1060,7 @@ interface EventData {
 <span class="cstat-no" title="statement not covered" >          results.push({ action: 'created', event: newEvent });</span>
         }
       } catch (error) {
-<span class="cstat-no" title="statement not covered" >        console.error(`이벤트 처리 오류 (${eventData.name}):`, error);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError(`이벤트 처리 오류 (${eventData.name}):`, error, req);</span>
 <span class="cstat-no" title="statement not covered" >        results.push({ action: 'error', eventName: eventData.name, error: error.message });</span>
       }
     }
@@ -1071,7 +1074,7 @@ interface EventData {
       errors: results.filter(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >r.action === 'error')</span>.length
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('이벤트 자동 업데이트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('이벤트 자동 업데이트 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '이벤트 자동 업데이트에 실패했습니다.' });</span>
   }
 });
@@ -1105,7 +1108,7 @@ interface EventData {
     
 <span class="cstat-no" title="statement not covered" >    res.json(stats);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('이벤트 통계 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('이벤트 통계 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '이벤트 통계를 불러오는데 실패했습니다.' });</span>
   }
 });
@@ -1117,7 +1120,7 @@ export const <span class="cstat-no" title="statement not covered" >eventRoutes =
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

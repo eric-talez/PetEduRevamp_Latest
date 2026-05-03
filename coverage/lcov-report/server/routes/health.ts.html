@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/176</span>
+                <span class='fraction'>0/181</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/39</span>
+                <span class='fraction'>0/45</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/25</span>
+                <span class='fraction'>0/26</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/175</span>
+                <span class='fraction'>0/180</span>
             </div>
         
             
@@ -481,8 +481,23 @@
 <a name='L416'></a><a href='#L416'>416</a>
 <a name='L417'></a><a href='#L417'>417</a>
 <a name='L418'></a><a href='#L418'>418</a>
-<a name='L419'></a><a href='#L419'>419</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L419'></a><a href='#L419'>419</a>
+<a name='L420'></a><a href='#L420'>420</a>
+<a name='L421'></a><a href='#L421'>421</a>
+<a name='L422'></a><a href='#L422'>422</a>
+<a name='L423'></a><a href='#L423'>423</a>
+<a name='L424'></a><a href='#L424'>424</a>
+<a name='L425'></a><a href='#L425'>425</a>
+<a name='L426'></a><a href='#L426'>426</a>
+<a name='L427'></a><a href='#L427'>427</a>
+<a name='L428'></a><a href='#L428'>428</a>
+<a name='L429'></a><a href='#L429'>429</a>
+<a name='L430'></a><a href='#L430'>430</a>
+<a name='L431'></a><a href='#L431'>431</a>
+<a name='L432'></a><a href='#L432'>432</a>
+<a name='L433'></a><a href='#L433'>433</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -861,9 +876,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -901,6 +929,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { Express } from 'express';
 import type { IStorage } from '../storage';
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export function <span class="fstat-no" title="function not covered" >r</span>egisterHealthRoutes(</span>app: Express, storage: IStorage) {
   // 반려동물 예방접종 기록 조회
@@ -915,7 +944,7 @@ import type { IStorage } from '../storage';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(vaccinations);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching vaccinations:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching vaccinations:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -938,7 +967,7 @@ import type { IStorage } from '../storage';
       const vaccination = <span class="cstat-no" title="statement not covered" >await storage.createVaccination(vaccinationData);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(201).json(vaccination);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error creating vaccination:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error creating vaccination:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -955,7 +984,7 @@ import type { IStorage } from '../storage';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(checkups);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching checkups:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching checkups:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -978,7 +1007,7 @@ import type { IStorage } from '../storage';
       const checkup = <span class="cstat-no" title="statement not covered" >await storage.createCheckup(checkupData);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(201).json(checkup);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error creating checkup:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error creating checkup:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -995,7 +1024,7 @@ import type { IStorage } from '../storage';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(weightRecords);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching weight records:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching weight records:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1017,7 +1046,7 @@ import type { IStorage } from '../storage';
       const weightRecord = <span class="cstat-no" title="statement not covered" >await storage.createWeightRecord(weightData);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(201).json(weightRecord);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error creating weight record:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error creating weight record:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1034,7 +1063,7 @@ import type { IStorage } from '../storage';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(medications);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching medications:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching medications:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1056,7 +1085,7 @@ import type { IStorage } from '../storage';
       const medication = <span class="cstat-no" title="statement not covered" >await storage.createMedication(medicationData);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(201).json(medication);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error creating medication:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error creating medication:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1073,7 +1102,7 @@ import type { IStorage } from '../storage';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(nutritionPlans);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching nutrition plans:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching nutrition plans:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1095,7 +1124,7 @@ import type { IStorage } from '../storage';
       const nutritionPlan = <span class="cstat-no" title="statement not covered" >await storage.createNutritionPlan(nutritionData);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(201).json(nutritionPlan);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error creating nutrition plan:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error creating nutrition plan:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1112,7 +1141,7 @@ import type { IStorage } from '../storage';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(reminders);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching health reminders:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching health reminders:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1134,7 +1163,7 @@ import type { IStorage } from '../storage';
       const reminder = <span class="cstat-no" title="statement not covered" >await storage.createHealthReminder(reminderData);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(201).json(reminder);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error creating health reminder:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error creating health reminder:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1197,7 +1226,7 @@ import type { IStorage } from '../storage';
         healthSummary
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching health dashboard:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching health dashboard:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
@@ -1274,15 +1303,20 @@ import type { IStorage } from '../storage';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(stats);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching health stats:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching health stats:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: 'Internal server error' });</span>
     }
   });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  app.get('/api/health', <span class="fstat-no" title="function not covered" >async </span>(req, res) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const health = <span class="cstat-no" title="statement not covered" >{</span>
-        status: 'ok',
+      const { getEmailServiceStatus } = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >await import('</span>../services/email-service');</span>
+      const emailStatus = <span class="cstat-no" title="statement not covered" >getEmailServiceStatus();</span>
+      const emailOk = <span class="cstat-no" title="statement not covered" >!emailStatus.critical;</span>
+      const overall = <span class="cstat-no" title="statement not covered" >emailOk ? 'ok' : 'degraded';</span>
+&nbsp;
+      const health: any = <span class="cstat-no" title="statement not covered" >{</span>
+        status: overall,
         timestamp: new Date().toISOString(),
         version: '1.0.0',
         uptime: process.uptime(),
@@ -1296,8 +1330,16 @@ import type { IStorage } from '../storage';
         services: {
           database: 'connected',
           cache: 'active',
-          websocket: 'running'
-        }
+          websocket: 'running',
+          email: emailOk ? 'ok' : 'critical',
+        },
+        email: {
+          configured: emailStatus.configured,
+          fromEmailConfigured: emailStatus.fromEmailConfigured,
+          critical: emailStatus.critical,
+          consecutiveFailures: emailStatus.consecutiveFailures,
+          warnings: emailStatus.warnings,
+        },
       };
 &nbsp;
       // 프로덕션에서는 민감한 정보 제거
@@ -1306,7 +1348,7 @@ import type { IStorage } from '../storage';
 <span class="cstat-no" title="statement not covered" >        delete health.memory.external;</span>
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      res.json(health);</span>
+<span class="cstat-no" title="statement not covered" >      res.status(emailOk ? 200 : 503).json(health);</span>
     } catch (error) {
 <span class="cstat-no" title="statement not covered" >      res.status(503).json({</span>
         status: 'error',
@@ -1324,7 +1366,7 @@ import type { IStorage } from '../storage';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

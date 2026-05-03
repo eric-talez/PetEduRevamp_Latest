@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/159</span>
+                <span class='fraction'>0/160</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/159</span>
+                <span class='fraction'>0/160</span>
             </div>
         
             
@@ -557,7 +557,9 @@
 <a name='L492'></a><a href='#L492'>492</a>
 <a name='L493'></a><a href='#L493'>493</a>
 <a name='L494'></a><a href='#L494'>494</a>
-<a name='L495'></a><a href='#L495'>495</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L495'></a><a href='#L495'>495</a>
+<a name='L496'></a><a href='#L496'>496</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1053,6 +1055,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { Express, Request, Response, NextFunction } from "express";
 <span class="cstat-no" title="statement not covered" >import { storage } from "../storage";</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 // 관리자 권한 검사 미들웨어
 const requireAdmin = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(r</span>eq: any, res: Response, next: NextFunction) =&gt; {</span>
@@ -1097,7 +1100,7 @@ async function <span class="fstat-no" title="function not covered" >testTossPaym
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    return response.ok;</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Toss 결제 테스트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Toss 결제 테스트 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >    return false;</span>
   }
 }
@@ -1121,7 +1124,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    return response.ok;</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Toss 결제 취소 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Toss 결제 취소 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >    return false;</span>
   }
 }
@@ -1140,7 +1143,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: '결제 수단 목록을 성공적으로 조회했습니다.'
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 수단 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 수단 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 수단 조회 중 오류가 발생했습니다.'
@@ -1162,7 +1165,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: `${methodData.name} 결제 수단이 성공적으로 등록되었습니다.`
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 수단 등록 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 수단 등록 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 수단 등록 중 오류가 발생했습니다.'
@@ -1192,7 +1195,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: `${updateData.name || id} 결제 수단이 성공적으로 수정되었습니다.`
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 수단 수정 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 수단 수정 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 수단 수정 중 오류가 발생했습니다.'
@@ -1212,7 +1215,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: '사용자 요금제 목록을 성공적으로 조회했습니다.'
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 사용자 요금제 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 사용자 요금제 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '사용자 요금제 조회 중 오류가 발생했습니다.'
@@ -1264,7 +1267,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         });
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 테스트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 테스트 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 테스트 중 서버 오류가 발생했습니다.',
@@ -1289,7 +1292,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: `${methodId} 결제 수단이 ${status === 'active' ? '활성화' : '비활성화'}되었습니다.`
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 수단 상태 변경 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 수단 상태 변경 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 수단 상태 변경 중 오류가 발생했습니다.'
@@ -1313,7 +1316,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: `${role} 요금제가 업데이트되었습니다.`
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 요금제 업데이트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 요금제 업데이트 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '요금제 업데이트 중 오류가 발생했습니다.'
@@ -1336,7 +1339,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: '결제 내역을 성공적으로 조회했습니다.'
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 내역 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 내역 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 내역 조회 중 오류가 발생했습니다.'
@@ -1358,7 +1361,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: '결제 내역이 성공적으로 추가되었습니다.'
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 내역 추가 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 내역 추가 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 내역 추가 중 오류가 발생했습니다.'
@@ -1379,7 +1382,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: `${methodId} 결제 수단이 성공적으로 삭제되었습니다.`
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 수단 삭제 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 수단 삭제 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 수단 삭제 중 오류가 발생했습니다.'
@@ -1415,7 +1418,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         });
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 취소 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 취소 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 취소 중 서버 오류가 발생했습니다.'
@@ -1455,7 +1458,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: '새 결제 수단이 성공적으로 추가되었습니다.'
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 수단 추가 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 수단 추가 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 수단 추가 중 오류가 발생했습니다.'
@@ -1481,7 +1484,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         data: securitySettings
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 보안 설정 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 보안 설정 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '보안 설정 조회 중 오류가 발생했습니다.'
@@ -1508,7 +1511,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         message: '보안 설정이 성공적으로 업데이트되었습니다.'
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 보안 설정 업데이트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 보안 설정 업데이트 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '보안 설정 업데이트 중 오류가 발생했습니다.'
@@ -1535,7 +1538,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
         data: stats
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Payment] 결제 통계 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Payment] 결제 통계 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: '결제 통계 조회 중 오류가 발생했습니다.'
@@ -1552,7 +1555,7 @@ async function <span class="fstat-no" title="function not covered" >cancelTossPa
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

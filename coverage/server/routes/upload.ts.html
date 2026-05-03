@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/77</span>
+                <span class='fraction'>0/78</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/77</span>
+                <span class='fraction'>0/78</span>
             </div>
         
             
@@ -307,7 +307,8 @@
 <a name='L242'></a><a href='#L242'>242</a>
 <a name='L243'></a><a href='#L243'>243</a>
 <a name='L244'></a><a href='#L244'>244</a>
-<a name='L245'></a><a href='#L245'>245</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -315,6 +316,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -559,13 +561,14 @@
   processUploadedFiles, 
   deleteFile 
 } from "../middleware/upload";
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export function <span class="fstat-no" title="function not covered" >r</span>egisterUploadRoutes(</span>app: Express) {
   // 단일 파일 업로드
 <span class="cstat-no" title="statement not covered" >  app.post("/api/upload/single", <span class="fstat-no" title="function not covered" >(r</span>eq: Request, res: Response) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    uploadSingle(req, res, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error('업로드 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('업로드 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.status(400).json({ </span>
           success: false, 
           message: err.message 
@@ -592,7 +595,7 @@
 <span class="cstat-no" title="statement not covered" >  app.post("/api/upload/multiple", <span class="fstat-no" title="function not covered" >(r</span>eq: Request, res: Response) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    uploadMultiple(req, res, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error('업로드 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('업로드 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.status(400).json({ </span>
           success: false, 
           message: err.message 
@@ -619,7 +622,7 @@
 <span class="cstat-no" title="statement not covered" >  app.post("/api/upload/notebook", <span class="fstat-no" title="function not covered" >(r</span>eq: Request, res: Response) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    uploadFields(req, res, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error('업로드 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('업로드 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.status(400).json({ </span>
           success: false, 
           message: err.message 
@@ -646,7 +649,7 @@
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    uploadSingle(req, res, <span class="fstat-no" title="function not covered" >async </span>(err) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error('프로필 사진 업로드 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('프로필 사진 업로드 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.status(400).json({ </span>
           success: false, 
           message: err.message 
@@ -676,7 +679,7 @@
           message: '프로필 사진이 성공적으로 업데이트되었습니다.'
         });
       } catch (error) {
-<span class="cstat-no" title="statement not covered" >        console.error('프로필 업데이트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('프로필 업데이트 오류:', error, req);</span>
 &nbsp;
         // 파일 업로드는 성공했지만 DB 업데이트 실패 시에도 파일 정보 반환
         const fileInfo = <span class="cstat-no" title="statement not covered" >processUploadedFiles(req.file);</span>
@@ -693,7 +696,7 @@
 <span class="cstat-no" title="statement not covered" >  app.post("/api/upload/image", <span class="fstat-no" title="function not covered" >(r</span>eq: Request, res: Response) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    uploadSingle(req, res, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error('업로드 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('업로드 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.status(400).json({ </span>
           success: false, 
           message: err.message 
@@ -725,7 +728,7 @@
 <span class="cstat-no" title="statement not covered" >  app.post("/api/upload/video", <span class="fstat-no" title="function not covered" >(r</span>eq: Request, res: Response) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    uploadSingle(req, res, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error('동영상 업로드 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('동영상 업로드 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.status(400).json({ </span>
           success: false, 
           message: err.message 
@@ -802,7 +805,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/87</span>
+                <span class='fraction'>0/88</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/87</span>
+                <span class='fraction'>0/88</span>
             </div>
         
             
@@ -360,10 +360,12 @@
 <a name='L295'></a><a href='#L295'>295</a>
 <a name='L296'></a><a href='#L296'>296</a>
 <a name='L297'></a><a href='#L297'>297</a>
-<a name='L298'></a><a href='#L298'>298</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -661,6 +663,7 @@
 import type { Express } from "express";
 import { IStorage } from "../storage";
 import crypto from 'crypto';
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export function <span class="fstat-no" title="function not covered" >r</span>egisterPaymentAdminRoutes(</span>app: Express, storage: IStorage) {
 <span class="cstat-no" title="statement not covered" >  console.log('[PaymentAdminRoutes] 관리자 결제 관리 라우트 등록 시작');</span>
@@ -692,7 +695,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(providers);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('결제 제공업체 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('결제 제공업체 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '서버 오류가 발생했습니다' });</span>
     }
   });
@@ -714,7 +717,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json({ success: true, message: '설정이 저장되었습니다' });</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('결제 제공업체 설정 저장 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('결제 제공업체 설정 저장 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '설정 저장에 실패했습니다' });</span>
     }
   });
@@ -753,7 +756,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(transactions);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('결제 거래 내역 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('결제 거래 내역 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '서버 오류가 발생했습니다' });</span>
     }
   });
@@ -783,7 +786,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(testResult);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('토스 테스트 결제 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('토스 테스트 결제 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ </span>
         success: false, 
         error: '테스트 결제에 실패했습니다' 
@@ -811,7 +814,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(testResult);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('다날 테스트 인증 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('다날 테스트 인증 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ </span>
         success: false, 
         error: '인증 테스트에 실패했습니다' 
@@ -842,7 +845,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(cancelResult);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('결제 취소 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('결제 취소 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '결제 취소에 실패했습니다' });</span>
     }
   });
@@ -884,7 +887,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(webhookLogs);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('웹훅 로그 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('웹훅 로그 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '서버 오류가 발생했습니다' });</span>
     }
   });
@@ -899,7 +902,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json({ success: true, message: 'Webhook received' });</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('토스 웹훅 처리 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('토스 웹훅 처리 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '웹훅 처리에 실패했습니다' });</span>
     }
   });
@@ -914,7 +917,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json({ success: true, message: 'Webhook received' });</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('다날 웹훅 처리 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('다날 웹훅 처리 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '웹훅 처리에 실패했습니다' });</span>
     }
   });
@@ -947,7 +950,7 @@ import crypto from 'crypto';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(stats);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('권한별 결제 통계 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('권한별 결제 통계 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '서버 오류가 발생했습니다' });</span>
     }
   });
@@ -961,7 +964,7 @@ import crypto from 'crypto';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

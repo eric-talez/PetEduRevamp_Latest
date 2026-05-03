@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/85</span>
+                <span class='fraction'>0/86</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/77</span>
+                <span class='fraction'>0/78</span>
             </div>
         
             
@@ -367,7 +367,9 @@
 <a name='L302'></a><a href='#L302'>302</a>
 <a name='L303'></a><a href='#L303'>303</a>
 <a name='L304'></a><a href='#L304'>304</a>
-<a name='L305'></a><a href='#L305'>305</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -673,6 +675,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { Express } from "express";
 <span class="cstat-no" title="statement not covered" >import { aiProxyService } from "../ai/ai-proxy";</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 interface AIConfiguration {
   openaiApiKey?: string;
@@ -752,7 +755,7 @@ const mockUsageStats = <span class="cstat-no" title="statement not covered" >{</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(safeConfig);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('AI 설정 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('AI 설정 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'AI 설정을 조회할 수 없습니다.' });</span>
     }
   });
@@ -823,7 +826,7 @@ const mockUsageStats = <span class="cstat-no" title="statement not covered" >{</
       });
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('AI 설정 업데이트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('AI 설정 업데이트 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'AI 설정을 업데이트할 수 없습니다.' });</span>
     }
   });
@@ -845,7 +848,7 @@ const mockUsageStats = <span class="cstat-no" title="statement not covered" >{</
 <span class="cstat-no" title="statement not covered" >      res.json(stats);</span>
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('AI 사용량 통계 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('AI 사용량 통계 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '사용량 통계를 조회할 수 없습니다.' });</span>
     }
   });
@@ -868,7 +871,7 @@ const mockUsageStats = <span class="cstat-no" title="statement not covered" >{</
       });
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('AI 서비스 재시작 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('AI 서비스 재시작 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'AI 서비스를 재시작할 수 없습니다.' });</span>
     }
   });
@@ -899,7 +902,7 @@ const mockUsageStats = <span class="cstat-no" title="statement not covered" >{</
 <span class="cstat-no" title="statement not covered" >      res.json(detailedStatus);</span>
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('AI 서비스 상태 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('AI 서비스 상태 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'AI 서비스 상태를 조회할 수 없습니다.' });</span>
     }
   });
@@ -925,7 +928,7 @@ const mockUsageStats = <span class="cstat-no" title="statement not covered" >{</
 <span class="cstat-no" title="statement not covered" >      res.json(realtimeData);</span>
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('실시간 사용량 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('실시간 사용량 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '실시간 사용량을 조회할 수 없습니다.' });</span>
     }
   });
@@ -969,7 +972,7 @@ const mockUsageStats = <span class="cstat-no" title="statement not covered" >{</
 <span class="cstat-no" title="statement not covered" >      res.json(performanceData);</span>
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('AI 모델 성능 데이터 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('AI 모델 성능 데이터 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: '성능 데이터를 조회할 수 없습니다.' });</span>
     }
   });
@@ -982,7 +985,7 @@ const mockUsageStats = <span class="cstat-no" title="statement not covered" >{</
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

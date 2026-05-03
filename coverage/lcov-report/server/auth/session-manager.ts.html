@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/171</span>
+                <span class='fraction'>0/172</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/150</span>
+                <span class='fraction'>0/151</span>
             </div>
         
             
@@ -485,7 +485,8 @@
 <a name='L420'></a><a href='#L420'>420</a>
 <a name='L421'></a><a href='#L421'>421</a>
 <a name='L422'></a><a href='#L422'>422</a>
-<a name='L423'></a><a href='#L423'>423</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L423'></a><a href='#L423'>423</a>
+<a name='L424'></a><a href='#L424'>424</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -494,6 +495,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -919,6 +921,7 @@ import type { Request, Response, NextFunction } from "express";
 <span class="cstat-no" title="statement not covered" >import { db } from "../db";</span>
 <span class="cstat-no" title="statement not covered" >import { userSessions, type UserSession, type User } from "../../shared/schema";</span>
 <span class="cstat-no" title="statement not covered" >import { and, eq, isNull, desc, ne, gt, lt, or, isNotNull, sql as drizzleSql } from "drizzle-orm";</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 type AuthedUser = Pick&lt;User, "id"&gt;;
 function <span class="fstat-no" title="function not covered" >getUserId(</span>req: Request): number | undefined {
@@ -1060,7 +1063,7 @@ function <span class="fstat-no" title="function not covered" >clientIp(</span>re
     }
 <span class="cstat-no" title="statement not covered" >    recentActivityTouch.set(req.sessionID, now.getTime());</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error("[SessionManager] 로그인 세션 등록 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError("[SessionManager] 로그인 세션 등록 오류:", error, req);</span>
   }
 }
 &nbsp;
@@ -1126,7 +1129,7 @@ function <span class="fstat-no" title="function not covered" >clientIp(</span>re
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      next();</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error("[SessionManager] activitySessionMiddleware 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError("[SessionManager] activitySessionMiddleware 오류:", error, req);</span>
 <span class="cstat-no" title="statement not covered" >      next();</span>
     }
   })();
@@ -1165,7 +1168,7 @@ async function <span class="fstat-no" title="function not covered" >markRevoked(
       .set({ revokedAt: new Date(), revokedReason: reason })
       .where(eq(userSessions.id, id));
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error("[SessionManager] markRevoked 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError("[SessionManager] markRevoked 오류:", error);</span>
   }
 }
 &nbsp;
@@ -1229,7 +1232,7 @@ async function <span class="fstat-no" title="function not covered" >markRevoked(
       .set({ revokedAt: new Date(), revokedReason: reason })
       .where(eq(userSessions.sessionId, sessionId));
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error("[SessionManager] revokeCurrentSession 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError("[SessionManager] revokeCurrentSession 오류:", error);</span>
   }
 }
 &nbsp;
@@ -1264,7 +1267,7 @@ async function <span class="fstat-no" title="function not covered" >markRevoked(
     }
 <span class="cstat-no" title="statement not covered" >    return deleted;</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error("[SessionManager] cleanupExpiredUserSessions 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError("[SessionManager] cleanupExpiredUserSessions 오류:", error);</span>
 <span class="cstat-no" title="statement not covered" >    return 0;</span>
   }
 }
@@ -1326,7 +1329,7 @@ let cleanupTimer: NodeJS.Timeout | null = <span class="cstat-no" title="statemen
       })
       .where(eq(userSessions.sessionId, sessionId));
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error("[SessionManager] touchSessionActivity 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError("[SessionManager] touchSessionActivity 오류:", error);</span>
   }
 }
 &nbsp;</pre></td></tr></table></pre>
@@ -1336,7 +1339,7 @@ let cleanupTimer: NodeJS.Timeout | null = <span class="cstat-no" title="statemen
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

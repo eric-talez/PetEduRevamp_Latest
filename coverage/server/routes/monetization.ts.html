@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/297</span>
+                <span class='fraction'>0/298</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/286</span>
+                <span class='fraction'>0/287</span>
             </div>
         
             
@@ -918,7 +918,8 @@
 <a name='L853'></a><a href='#L853'>853</a>
 <a name='L854'></a><a href='#L854'>854</a>
 <a name='L855'></a><a href='#L855'>855</a>
-<a name='L856'></a><a href='#L856'>856</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L856'></a><a href='#L856'>856</a>
+<a name='L857'></a><a href='#L857'>857</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -930,6 +931,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1786,6 +1788,7 @@
   courses
 } from '../../shared/schema';
 <span class="cstat-no" title="statement not covered" >import { eq, sql, and, desc, count } from 'drizzle-orm';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 const router = <span class="cstat-no" title="statement not covered" >Router();</span>
 &nbsp;
@@ -1894,7 +1897,7 @@ function <span class="fstat-no" title="function not covered" >getRevenueStage(</
     
 <span class="cstat-no" title="statement not covered" >    res.json({ success: true });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Event record error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Event record error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to record event' });</span>
   }
 });
@@ -2043,7 +2046,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    return { ownerScore, trainerScore, followerCount, eligibility };</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Score recalc error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Score recalc error:', error);</span>
 <span class="cstat-no" title="statement not covered" >    return null;</span>
   }
 }
@@ -2081,7 +2084,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
       eligibility,
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('User score fetch error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('User score fetch error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch user score' });</span>
   }
 });
@@ -2119,7 +2122,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json({ success: true });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Follow error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Follow error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to follow' });</span>
   }
 });
@@ -2136,7 +2139,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json({ success: true });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Unfollow error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Unfollow error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to unfollow' });</span>
   }
 });
@@ -2163,7 +2166,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json({ success: true });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Monetization toggle error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Monetization toggle error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to toggle monetization' });</span>
   }
 });
@@ -2221,7 +2224,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
       },
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Admin overview error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Admin overview error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch overview' });</span>
   }
 });
@@ -2248,7 +2251,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json(result);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Revenue record error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Revenue record error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to record revenue' });</span>
   }
 });
@@ -2259,7 +2262,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     const revenues = <span class="cstat-no" title="statement not covered" >await db.select().from(monthlyRevenue).orderBy(desc(monthlyRevenue.month)).limit(12);</span>
 <span class="cstat-no" title="statement not covered" >    res.json(revenues);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Revenue fetch error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Revenue fetch error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch revenue' });</span>
   }
 });
@@ -2330,7 +2333,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json({ success: true, payouts: payoutResults });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Settlement error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Settlement error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to settle' });</span>
   }
 });
@@ -2358,7 +2361,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json(results);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Payouts fetch error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Payouts fetch error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch payouts' });</span>
   }
 });
@@ -2395,7 +2398,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
       totalEarnings,
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Trainer earnings error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Trainer earnings error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch earnings' });</span>
   }
 });
@@ -2410,7 +2413,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     });
 <span class="cstat-no" title="statement not covered" >    res.json(settingsMap);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Settings fetch error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Settings fetch error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch settings' });</span>
   }
 });
@@ -2443,7 +2446,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
       totalWatchTime: Math.floor((cache?.watchSeconds || 0) / 60),
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('My score error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('My score error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch score' });</span>
   }
 });
@@ -2501,7 +2504,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
       },
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('My eligibility error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('My eligibility error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch eligibility' });</span>
   }
 });
@@ -2547,7 +2550,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json({ trainers: enrichedTrainers });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Admin trainers error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Admin trainers error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch trainers' });</span>
   }
 });
@@ -2575,7 +2578,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json({ monthly });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Monthly revenue error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Monthly revenue error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to fetch monthly revenue' });</span>
   }
 });
@@ -2601,7 +2604,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json({ success: true, processedCount: pendingPayouts.length });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Process payout error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Process payout error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to process payout' });</span>
   }
 });
@@ -2622,7 +2625,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
     
 <span class="cstat-no" title="statement not covered" >    res.json({ success: true });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Settings update error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Settings update error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to update settings' });</span>
   }
 });
@@ -2635,7 +2638,7 @@ async function <span class="fstat-no" title="function not covered" >recalcUserSc
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/74</span>
+                <span class='fraction'>0/75</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/72</span>
+                <span class='fraction'>0/73</span>
             </div>
         
             
@@ -313,7 +313,9 @@
 <a name='L248'></a><a href='#L248'>248</a>
 <a name='L249'></a><a href='#L249'>249</a>
 <a name='L250'></a><a href='#L250'>250</a>
-<a name='L251'></a><a href='#L251'>251</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -566,6 +568,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Express } from "express";
 <span class="cstat-no" title="statement not covered" >import { Router } from 'express';</span>
 <span class="cstat-no" title="statement not covered" >import OpenAI from "openai";</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const DEFAULT_MODEL = <span class="cstat-no" title="statement not covered" >"gpt-4o";</span>
@@ -637,7 +640,7 @@ const DEFAULT_MODEL = <span class="cstat-no" title="statement not covered" >"gpt
       });
       
     } catch (error: any) {
-<span class="cstat-no" title="statement not covered" >      console.error('AI API 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('AI API 오류:', error, req);</span>
       
       // 오류 유형에 따른 응답
 <span class="cstat-no" title="statement not covered" >      if (error.status === 401) {</span>
@@ -701,7 +704,7 @@ const DEFAULT_MODEL = <span class="cstat-no" title="statement not covered" >"gpt
         const analysisResult = <span class="cstat-no" title="statement not covered" >JSON.parse(response.choices[0].message.content || '{}');</span>
 <span class="cstat-no" title="statement not covered" >        return res.json(analysisResult);</span>
       } catch (parseError) {
-<span class="cstat-no" title="statement not covered" >        console.error('JSON 파싱 오류:', parseError);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('JSON 파싱 오류:', parseError, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.status(500).json({ </span>
           error: 'AI 응답을 처리하는 중 오류가 발생했습니다.',
           rawResponse: response.choices[0].message.content
@@ -709,7 +712,7 @@ const DEFAULT_MODEL = <span class="cstat-no" title="statement not covered" >"gpt
       }
       
     } catch (error: any) {
-<span class="cstat-no" title="statement not covered" >      console.error('행동 분석 API 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('행동 분석 API 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(500).json({ error: '분석 중 오류가 발생했습니다: ' + error.message });</span>
     }
   });
@@ -797,7 +800,7 @@ const DEFAULT_MODEL = <span class="cstat-no" title="statement not covered" >"gpt
         const trainingPlan = <span class="cstat-no" title="statement not covered" >JSON.parse(response.choices[0].message.content || '{}');</span>
 <span class="cstat-no" title="statement not covered" >        return res.json(trainingPlan);</span>
       } catch (parseError) {
-<span class="cstat-no" title="statement not covered" >        console.error('JSON 파싱 오류:', parseError);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('JSON 파싱 오류:', parseError, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.status(500).json({ </span>
           error: 'AI 응답을 처리하는 중 오류가 발생했습니다.',
           rawResponse: response.choices[0].message.content
@@ -805,7 +808,7 @@ const DEFAULT_MODEL = <span class="cstat-no" title="statement not covered" >"gpt
       }
       
     } catch (error: any) {
-<span class="cstat-no" title="statement not covered" >      console.error('훈련 계획 생성 API 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('훈련 계획 생성 API 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(500).json({ error: '훈련 계획 생성 중 오류가 발생했습니다: ' + error.message });</span>
     }
   });
@@ -820,7 +823,7 @@ const DEFAULT_MODEL = <span class="cstat-no" title="statement not covered" >"gpt
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

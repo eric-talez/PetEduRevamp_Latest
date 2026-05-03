@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/72</span>
+                <span class='fraction'>0/73</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/71</span>
+                <span class='fraction'>0/72</span>
             </div>
         
             
@@ -302,7 +302,9 @@
 <a name='L237'></a><a href='#L237'>237</a>
 <a name='L238'></a><a href='#L238'>238</a>
 <a name='L239'></a><a href='#L239'>239</a>
-<a name='L240'></a><a href='#L240'>240</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -545,6 +547,7 @@
 <span class="cstat-no" title="statement not covered" >import { db } from '../db';</span>
 <span class="cstat-no" title="statement not covered" >import { users, courses, institutes, pets } from '../../shared/schema';</span>
 <span class="cstat-no" title="statement not covered" >import { eq, sql, count } from 'drizzle-orm';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 const router = <span class="cstat-no" title="statement not covered" >Router();</span>
 &nbsp;
@@ -569,7 +572,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 <span class="cstat-no" title="statement not covered" >      console.log('[Database Test] ✅ 데이터베이스 연결 성공');</span>
     } catch (error) {
 <span class="cstat-no" title="statement not covered" >      testResults.errors.push(`Connection Error: ${error}`);</span>
-<span class="cstat-no" title="statement not covered" >      console.error('[Database Test] ❌ 데이터베이스 연결 실패:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Database Test] ❌ 데이터베이스 연결 실패:', error, req);</span>
     }
 &nbsp;
     // 2. 스키마 및 테이블 존재 확인
@@ -595,14 +598,14 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
             error: error.message
           };
 <span class="cstat-no" title="statement not covered" >          testResults.errors.push(`Table ${table.name} Error: ${error.message}`);</span>
-<span class="cstat-no" title="statement not covered" >          console.error(`[Database Test] ❌ ${table.name} 테이블 오류:`, error.message);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError(`[Database Test] ❌ ${table.name} 테이블 오류:`, error.message, req);</span>
         }
       }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      testResults.schemaTest = Object.values(testResults.tables).some(<span class="fstat-no" title="function not covered" >t </span>=&gt; <span class="cstat-no" title="statement not covered" >t.exists)</span>;</span>
     } catch (error) {
 <span class="cstat-no" title="statement not covered" >      testResults.errors.push(`Schema Error: ${error}`);</span>
-<span class="cstat-no" title="statement not covered" >      console.error('[Database Test] ❌ 스키마 테스트 실패:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Database Test] ❌ 스키마 테스트 실패:', error, req);</span>
     }
 &nbsp;
     // 3. 실제 데이터 조회 테스트
@@ -651,7 +654,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
     } catch (error) {
 <span class="cstat-no" title="statement not covered" >      testResults.errors.push(`Data Query Error: ${error}`);</span>
-<span class="cstat-no" title="statement not covered" >      console.error('[Database Test] ❌ 데이터 조회 실패:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Database Test] ❌ 데이터 조회 실패:', error, req);</span>
     }
 &nbsp;
     // 4. 환경 정보
@@ -688,7 +691,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
     });
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('[Database Test] ❌ 테스트 실행 중 심각한 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('[Database Test] ❌ 테스트 실행 중 심각한 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({</span>
       success: false,
       message: '데이터베이스 테스트 실행 중 오류가 발생했습니다.',
@@ -750,7 +753,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 <span class="cstat-no" title="statement not covered" >      console.log('[Menu Visibility DB Test] ✅ 데이터베이스 테이블 생성 및 데이터 삽입 성공');</span>
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Menu Visibility DB Test] ❌ 데이터베이스 테이블 테스트 실패:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Menu Visibility DB Test] ❌ 데이터베이스 테이블 테스트 실패:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      testMenuSettings.can_create = false;</span>
     }
 &nbsp;
@@ -771,7 +774,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
     });
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('[Menu Visibility DB Test] ❌ 메뉴 표시 설정 DB 테스트 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('[Menu Visibility DB Test] ❌ 메뉴 표시 설정 DB 테스트 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({</span>
       success: false,
       message: '메뉴 표시 설정 데이터베이스 테스트 중 오류가 발생했습니다.',
@@ -787,7 +790,7 @@ export { router as <span class="cstat-no" title="statement not covered" >databas
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

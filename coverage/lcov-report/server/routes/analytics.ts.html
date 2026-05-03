@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/201</span>
+                <span class='fraction'>0/202</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/183</span>
+                <span class='fraction'>0/184</span>
             </div>
         
             
@@ -567,7 +567,9 @@
 <a name='L502'></a><a href='#L502'>502</a>
 <a name='L503'></a><a href='#L503'>503</a>
 <a name='L504'></a><a href='#L504'>504</a>
-<a name='L505'></a><a href='#L505'>505</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L505'></a><a href='#L505'>505</a>
+<a name='L506'></a><a href='#L506'>506</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1075,6 +1077,7 @@
 <span class="cstat-no" title="statement not covered" >import { db } from "../db";</span>
 <span class="cstat-no" title="statement not covered" >import { pets, users, courses, events } from "../../shared/schema";</span>
 <span class="cstat-no" title="statement not covered" >import { eq, desc, and, gte, lte, count, avg, sum, inArray, isNotNull } from "drizzle-orm";</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export function <span class="fstat-no" title="function not covered" >r</span>egisterAnalyticsRoutes(</span>app: Express) {
   // 훈련 진행도 데이터 가져오기
@@ -1182,7 +1185,7 @@
       
 <span class="cstat-no" title="statement not covered" >      res.json(trainingProgress);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching training progress:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching training progress:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'Failed to fetch training progress' });</span>
     }
   });
@@ -1260,7 +1263,7 @@
       
 <span class="cstat-no" title="statement not covered" >      res.json(stats);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching learning stats:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching learning stats:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'Failed to fetch learning stats' });</span>
     }
   });
@@ -1294,7 +1297,7 @@
       
 <span class="cstat-no" title="statement not covered" >      res.json(monthlyProgress);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching monthly progress:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching monthly progress:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'Failed to fetch monthly progress' });</span>
     }
   });
@@ -1320,7 +1323,7 @@
       
 <span class="cstat-no" title="statement not covered" >      res.json(petProgress);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error fetching pet progress:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error fetching pet progress:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'Failed to fetch pet progress' });</span>
     }
   });
@@ -1356,7 +1359,7 @@
       
 <span class="cstat-no" title="statement not covered" >      res.status(201).json(newSession[0]);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error creating training session:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error creating training session:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ error: 'Failed to create training session' });</span>
     }
   });
@@ -1477,7 +1480,7 @@
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(analyticsData);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Dashboard analytics error:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Dashboard analytics error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: '분석 데이터를 가져오는 중 오류가 발생했습니다.' });</span>
     }
   });
@@ -1569,7 +1572,7 @@
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      res.json(myCoursesData);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('My courses error:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('My courses error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ message: '강의 데이터를 가져오는 중 오류가 발생했습니다.' });</span>
     }
   });
@@ -1582,7 +1585,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

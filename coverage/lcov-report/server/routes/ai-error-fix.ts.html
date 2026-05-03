@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/196</span>
+                <span class='fraction'>0/197</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/191</span>
+                <span class='fraction'>0/192</span>
             </div>
         
             
@@ -579,10 +579,12 @@
 <a name='L514'></a><a href='#L514'>514</a>
 <a name='L515'></a><a href='#L515'>515</a>
 <a name='L516'></a><a href='#L516'>516</a>
-<a name='L517'></a><a href='#L517'>517</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L517'></a><a href='#L517'>517</a>
+<a name='L518'></a><a href='#L518'>518</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1099,6 +1101,7 @@
 <span class="cstat-no" title="statement not covered" >import { spawn } from "child_process";</span>
 <span class="cstat-no" title="statement not covered" >import fs from "fs/promises";</span>
 import path from "path";
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 interface ErrorFixLog {
   id: string;
@@ -1208,7 +1211,7 @@ class AIErrorFixService {
       
 <span class="cstat-no" title="statement not covered" >      return errors;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[AI-Fix] 에러 검사 실패:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[AI-Fix] 에러 검사 실패:', error);</span>
 <span class="cstat-no" title="statement not covered" >      return [];</span>
     }
   }
@@ -1234,7 +1237,7 @@ class AIErrorFixService {
 <span class="cstat-no" title="statement not covered" >          try {</span>
 <span class="cstat-no" title="statement not covered" >            tsc.kill('SIGTERM');</span>
           } catch (killError) {
-<span class="cstat-no" title="statement not covered" >            console.error('[AI-Fix] 프로세스 종료 실패:', killError);</span>
+<span class="cstat-no" title="statement not covered" >            logServerError('[AI-Fix] 프로세스 종료 실패:', killError);</span>
           }
 <span class="cstat-no" title="statement not covered" >          isResolved = true;</span>
 <span class="cstat-no" title="statement not covered" >          resolve('검사 시간이 초과되었습니다. (타임아웃 10초)');</span>
@@ -1262,7 +1265,7 @@ class AIErrorFixService {
 <span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!isResolved) {</span>
 <span class="cstat-no" title="statement not covered" >          clearTimeout(timeoutId);</span>
 <span class="cstat-no" title="statement not covered" >          isResolved = true;</span>
-<span class="cstat-no" title="statement not covered" >          console.error('[AI-Fix] TypeScript 검사 프로세스 에러:', error);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError('[AI-Fix] TypeScript 검사 프로세스 에러:', error);</span>
 <span class="cstat-no" title="statement not covered" >          resolve(`TypeScript 검사 중 에러가 발생했습니다: ${error.message}`);</span>
         }
       });
@@ -1364,7 +1367,7 @@ class AIErrorFixService {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return { success, fix };</span>
     } catch (err) {
-<span class="cstat-no" title="statement not covered" >      console.error('[AI-Fix] 에러 수정 실패:', err);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[AI-Fix] 에러 수정 실패:', err);</span>
 <span class="cstat-no" title="statement not covered" >      return { success: false, fix: '' };</span>
     }
   }
@@ -1516,7 +1519,7 @@ const aiErrorFixService = <span class="cstat-no" title="statement not covered" >
             ...result
           });
         } catch (fixError) {
-<span class="cstat-no" title="statement not covered" >          console.error(`[AI-Fix] 개별 에러 수정 실패:`, fixError);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError(`[AI-Fix] 개별 에러 수정 실패:`, fixError, req);</span>
 <span class="cstat-no" title="statement not covered" >          fixResults.push({</span>
             error,
             success: false,
@@ -1539,13 +1542,13 @@ const aiErrorFixService = <span class="cstat-no" title="statement not covered" >
 <span class="cstat-no" title="statement not covered" >      console.log('[AI-Fix] 응답 전송:', JSON.stringify(response, null, 2));</span>
 <span class="cstat-no" title="statement not covered" >      res.json(response);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[AI-Fix] 검사 실행 실패:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[AI-Fix] 검사 실행 실패:', error, req);</span>
       const errorMessage = <span class="cstat-no" title="statement not covered" >error instanceof Error ? error.message : String(error);</span>
-<span class="cstat-no" title="statement not covered" >      console.error('[AI-Fix] 검사 실행 상세 오류:', {</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[AI-Fix] 검사 실행 상세 오류:', {</span>
         error,
         message: errorMessage,
         stack: error instanceof Error ? error.stack : undefined
-      });
+      }, req);
       
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({ </span>
         success: false,
@@ -1601,7 +1604,7 @@ const aiErrorFixService = <span class="cstat-no" title="statement not covered" >
       
 <span class="cstat-no" title="statement not covered" >      res.json(health);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[AI-Fix] 헬스체크 실패:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[AI-Fix] 헬스체크 실패:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         status: 'unhealthy',
         error: error instanceof Error ? error.message : String(error),
@@ -1618,7 +1621,7 @@ const aiErrorFixService = <span class="cstat-no" title="statement not covered" >
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

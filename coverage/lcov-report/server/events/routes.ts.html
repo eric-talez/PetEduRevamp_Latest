@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/81</span>
+                <span class='fraction'>0/82</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/81</span>
+                <span class='fraction'>0/82</span>
             </div>
         
             
@@ -304,7 +304,9 @@
 <a name='L239'></a><a href='#L239'>239</a>
 <a name='L240'></a><a href='#L240'>240</a>
 <a name='L241'></a><a href='#L241'>241</a>
-<a name='L242'></a><a href='#L242'>242</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -550,6 +552,7 @@
 <span class="cstat-no" title="statement not covered" >import { storage } from "../storage";</span>
 <span class="cstat-no" title="statement not covered" >import { csrfProtection } from '../middleware/csrf';</span>
 <span class="cstat-no" title="statement not covered" >import { notificationService } from '../notifications/notification-service';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 // 이벤트 스키마 정의
 const eventSchema = <span class="cstat-no" title="statement not covered" >z.object({</span>
@@ -593,7 +596,7 @@ const eventSchema = <span class="cstat-no" title="statement not covered" >z.obje
         }
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error("이벤트 조회 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError("이벤트 조회 오류:", error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(500).json({ </span>
         message: "이벤트를 불러오는 중 오류가 발생했습니다", 
         code: "EVENT_FETCH_ERROR" 
@@ -616,7 +619,7 @@ const eventSchema = <span class="cstat-no" title="statement not covered" >z.obje
       
 <span class="cstat-no" title="statement not covered" >      return res.status(200).json(event);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error("이벤트 상세 조회 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError("이벤트 상세 조회 오류:", error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(500).json({ </span>
         message: "이벤트 상세 정보를 불러오는 중 오류가 발생했습니다", 
         code: "EVENT_DETAIL_FETCH_ERROR" 
@@ -662,7 +665,7 @@ const eventSchema = <span class="cstat-no" title="statement not covered" >z.obje
         });
       }
       
-<span class="cstat-no" title="statement not covered" >      console.error("이벤트 생성 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError("이벤트 생성 오류:", error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(500).json({ </span>
         message: "이벤트 생성 중 오류가 발생했습니다", 
         code: "EVENT_CREATE_ERROR" 
@@ -724,12 +727,12 @@ const eventSchema = <span class="cstat-no" title="statement not covered" >z.obje
           data: { eventId, eventTitle: event.title }
         });
       } catch (notifyError) {
-<span class="cstat-no" title="statement not covered" >        console.error('[이벤트] 알림 발송 실패:', notifyError);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('[이벤트] 알림 발송 실패:', notifyError, req);</span>
       }
       
 <span class="cstat-no" title="statement not covered" >      return res.status(201).json(attendance);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error("이벤트 참가 신청 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError("이벤트 참가 신청 오류:", error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(500).json({ </span>
         message: "이벤트 참가 신청 중 오류가 발생했습니다", 
         code: "EVENT_ATTEND_ERROR" 
@@ -753,7 +756,7 @@ const eventSchema = <span class="cstat-no" title="statement not covered" >z.obje
       
 <span class="cstat-no" title="statement not covered" >      return res.status(200).json(events);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error("지역별 이벤트 조회 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError("지역별 이벤트 조회 오류:", error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(500).json({ </span>
         message: "지역별 이벤트를 불러오는 중 오류가 발생했습니다", 
         code: "REGION_EVENTS_FETCH_ERROR" 
@@ -777,7 +780,7 @@ const eventSchema = <span class="cstat-no" title="statement not covered" >z.obje
       
 <span class="cstat-no" title="statement not covered" >      return res.status(200).json(events);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error("카테고리별 이벤트 조회 오류:", error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError("카테고리별 이벤트 조회 오류:", error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.status(500).json({ </span>
         message: "카테고리별 이벤트를 불러오는 중 오류가 발생했습니다", 
         code: "CATEGORY_EVENTS_FETCH_ERROR" 
@@ -793,7 +796,7 @@ const eventSchema = <span class="cstat-no" title="statement not covered" >z.obje
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

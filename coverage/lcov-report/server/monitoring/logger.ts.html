@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/30</span>
+                <span class='fraction'>0/39</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>0/25</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/29</span>
+                <span class='fraction'>0/37</span>
             </div>
         
             
@@ -175,7 +175,23 @@
 <a name='L110'></a><a href='#L110'>110</a>
 <a name='L111'></a><a href='#L111'>111</a>
 <a name='L112'></a><a href='#L112'>112</a>
-<a name='L113'></a><a href='#L113'>113</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -189,11 +205,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -299,14 +331,30 @@ const logDir = <span class="cstat-no" title="statement not covered" >path.join(p
 <span class="cstat-no" title="statement not covered" >  fs.mkdirSync(logDir, { recursive: true });</span>
 }
 &nbsp;
-// 포맷터 설정
+// 포맷터 설정 — 모든 메타데이터를 직렬화하여 컨텍스트(requestId/userId/route 등)를 보존
+const STANDARD_KEYS = <span class="cstat-no" title="statement not covered" >new Set(['level', 'message', 'timestamp', 'stack', 'service', 'splat']);</span>
 const formatter = <span class="cstat-no" title="statement not covered" >winston.format.combine(</span>
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
-  winston.format.printf(<span class="fstat-no" title="function not covered" >({</span> level, message, timestamp, stack }) =&gt; {
-<span class="cstat-no" title="statement not covered" >    return `${timestamp} [${level.toUpperCase()}]: ${message} ${stack || ''}`;</span>
+  winston.format.printf(<span class="fstat-no" title="function not covered" >(i</span>nfo) =&gt; {
+    const { level, message, timestamp, stack } = <span class="cstat-no" title="statement not covered" >info as any;</span>
+    const meta: Record&lt;string, unknown&gt; = <span class="cstat-no" title="statement not covered" >{};</span>
+<span class="cstat-no" title="statement not covered" >    for (const [k, v] of Object.entries(info)) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!STANDARD_KEYS.has(k) &amp;&amp; v !== undefined) <span class="cstat-no" title="statement not covered" >meta[k] = v;</span></span>
+    }
+    const metaStr = <span class="cstat-no" title="statement not covered" >Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';</span>
+    const stackStr = <span class="cstat-no" title="statement not covered" >stack ? ` ${stack}` : '';</span>
+<span class="cstat-no" title="statement not covered" >    return `${timestamp} [${String(level).toUpperCase()}]: ${message}${metaStr}${stackStr}`;</span>
   })
+);
+&nbsp;
+// 파일은 JSON 라인 형식으로 저장하여 구조화된 컨텍스트를 보존
+const jsonFileFormat = <span class="cstat-no" title="statement not covered" >winston.format.combine(</span>
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.errors({ stack: true }),
+  winston.format.splat(),
+  winston.format.json()
 );
 &nbsp;
 // 콘솔 트랜스포트 설정
@@ -325,7 +373,7 @@ const fileTransport = <span class="cstat-no" title="statement not covered" >new 
   maxSize: '20m', // 20MB
   maxFiles: '14d', // 14일간 보관
   level: 'info',
-  format: formatter
+  format: jsonFileFormat
 });
 &nbsp;
 // 에러 전용 파일 트랜스포트 설정
@@ -335,7 +383,7 @@ const errorFileTransport = <span class="cstat-no" title="statement not covered" 
   maxSize: '20m', // 20MB
   maxFiles: '30d', // 30일간 보관
   level: 'error',
-  format: formatter
+  format: jsonFileFormat
 });
 &nbsp;
 // 로거 생성
@@ -406,7 +454,7 @@ export const <span class="cstat-no" title="statement not covered" >loggerMiddlew
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/151</span>
+                <span class='fraction'>0/152</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/144</span>
+                <span class='fraction'>0/145</span>
             </div>
         
             
@@ -405,12 +405,14 @@
 <a name='L340'></a><a href='#L340'>340</a>
 <a name='L341'></a><a href='#L341'>341</a>
 <a name='L342'></a><a href='#L342'>342</a>
-<a name='L343'></a><a href='#L343'>343</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L343'></a><a href='#L343'>343</a>
+<a name='L344'></a><a href='#L344'>344</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -753,6 +755,7 @@
 <span class="cstat-no" title="statement not covered" >import { eq, and, or, desc, asc, ilike, gte, lte, count } from 'drizzle-orm';</span>
 import { z } from 'zod';
 import { storage } from '../storage';
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 const router = <span class="cstat-no" title="statement not covered" >Router();</span>
 &nbsp;
@@ -820,7 +823,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
       }
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 목록 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 목록 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 목록을 불러오는 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -844,7 +847,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json(product[0]);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 상세 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 상세 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 정보를 불러오는 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -862,7 +865,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json(categoryCounts);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('카테고리별 상품 개수 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('카테고리별 상품 개수 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '카테고리 정보를 불러오는 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -880,7 +883,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json(popularProducts);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('인기 상품 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('인기 상품 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '인기 상품을 불러오는 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -898,7 +901,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json(recommendedProducts);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('추천 상품 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('추천 상품 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '추천 상품을 불러오는 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -917,7 +920,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
     
 <span class="cstat-no" title="statement not covered" >    res.status(201).json(newProduct);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 생성 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 생성 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 생성 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -944,7 +947,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json(updatedProduct);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 수정 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 수정 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 수정 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -969,7 +972,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json({ message: '상품이 성공적으로 삭제되었습니다.' });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 삭제 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 삭제 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 삭제 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -1015,7 +1018,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
     
 <span class="cstat-no" title="statement not covered" >    res.json(exposures);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 노출 연결 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 노출 연결 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 노출 연결 정보를 불러오는 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -1032,7 +1035,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
     
 <span class="cstat-no" title="statement not covered" >    res.status(201).json(newExposure);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 노출 연결 생성 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 노출 연결 생성 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 노출 연결 생성 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -1059,7 +1062,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json(updatedExposure);</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 노출 연결 수정 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 노출 연결 수정 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 노출 연결 수정 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -1084,7 +1087,7 @@ const router = <span class="cstat-no" title="statement not covered" >Router();</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json({ message: '상품 노출 연결이 성공적으로 삭제되었습니다.' });</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('상품 노출 연결 삭제 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('상품 노출 연결 삭제 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '상품 노출 연결 삭제 중 오류가 발생했습니다.' });</span>
   }
 });
@@ -1096,7 +1099,7 @@ export { router as <span class="cstat-no" title="statement not covered" >product
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/79</span>
+                <span class='fraction'>0/81</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/79</span>
+                <span class='fraction'>0/81</span>
             </div>
         
             
@@ -304,9 +304,13 @@
 <a name='L239'></a><a href='#L239'>239</a>
 <a name='L240'></a><a href='#L240'>240</a>
 <a name='L241'></a><a href='#L241'>241</a>
-<a name='L242'></a><a href='#L242'>242</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -548,6 +552,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { WebSocket, WebSocketServer } from 'ws';</span>
 import { IStorage } from '../storage';
 import { UserRole } from '@shared/schema';
+<span class="cstat-no" title="statement not covered" >import { logger } from '../monitoring/logger';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 // 알림 타입 정의
 export interface Notification {
@@ -595,7 +601,7 @@ export interface Notification {
 <span class="cstat-no" title="statement not covered" >              userClients.push(ws);</span>
 <span class="cstat-no" title="statement not covered" >              this.clients.set(userId, userClients);</span>
             } else {
-<span class="cstat-no" title="statement not covered" >              console.error('[NotificationService] Invalid userId in authentication');</span>
+<span class="cstat-no" title="statement not covered" >              logger.error('[NotificationService] Invalid userId in authentication');</span>
 <span class="cstat-no" title="statement not covered" >              ws.send(JSON.stringify({</span>
                 type: 'authentication_error',
                 message: '유효하지 않은 사용자 ID입니다.'
@@ -625,7 +631,7 @@ export interface Notification {
             }
           }
         } catch (error) {
-<span class="cstat-no" title="statement not covered" >          console.error('[NotificationService] Error processing message:', error);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError('[NotificationService] Error processing message:', error);</span>
         }
       });
       
@@ -684,7 +690,7 @@ export interface Notification {
 <span class="cstat-no" title="statement not covered" >      return notification;</span>
       
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[NotificationService] Error sending notification:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[NotificationService] Error sending notification:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -711,7 +717,7 @@ export interface Notification {
       
 <span class="cstat-no" title="statement not covered" >      return notifications;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[NotificationService] Error sending group notification:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[NotificationService] Error sending group notification:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -736,7 +742,7 @@ export interface Notification {
       });
       
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[NotificationService] Error sending unread notifications:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[NotificationService] Error sending unread notifications:', error);</span>
     }
   }
   
@@ -760,7 +766,7 @@ export interface Notification {
       });
       
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[NotificationService] Error marking notification as read:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[NotificationService] Error marking notification as read:', error);</span>
     }
   }
   
@@ -783,7 +789,7 @@ export interface Notification {
       });
       
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[NotificationService] Error marking all notifications as read:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[NotificationService] Error marking all notifications as read:', error);</span>
     }
   }
 }</pre></td></tr></table></pre>
@@ -793,7 +799,7 @@ export interface Notification {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

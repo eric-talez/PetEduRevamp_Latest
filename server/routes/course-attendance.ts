@@ -113,7 +113,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-async function notifyCertificateEmailForCourse(
+export async function notifyCertificateEmailForCourse(
   userId: number,
   courseId: number,
   totalSessions: number,
@@ -244,7 +244,7 @@ async function notifyAbsenceWarning(params: {
   } catch { /* noop */ }
 }
 
-function recomputeProgress(userId: number, courseId: number) {
+export function recomputeProgress(userId: number, courseId: number) {
   const courseSessionsForCourse = sessions().filter((s) => s.courseId === courseId);
   const total = courseSessionsForCourse.length;
   const myAtt = attendance().filter((a) => a.courseId === courseId && a.userId === userId);
@@ -257,6 +257,7 @@ function recomputeProgress(userId: number, courseId: number) {
   let progress = list.find((p) => p.userId === userId && p.courseId === courseId);
   const isComplete = total > 0 && completed >= total;
   const now = new Date().toISOString();
+  const pendingNotifications: Promise<unknown>[] = [];
 
   if (!progress) {
     progress = {
@@ -277,9 +278,11 @@ function recomputeProgress(userId: number, courseId: number) {
     };
     list.push(progress);
     if (isComplete) {
-      notifyReviewRequestForCourse(userId, courseId).catch(() => {/* noop */});
-      notifyCertificateEmailForCourse(userId, courseId, total, completed, now).catch(
-        () => {/* noop */},
+      pendingNotifications.push(
+        notifyReviewRequestForCourse(userId, courseId).catch(() => {/* noop */}),
+        notifyCertificateEmailForCourse(userId, courseId, total, completed, now).catch(
+          () => {/* noop */},
+        ),
       );
     }
   } else {
@@ -291,9 +294,11 @@ function recomputeProgress(userId: number, courseId: number) {
     if (isComplete && progress.status !== "completed") {
       progress.status = "completed";
       progress.completedAt = now;
-      notifyReviewRequestForCourse(userId, courseId).catch(() => {/* noop */});
-      notifyCertificateEmailForCourse(userId, courseId, total, completed, now).catch(
-        () => {/* noop */},
+      pendingNotifications.push(
+        notifyReviewRequestForCourse(userId, courseId).catch(() => {/* noop */}),
+        notifyCertificateEmailForCourse(userId, courseId, total, completed, now).catch(
+          () => {/* noop */},
+        ),
       );
     } else if (!isComplete) {
       progress.status = "active";
@@ -303,7 +308,14 @@ function recomputeProgress(userId: number, courseId: number) {
   }
 
   const absenceRate = checked > 0 ? absent / checked : 0;
-  return { progress, absenceRate, totalSessions: total, completedSessions: completed, absentSessions: absent };
+  return {
+    progress,
+    absenceRate,
+    totalSessions: total,
+    completedSessions: completed,
+    absentSessions: absent,
+    pendingNotifications,
+  };
 }
 
 function ensureAttendanceRows(courseId: number): void {

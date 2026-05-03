@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/100</span>
+                <span class='fraction'>0/107</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/26</span>
+                <span class='fraction'>0/34</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/95</span>
+                <span class='fraction'>0/101</span>
             </div>
         
             
@@ -395,7 +395,18 @@
 <a name='L330'></a><a href='#L330'>330</a>
 <a name='L331'></a><a href='#L331'>331</a>
 <a name='L332'></a><a href='#L332'>332</a>
-<a name='L333'></a><a href='#L333'>333</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L333'></a><a href='#L333'>333</a>
+<a name='L334'></a><a href='#L334'>334</a>
+<a name='L335'></a><a href='#L335'>335</a>
+<a name='L336'></a><a href='#L336'>336</a>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a>
+<a name='L340'></a><a href='#L340'>340</a>
+<a name='L341'></a><a href='#L341'>341</a>
+<a name='L342'></a><a href='#L342'>342</a>
+<a name='L343'></a><a href='#L343'>343</a>
+<a name='L344'></a><a href='#L344'>344</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -405,6 +416,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -623,17 +635,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -737,6 +759,7 @@
 } from '../../shared/schema';
 <span class="cstat-no" title="statement not covered" >import { eq, and, lte, inArray, sql } from 'drizzle-orm';</span>
 <span class="cstat-no" title="statement not covered" >import { fcmService } from './fcm-service';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 class PushSchedulerService {
   private static instance: PushSchedulerService;
@@ -804,7 +827,7 @@ class PushSchedulerService {
 <span class="cstat-no" title="statement not covered" >        await this.sendCampaign(campaign);</span>
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Push Scheduler] 예약 캠페인 처리 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Push Scheduler] 예약 캠페인 처리 오류:', error);</span>
     }
   }
 &nbsp;
@@ -829,7 +852,7 @@ class PushSchedulerService {
 <span class="cstat-no" title="statement not covered" >        await this.sendScheduledNotification(notif);</span>
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Push Scheduler] 예약 알림 처리 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Push Scheduler] 예약 알림 처리 오류:', error);</span>
     }
   }
 &nbsp;
@@ -930,7 +953,7 @@ class PushSchedulerService {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      console.log(`[Push Scheduler] 캠페인 ${campaign.id} 완료 - 성공: ${successCount}, 실패: ${failureCount}`);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error(`[Push Scheduler] 캠페인 ${campaign.id} 발송 실패:`, error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError(`[Push Scheduler] 캠페인 ${campaign.id} 발송 실패:`, error);</span>
       
 <span class="cstat-no" title="statement not covered" >      await db</span>
         .update(pushCampaigns)
@@ -967,12 +990,22 @@ class PushSchedulerService {
 &nbsp;
       let anySuccess = <span class="cstat-no" title="statement not covered" >false;</span>
 &nbsp;
+      // FCM data payload 은 string key/value 만 허용 → 숫자/불리언 등은 문자열화
+      let normalizedData: Record&lt;string, string&gt; | undefined;
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (notif.data &amp;&amp; typeof notif.data === 'object') {</span>
+<span class="cstat-no" title="statement not covered" >        normalizedData = {};</span>
+<span class="cstat-no" title="statement not covered" >        for (const [k, v] of Object.entries(notif.data as Record&lt;string, unknown&gt;)) {</span>
+<span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (v === null || v === undefined) <span class="cstat-no" title="statement not covered" >continue;</span></span>
+<span class="cstat-no" title="statement not covered" >          normalizedData[k] = typeof v === 'string' ? v : JSON.stringify(v);</span>
+        }
+      }
+&nbsp;
 <span class="cstat-no" title="statement not covered" >      for (const token of userTokens) {</span>
         const result = <span class="cstat-no" title="statement not covered" >await fcmService.sendToDevice(</span>
           token.token,
           notif.title,
           notif.message,
-          notif.data as Record&lt;string, string&gt; | undefined
+          normalizedData
         );
 &nbsp;
 <span class="cstat-no" title="statement not covered" >        if (result.success) {</span>
@@ -1007,7 +1040,7 @@ class PushSchedulerService {
         .where(eq(scheduledPushNotifications.id, notif.id));
 &nbsp;
     } catch (error: any) {
-<span class="cstat-no" title="statement not covered" >      console.error(`[Push Scheduler] 알림 ${notif.id} 발송 실패:`, error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError(`[Push Scheduler] 알림 ${notif.id} 발송 실패:`, error);</span>
       
 <span class="cstat-no" title="statement not covered" >      await db</span>
         .update(scheduledPushNotifications)
@@ -1066,7 +1099,7 @@ export const <span class="cstat-no" title="statement not covered" >pushScheduler
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

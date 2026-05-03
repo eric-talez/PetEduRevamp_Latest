@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>0/28</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>0/28</span>
             </div>
         
             
@@ -154,7 +154,9 @@
 <a name='L89'></a><a href='#L89'>89</a>
 <a name='L90'></a><a href='#L90'>90</a>
 <a name='L91'></a><a href='#L91'>91</a>
-<a name='L92'></a><a href='#L92'>92</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -246,6 +248,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { storage } from '../storage';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 interface RevenueData {
   courseId: string;
@@ -275,7 +278,7 @@ interface MonthlyRevenueSummary {
       const revenues = <span class="cstat-no" title="statement not covered" >await storage.getRevenueByTrainer(trainerId, dateRange);</span>
 <span class="cstat-no" title="statement not covered" >      return revenues;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('수익 내역 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('수익 내역 조회 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('수익 내역을 조회할 수 없습니다.');</span>
     }
   }
@@ -286,7 +289,7 @@ interface MonthlyRevenueSummary {
       const summary = <span class="cstat-no" title="statement not covered" >await storage.getMonthlyRevenueSummary(trainerId);</span>
 <span class="cstat-no" title="statement not covered" >      return summary;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('월별 수익 요약 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('월별 수익 요약 조회 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('월별 수익 요약을 조회할 수 없습니다.');</span>
     }
   }
@@ -303,7 +306,7 @@ interface MonthlyRevenueSummary {
       const stats = <span class="cstat-no" title="statement not covered" >await storage.getPlatformRevenueStats();</span>
 <span class="cstat-no" title="statement not covered" >      return stats;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('플랫폼 수익 통계 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('플랫폼 수익 통계 조회 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('플랫폼 수익 통계를 조회할 수 없습니다.');</span>
     }
   }
@@ -313,7 +316,7 @@ interface MonthlyRevenueSummary {
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      await storage.processRevenueSettlement(trainerId, month);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('수익 정산 처리 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('수익 정산 처리 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('수익 정산을 처리할 수 없습니다.');</span>
     }
   }
@@ -330,7 +333,7 @@ interface MonthlyRevenueSummary {
       const analysis = <span class="cstat-no" title="statement not covered" >await storage.getCurriculumRevenueAnalysis(curriculumId);</span>
 <span class="cstat-no" title="statement not covered" >      return analysis;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('커리큘럼 수익 분석 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('커리큘럼 수익 분석 오류:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('커리큘럼 수익 분석을 조회할 수 없습니다.');</span>
     }
   }
@@ -343,7 +346,7 @@ export const <span class="cstat-no" title="statement not covered" >revenueServic
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:45.640Z
+                at 2026-05-03T18:16:48.880Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

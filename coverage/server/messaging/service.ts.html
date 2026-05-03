@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/166</span>
+                <span class='fraction'>0/168</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/160</span>
+                <span class='fraction'>0/162</span>
             </div>
         
             
@@ -602,9 +602,13 @@
 <a name='L537'></a><a href='#L537'>537</a>
 <a name='L538'></a><a href='#L538'>538</a>
 <a name='L539'></a><a href='#L539'>539</a>
-<a name='L540'></a><a href='#L540'>540</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L540'></a><a href='#L540'>540</a>
+<a name='L541'></a><a href='#L541'>541</a>
+<a name='L542'></a><a href='#L542'>542</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1144,6 +1148,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { WebSocket, WebSocketServer } from 'ws';
 import { IStorage } from '../storage';
 import { UserRole } from '@shared/schema';
+<span class="cstat-no" title="statement not covered" >import { logger } from '../monitoring/logger';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 // 메시지 타입 정의
 export interface Message {
@@ -1220,7 +1226,7 @@ interface Client {
             }));
           }
         } catch (error) {
-<span class="cstat-no" title="statement not covered" >          console.error('Error processing message:', error);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError('Error processing message:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >          ws.send(JSON.stringify({</span>
             type: 'error',
             message: 'Invalid message format'
@@ -1266,7 +1272,7 @@ interface Client {
 <span class="cstat-no" title="statement not covered" >          console.log(`Closing previous connection for user ${userId}`);</span>
 <span class="cstat-no" title="statement not covered" >          existingClient.connection.close();</span>
         } catch (e) {
-<span class="cstat-no" title="statement not covered" >          console.error(`Error closing previous connection for user ${userId}:`, e);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError(`Error closing previous connection for user ${userId}:`, e);</span>
         }
       }
       
@@ -1303,7 +1309,7 @@ interface Client {
       
 <span class="cstat-no" title="statement not covered" >      console.log(`Client ${userId} (${user.name}) ${reconnect ? 're-' : ''}authenticated`);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Authentication error:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Authentication error:', error);</span>
 <span class="cstat-no" title="statement not covered" >      ws.send(JSON.stringify({</span>
         type: 'error',
         message: 'Authentication failed'
@@ -1339,7 +1345,7 @@ interface Client {
 <span class="cstat-no" title="statement not covered" >        console.log(`Sent conversation history to user ${userId} (${Object.keys(userConversations).length} conversations)`);</span>
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error sending conversation history:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error sending conversation history:', error);</span>
     }
   }
 &nbsp;
@@ -1359,7 +1365,7 @@ interface Client {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const sender = <span class="cstat-no" title="statement not covered" >this.clients.get(senderId);</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!sender) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error(`Sender ${senderId} not found`);</span>
+<span class="cstat-no" title="statement not covered" >        logger.error(`Sender ${senderId} not found`);</span>
 <span class="cstat-no" title="statement not covered" >        return;</span>
       }
       
@@ -1417,7 +1423,7 @@ interface Client {
       
 <span class="cstat-no" title="statement not covered" >      console.log(`Message from ${senderId} to ${receiverId} delivered`);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error processing message:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error processing message:', error);</span>
     }
   }
 &nbsp;
@@ -1449,7 +1455,7 @@ interface Client {
         }
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error processing read receipt:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error processing read receipt:', error);</span>
     }
   }
 &nbsp;
@@ -1468,7 +1474,7 @@ interface Client {
         }));
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error processing typing indicator:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error processing typing indicator:', error);</span>
     }
   }
 &nbsp;
@@ -1516,7 +1522,7 @@ interface Client {
 <span class="cstat-no" title="statement not covered" >        console.log(`Sent ${unreadMessages.length} unread messages to user ${userId}`);</span>
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Error sending unread messages:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('Error sending unread messages:', error);</span>
     }
   }
 &nbsp;
@@ -1687,7 +1693,7 @@ interface Client {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

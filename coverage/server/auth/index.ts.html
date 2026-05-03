@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/243</span>
+                <span class='fraction'>0/245</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/242</span>
+                <span class='fraction'>0/244</span>
             </div>
         
             
@@ -767,7 +767,9 @@
 <a name='L702'></a><a href='#L702'>702</a>
 <a name='L703'></a><a href='#L703'>703</a>
 <a name='L704'></a><a href='#L704'>704</a>
-<a name='L705'></a><a href='#L705'>705</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L705'></a><a href='#L705'>705</a>
+<a name='L706'></a><a href='#L706'>706</a>
+<a name='L707'></a><a href='#L707'>707</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -798,6 +800,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1502,6 +1506,8 @@ import { UserRole } from '../../shared/schema';
   HTTP_STATUS,
   extendResponse
 } from '../middleware/api-standards';
+<span class="cstat-no" title="statement not covered" >import { logger } from '../monitoring/logger';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 // JWT 설정 - 프로덕션에서 반드시 환경 변수 필요
 const isProduction = <span class="cstat-no" title="statement not covered" >process.env.NODE_ENV === 'production';</span>
@@ -1509,8 +1515,8 @@ const JWT_SECRET: string = <span class="cstat-no" title="statement not covered" 
 const JWT_EXPIRES_IN = <span class="cstat-no" title="statement not covered" >process.env.JWT_EXPIRES_IN || '7d';</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span>if (isProduction &amp;&amp; !process.env.JWT_SECRET) {</span>
-<span class="cstat-no" title="statement not covered" >  console.error('❌ [프로덕션] JWT_SECRET 환경 변수가 설정되지 않았습니다.');</span>
-<span class="cstat-no" title="statement not covered" >  console.error('   Replit Secrets에서 JWT_SECRET을 설정해주세요.');</span>
+<span class="cstat-no" title="statement not covered" >  logger.error('❌ [프로덕션] JWT_SECRET 환경 변수가 설정되지 않았습니다.');</span>
+<span class="cstat-no" title="statement not covered" >  logger.error('   Replit Secrets에서 JWT_SECRET을 설정해주세요.');</span>
 <span class="cstat-no" title="statement not covered" >  process.exit(1);</span>
 }
 &nbsp;
@@ -1685,7 +1691,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
 <span class="cstat-no" title="statement not covered" >  router.post('/login', csrfProtection, <span class="fstat-no" title="function not covered" >(r</span>eq, res, next) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    passport.authenticate('local', <span class="fstat-no" title="function not covered" >(e</span>rr: Error, user: any, info: { message?: string }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error('로그인 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('로그인 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.error(</span>
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '로그인 처리 중 오류가 발생했습니다'
@@ -1721,7 +1727,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
       
 <span class="cstat-no" title="statement not covered" >      req.login(user, <span class="fstat-no" title="function not covered" >(l</span>oginErr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (loginErr) {</span>
-<span class="cstat-no" title="statement not covered" >          console.error('로그인 세션 생성 오류:', loginErr);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError('로그인 세션 생성 오류:', loginErr, req);</span>
 <span class="cstat-no" title="statement not covered" >          return res.error(</span>
             ApiErrorCode.INTERNAL_SERVER_ERROR,
             '로그인 세션 생성 중 오류가 발생했습니다'
@@ -1741,7 +1747,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
         // 세션 명시적 저장
 <span class="cstat-no" title="statement not covered" >        req.session.save(<span class="fstat-no" title="function not covered" >async </span>(saveErr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (saveErr) {</span>
-<span class="cstat-no" title="statement not covered" >            console.error('세션 저장 오류:', saveErr);</span>
+<span class="cstat-no" title="statement not covered" >            logServerError('세션 저장 오류:', saveErr, req);</span>
 <span class="cstat-no" title="statement not covered" >            return res.error(</span>
               ApiErrorCode.INTERNAL_SERVER_ERROR,
               '세션 저장 중 오류가 발생했습니다'
@@ -1779,7 +1785,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    req.logout(<span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error('로그아웃 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >        logServerError('로그아웃 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >        return res.error(</span>
           ApiErrorCode.INTERNAL_SERVER_ERROR,
           '로그아웃 처리 중 오류가 발생했습니다'
@@ -1810,7 +1816,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
       const sessions = <span class="cstat-no" title="statement not covered" >await listActiveSessions(userId, req.sessionID);</span>
 <span class="cstat-no" title="statement not covered" >      return res.success(sessions, '활성 세션 목록을 조회했습니다.');</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Auth] 세션 목록 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Auth] 세션 목록 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.error(</span>
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '세션 목록을 조회할 수 없습니다.'
@@ -1845,7 +1851,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
       // 현재 세션을 끊은 경우, 즉시 세션을 파기
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (revoked.sessionId === req.sessionID) {</span>
 <span class="cstat-no" title="statement not covered" >        return req.logout(<span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (err) <span class="cstat-no" title="statement not covered" >console.error('[Auth] sessions DELETE logout 오류:', err);</span></span>
+<span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (err) <span class="cstat-no" title="statement not covered" >logServerError('[Auth] sessions DELETE logout 오류:', err, req);</span></span>
 <span class="cstat-no" title="statement not covered" >          req.session?.destroy(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
 <span class="cstat-no" title="statement not covered" >            res.clearCookie('talez.sid');</span>
 <span class="cstat-no" title="statement not covered" >            return res.success({ revokedCurrent: true }, '현재 세션을 종료했습니다.');</span>
@@ -1854,7 +1860,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
       }
 <span class="cstat-no" title="statement not covered" >      return res.success({ revokedCurrent: false }, '세션을 강제 종료했습니다.');</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[Auth] 세션 강제 종료 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[Auth] 세션 강제 종료 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.error(</span>
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '세션을 종료할 수 없습니다.'
@@ -1911,7 +1917,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
       // 세션 생성
 <span class="cstat-no" title="statement not covered" >      req.login(user, <span class="fstat-no" title="function not covered" >(l</span>oginErr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (loginErr) {</span>
-<span class="cstat-no" title="statement not covered" >          console.error('[QuickLogin] 세션 생성 오류:', loginErr);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError('[QuickLogin] 세션 생성 오류:', loginErr, req);</span>
 <span class="cstat-no" title="statement not covered" >          return res.error(</span>
             ApiErrorCode.INTERNAL_SERVER_ERROR,
             '로그인 세션 생성 중 오류가 발생했습니다'
@@ -1931,7 +1937,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
         // 세션 명시적 저장
 <span class="cstat-no" title="statement not covered" >        req.session.save(<span class="fstat-no" title="function not covered" >async </span>(saveErr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (saveErr) {</span>
-<span class="cstat-no" title="statement not covered" >            console.error('[QuickLogin] 세션 저장 오류:', saveErr);</span>
+<span class="cstat-no" title="statement not covered" >            logServerError('[QuickLogin] 세션 저장 오류:', saveErr, req);</span>
 <span class="cstat-no" title="statement not covered" >            return res.error(</span>
               ApiErrorCode.INTERNAL_SERVER_ERROR,
               '세션 저장 중 오류가 발생했습니다'
@@ -1959,7 +1965,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
         });
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('[QuickLogin] 퀵로그인 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('[QuickLogin] 퀵로그인 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.error(</span>
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '퀵로그인 처리 중 오류가 발생했습니다'
@@ -2101,7 +2107,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
             }
           }
         } catch (inviteError) {
-<span class="cstat-no" title="statement not covered" >          console.error('[Invite] 초대 코드 처리 오류:', inviteError);</span>
+<span class="cstat-no" title="statement not covered" >          logServerError('[Invite] 초대 코드 처리 오류:', inviteError, req);</span>
           // 초대 코드 처리 실패는 회원가입 성공에 영향을 주지 않음
         }
       }
@@ -2110,7 +2116,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
 <span class="cstat-no" title="statement not covered" >      if (socialSignup) {</span>
 <span class="cstat-no" title="statement not covered" >        req.login(user, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (err) {</span>
-<span class="cstat-no" title="statement not covered" >            console.error('회원가입 후 자동 로그인 오류:', err);</span>
+<span class="cstat-no" title="statement not covered" >            logServerError('회원가입 후 자동 로그인 오류:', err, req);</span>
 <span class="cstat-no" title="statement not covered" >            return res.error(</span>
               ApiErrorCode.INTERNAL_SERVER_ERROR,
               '회원가입은 완료되었으나 자동 로그인 중 오류가 발생했습니다'
@@ -2129,7 +2135,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
         );
       }
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('회원가입 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('회원가입 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.error(</span>
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '회원가입 처리 중 오류가 발생했습니다'
@@ -2148,7 +2154,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
       
 <span class="cstat-no" title="statement not covered" >      return res.success(socialSignup, '소셜 로그인 가입 정보를 성공적으로 조회했습니다.');</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('소셜 가입 정보 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('소셜 가입 정보 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      return res.error(</span>
         ApiErrorCode.INTERNAL_SERVER_ERROR,
         '소셜 가입 정보 조회 중 오류가 발생했습니다'
@@ -2161,7 +2167,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      getCSRFToken(req, res);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('CSRF 토큰 조회 오류:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logServerError('CSRF 토큰 조회 오류:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >      res.status(500).json({</span>
         success: false,
         message: 'CSRF 토큰 조회 중 오류가 발생했습니다.'
@@ -2182,7 +2188,7 @@ function <span class="fstat-no" title="function not covered" >setupAuthRoutes(</
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

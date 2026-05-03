@@ -38,6 +38,14 @@ export function ensureCertificateEmailNotifierLoaded(): void {
   // 모듈 import 자체로 빌더가 등록되므로 호출하면 OK.
 }
 
+/**
+ * 테스트 전용: 모듈 내부 in-memory dedupe 가드(sentGuard) 를 비운다.
+ * 프로덕션 코드는 호출하지 않으며, 통합 테스트의 격리를 위해서만 사용한다.
+ */
+export function __resetSentGuardForTests(): void {
+  sentGuard.clear();
+}
+
 export interface TriggerCertificateEmailParams {
   userId: number;
   userName?: string | null;

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/95</span>
+                <span class='fraction'>0/96</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/95</span>
+                <span class='fraction'>0/96</span>
             </div>
         
             
@@ -547,7 +547,9 @@
 <a name='L482'></a><a href='#L482'>482</a>
 <a name='L483'></a><a href='#L483'>483</a>
 <a name='L484'></a><a href='#L484'>484</a>
-<a name='L485'></a><a href='#L485'>485</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L485'></a><a href='#L485'>485</a>
+<a name='L486'></a><a href='#L486'>486</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1034,6 +1036,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import express from 'express';</span>
 <span class="cstat-no" title="statement not covered" >import multer from 'multer';</span>
 <span class="cstat-no" title="statement not covered" >import OpenAI from 'openai';</span>
+<span class="cstat-no" title="statement not covered" >import { logServerError } from '../middleware/audit-logger';</span>
 &nbsp;
 const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
 &nbsp;
@@ -1230,7 +1233,7 @@ If a dog IS visible, provide COMPREHENSIVE analysis including:
     };
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Image analysis error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Image analysis error:', error);</span>
 <span class="cstat-no" title="statement not covered" >    return {</span>
       timestamp,
       behavior: "분석 실패",
@@ -1321,7 +1324,7 @@ Analyze dog vocalizations for:
     };
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Audio analysis error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Audio analysis error:', error);</span>
 <span class="cstat-no" title="statement not covered" >    return {</span>
       timestamp,
       behavior: "음성 분석 오류",
@@ -1364,7 +1367,7 @@ Analyze dog vocalizations for:
 <span class="cstat-no" title="statement not covered" >    res.json(analysis);</span>
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Frame analysis error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Frame analysis error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '프레임 분석 중 오류가 발생했습니다' });</span>
   }
 });
@@ -1386,7 +1389,7 @@ Analyze dog vocalizations for:
 <span class="cstat-no" title="statement not covered" >    res.json(analysis);</span>
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Audio analysis error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Audio analysis error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '오디오 분석 중 오류가 발생했습니다' });</span>
   }
 });
@@ -1415,7 +1418,7 @@ Analyze dog vocalizations for:
 <span class="cstat-no" title="statement not covered" >    res.json(analysis);</span>
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Metadata analysis error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Metadata analysis error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '메타데이터 분석 중 오류가 발생했습니다' });</span>
   }
 });
@@ -1446,7 +1449,7 @@ Analyze dog vocalizations for:
 <span class="cstat-no" title="statement not covered" >    res.json(metrics);</span>
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Metrics calculation error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Metrics calculation error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: '메트릭스 계산 중 오류가 발생했습니다' });</span>
   }
 });
@@ -1497,7 +1500,7 @@ Analyze dog vocalizations for:
 <span class="cstat-no" title="statement not covered" >    res.json(report);</span>
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('Report generation error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logServerError('Report generation error:', error, req);</span>
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ </span>
       error: '리포트 생성 중 오류가 발생했습니다',
       executiveSummary: "리포트 생성에 실패했습니다. 다시 시도해주세요.",
@@ -1522,7 +1525,7 @@ Analyze dog vocalizations for:
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T11:00:51.178Z
+                at 2026-05-03T18:16:53.930Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
