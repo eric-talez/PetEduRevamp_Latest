@@ -113,6 +113,33 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+async function notifyReviewRequestForCourse(userId: number, courseId: number) {
+  try {
+    const course = findCourse(courseId);
+    if (!course || !course.instructorId) return;
+    const userList = storage.users as Array<{ id: number; name?: string }>;
+    const petList = storage.pets as Array<{ id: number; ownerId: number; name?: string }>;
+    const trainer = userList.find((u) => u.id === course.instructorId);
+    const owner = userList.find((u) => u.id === userId);
+    const pet = petList.find((p) => p.ownerId === userId);
+    const { triggerReviewRequestNotification } = await import(
+      "../services/review-request-notifier"
+    );
+    await triggerReviewRequestNotification({
+      ownerId: userId,
+      ownerName: owner?.name,
+      trainerId: course.instructorId,
+      trainerName: trainer?.name,
+      petId: pet?.id ?? null,
+      petName: pet?.name ?? null,
+      courseId,
+      lessonRef: `course-${courseId}`,
+      completedAt: new Date().toISOString(),
+      storage,
+    });
+  } catch { /* noop */ }
+}
+
 function recomputeProgress(userId: number, courseId: number) {
   const courseSessionsForCourse = sessions().filter((s) => s.courseId === courseId);
   const total = courseSessionsForCourse.length;
@@ -154,6 +181,7 @@ function recomputeProgress(userId: number, courseId: number) {
     if (isComplete && progress.status !== "completed") {
       progress.status = "completed";
       progress.completedAt = now;
+      notifyReviewRequestForCourse(userId, courseId).catch(() => {/* noop */});
     } else if (!isComplete) {
       progress.status = "active";
       progress.completedAt = null;

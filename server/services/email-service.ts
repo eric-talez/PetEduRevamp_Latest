@@ -242,6 +242,21 @@ const DEFAULT_TEMPLATES: Array<{
     variables: { name: "사용자 이름", reason: "실패 사유" },
   },
   {
+    key: "review_request",
+    category: "review_request",
+    name: "리뷰 작성 요청",
+    subject: "[TALEZ] {{name}}님, {{trainerName}} 트레이너에 대한 후기를 남겨주세요",
+    bodyHtml:
+      "<h2>수업이 완료되었어요!</h2><p>{{name}}님, <b>{{trainerName}}</b> 트레이너의 수업은 어떠셨나요?</p><p>{{petName}}와 함께한 소중한 경험을 다른 보호자에게 공유해주세요.</p><p><a href=\"{{actionUrl}}\">리뷰 작성하기</a></p><p style=\"color:#888;font-size:12px\">완료 후 14일 이내에만 작성하실 수 있어요.</p>",
+    description: "수업/훈련 완료 시 보호자에게 리뷰 요청 자동 발송",
+    variables: {
+      name: "보호자 이름",
+      trainerName: "트레이너 이름",
+      petName: "반려동물 이름",
+      actionUrl: "리뷰 작성 링크",
+    },
+  },
+  {
     key: "settlement_deadline",
     category: "settlement_deadline",
     name: "정산 마감 안내",
@@ -529,6 +544,12 @@ export const emailTriggers = {
   settlementDeadline: (userId: number, vars: Record<string, any>) =>
     queueEmail({
       templateKey: "settlement_deadline",
+      userId,
+      variables: vars,
+    }),
+  reviewRequest: (userId: number, vars: Record<string, any>) =>
+    queueEmail({
+      templateKey: "review_request",
       userId,
       variables: vars,
     }),

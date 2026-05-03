@@ -1485,20 +1485,29 @@ class Storage {
       };
       this.pets[petIndex] = next;
 
-      // 훈련 완료 시 보호자에게 리뷰 작성 요청 알림 (1회)
+      // 훈련 완료 시 보호자에게 리뷰 작성 요청 알림 (인앱 + 이메일, 1회)
       try {
         const becameCompleted =
           (updates.trainingStatus === "completed" && prev.trainingStatus !== "completed") ||
           (updates.status === "completed" && prev.status !== "completed");
         if (becameCompleted && next.ownerId && next.assignedTrainerId) {
-          const trainerName = next.assignedTrainerName || `트레이너 #${next.assignedTrainerId}`;
-          this.createNotification?.({
-            userId: next.ownerId,
-            title: "훈련 수업이 완료되었어요!",
-            message: `${trainerName}님의 수업은 어떠셨나요? 소중한 후기를 남겨주세요.`,
-            type: "review_reminder",
-            actionUrl: "/reviews/write",
-          });
+          const completedAt =
+            next.trainingEndDate || next.completedAt || next.updatedAt;
+          // dynamic import 로 순환 의존 회피
+          import("./services/review-request-notifier")
+            .then(({ triggerReviewRequestNotification }) =>
+              triggerReviewRequestNotification({
+                ownerId: next.ownerId,
+                trainerId: next.assignedTrainerId,
+                trainerName: next.assignedTrainerName,
+                petId: next.id,
+                petName: next.name,
+                lessonRef: `pet-${next.id}`,
+                completedAt,
+                storage: this,
+              }),
+            )
+            .catch(() => {/* noop */});
         }
       } catch { /* noop */ }
 

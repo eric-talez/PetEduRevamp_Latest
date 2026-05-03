@@ -3400,6 +3400,7 @@ export const EMAIL_CATEGORIES = [
   "payment_receipt",
   "payment_failed",
   "settlement_deadline",
+  "review_request",
 ] as const;
 export type EmailCategory = (typeof EMAIL_CATEGORIES)[number];
 

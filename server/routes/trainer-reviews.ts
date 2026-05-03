@@ -6,6 +6,10 @@ import {
   insertTrainerReviewReportSchema,
 } from "../../shared/schema";
 import { logServerError } from '../middleware/audit-logger';
+import {
+  isReviewAutoNotifyEnabled,
+  setReviewAutoNotifyEnabled,
+} from "../services/review-request-notifier";
 
 type SessionUser = {
   id: number;
@@ -272,6 +276,42 @@ export function registerTrainerReviewRoutes(app: Express) {
       res.status(500).json({ success: false, error: "처리 중 오류가 발생했습니다." });
     }
   });
+
+  // 관리자: 자동 리뷰 요청 알림 on/off 조회
+  app.get(
+    "/api/admin/trainer-reviews/auto-notify",
+    requireRole("admin"),
+    async (_req: Request, res: Response) => {
+      try {
+        const enabled = await isReviewAutoNotifyEnabled();
+        res.json({ success: true, enabled });
+      } catch (error) {
+        logServerError("[trainerReviews] auto-notify get 오류:", error);
+        res.status(500).json({ success: false, error: "설정 조회 중 오류가 발생했습니다." });
+      }
+    },
+  );
+
+  // 관리자: 자동 리뷰 요청 알림 on/off 설정
+  app.put(
+    "/api/admin/trainer-reviews/auto-notify",
+    requireRole("admin"),
+    async (req: Request, res: Response) => {
+      try {
+        const { enabled } = req.body as { enabled?: boolean };
+        if (typeof enabled !== "boolean") {
+          return res
+            .status(400)
+            .json({ success: false, error: "enabled(boolean) 값이 필요합니다." });
+        }
+        await setReviewAutoNotifyEnabled(enabled);
+        res.json({ success: true, enabled });
+      } catch (error) {
+        logServerError("[trainerReviews] auto-notify set 오류:", error, req);
+        res.status(500).json({ success: false, error: "설정 저장 중 오류가 발생했습니다." });
+      }
+    },
+  );
 }
 
 export default registerTrainerReviewRoutes;
