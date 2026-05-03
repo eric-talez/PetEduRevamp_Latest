@@ -2718,18 +2718,24 @@ class Storage {
   }
 
   createTrainingJournal(journalData: any): any {
-    const journal = {
-      id: (this.trainingJournals || []).length + 1,
-      ...journalData,
-      createdAt: new Date().toISOString(),
-      status: 'draft'
-    };
-
     if (!this.trainingJournals) {
       this.trainingJournals = [];
     }
+    const journal = {
+      id: this.trainingJournals.length + 1,
+      status: 'sent',
+      isRead: false,
+      ...journalData,
+      createdAt: journalData?.createdAt || new Date().toISOString(),
+      updatedAt: journalData?.updatedAt || new Date().toISOString(),
+    };
     this.trainingJournals.push(journal);
     return journal;
+  }
+
+  // getPet 별칭 - 일부 라우트에서 사용
+  getPetById(id: number): any {
+    return this.getPet(id);
   }
 
   getTrainingJournalById(id: number): any {
@@ -2851,8 +2857,8 @@ class Storage {
 
     // 훈련사는 담당 펫의 일지만 생성 가능
     if (userRole === 'trainer') {
-      const pet = this.getPostById(petId as any);
-      return pet && pet.assignedTrainerId === userId;
+      const pet = this.getPet(petId);
+      return !!(pet && (pet.assignedTrainerId === userId || pet.trainerId === userId));
     }
 
     return false;

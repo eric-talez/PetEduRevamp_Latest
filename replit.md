@@ -51,6 +51,7 @@ TALEZ is built for modularity, scalability, and performance using modern web tec
 - **Pet Visit Trust & QR Check-in System**: Zone-based access control, single-use session tokens for pet visits, and a robust QR-based check-in CRM with check-in history and statistics.
 - **First Visit Consultation & Temperament Grading**: System for documenting initial pet consultations and assigning temperament grades (A-E).
 - **Nose Print Authentication (Apr 15)**: Pet nose print enrollment and verification system with `pet_nose_profiles` and `nose_verification_logs` tables. Memory-based upload for public endpoints (DoS prevention), rate limiting, and manual staff approval fallback.
+- **Training Journal (알림장) – Real API & Notifications (May 03, 2026)**: Removed mock data from trainer notebook (`/trainer/notebook`) and pet-owner notebook (`/notebook`). Both pages now consume live `/api/trainer/journals`, `/api/trainer/students-for-journal`, and `/api/notebook/entries`. POST `/api/notebook/entries` triggers in-app notification (`notificationService`) and SendGrid email (`queueEmail` template `notebook_journal_created`) to the pet owner unless status is `draft`. Storage `createTrainingJournal` no longer forces `draft`. Added `getPetById` alias and fixed `canUserCreateTrainingJournal` to use `getPet`. New `POST /api/notebook/transcribe` (Whisper STT, trainer-only, 25MB cap, multer dest `uploads/notebook-stt/`).
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon serverless)

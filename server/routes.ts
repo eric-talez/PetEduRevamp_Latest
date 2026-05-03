@@ -4590,10 +4590,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 1. 새 훈련 일지 생성
   app.post("/api/notebook/entries", requireAuth('trainer'), csrfProtection, async (req, res) => {
     try {
-      // Zod 스키마 검증
-      const validatedData = insertTrainingJournalSchema.parse(req.body);
       const currentUser = req.session.user!;
-      
+      // 서버가 채워야 하는 필드는 클라이언트 입력에서 제외
+      const { trainerId: _t, petOwnerId: _o, ...rest } = (req.body || {});
+      // petId는 number로 강제 (string 들어오는 경우 대비)
+      if (rest.petId != null) rest.petId = Number(rest.petId);
+      const journalInputSchema = insertTrainingJournalSchema.omit({ trainerId: true, petOwnerId: true });
+      const validatedData = journalInputSchema.parse(rest);
+
       // 권한 확인 - 훈련사가 담당 펫의 일지만 생성 가능
       if (!storage.canUserCreateTrainingJournal(currentUser.id, currentUser.role, validatedData.petId)) {
         return res.status(403).json({
@@ -4616,9 +4620,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...validatedData,
         trainerId: currentUser.id,
         petOwnerId: pet.ownerId,
-        status: 'sent',
+        status: validatedData.status || 'sent',
         isRead: false
       });
+
+      // 보호자에게 알림 발송 (인앱 + 이메일) - draft가 아닐 때만
+      if (journalEntry.status !== 'draft' && pet.ownerId) {
+        try {
+          const { notificationService } = await import('./notifications/notification-service');
+          await notificationService.sendNotification({
+            userId: pet.ownerId,
+            type: 'message',
+            title: `새 알림장이 도착했습니다`,
+            message: `${pet.name}의 ${validatedData.title || '훈련 일지'}가 등록되었어요.`,
+            actionUrl: `/notebook?entryId=${journalEntry.id}`,
+            data: { journalId: journalEntry.id, petId: pet.id }
+          });
+        } catch (e) {
+          logServerError('알림장 알림 발송 실패:', e, req);
+        }
+        try {
+          const { queueEmail } = await import('./services/email-service');
+          await queueEmail({
+            templateKey: 'notebook_journal_created',
+            userId: pet.ownerId,
+            variables: {
+              petName: pet.name,
+              title: validatedData.title || '훈련 일지',
+              date: validatedData.trainingDate || new Date().toISOString().slice(0, 10),
+              link: `${process.env.APP_URL || ''}/notebook?entryId=${journalEntry.id}`,
+            },
+          });
+        } catch (e: any) {
+          // 템플릿 미존재 등은 무시
+          if (!String(e?.message || '').includes('템플릿이 존재하지 않습니다')) {
+            logServerError('알림장 이메일 발송 실패:', e, req);
+          }
+        }
+      }
 
       res.status(201).json({
         success: true,
@@ -4649,13 +4688,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = trainingJournalQuerySchema.parse(req.query);
       const currentUser = req.session.user!;
 
-      // 사용자 권한에 따른 필터링
+      // 사용자 권한에 따른 필터링 (allow-list)
       if (currentUser.role === 'pet-owner') {
         query.petOwnerId = currentUser.id;
       } else if (currentUser.role === 'trainer') {
         query.trainerId = currentUser.id;
+      } else if (currentUser.role !== 'admin' && currentUser.role !== 'institute-admin') {
+        return res.status(403).json({ error: '접근 권한이 없습니다.', code: 'FORBIDDEN' });
       }
-      // 관리자는 모든 일지 조회 가능
+      // 관리자/기관관리자는 모든 일지 조회 가능
 
       const result = storage.getTrainingJournalsWithPagination(query);
 
@@ -8107,21 +8148,86 @@ app.get('/api/search', async (req, res) => {
   });
 
   // 훈련사 알림장 목록 조회 API
-  app.get("/api/trainer/journals", async (req, res) => {
+  app.get("/api/trainer/journals", requireAuth('trainer'), async (req, res) => {
     try {
-      const trainerId = req.session?.user?.id || 1;
+      const trainerId = req.session!.user!.id;
       const journals = await storage.getTrainingJournalsByTrainer(trainerId);
-      
-      return res.json({
-        success: true,
-        journals
-      });
+
+      // 펫/소유자 정보로 보강
+      const enriched = await Promise.all(journals.map(async (j: any) => {
+        const pet = storage.getPet(j.petId);
+        let owner: any = null;
+        if (pet?.ownerId) {
+          try { owner = await storage.getUser?.(pet.ownerId); } catch {}
+        }
+        return {
+          ...j,
+          pet: pet ? { id: pet.id, name: pet.name, breed: pet.breed, age: pet.age } : null,
+          owner: owner ? { id: owner.id, name: owner.name, email: owner.email } : null,
+        };
+      }));
+
+      return res.json({ success: true, journals: enriched });
     } catch (error) {
       logServerError('훈련사 알림장 목록 조회 오류:', error, req);
       return res.status(500).json({
         success: false,
         message: "알림장 목록 조회 중 오류가 발생했습니다."
       });
+    }
+  });
+
+  // 훈련사의 알림장 작성 가능 학생/반려동물 목록
+  app.get("/api/trainer/students-for-journal", requireAuth('trainer'), async (req, res) => {
+    try {
+      const trainerId = req.session!.user!.id;
+      const pets = storage.getPetsByTrainerId(trainerId);
+      const result = await Promise.all(pets.map(async (pet: any) => {
+        let owner: any = null;
+        try { owner = await storage.getUser?.(pet.ownerId); } catch {}
+        const journals = (storage.getTrainingJournalsByPet?.(pet.id) || []);
+        const lastJournal = journals.length
+          ? journals.map((j: any) => j.trainingDate || j.createdAt).sort().slice(-1)[0]
+          : null;
+        return {
+          id: pet.ownerId,
+          petId: pet.id,
+          name: owner?.name || '보호자',
+          email: owner?.email || '',
+          pet: { id: pet.id, name: pet.name, breed: pet.breed || '', age: pet.age || 0 },
+          course: { id: 0, title: pet.trainingType || '훈련', currentSession: 0, totalSessions: 0 },
+          lastJournal,
+        };
+      }));
+      return res.json({ success: true, students: result });
+    } catch (error) {
+      logServerError('알림장 학생 목록 조회 오류:', error, req);
+      return res.status(500).json({ success: false, message: '학생 목록 조회 실패' });
+    }
+  });
+
+  // 알림장 음성 입력(STT) - OpenAI Whisper
+  const notebookSttUpload = multer({
+    dest: 'uploads/notebook-stt/',
+    limits: { fileSize: 25 * 1024 * 1024 },
+  });
+  app.post("/api/notebook/transcribe", requireAuth('trainer'), notebookSttUpload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ success: false, error: '오디오 파일이 필요합니다.' });
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const fs = await import('fs');
+      const transcription = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(req.file.path),
+        model: 'whisper-1',
+        language: 'ko',
+      });
+      try { fs.unlinkSync(req.file.path); } catch {}
+      return res.json({ success: true, text: transcription.text });
+    } catch (error: any) {
+      logServerError('알림장 STT 오류:', error, req);
+      try { if (req.file) require('fs').unlinkSync(req.file.path); } catch {}
+      return res.status(500).json({ success: false, error: '음성 인식 중 오류가 발생했습니다.' });
     }
   });
 

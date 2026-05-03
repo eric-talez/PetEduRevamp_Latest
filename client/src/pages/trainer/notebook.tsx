@@ -198,12 +198,30 @@ export default function TrainerNotebookPage() {
   // 알림장 생성 mutation
   const createNotebookMutation = useMutation({
     mutationFn: async (notebookData: any) => {
-      const response = await fetch('/api/notebook/entries', {
+      const { secureRequest } = await import('@/lib/csrf');
+      const payload = {
+        title: notebookData.title,
+        content: notebookData.content,
+        petId: Number(notebookData.petId),
+        trainingDate: notebookData.trainingDate,
+        trainingDuration: notebookData.trainingDuration,
+        progressRating: notebookData.progressRating,
+        behaviorNotes: notebookData.behaviorNotes,
+        homeworkInstructions: notebookData.homeworkInstructions,
+        nextGoals: notebookData.nextGoals,
+        attachments: notebookData.attachments || [],
+      };
+      const response = await secureRequest('/api/notebook/entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notebookData)
+        body: JSON.stringify(payload),
       });
-      return response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success === false) {
+        const msg = data?.error || data?.message || `요청 실패 (${response.status})`;
+        throw new Error(msg);
+      }
+      return data;
     },
     onSuccess: () => {
       toast({
@@ -269,120 +287,58 @@ export default function TrainerNotebookPage() {
     createNotebookMutation.mutate(notebookForm);
   };
 
-  // 알림장 목록 조회
-  const { data: journals, isLoading: journalsLoading } = useQuery({
+  // 알림장 목록 조회 (실제 API)
+  const { data: journals, isLoading: journalsLoading } = useQuery<Journal[]>({
     queryKey: ['/api/trainer/journals'],
     queryFn: async () => {
-      return [
-        {
-          id: 1,
-          title: "멍멍이 훈련 일지 - 1주차",
-          content: "오늘은 기본 자세 훈련을 진행했습니다. 멍멍이는 앉기 명령에 대한 반응이 매우 좋았고, 기다리기 명령도 5초 정도 유지할 수 있었습니다. 처음 수업치고는 집중력이 뛰어났습니다.",
-          trainer: { id: 1, name: "김민수", avatar: "/avatars/trainer1.jpg" },
-          student: {
-            id: 1,
-            name: "홍길동",
-            email: "hong@example.com",
-            pet: { id: 1, name: "멍멍이", breed: "골든 리트리버", age: 2 }
+      const res = await fetch('/api/trainer/journals', { credentials: 'include' });
+      if (!res.ok) throw new Error('알림장 조회 실패');
+      const json = await res.json();
+      const list = json.journals || [];
+      return list.map((j: any) => ({
+        id: j.id,
+        title: j.title || '훈련 일지',
+        content: j.content || '',
+        trainer: { id: j.trainerId, name: j.trainerName || '훈련사' },
+        student: {
+          id: j.owner?.id || j.petOwnerId || 0,
+          name: j.owner?.name || '보호자',
+          email: j.owner?.email || '',
+          pet: {
+            id: j.pet?.id || j.petId || 0,
+            name: j.pet?.name || '반려동물',
+            breed: j.pet?.breed || '',
+            age: j.pet?.age || 0,
           },
-          course: { id: 1, title: "기초 복종 훈련", session: 1 },
-          trainingDate: "2025-01-21",
-          trainingDuration: 60,
-          progressRating: 4,
-          behaviorNotes: "적극적이고 집중력이 좋음. 다른 개들과의 사회성도 우수함.",
-          homeworkInstructions: "매일 5분씩 앉기 연습을 해주세요. 간식을 활용하여 긍정적인 경험을 만들어주시기 바랍니다.",
-          nextGoals: "기다리기 시간을 10초까지 연장하고, 이리와 명령 추가 예정",
-          attachments: ["/attachments/progress-photo1.jpg"],
-          status: 'sent',
-          createdAt: "2025-01-21T16:00:00Z",
-          updatedAt: "2025-01-21T16:00:00Z",
-          readAt: "2025-01-21T18:30:00Z"
         },
-        {
-          id: 2,
-          title: "바둑이 훈련 일지 - 3주차",
-          content: "오늘은 어질리티 기초 과정 3주차 수업을 진행했습니다. 바둑이는 낮은 점프대 통과에 성공했고, 터널 통과도 망설임 없이 해냈습니다. 운동 능력이 뛰어나 진도가 빠르게 나가고 있습니다.",
-          trainer: { id: 1, name: "김민수" },
-          student: {
-            id: 2,
-            name: "김영희",
-            email: "kim@example.com",
-            pet: { id: 2, name: "바둑이", breed: "보더 콜리", age: 3 }
-          },
-          course: { id: 2, title: "어질리티 기초", session: 3 },
-          trainingDate: "2025-01-20",
-          trainingDuration: 90,
-          progressRating: 5,
-          behaviorNotes: "에너지가 넘치고 학습 능력이 뛰어남. 새로운 도전을 즐기는 성격",
-          homeworkInstructions: "집에서 낮은 장애물을 설치하여 점프 연습을 해주세요. 안전에 주의하시기 바랍니다.",
-          nextGoals: "더 높은 점프대와 복잡한 코스 도전 예정",
-          attachments: [],
-          status: 'read',
-          createdAt: "2025-01-20T18:30:00Z",
-          updatedAt: "2025-01-20T18:30:00Z",
-          readAt: "2025-01-20T20:15:00Z",
-          replyMessage: "감사합니다! 집에서도 열심히 연습하고 있어요."
-        },
-        {
-          id: 3,
-          title: "초코 행동 교정 상담 - 초회",
-          content: "오늘은 초코의 짖기 문제에 대한 초회 상담을 진행했습니다. 방문자나 다른 개를 보면 과도하게 짖는 행동을 보이고 있습니다. 원인 분석 결과 불안감과 영역 보호 본능이 주요 원인으로 보입니다.",
-          trainer: { id: 1, name: "김민수" },
-          student: {
-            id: 3,
-            name: "박철수",
-            email: "park@example.com",
-            pet: { id: 3, name: "초코", breed: "시바견", age: 4 }
-          },
-          course: { id: 3, title: "문제행동 교정", session: 1 },
-          trainingDate: "2025-01-19",
-          trainingDuration: 120,
-          progressRating: 3,
-          behaviorNotes: "경계심이 강하고 새로운 환경에 민감함. 시간이 걸리더라도 인내심을 가지고 접근 필요",
-          homeworkInstructions: "하루 2회, 10분씩 조용한 환경에서 이름 부르기 연습을 해주세요. 짖을 때는 무시하고, 조용할 때 칭찬과 간식을 주세요.",
-          nextGoals: "기본 신뢰 관계 구축 후 점진적 둔감화 훈련 시작",
-          attachments: ["/attachments/behavior-analysis1.pdf"],
-          status: 'draft',
-          createdAt: "2025-01-19T15:00:00Z",
-          updatedAt: "2025-01-21T10:00:00Z"
-        }
-      ] as Journal[];
+        course: { id: 0, title: j.trainingType || '훈련', session: j.sessionNumber || 1 },
+        trainingDate: j.trainingDate || j.createdAt?.slice(0, 10) || '',
+        trainingDuration: j.trainingDuration || 60,
+        progressRating: j.progressRating || 3,
+        behaviorNotes: j.behaviorNotes || '',
+        homeworkInstructions: j.homeworkInstructions || '',
+        nextGoals: j.nextGoals || '',
+        attachments: j.attachments || [],
+        status: (j.status || 'sent') as Journal['status'],
+        createdAt: j.createdAt || new Date().toISOString(),
+        updatedAt: j.updatedAt || j.createdAt || new Date().toISOString(),
+        readAt: j.readAt,
+        replyMessage: j.replyMessage,
+      })) as Journal[];
     },
-    enabled: isAuthenticated
+    enabled: isAuthenticated,
   });
 
-  // 학생 목록 조회
-  const { data: students, isLoading: studentsLoading } = useQuery({
+  // 학생 목록 조회 (실제 API)
+  const { data: students, isLoading: studentsLoading } = useQuery<Student[]>({
     queryKey: ['/api/trainer/students-for-journal'],
     queryFn: async () => {
-      return [
-        {
-          id: 1,
-          name: "홍길동",
-          email: "hong@example.com",
-          pet: { id: 1, name: "멍멍이", breed: "골든 리트리버", age: 2 },
-          course: { id: 1, title: "기초 복종 훈련", currentSession: 2, totalSessions: 8 },
-          lastJournal: "2025-01-21"
-        },
-        {
-          id: 2,
-          name: "김영희",
-          email: "kim@example.com",
-          pet: { id: 2, name: "바둑이", breed: "보더 콜리", age: 3 },
-          course: { id: 2, title: "어질리티 기초", currentSession: 4, totalSessions: 6 },
-          lastJournal: "2025-01-20"
-        },
-        {
-          id: 3,
-          name: "박철수",
-          email: "park@example.com",
-          pet: { id: 3, name: "초코", breed: "시바견", age: 4 },
-          course: { id: 3, title: "문제행동 교정", currentSession: 1, totalSessions: 12 },
-          lastJournal: null
-        }
-      ] as Student[];
+      const res = await fetch('/api/trainer/students-for-journal', { credentials: 'include' });
+      if (!res.ok) throw new Error('학생 목록 조회 실패');
+      const json = await res.json();
+      return (json.students || []) as Student[];
     },
-    enabled: isAuthenticated
+    enabled: isAuthenticated,
   });
 
   // 알림장 작성/수정

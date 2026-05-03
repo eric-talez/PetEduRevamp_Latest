@@ -297,85 +297,7 @@ export default function NotebookPage() {
     return userRole === 'trainer' || userRole === 'institute-admin';
   }, [userRole]);
 
-  // 샘플 데이터 로드
-  useEffect(() => {
-    const sampleEntries: NotebookEntry[] = [
-      {
-        id: '1',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        petName: '멍멍이',
-        petId: 'pet1',
-        trainerName: '김민수',
-        trainerId: 'trainer1',
-        title: '오늘의 기본 훈련 세션',
-        content: '오늘 멍멍이는 기본 명령어 훈련을 매우 잘 따라했습니다. 특히 "앉아"와 "기다려" 명령에 대한 반응이 지난주보다 훨씬 개선되었어요.',
-        activities: {
-          training: { type: '기본 명령어', focus: '리드줄 훈련', achievement: '잘 따라함' },
-          play: { duration: '30분', type: '공 던지기', intensity: '보통' },
-          meal: { frequency: '2회', amount: '적정량', time1: '08:00', time2: '18:00', snacks: '간식 훈련용' },
-          health: { weight: '15kg', temperature: '정상', water: '충분', special: '구강 검진' },
-          bathroom: { urination: '정상', defecation: '정상', condition: '양호' },
-          behavior: ['긍정적 반응', '집중력 향상']
-        },
-        mood: 'excellent',
-        photos: [
-          'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&q=80',
-          'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=300&fit=crop&q=80',
-          'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=300&fit=crop&q=80'
-        ],
-        videos: [
-          'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
-          'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4'
-        ],
-        notes: '내일은 산책 훈련을 추가로 진행할 예정입니다.',
-        nextGoals: ['산책 훈련', '다른 강아지와의 사회화'],
-        weather: '맑음',
-        duration: 90,
-        location: 'PetEdu 훈련장 A',
-        tags: ['기본훈련', '개선됨', '추천'],
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        date: format(subDays(new Date(), 1), 'yyyy-MM-dd'),
-        petName: '야옹이',
-        petId: 'pet2',
-        trainerName: '이영희',
-        trainerId: 'trainer2',
-        title: '고양이 행동 교정 세션',
-        content: '야옹이의 스크래칭 문제를 개선하기 위한 훈련을 진행했습니다. 전용 스크래칭 포스트 사용법을 익혔고, 가구 긁기가 50% 정도 줄어들었습니다.',
-        activities: {
-          training: { type: '스크래칭 교정', focus: '장난감 활용', achievement: '개선됨' },
-          play: { duration: '45분', type: '깃털 놀이', intensity: '활발' },
-          meal: { frequency: '2회', amount: '적정량', time1: '07:30', time2: '19:30', snacks: '고양이 풀' },
-          health: { weight: '4.5kg', temperature: '정상', water: '보통', special: '털갈이 관리' },
-          bathroom: { urination: '정상', defecation: '정상', condition: '양호' },
-          behavior: ['스크래칭 개선', '활동성 증가']
-        },
-        mood: 'good',
-        photos: [
-          'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=300&fit=crop&q=80',
-          'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=400&h=300&fit=crop&q=80'
-        ],
-        videos: [
-          'https://sample-videos.com/zip/10/mp4/SampleVideo_640x360_1mb.mp4'
-        ],
-        notes: '점진적으로 개선되고 있습니다. 꾸준한 훈련이 필요해요.',
-        nextGoals: ['완전한 스크래칭 교정', '새로운 장난감 적응'],
-        weather: '흐림',
-        duration: 75,
-        location: 'PetEdu 고양이 전용실',
-        tags: ['행동교정', '진행중'],
-        isRead: true,
-        createdAt: subDays(new Date(), 1).toISOString(),
-        updatedAt: subDays(new Date(), 1).toISOString()
-      }
-    ];
-
-    setEntries(sampleEntries);
-  }, []);
+  // 알림장 자동 로드 - mock 제거됨, 실제 API 사용
 
   // 필터링 및 검색
   useEffect(() => {
@@ -464,11 +386,36 @@ export default function NotebookPage() {
       if (selectedPet !== 'all') queryParams.append('petId', selectedPet);
       if (selectedTrainer !== 'all') queryParams.append('trainerId', selectedTrainer);
 
-      const response = await fetch(`/api/notebook/entries?${queryParams}`);
+      const response = await fetch(`/api/notebook/entries?${queryParams}`, { credentials: 'include' });
       const data = await response.json();
 
       if (data.success) {
-        setEntries(data.entries || []);
+        const list = (data.data || data.entries || []) as any[];
+        // 서버 trainingJournals 스키마를 NotebookEntry 표시 형식으로 매핑
+        const mapped: NotebookEntry[] = list.map((j: any) => ({
+          id: String(j.id),
+          date: (j.trainingDate || j.createdAt || '').toString().slice(0, 10),
+          petName: j.petName || j.pet?.name || '반려동물',
+          petId: String(j.petId ?? j.pet?.id ?? ''),
+          trainerName: j.trainerName || j.trainer?.name || '훈련사',
+          trainerId: String(j.trainerId ?? j.trainer?.id ?? ''),
+          title: j.title || '훈련 일지',
+          content: j.content || '',
+          activities: j.activities || {},
+          mood: (j.mood || 'normal') as NotebookEntry['mood'],
+          photos: Array.isArray(j.attachments) ? j.attachments.filter((u: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(u)) : (j.photos || []),
+          videos: Array.isArray(j.attachments) ? j.attachments.filter((u: string) => /\.(mp4|mov|webm)$/i.test(u)) : (j.videos || []),
+          notes: j.behaviorNotes || j.notes || '',
+          nextGoals: Array.isArray(j.nextGoals) ? j.nextGoals : (j.nextGoals ? [j.nextGoals] : []),
+          weather: j.weather || '',
+          duration: j.trainingDuration || j.duration || 0,
+          location: j.location || '',
+          tags: j.tags || [],
+          isRead: !!j.isRead,
+          createdAt: j.createdAt || new Date().toISOString(),
+          updatedAt: j.updatedAt || j.createdAt || new Date().toISOString(),
+        }));
+        setEntries(mapped);
       } else {
         throw new Error(data.error || '알림장을 불러올 수 없습니다');
       }
@@ -483,6 +430,11 @@ export default function NotebookPage() {
       setIsLoading(false);
     }
   }, [selectedPet, selectedTrainer, toast]);
+
+  // 마운트 및 필터 변경 시 알림장 자동 조회
+  useEffect(() => {
+    fetchEntries();
+  }, [fetchEntries]);
 
   // 파일 업로드 핸들러
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>, type: 'images' | 'videos') => {
