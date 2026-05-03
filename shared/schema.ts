@@ -3245,3 +3245,78 @@ export const userSessions = pgTable("user_sessions", {
 export const insertUserSessionSchema = createInsertSchema(userSessions).omit({ id: true, createdAt: true });
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
+
+// =============================================================================
+// 이메일 알림 자동화 (SendGrid) - Task #24
+// =============================================================================
+
+// 이메일 템플릿 카테고리: welcome, booking_confirmed, lesson_reminder_d1,
+//   payment_receipt, payment_failed, settlement_deadline
+export const emailTemplates = pgTable("email_templates", {
+  id: serial("id").primaryKey(),
+  key: varchar("key", { length: 80 }).notNull().unique(),
+  name: varchar("name", { length: 200 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  subject: varchar("subject", { length: 300 }).notNull(),
+  bodyHtml: text("body_html"),
+  sendgridTemplateId: varchar("sendgrid_template_id", { length: 100 }),
+  enabled: boolean("enabled").default(true),
+  variables: jsonb("variables"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const emailNotificationPreferences = pgTable("email_notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  enabled: boolean("enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const emailLogs = pgTable("email_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  recipient: varchar("recipient", { length: 255 }).notNull(),
+  templateKey: varchar("template_key", { length: 80 }).notNull(),
+  subject: varchar("subject", { length: 300 }),
+  payload: jsonb("payload"),
+  status: varchar("status", { length: 30 }).default("queued"), // queued, sent, failed, skipped
+  attempts: integer("attempts").default(0),
+  lastError: text("last_error"),
+  providerMessageId: varchar("provider_message_id", { length: 200 }),
+  scheduledFor: timestamp("scheduled_for"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+
+export const insertEmailPreferenceSchema = createInsertSchema(emailNotificationPreferences).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export type InsertEmailPreference = z.infer<typeof insertEmailPreferenceSchema>;
+export type EmailPreference = typeof emailNotificationPreferences.$inferSelect;
+
+export const insertEmailLogSchema = createInsertSchema(emailLogs).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
+export type EmailLog = typeof emailLogs.$inferSelect;
+
+export const EMAIL_CATEGORIES = [
+  "welcome",
+  "booking_confirmed",
+  "lesson_reminder_d1",
+  "payment_receipt",
+  "payment_failed",
+  "settlement_deadline",
+] as const;
+export type EmailCategory = (typeof EMAIL_CATEGORIES)[number];

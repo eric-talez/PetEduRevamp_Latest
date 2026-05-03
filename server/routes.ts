@@ -16,6 +16,7 @@ import { registerSubscriptionRoutes } from "./routes/subscriptions";
 import { productRoutes } from "./routes/products";
 import { simpleProductRoutes } from "./routes/simple-products";
 // import { registerNotificationRoutes } from "./routes/notification-routes";
+import { registerEmailNotificationRoutes } from "./routes/email-notifications";
 import { registerUploadRoutes } from "./routes/upload";
 import { notificationService } from "./notifications/notification-service";
 import OpenAI from "openai";
@@ -798,6 +799,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 관리자 라우트 등록
   registerAdminRoutes(app);
+
+  // 이메일 알림 (SendGrid) 라우트 등록 - Task #24
+  registerEmailNotificationRoutes(app);
 
   // 날씨 API 라우트 등록
   app.use('/api/weather', weatherRoutes);

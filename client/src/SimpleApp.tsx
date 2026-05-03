@@ -74,6 +74,7 @@ import AdminMembersStatus from "./pages/admin/AdminMembersStatus";
 import TrainerCertificationManagement from "./pages/admin/TrainerCertificationManagement";
 import MessagingSettings from "./pages/admin/MessagingSettings";
 import PushNotificationManagement from "./pages/admin/PushNotificationManagement";
+import AdminEmailNotifications from "./pages/admin/AdminEmailNotifications";
 import AdminProductPricing from "./pages/admin/AdminProductPricing";
 import AdminSettlementPage from "./pages/admin/settlement";
 import ContentCrawler from "./pages/admin/ContentCrawler";
@@ -1774,6 +1775,11 @@ function AuthenticatedRoutes() {
         <Route path="/admin/push-notifications">
           {() => (
             <ProtectedAdminRoute component={PushNotificationManagement} />
+          )}
+        </Route>
+        <Route path="/admin/email-notifications">
+          {() => (
+            <ProtectedAdminRoute component={AdminEmailNotifications} />
           )}
         </Route>
         <Route path="/admin/notebook-monitor">

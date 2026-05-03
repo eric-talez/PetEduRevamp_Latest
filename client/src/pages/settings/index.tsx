@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeSettings } from "@/components/ThemeSettings";
 import { AccessibilitySettings } from "@/components/ui/AccessibilityControls";
 import { SecuritySessionsPanel } from "@/components/SecuritySessionsPanel";
+import EmailNotificationsSettings from "@/components/EmailNotificationsSettings";
 
 interface SettingsPageProps {
   userRole?: string;
@@ -427,6 +428,10 @@ export default function SettingsPage({ userRole: propUserRole }: SettingsPagePro
                   <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
                     변경사항 저장
                   </button>
+                </div>
+
+                <div className="border-t pt-6 mt-6">
+                  <EmailNotificationsSettings />
                 </div>
               </div>
             </div>

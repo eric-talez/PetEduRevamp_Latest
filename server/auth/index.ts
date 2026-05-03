@@ -568,6 +568,14 @@ function setupAuthRoutes(app: Express) {
       if (socialSignup) {
         delete req.session.socialSignup;
       }
+
+      // 환영 이메일 발송 (실패해도 회원가입에 영향 없음)
+      try {
+        const { emailTriggers } = await import('../services/email-service');
+        await emailTriggers.welcome(user.id, user.name || user.username);
+      } catch (e) {
+        console.warn('[email] welcome 발송 실패:', (e as Error).message);
+      }
       
       // 초대 코드가 있으면 초대자에게 교육 참여 기회 1회 부여
       if (inviteCode && inviteCode.trim()) {
