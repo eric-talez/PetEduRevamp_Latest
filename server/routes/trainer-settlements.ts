@@ -13,6 +13,7 @@ import {
 } from "../../shared/schema";
 import { z } from "zod";
 import { logServerError } from '../middleware/audit-logger';
+import { generateTrainerSettlementPdf } from "../services/trainer-settlement-pdf";
 
 interface AuthedRequest extends Request {
   user?: { id: number; role: string; name?: string; email?: string };
@@ -528,6 +529,83 @@ export function registerTrainerSettlementRoutes(app: Express) {
       res.send(csv);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ success: false, message: msg });
+    }
+  });
+
+  // PDF 명세서 다운로드
+  app.get("/api/admin/trainer-settlements/export.pdf", requireAdmin, async (req, res) => {
+    try {
+      const monthRaw = typeof req.query.month === "string" ? req.query.month : "";
+      const month = /^\d{4}-\d{2}$/.test(monthRaw) ? monthRaw : monthKey(new Date());
+      let trainerIdQ: number | undefined;
+      if (typeof req.query.trainerId === "string" && req.query.trainerId.length > 0) {
+        const n = Number(req.query.trainerId);
+        if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 0) {
+          return res.status(400).json({ success: false, message: "trainerId는 양의 정수여야 합니다." });
+        }
+        trainerIdQ = n;
+      }
+      const conds: SQL[] = [eq(trainerSettlementItems.settlementMonth, month)];
+      if (trainerIdQ) conds.push(eq(trainerSettlementItems.trainerId, trainerIdQ));
+
+      const rows = await db
+        .select({
+          item: trainerSettlementItems,
+          trainerName: users.name,
+          trainerEmail: users.email,
+        })
+        .from(trainerSettlementItems)
+        .leftJoin(users, eq(users.id, trainerSettlementItems.trainerId))
+        .where(buildWhere(conds))
+        .orderBy(trainerSettlementItems.trainerId, desc(trainerSettlementItems.occurredAt));
+
+      const groupsMap = new Map<
+        number,
+        { trainerId: number; trainerName: string; trainerEmail: string; items: typeof rows[number]["item"][] }
+      >();
+      for (const r of rows) {
+        const tid = r.item.trainerId;
+        const g = groupsMap.get(tid) || {
+          trainerId: tid,
+          trainerName: r.trainerName || `Trainer #${tid}`,
+          trainerEmail: r.trainerEmail || "",
+          items: [],
+        };
+        g.items.push(r.item);
+        groupsMap.set(tid, g);
+      }
+
+      const pdf = await generateTrainerSettlementPdf({
+        month,
+        groups: Array.from(groupsMap.values()).map((g) => ({
+          trainerId: g.trainerId,
+          trainerName: g.trainerName,
+          trainerEmail: g.trainerEmail,
+          items: g.items.map((i) => ({
+            occurredAt: i.occurredAt,
+            sourceType: i.sourceType,
+            sourceId: i.sourceId,
+            sourceName: i.sourceName,
+            category: i.category,
+            grossAmount: i.grossAmount,
+            commissionRate: i.commissionRate,
+            platformFee: i.platformFee,
+            netAmount: i.netAmount,
+            status: i.status,
+          })),
+        })),
+      });
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="trainer-settlements-${month}${trainerIdQ ? `-trainer-${trainerIdQ}` : ""}.pdf"`
+      );
+      res.send(pdf);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logServerError("[정산 PDF] 오류:", e, req);
       res.status(500).json({ success: false, message: msg });
     }
   });

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Download, Lock, RefreshCw, Trash2, Plus, CheckCircle2, Ban } from 'lucide-react';
+import { Download, Lock, RefreshCw, Trash2, Plus, CheckCircle2, Ban, FileText, Printer } from 'lucide-react';
 import { SkeletonTable, FetchingOverlay } from '@/components/ui/SkeletonLoader';
 import { keepPreviousData } from '@tanstack/react-query';
 
@@ -135,6 +135,9 @@ export default function AdminTrainerSettlementsPage() {
   const downloadCsv = () => {
     window.open(`/api/admin/trainer-settlements/export.csv?month=${month}`, '_blank');
   };
+  const downloadPdf = () => {
+    window.open(`/api/admin/trainer-settlements/export.pdf?month=${month}`, '_blank');
+  };
   const openStatement = () => {
     window.open(`/api/admin/trainer-settlements/statement.html?month=${month}`, '_blank');
   };
@@ -158,8 +161,11 @@ export default function AdminTrainerSettlementsPage() {
           <Button variant="outline" onClick={downloadCsv}>
             <Download className="h-4 w-4 mr-2" /> CSV
           </Button>
+          <Button variant="outline" onClick={downloadPdf}>
+            <FileText className="h-4 w-4 mr-2" /> PDF 다운로드
+          </Button>
           <Button variant="outline" onClick={openStatement}>
-            <Download className="h-4 w-4 mr-2" /> PDF 명세서
+            <Printer className="h-4 w-4 mr-2" /> 인쇄용 명세서
           </Button>
           <Button onClick={() => closeMonth.mutate()} disabled={closeMonth.isPending}>
             <Lock className="h-4 w-4 mr-2" /> {month} 마감
