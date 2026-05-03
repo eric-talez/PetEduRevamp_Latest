@@ -140,6 +140,67 @@ async function notifyReviewRequestForCourse(userId: number, courseId: number) {
   } catch { /* noop */ }
 }
 
+function computeAbsenceRate(userId: number, courseId: number): number {
+  const myAtt = attendance().filter((a) => a.courseId === courseId && a.userId === userId);
+  const completed = myAtt.filter((a) => a.status === "present" || a.status === "late").length;
+  const absent = myAtt.filter((a) => a.status === "absent").length;
+  const checked = completed + absent;
+  return checked > 0 ? absent / checked : 0;
+}
+
+async function notifyAbsenceWarning(params: {
+  userId: number;
+  courseId: number;
+  absenceRate: number;
+  totalSessions: number;
+  absentSessions: number;
+}) {
+  try {
+    const course = findCourse(params.courseId);
+    if (!course) return;
+    const userList = storage.users as Array<{ id: number; name?: string }>;
+    const owner = userList.find((u) => u.id === params.userId);
+    const ownerName = owner?.name || "수강생";
+    const courseTitle = course.title || `코스 #${params.courseId}`;
+    const ratePct = Math.round(params.absenceRate * 1000) / 10;
+
+    const metadata = {
+      kind: "absence_warning",
+      courseId: params.courseId,
+      userId: params.userId,
+      absenceRate: ratePct,
+      absentSessions: params.absentSessions,
+      totalSessions: params.totalSessions,
+    };
+
+    // 보호자 알림
+    try {
+      await storage.createNotification?.({
+        userId: params.userId,
+        title: "결석률 경고",
+        message: `[${courseTitle}] 결석률이 ${ratePct}%에 도달했습니다. 출석에 주의해 주세요.`,
+        type: "warning",
+        actionUrl: `/courses/${params.courseId}/progress`,
+        metadata,
+      });
+    } catch { /* noop */ }
+
+    // 트레이너 알림
+    if (course.instructorId) {
+      try {
+        await storage.createNotification?.({
+          userId: course.instructorId,
+          title: "수강생 결석률 경고",
+          message: `[${courseTitle}] ${ownerName}님의 결석률이 ${ratePct}%에 도달했습니다.`,
+          type: "warning",
+          actionUrl: `/trainer/courses/${params.courseId}`,
+          metadata: { ...metadata, ownerName },
+        });
+      } catch { /* noop */ }
+    }
+  } catch { /* noop */ }
+}
+
 function recomputeProgress(userId: number, courseId: number) {
   const courseSessionsForCourse = sessions().filter((s) => s.courseId === courseId);
   const total = courseSessionsForCourse.length;
@@ -359,6 +420,15 @@ export function registerCourseAttendanceRoutes(app: Express) {
     const updatedUsers = new Set<number>();
     const att = attendance();
 
+    // 임계값 통과 감지를 위한 사전 결석률 캡처
+    const previousRates = new Map<number, number>();
+    for (const item of parsed.data.items) {
+      if (!enrolledIds.has(item.userId)) continue;
+      if (!previousRates.has(item.userId)) {
+        previousRates.set(item.userId, computeAbsenceRate(item.userId, session.courseId));
+      }
+    }
+
     for (const item of parsed.data.items) {
       if (!enrolledIds.has(item.userId)) continue;
       let row = att.find((a) => a.sessionId === sessionId && a.userId === item.userId);
@@ -397,6 +467,17 @@ export function registerCourseAttendanceRoutes(app: Express) {
           totalSessions: result.totalSessions,
           absentSessions: result.absentSessions,
         });
+
+        const prevRate = previousRates.get(userId) ?? 0;
+        if (prevRate < ABSENCE_WARN_THRESHOLD) {
+          notifyAbsenceWarning({
+            userId,
+            courseId: session.courseId,
+            absenceRate: result.absenceRate,
+            totalSessions: result.totalSessions,
+            absentSessions: result.absentSessions,
+          }).catch(() => { /* noop */ });
+        }
       }
     }
 
