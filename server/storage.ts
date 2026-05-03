@@ -2709,6 +2709,28 @@ class Storage {
     return (this.trainingJournals || []).find(j => j.id === id) || null;
   }
 
+  // 알림장 읽음 처리: readAt은 최초 1회만, lastViewedAt은 매번 갱신
+  markJournalRead(journalId: number): { isRead: boolean; readAt: string; lastViewedAt: string } | null {
+    const journal = (this.trainingJournals || []).find(j => j.id === journalId);
+    if (!journal) return null;
+    const now = new Date().toISOString();
+    if (!journal.isRead) {
+      journal.isRead = true;
+      journal.readAt = now;
+      journal.status = 'read';
+    }
+    journal.lastViewedAt = now;
+    journal.updatedAt = now;
+    return { isRead: true, readAt: journal.readAt, lastViewedAt: journal.lastViewedAt };
+  }
+
+  // 트레이너의 미읽음 알림장 개수
+  getUnreadJournalCountForTrainer(trainerId: number): number {
+    return (this.trainingJournals || []).filter(
+      j => j.trainerId === trainerId && !j.isRead
+    ).length;
+  }
+
   updateTrainingJournal(id: number, updateData: any): any {
     const journal = (this.trainingJournals || []).find(j => j.id === id);
     if (journal) {

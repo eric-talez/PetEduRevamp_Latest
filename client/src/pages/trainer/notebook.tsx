@@ -81,9 +81,20 @@ interface Journal {
   status: 'draft' | 'sent' | 'read' | 'replied';
   createdAt: string;
   updatedAt: string;
+  isRead?: boolean;
   readAt?: string;
+  lastViewedAt?: string;
   replyMessage?: string;
 }
+
+// "MM/DD HH:mm" 포맷터
+const formatReadTimestamp = (iso?: string | null): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 interface Student {
   id: number;
@@ -463,7 +474,7 @@ export default function TrainerNotebookPage() {
         pet?: { id: number; name: string; breed?: string; age?: number };
         owner?: { id: number; name: string; email: string };
       };
-      const list: RawJournal[] = json.journals || [];
+      const list: (RawJournal & { isRead?: boolean; lastViewedAt?: string })[] = json.journals || [];
       return list.map((j) => ({
         id: j.id,
         title: j.title || '훈련 일지',
@@ -491,7 +502,9 @@ export default function TrainerNotebookPage() {
         status: (j.status || 'sent') as Journal['status'],
         createdAt: j.createdAt || new Date().toISOString(),
         updatedAt: j.updatedAt || j.createdAt || new Date().toISOString(),
+        isRead: !!j.isRead,
         readAt: j.readAt,
+        lastViewedAt: j.lastViewedAt,
         replyMessage: j.replyMessage,
       })) as Journal[];
     },
@@ -1414,6 +1427,27 @@ export default function TrainerNotebookPage() {
                           <FileText className="h-5 w-5 text-success" />
                           <h3 className="text-lg font-semibold">{journal.title}</h3>
                           {getStatusBadge(journal.status)}
+                          {journal.readAt ? (
+                            <Badge
+                              variant="outline"
+                              className="ml-1 border-emerald-300 bg-emerald-50 text-emerald-700"
+                              data-testid={`badge-read-${journal.id}`}
+                              title={`보호자가 ${new Date(journal.readAt).toLocaleString()}에 읽음`}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              읽음 ✓ {formatReadTimestamp(journal.readAt)}
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="ml-1 border-amber-300 bg-amber-50 text-amber-700"
+                              data-testid={`badge-unread-${journal.id}`}
+                              title="보호자가 아직 알림장을 열어보지 않았습니다"
+                            >
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              미읽음
+                            </Badge>
+                          )}
                           {commentCounts[journal.id]?.new > 0 && (
                             <Badge
                               variant="destructive"
@@ -1480,12 +1514,6 @@ export default function TrainerNotebookPage() {
                               ))}
                             </div>
                           </div>
-                          {journal.readAt && (
-                            <div className="flex items-center gap-1 text-success">
-                              <CheckCircle className="h-4 w-4" />
-                              <span>읽음: {new Date(journal.readAt).toLocaleDateString()}</span>
-                            </div>
-                          )}
                         </div>
 
                         {journal.replyMessage && (
@@ -1661,14 +1689,25 @@ export default function TrainerNotebookPage() {
                   <FileText className="h-6 w-6 text-success" />
                   {selectedJournal.title}
                 </DialogTitle>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2 flex-wrap" data-testid="journal-detail-status">
                   {getStatusBadge(selectedJournal.status)}
                   <span className="text-sm text-gray-500">
-                    작성: {new Date(selectedJournal.createdAt).toLocaleDateString()}
+                    작성: {new Date(selectedJournal.createdAt).toLocaleString()}
                   </span>
-                  {selectedJournal.readAt && (
-                    <span className="text-sm text-success">
-                      읽음: {new Date(selectedJournal.readAt).toLocaleDateString()}
+                  {selectedJournal.readAt ? (
+                    <span className="text-sm text-emerald-700 inline-flex items-center gap-1" data-testid="journal-detail-read-at">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      읽음 ✓ {formatReadTimestamp(selectedJournal.readAt)}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-amber-700 inline-flex items-center gap-1" data-testid="journal-detail-unread">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      미읽음
+                    </span>
+                  )}
+                  {selectedJournal.lastViewedAt && (
+                    <span className="text-xs text-gray-500" data-testid="journal-detail-last-viewed">
+                      · 마지막 조회 {formatReadTimestamp(selectedJournal.lastViewedAt)}
                     </span>
                   )}
                 </div>

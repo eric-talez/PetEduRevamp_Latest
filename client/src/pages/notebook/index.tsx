@@ -956,15 +956,15 @@ export default function NotebookPage() {
     };
   }, [entries, selectedCalendarDate]);
 
-  // 알림장 읽음 처리
+  // 알림장 읽음 처리 (보호자 전용) — 상세 모달 열릴 때마다 호출
+  // 서버는 최초 1회만 readAt를 기록하고, lastViewedAt은 매번 갱신합니다.
   const markAsRead = async (entryId: string) => {
     try {
-      const response = await fetch(`/api/notebook/entries/${entryId}/read`, {
-        method: 'PATCH'
+      const response = await secureRequest(`/api/notebook/entries/${entryId}/read`, {
+        method: 'PATCH',
       });
-
       if (response.ok) {
-        setEntries(prev => prev.map(entry => 
+        setEntries(prev => prev.map(entry =>
           entry.id === entryId ? { ...entry, isRead: true } : entry
         ));
       }
@@ -2114,9 +2114,8 @@ export default function NotebookPage() {
               className={`transition-all hover:shadow-md cursor-pointer ${!entry.isRead ? 'border-primary/30 bg-primary/30' : ''}`}
               onClick={() => {
                 setSelectedEntry(entry);
-                if (!entry.isRead) {
-                  markAsRead(entry.id);
-                }
+                // 매 열람마다 호출 — 서버가 최초 1회만 readAt 기록, lastViewedAt은 갱신
+                markAsRead(entry.id);
               }}
             >
               <CardHeader className="pb-3">

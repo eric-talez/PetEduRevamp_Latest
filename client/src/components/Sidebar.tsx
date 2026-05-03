@@ -597,6 +597,15 @@ export function Sidebar({
   const showAdminMenu = isAdmin;  // 관리자 전용 메뉴
   const showPetOwnerMenu = isPetOwner && !isAdmin;  // 견주 전용 메뉴 (관리자 제외)
   const showOperationsMenu = (isTrainer || isInstituteAdmin) && !isAdmin;  // 운영 관리 메뉴 (관리자 제외)
+
+  // 트레이너 미읽음 알림장 카운트 (사이드바 뱃지)
+  const { data: trainerUnreadJournalsData } = useQuery<{ success: boolean; count: number }>({
+    queryKey: ['/api/trainer/journals/unread-count'],
+    enabled: isAuthenticated && isTrainer && !isAdmin,
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+  const trainerUnreadJournalCount = trainerUnreadJournalsData?.count ?? 0;
   const showAllAuthenticatedMenu = (isPetOwner || isTrainer || isInstituteAdmin) && !isAdmin;  // 로그인 사용자 (관리자 제외)
   const showBasicMenu = true;  // 공개 메뉴
 
@@ -863,7 +872,7 @@ export function Sidebar({
                         <AccessibleNavItem href="/trainer/students" icon={<Users className="w-5 h-5 mr-2" />} hoverIcon={<UserCheck className="w-5 h-5 mr-2 text-primary" />} active={isActive("/trainer/students")} onClick={handleItemClick} show={isMenuVisible('trainer-students')} highlighted>수강생</AccessibleNavItem>
                         <AccessibleNavItem href="/trainer/earnings" icon={<DollarSign className="w-5 h-5 mr-2" />} hoverIcon={<TrendingUp className="w-5 h-5 mr-2 text-primary" />} active={isActive("/trainer/earnings")} onClick={handleItemClick} show={isMenuVisible('trainer-earnings')} highlighted>수익</AccessibleNavItem>
                         <AccessibleNavItem href="/education-schedule" icon={<Calendar className="w-5 h-5 mr-2" />} hoverIcon={<CalendarDays className="w-5 h-5 mr-2 text-primary" />} active={isActive("/education-schedule")} onClick={handleItemClick} show={true}>일정</AccessibleNavItem>
-                        <AccessibleNavItem href="/trainer/notebook" icon={<FileText className="w-5 h-5 mr-2" />} hoverIcon={<Edit className="w-5 h-5 mr-2 text-primary" />} active={isActive("/trainer/notebook")} onClick={handleItemClick} show={isMenuVisible('trainer-notebook')}>알림장</AccessibleNavItem>
+                        <AccessibleNavItem href="/trainer/notebook" icon={<FileText className="w-5 h-5 mr-2" />} hoverIcon={<Edit className="w-5 h-5 mr-2 text-primary" />} active={isActive("/trainer/notebook")} onClick={handleItemClick} show={isMenuVisible('trainer-notebook')} badge={trainerUnreadJournalCount > 0 ? `미읽음 ${trainerUnreadJournalCount}` : undefined}>알림장</AccessibleNavItem>
                         <AccessibleNavItem href="/consultation-records" icon={<ClipboardList className="w-5 h-5 mr-2" />} hoverIcon={<ClipboardList className="w-5 h-5 mr-2 text-primary" />} active={isActive("/consultation-records")} onClick={handleItemClick} show={true} badge="상담">상담 기록</AccessibleNavItem>
                         <AccessibleNavItem href="/institute/visit-sessions" icon={<Shield className="w-5 h-5 mr-2" />} hoverIcon={<Shield className="w-5 h-5 mr-2 text-primary" />} active={isActive("/institute/visit-sessions")} onClick={handleItemClick} show={true} badge="신뢰QR">방문 신뢰 QR</AccessibleNavItem>
                         <AccessibleNavItem href="/institute/checkin-dashboard" icon={<QrCode className="w-5 h-5 mr-2" />} hoverIcon={<QrCode className="w-5 h-5 mr-2 text-primary" />} active={isActive("/institute/checkin-dashboard")} onClick={handleItemClick} show={true} badge="체크인">체크인 현황</AccessibleNavItem>

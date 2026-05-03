@@ -5048,16 +5048,10 @@ ${keywords}
         });
       }
 
-      // 읽음 상태 업데이트 (견주가 조회할 때)
-      if (currentUser.role === 'pet-owner' && !journal.isRead) {
-        storage.updateTrainingJournal(journalId, {
-          isRead: true,
-          readAt: new Date().toISOString(),
-          status: 'read'
-        });
-        journal.isRead = true;
-        journal.readAt = new Date().toISOString();
-        journal.status = 'read';
+      // 읽음/마지막 조회 시각 업데이트 (보호자가 조회할 때)
+      // - readAt: 최초 1회만, lastViewedAt: 매 조회마다 갱신
+      if (currentUser.role === 'pet-owner' && journal.petOwnerId === currentUser.id) {
+        storage.markJournalRead(journalId);
       }
 
       res.json({
@@ -5404,6 +5398,47 @@ ${keywords}
     } catch (error) {
       logServerError('[알림장 댓글] 카운트 조회 실패:', error, req);
       res.status(500).json({ error: '카운트 조회 실패', code: 'COMMENTS_COUNT_FAILED' });
+    }
+  });
+
+  // 알림장 읽음 확인 (보호자 전용) — 상세 모달 열릴 때마다 호출
+  // 최초 1회만 readAt 기록, lastViewedAt은 매 호출 시 갱신
+  app.patch('/api/notebook/entries/:id/read', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      // 보호자(소유자)만 읽음 표시 가능 — IDOR/오작동 방지
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '접근 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      if (currentUser.role !== 'pet-owner' || journal.petOwnerId !== currentUser.id) {
+        // 트레이너/관리자/그 외 역할은 읽음 처리 불가 (조회는 허용)
+        return res.status(403).json({ error: '보호자만 읽음 처리할 수 있습니다.', code: 'OWNER_ONLY' });
+      }
+      const result = storage.markJournalRead(journalId);
+      return res.json({ success: true, data: result });
+    } catch (error) {
+      logServerError('[알림장] 읽음 처리(PATCH) 실패:', error, req);
+      res.status(500).json({ error: '읽음 처리 실패', code: 'MARK_READ_FAILED' });
+    }
+  });
+
+  // 트레이너의 미읽음 알림장 개수 (사이드바 뱃지용)
+  app.get('/api/trainer/journals/unread-count', requireAuth('trainer'), async (req, res) => {
+    try {
+      const trainerId = req.session.user!.id;
+      const count = storage.getUnreadJournalCountForTrainer(trainerId);
+      return res.json({ success: true, count });
+    } catch (error) {
+      logServerError('[알림장] 미읽음 카운트 조회 실패:', error, req);
+      res.status(500).json({ success: false, count: 0 });
     }
   });
 
@@ -6333,16 +6368,10 @@ ${keywords}
         });
       }
 
-      // 읽음 상태 업데이트 (견주가 조회할 때)
-      if (currentUser.role === 'pet-owner' && !journal.isRead) {
-        storage.updateTrainingJournal(journalId, {
-          isRead: true,
-          readAt: new Date().toISOString(),
-          status: 'read'
-        });
-        journal.isRead = true;
-        journal.readAt = new Date().toISOString();
-        journal.status = 'read';
+      // 읽음/마지막 조회 시각 업데이트 (보호자가 조회할 때)
+      // - readAt: 최초 1회만, lastViewedAt: 매 조회마다 갱신
+      if (currentUser.role === 'pet-owner' && journal.petOwnerId === currentUser.id) {
+        storage.markJournalRead(journalId);
       }
 
       res.json({

@@ -1062,6 +1062,7 @@ export const trainingJournals = pgTable("training_journals", {
   attachments: text("attachments").array(), // 첨부파일 URL 배열
   isRead: boolean("is_read").default(false), // 견주 읽음 여부
   readAt: timestamp("read_at"),
+  lastViewedAt: timestamp("last_viewed_at"), // 보호자가 마지막으로 알림장을 연 시각
   status: varchar("status", { length: 20 }).default("sent"), // sent, read, replied
   isAiDraft: boolean("is_ai_draft").default(false), // AI 초안에서 시작했는지 여부
   createdAt: timestamp("created_at").defaultNow(),
