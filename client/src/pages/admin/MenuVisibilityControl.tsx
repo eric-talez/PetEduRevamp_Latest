@@ -109,7 +109,7 @@ const MenuVisibilityControl: React.FC = () => {
         { id: 'community', name: '커뮤니티', path: '/community', category: '소통', description: '사용자 커뮤니티', icon: 'MessageSquare' },
         { id: 'location', name: '위치 서비스', path: '/location', category: '도구', description: '근처 시설 찾기', icon: 'MapPin' },
         { id: 'messages', name: '메시지', path: '/messages', category: '도구', description: '메시지 관리', icon: 'MessageSquare' },
-        { id: 'alerts', name: '알림', path: '/alerts', category: '도구', description: '알림 관리', icon: 'Bell' }
+        { id: 'notifications', name: '알림', path: '/notifications', category: '도구', description: '알림 관리', icon: 'Bell' }
       ]
     },
     trainer: {

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useNotifications } from '@/hooks/use-notifications';
 import { 
   Card, 
   CardContent, 
@@ -20,7 +19,6 @@ import {
   Send,
   User,
   Users,
-  Bell,
   Settings,
   ChevronRight
 } from 'lucide-react';
@@ -60,7 +58,6 @@ interface Contact {
 
 export default function MessagingPage() {
   const { user } = useAuth();
-  const { sendNotification, sendTestNotification } = useNotifications();
 
   const [activeTab, setActiveTab] = useState('messages');
   const [messageInput, setMessageInput] = useState('');
@@ -239,18 +236,6 @@ export default function MessagingPage() {
     setMessageInput('');
   };
 
-  // 테스트 알림 전송
-  const handleSendTestNotification = () => {
-    if (sendTestNotification) {
-      sendTestNotification.mutate({
-        title: '새 메시지 알림',
-        message: `${selectedContact?.name || '상대방'}님이 새 메시지를 보냈습니다: "안녕하세요, 테스트 메시지입니다."`,
-        type: 'info',
-        linkTo: '/messaging'
-      });
-    }
-  };
-
   // 연락처 선택 처리
   const handleSelectContact = (contact: Contact) => {
     setSelectedContact(contact);
@@ -270,15 +255,6 @@ export default function MessagingPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSendTestNotification}
-            disabled={sendTestNotification?.isPending}
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            테스트 알림 전송
-          </Button>
-
           <Button>
             <MessageSquare className="h-4 w-4 mr-2" />
             새 대화

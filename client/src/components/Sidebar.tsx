@@ -515,7 +515,6 @@ export function Sidebar({
       '/notebook': '알림장',
       '/calendar': '교육 일정',
       '/education-schedule': '교육 일정',
-      '/alerts': '알림',
       '/notifications': '알림 센터'
       // '/shop' 항목은 제거 - 사이드바에서 직접 새 창으로 열기 처리
     };
