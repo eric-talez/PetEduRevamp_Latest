@@ -47,6 +47,7 @@ import {
   EMPTY_FILTERS,
   hasActiveFilters,
   filtersToApiParams,
+  DEFAULT_CATEGORIES,
   type NotebookFilters,
   type PetOption,
 } from '@/components/notebook/NotebookFilterBar';
@@ -88,6 +89,7 @@ interface Journal {
   updatedAt: string;
   readAt?: string;
   replyMessage?: string;
+  category?: string | null;
 }
 
 interface Student {
@@ -129,6 +131,12 @@ export default function TrainerNotebookPage() {
   const [selectedJournal, setSelectedJournal] = useState<Journal | null>(null);
   const [isJournalDetailOpen, setIsJournalDetailOpen] = useState(false);
   const [isCreateJournalOpen, setIsCreateJournalOpen] = useState(false);
+  const [editingJournal, setEditingJournal] = useState<Journal | null>(null);
+  const [editForm, setEditForm] = useState<{ title: string; content: string; category: string }>({
+    title: '',
+    content: '',
+    category: '',
+  });
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'activities' | 'media' | 'ai'>('basic');
   const search = useSearch();
@@ -176,6 +184,7 @@ export default function TrainerNotebookPage() {
     content: '',
     studentId: '',
     petId: '',
+    category: '',
     trainingDate: new Date().toISOString().split('T')[0],
     trainingDuration: 60,
     progressRating: 3,
@@ -260,7 +269,7 @@ export default function TrainerNotebookPage() {
   const createNotebookMutation = useMutation({
     mutationFn: async (notebookData: any) => {
       const { secureRequest } = await import('@/lib/csrf');
-      const payload = {
+      const payload: Record<string, unknown> = {
         title: notebookData.title,
         content: notebookData.content,
         petId: Number(notebookData.petId),
@@ -272,6 +281,9 @@ export default function TrainerNotebookPage() {
         nextGoals: notebookData.nextGoals,
         attachments: notebookData.attachments || [],
       };
+      if (notebookData.category && notebookData.category.trim()) {
+        payload.category = notebookData.category.trim();
+      }
       const response = await secureRequest('/api/notebook/entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -295,6 +307,7 @@ export default function TrainerNotebookPage() {
         content: '',
         studentId: '',
         petId: '',
+        category: '',
         trainingDate: new Date().toISOString().split('T')[0],
         trainingDuration: 60,
         progressRating: 3,
@@ -368,6 +381,7 @@ export default function TrainerNotebookPage() {
         trainingDate?: string;
         trainingDuration?: number;
         trainingType?: string;
+        category?: string | null;
         sessionNumber?: number;
         progressRating?: number;
         behaviorNotes?: string;
@@ -412,6 +426,7 @@ export default function TrainerNotebookPage() {
         updatedAt: j.updatedAt || j.createdAt || new Date().toISOString(),
         readAt: j.readAt,
         replyMessage: j.replyMessage,
+        category: j.category ?? null,
       })) as Journal[];
     },
     enabled: isAuthenticated,
@@ -429,21 +444,53 @@ export default function TrainerNotebookPage() {
     enabled: isAuthenticated,
   });
 
-  // 알림장 작성/수정
-  const saveJournalMutation = useMutation({
-    mutationFn: async (journalData: any) => {
-      console.log('알림장 저장:', journalData);
-      return { success: true, id: Math.random() };
+  // 알림장 수정 (제목/카테고리/본문)
+  const updateJournalMutation = useMutation({
+    mutationFn: async (vars: { id: number; title: string; content: string; category: string }) => {
+      const { secureRequest } = await import('@/lib/csrf');
+      const payload: Record<string, unknown> = {
+        title: vars.title,
+        content: vars.content,
+        // 빈 문자열이면 카테고리 해제(null)
+        category: vars.category && vars.category.trim() ? vars.category.trim() : null,
+      };
+      const response = await secureRequest(`/api/notebook/entries/${vars.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success === false) {
+        const msg = data?.error || data?.message || `요청 실패 (${response.status})`;
+        throw new Error(msg);
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/trainer/journals'] });
-      setIsCreateJournalOpen(false);
+      setEditingJournal(null);
       toast({
-        title: "알림장 저장 완료",
-        description: "알림장이 성공적으로 저장되었습니다."
+        title: "알림장 수정 완료",
+        description: "알림장이 성공적으로 수정되었습니다.",
       });
-    }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "수정 실패",
+        description: error?.message || '알림장 수정 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    },
   });
+
+  const openEditDialog = (journal: Journal) => {
+    setEditingJournal(journal);
+    setEditForm({
+      title: journal.title || '',
+      content: journal.content || '',
+      category: journal.category || '',
+    });
+  };
 
   // 알림장 전송
   const sendJournalMutation = useMutation({
@@ -685,7 +732,28 @@ export default function TrainerNotebookPage() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="category">카테고리</Label>
+                        <Select
+                          value={notebookForm.category || 'none'}
+                          onValueChange={(value) =>
+                            setNotebookForm(prev => ({ ...prev, category: value === 'none' ? '' : value }))
+                          }
+                        >
+                          <SelectTrigger id="category" data-testid="select-journal-category">
+                            <SelectValue placeholder="카테고리를 선택하세요" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">선택 안 함</SelectItem>
+                            {DEFAULT_CATEGORIES.map((c) => (
+                              <SelectItem key={c} value={c} data-testid={`option-journal-category-${c}`}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div>
                         <Label htmlFor="duration">훈련 시간 (분)</Label>
                         <Input 
@@ -1234,7 +1302,15 @@ export default function TrainerNotebookPage() {
                         </Button>
                         {journal.status === 'draft' && (
                           <>
-                            <Button variant="outline" size="sm">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditDialog(journal);
+                              }}
+                              data-testid={`button-edit-journal-${journal.id}`}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               편집
                             </Button>
@@ -1502,7 +1578,14 @@ export default function TrainerNotebookPage() {
                 </Button>
                 {selectedJournal.status === 'draft' && (
                   <>
-                    <Button variant="outline">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        openEditDialog(selectedJournal);
+                        setIsJournalDetailOpen(false);
+                      }}
+                      data-testid="button-edit-journal-detail"
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       편집
                     </Button>
@@ -1515,6 +1598,87 @@ export default function TrainerNotebookPage() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 알림장 편집 다이얼로그 (제목/카테고리/본문) */}
+      <Dialog open={!!editingJournal} onOpenChange={(open) => { if (!open) setEditingJournal(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>알림장 편집</DialogTitle>
+          </DialogHeader>
+          {editingJournal && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-title">제목</Label>
+                <Input
+                  id="edit-title"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))}
+                  data-testid="input-edit-journal-title"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-category">카테고리</Label>
+                <Select
+                  value={editForm.category || 'none'}
+                  onValueChange={(value) =>
+                    setEditForm((p) => ({ ...p, category: value === 'none' ? '' : value }))
+                  }
+                >
+                  <SelectTrigger id="edit-category" data-testid="select-edit-journal-category">
+                    <SelectValue placeholder="카테고리를 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">선택 안 함</SelectItem>
+                    {DEFAULT_CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c} data-testid={`option-edit-journal-category-${c}`}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-content">훈련 내용</Label>
+                <Textarea
+                  id="edit-content"
+                  rows={6}
+                  value={editForm.content}
+                  onChange={(e) => setEditForm((p) => ({ ...p, content: e.target.value }))}
+                  data-testid="textarea-edit-journal-content"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingJournal(null)}>
+              취소
+            </Button>
+            <Button
+              onClick={() => {
+                if (!editingJournal) return;
+                if (!editForm.title.trim()) {
+                  toast({ title: '제목을 입력해주세요', variant: 'destructive' });
+                  return;
+                }
+                if (!editForm.content.trim()) {
+                  toast({ title: '내용을 입력해주세요', variant: 'destructive' });
+                  return;
+                }
+                updateJournalMutation.mutate({
+                  id: editingJournal.id,
+                  title: editForm.title,
+                  content: editForm.content,
+                  category: editForm.category,
+                });
+              }}
+              disabled={updateJournalMutation.isPending}
+              data-testid="button-save-edit-journal"
+            >
+              저장
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

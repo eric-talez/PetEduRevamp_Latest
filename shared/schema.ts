@@ -2237,6 +2237,7 @@ export const updateTrainingJournalSchema = z.object({
   homeworkInstructions: z.string().max(2000, "숙제 내용은 2000자를 초과할 수 없습니다").optional().nullable(),
   nextGoals: z.string().max(2000, "다음 목표는 2000자를 초과할 수 없습니다").optional().nullable(),
   attachments: z.array(z.string().url("올바른 URL 형식이 아닙니다")).optional().nullable(),
+  category: z.string().trim().max(50, "카테고리는 50자를 초과할 수 없습니다").optional().nullable(),
   isRead: z.boolean().optional(),
   status: z.enum(["sent", "read", "replied"]).optional()
 });

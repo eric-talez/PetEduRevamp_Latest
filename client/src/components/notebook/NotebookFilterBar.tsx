@@ -83,7 +83,7 @@ interface Props {
   className?: string;
 }
 
-const DEFAULT_CATEGORIES = ['기본훈련', '행동교정', '사회화', '건강관리', '식습관', '기타'];
+export const DEFAULT_CATEGORIES = ['기본훈련', '행동교정', '사회화', '건강관리', '식습관', '기타'];
 
 function parseFiltersFromSearch(search: string): Partial<NotebookFilters> {
   const params = new URLSearchParams(search);
