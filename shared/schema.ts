@@ -1064,9 +1064,14 @@ export const trainingJournals = pgTable("training_journals", {
   readAt: timestamp("read_at"),
   lastViewedAt: timestamp("last_viewed_at"), // 보호자가 마지막으로 알림장을 연 시각
   status: varchar("status", { length: 20 }).default("sent"), // sent, read, replied
+  category: varchar("category", { length: 50 }), // 분류(예: 기본훈련, 행동교정, 사회화 등)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  petIdIdx: index("training_journals_pet_id_idx").on(table.petId),
+  createdAtIdx: index("training_journals_created_at_idx").on(table.createdAt),
+  categoryIdx: index("training_journals_category_idx").on(table.category),
+}));
 
 // 알림장 공유 토큰 테이블 (PDF 외부 공유 링크)
 export const notebookShareTokens = pgTable("notebook_share_tokens", {
@@ -2213,6 +2218,12 @@ export const trainingJournalQuerySchema = z.object({
   isRead: z.coerce.boolean().optional(),
   fromDate: z.string().optional(), // YYYY-MM-DD 형식
   toDate: z.string().optional(),   // YYYY-MM-DD 형식
+  // 검색·필터 확장 (Task #93)
+  q: z.string().trim().min(1).max(200).optional(),               // 키워드(제목/본문 ILIKE)
+  from: z.string().optional(),                                    // YYYY-MM-DD (fromDate alias)
+  to: z.string().optional(),                                      // YYYY-MM-DD (toDate alias)
+  category: z.string().trim().min(1).max(50).optional(),          // 카테고리 필터
+  unreadOnly: z.coerce.boolean().optional(),                      // 미읽음만
   sortBy: z.enum(["trainingDate", "createdAt", "title", "progressRating"]).default("trainingDate"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });

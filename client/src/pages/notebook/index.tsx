@@ -51,6 +51,14 @@ import { secureRequest, getCSRFToken } from '@/lib/csrf';
 import NotebookBannerImage from '@assets/stock_images/pet_training_journal_3a3d5b29.jpg';
 import { PageBanner } from '@/components/PageBanner';
 import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
+import {
+  NotebookFilterBar,
+  EMPTY_FILTERS,
+  hasActiveFilters,
+  filtersToApiParams,
+  type NotebookFilters,
+  type PetOption,
+} from '@/components/notebook/NotebookFilterBar';
 
 // 알림장 엔트리 타입 정의
 interface NotebookEntry {
@@ -130,8 +138,18 @@ export default function NotebookPage() {
   const [entries, setEntries] = useState<NotebookEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<NotebookEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPet, setSelectedPet] = useState('all');
+  // Task #93 — 통합 검색·필터(서버측) 상태
+  const [filters, setFilters] = useState<NotebookFilters>(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    return {
+      q: params.get('q') || '',
+      petId: params.get('petId') || 'all',
+      from: params.get('from') || '',
+      to: params.get('to') || '',
+      category: params.get('category') || 'all',
+      unreadOnly: params.get('unreadOnly') === 'true',
+    };
+  });
   const [selectedTrainer, setSelectedTrainer] = useState('all');
   const [selectedEntry, setSelectedEntry] = useState<NotebookEntry | null>(null);
   const [isNewEntryOpen, setIsNewEntryOpen] = useState(false);
@@ -300,55 +318,17 @@ export default function NotebookPage() {
 
   // 알림장 자동 로드 - mock 제거됨, 실제 API 사용
 
-  // 필터링 및 검색
+  // 필터링 및 정렬 (Task #93: q/petId/from/to/category/unreadOnly는 서버측 적용)
   useEffect(() => {
     let filtered = entries;
 
-    // 검색 필터
-    if (searchQuery) {
-      filtered = filtered.filter(entry => 
-        entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.petName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.trainerName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // 반려동물 필터
-    if (selectedPet !== 'all') {
-      filtered = filtered.filter(entry => entry.petId === selectedPet);
-    }
-
-    // 훈련사 필터
+    // 훈련사 필터(서버 미지원 → 클라이언트 보조)
     if (selectedTrainer !== 'all') {
       filtered = filtered.filter(entry => entry.trainerId === selectedTrainer);
     }
 
-    // 날짜 필터
-    const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const startOfWeek = new Date(startOfToday);
-    startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    if (dateFilterMode === 'today') {
-      filtered = filtered.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= startOfToday && entryDate < new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
-      });
-    } else if (dateFilterMode === 'week') {
-      const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= startOfWeek && entryDate < endOfWeek;
-      });
-    } else if (dateFilterMode === 'month') {
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      filtered = filtered.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= startOfMonth && entryDate <= endOfMonth;
-      });
-    } else if (dateFilterMode === 'custom' && selectedCalendarDate) {
+    // 'custom' 날짜는 단일 일자 정밀 필터링이라 클라이언트에서 보조 적용
+    if (dateFilterMode === 'custom' && selectedCalendarDate) {
       const selectedDateStart = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), selectedCalendarDate.getDate());
       const selectedDateEnd = new Date(selectedDateStart.getTime() + 24 * 60 * 60 * 1000);
       filtered = filtered.filter(entry => {
@@ -357,7 +337,7 @@ export default function NotebookPage() {
       });
     }
 
-    // 읽음/안읽음 필터
+    // 읽음/안읽음 토글 (서버 unreadOnly와 별개의 보조 표시 필터)
     if (!showRead && !showUnread) {
       filtered = [];
     } else if (!showRead) {
@@ -366,7 +346,7 @@ export default function NotebookPage() {
       filtered = filtered.filter(entry => entry.isRead);
     }
 
-    // 날짜 정렬
+    // 정렬
     if (sortBy === 'date') {
       filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     } else if (sortBy === 'pet') {
@@ -376,18 +356,18 @@ export default function NotebookPage() {
     }
 
     setFilteredEntries(filtered);
-  }, [entries, searchQuery, selectedPet, selectedTrainer, sortBy, showRead, showUnread, dateFilterMode, selectedCalendarDate]);
+  }, [entries, selectedTrainer, sortBy, showRead, showUnread, dateFilterMode, selectedCalendarDate]);
 
-  // 알림장 목록 조회
+  // 알림장 목록 조회 (Task #93: 서버측 검색·필터 적용)
   const fetchEntries = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const queryParams = new URLSearchParams();
-      if (selectedPet !== 'all') queryParams.append('petId', selectedPet);
-      if (selectedTrainer !== 'all') queryParams.append('trainerId', selectedTrainer);
+      const queryParams = new URLSearchParams(filtersToApiParams(filters));
+      if (selectedTrainer !== 'all') queryParams.set('trainerId', selectedTrainer);
+      queryParams.set('limit', '100');
 
-      const response = await fetch(`/api/notebook/entries?${queryParams}`, { credentials: 'include' });
+      const response = await fetch(`/api/notebook/entries?${queryParams.toString()}`, { credentials: 'include' });
       const data = await response.json();
 
       if (data.success) {
@@ -458,7 +438,7 @@ export default function NotebookPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedPet, selectedTrainer, toast]);
+  }, [filters, selectedTrainer, toast]);
 
   // 마운트 및 필터 변경 시 알림장 자동 조회
   useEffect(() => {
@@ -1872,23 +1852,19 @@ export default function NotebookPage() {
         </div>
       </div>
 
-      {/* 필터 및 검색 */}
+      {/* 검색·필터 (Task #93) */}
+      <NotebookFilterBar
+        filters={filters}
+        onChange={setFilters}
+        pets={(pets || []).map((p: any) => ({ id: p.id ?? p.petId, name: p.name }))}
+      />
+
+      {/* 보조 필터: 표시 토글·정렬 */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col gap-4">
-            {/* 첫 번째 줄: 검색 및 기본 필터 */}
             <div className="flex flex-col lg:flex-row gap-4 items-center">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="제목, 내용, 반려동물 이름으로 검색..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center flex-wrap">
                 <div className="flex items-center gap-2">
                   <Switch
                     id="show-read"
@@ -1906,17 +1882,6 @@ export default function NotebookPage() {
                   />
                   <label htmlFor="show-unread" className="text-sm">안읽음</label>
                 </div>
-
-                <Select value={selectedPet} onValueChange={setSelectedPet}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="반려동물" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">모든 반려동물</SelectItem>
-                    <SelectItem value="pet1">멍멍이</SelectItem>
-                    <SelectItem value="pet2">야옹이</SelectItem>
-                  </SelectContent>
-                </Select>
 
                 <Select value={selectedTrainer} onValueChange={setSelectedTrainer}>
                   <SelectTrigger className="w-32">
@@ -2071,15 +2036,29 @@ export default function NotebookPage() {
           <Card>
             <CardContent className="p-12 text-center">
               <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">알림장이 없습니다</h3>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                {hasActiveFilters(filters) ? '검색 조건에 맞는 알림장이 없습니다' : '알림장이 없습니다'}
+              </h3>
               <p className="text-gray-500 mb-4">
-                {canCreateNotebook ? '첫 번째 알림장을 작성해보세요!' : '훈련사가 작성한 알림장이 여기에 표시됩니다.'}
+                {hasActiveFilters(filters)
+                  ? '다른 검색어나 필터를 시도해보세요'
+                  : (canCreateNotebook ? '첫 번째 알림장을 작성해보세요!' : '훈련사가 작성한 알림장이 여기에 표시됩니다.')}
               </p>
-              {canCreateNotebook && (
-                <Button onClick={() => setIsNewEntryOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  새 알림장 작성
+              {hasActiveFilters(filters) ? (
+                <Button
+                  variant="outline"
+                  onClick={() => setFilters({ ...EMPTY_FILTERS })}
+                  data-testid="button-owner-empty-reset"
+                >
+                  필터 초기화
                 </Button>
+              ) : (
+                canCreateNotebook && (
+                  <Button onClick={() => setIsNewEntryOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    새 알림장 작성
+                  </Button>
+                )
               )}
             </CardContent>
           </Card>

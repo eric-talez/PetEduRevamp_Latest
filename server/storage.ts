@@ -2849,11 +2849,30 @@ class Storage {
     if (query.isRead !== undefined) {
       filteredJournals = filteredJournals.filter(j => j.isRead === query.isRead);
     }
-    if (query.fromDate) {
-      filteredJournals = filteredJournals.filter(j => j.trainingDate >= query.fromDate);
+    // 'from'/'to'를 fromDate/toDate alias로 수용 (Task #93)
+    const fromDate = query.fromDate || query.from;
+    const toDate = query.toDate || query.to;
+    if (fromDate) {
+      filteredJournals = filteredJournals.filter(j => (j.trainingDate || '') >= fromDate);
     }
-    if (query.toDate) {
-      filteredJournals = filteredJournals.filter(j => j.trainingDate <= query.toDate);
+    if (toDate) {
+      filteredJournals = filteredJournals.filter(j => (j.trainingDate || '') <= toDate);
+    }
+    // 키워드 검색 (제목/본문 ILIKE)
+    if (query.q) {
+      const needle = String(query.q).toLowerCase();
+      filteredJournals = filteredJournals.filter(j =>
+        (j.title || '').toLowerCase().includes(needle) ||
+        (j.content || '').toLowerCase().includes(needle)
+      );
+    }
+    // 카테고리 필터
+    if (query.category) {
+      filteredJournals = filteredJournals.filter(j => (j.category || j.trainingType) === query.category);
+    }
+    // 미읽음만
+    if (query.unreadOnly === true) {
+      filteredJournals = filteredJournals.filter(j => j.isRead === false || j.isRead === undefined || j.isRead === null);
     }
 
     // 정렬

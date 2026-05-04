@@ -42,6 +42,14 @@ import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
+import {
+  NotebookFilterBar,
+  EMPTY_FILTERS,
+  hasActiveFilters,
+  filtersToApiParams,
+  type NotebookFilters,
+  type PetOption,
+} from '@/components/notebook/NotebookFilterBar';
 
 interface Journal {
   id: number;
@@ -105,9 +113,19 @@ export default function TrainerNotebookPage() {
   const { userRole, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState('journals');
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
+  // Task #93 — 검색·필터 (URL 동기화는 NotebookFilterBar 내부에서 처리)
+  const [filters, setFilters] = useState<NotebookFilters>(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    return {
+      q: params.get('q') || '',
+      petId: params.get('petId') || 'all',
+      from: params.get('from') || '',
+      to: params.get('to') || '',
+      category: params.get('category') || 'all',
+      unreadOnly: params.get('unreadOnly') === 'true',
+    };
+  });
   const [selectedJournal, setSelectedJournal] = useState<Journal | null>(null);
   const [isJournalDetailOpen, setIsJournalDetailOpen] = useState(false);
   const [isCreateJournalOpen, setIsCreateJournalOpen] = useState(false);
@@ -330,11 +348,13 @@ export default function TrainerNotebookPage() {
     createNotebookMutation.mutate(notebookForm);
   };
 
-  // 알림장 목록 조회 (실제 API)
+  // 알림장 목록 조회 (실제 API) - Task #93: 서버측 검색·필터 적용
   const { data: journals, isLoading: journalsLoading } = useQuery<Journal[]>({
-    queryKey: ['/api/trainer/journals'],
+    queryKey: ['/api/trainer/journals', filters],
     queryFn: async () => {
-      const res = await fetch('/api/trainer/journals', { credentials: 'include' });
+      const params = new URLSearchParams(filtersToApiParams(filters));
+      const qs = params.toString();
+      const res = await fetch(`/api/trainer/journals${qs ? `?${qs}` : ''}`, { credentials: 'include' });
       if (!res.ok) throw new Error('알림장 조회 실패');
       const json = await res.json();
       type RawJournal = {
@@ -470,16 +490,26 @@ export default function TrainerNotebookPage() {
     }
   };
 
+  // 서버에서 q/petId/from/to/category/unreadOnly가 적용된 결과를 받음.
+  // statusFilter는 클라이언트 측 보조 필터.
   const filteredJournals = journals?.filter(journal => {
-    const matchesSearch = journal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         journal.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         journal.student.pet.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || journal.status === statusFilter;
-    const matchesDate = dateFilter === 'all' || 
-                       (dateFilter === 'today' && journal.trainingDate === '2025-01-22') ||
-                       (dateFilter === 'week' && new Date(journal.trainingDate) >= new Date('2025-01-16'));
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesStatus;
   });
+
+  // 학생 목록에서 펫 옵션 추출
+  const petOptions: PetOption[] = useMemo(() => {
+    const seen = new Set<number>();
+    const list: PetOption[] = [];
+    (students || []).forEach((s) => {
+      if (!s?.pet?.id || seen.has(s.pet.id)) return;
+      seen.add(s.pet.id);
+      list.push({ id: s.pet.id, name: s.pet.name });
+    });
+    return list;
+  }, [students]);
+
+  const activeFiltersCount = (hasActiveFilters(filters) ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0);
 
   const handleJournalClick = (journal: Journal) => {
     setSelectedJournal(journal);
@@ -1090,47 +1120,27 @@ export default function TrainerNotebookPage() {
             </Card>
           </div>
 
-          {/* 검색 및 필터 */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="제목, 학생명, 반려동물명으로 검색..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="상태 필터" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">전체</SelectItem>
-                    <SelectItem value="draft">임시저장</SelectItem>
-                    <SelectItem value="sent">전송됨</SelectItem>
-                    <SelectItem value="read">읽음</SelectItem>
-                    <SelectItem value="replied">답장받음</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="날짜 필터" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">전체</SelectItem>
-                    <SelectItem value="today">오늘</SelectItem>
-                    <SelectItem value="week">이번 주</SelectItem>
-                    <SelectItem value="month">이번 달</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+          {/* 검색 및 필터 (Task #93) */}
+          <NotebookFilterBar
+            filters={filters}
+            onChange={setFilters}
+            pets={petOptions}
+          />
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-gray-600">상태</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40" data-testid="select-trainer-status">
+                <SelectValue placeholder="상태 필터" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="draft">임시저장</SelectItem>
+                <SelectItem value="sent">전송됨</SelectItem>
+                <SelectItem value="read">읽음</SelectItem>
+                <SelectItem value="replied">답장받음</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* 알림장 목록 */}
           <div className="grid gap-4">
@@ -1265,22 +1275,30 @@ export default function TrainerNotebookPage() {
                 <CardContent className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                    {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' ? 
-                      '검색 조건에 맞는 알림장이 없습니다' : 
-                      '작성된 알림장이 없습니다'
-                    }
+                    {activeFiltersCount > 0
+                      ? '검색 조건에 맞는 알림장이 없습니다'
+                      : '작성된 알림장이 없습니다'}
                   </h3>
                   <p className="text-gray-500 mb-4">
-                    {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' ? 
-                      '다른 검색어나 필터를 시도해보세요' : 
-                      '첫 번째 알림장을 작성해보세요'
-                    }
+                    {activeFiltersCount > 0
+                      ? '다른 검색어나 필터를 시도해보세요'
+                      : '첫 번째 알림장을 작성해보세요'}
                   </p>
-                  {!searchTerm && statusFilter === 'all' && dateFilter === 'all' && userRole !== 'institute-admin' && (
-                    <Button onClick={() => setIsCreateJournalOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      새 알림장 작성
+                  {activeFiltersCount > 0 ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => { setFilters({ ...EMPTY_FILTERS }); setStatusFilter('all'); }}
+                      data-testid="button-trainer-empty-reset"
+                    >
+                      필터 초기화
                     </Button>
+                  ) : (
+                    userRole !== 'institute-admin' && (
+                      <Button onClick={() => setIsCreateJournalOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        새 알림장 작성
+                      </Button>
+                    )
                   )}
                 </CardContent>
               </Card>

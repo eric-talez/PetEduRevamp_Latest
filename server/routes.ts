@@ -8734,17 +8734,30 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
-  // 훈련사 알림장 목록 조회 API
+  // 훈련사 알림장 목록 조회 API (검색·필터 지원 - Task #93)
   app.get("/api/trainer/journals", requireAuth('trainer'), async (req, res) => {
     try {
       const trainerId = req.session!.user!.id;
-      const journals = await storage.getTrainingJournalsByTrainer(trainerId);
+
+      // 쿼리 파라미터(검색·필터) 파싱 - 실패 시에도 기본 목록은 반환
+      let query: any = { page: 1, limit: 100 };
+      try {
+        const parsed = trainingJournalQuerySchema.parse({ ...req.query, limit: req.query.limit ?? 100 });
+        query = parsed;
+      } catch (e: any) {
+        if (e?.name === 'ZodError') {
+          return res.status(400).json({ success: false, message: '검색 조건이 올바르지 않습니다.', details: e.errors });
+        }
+      }
+      query.trainerId = trainerId; // 본인 알림장으로 강제 한정
+
+      const result = storage.getTrainingJournalsWithPagination(query);
 
       // 펫/소유자 정보로 보강
       type Journal = { petId: number; [k: string]: unknown };
       type Pet = { id: number; name?: string; breed?: string; age?: number; ownerId?: number };
       type User = { id: number; name?: string; email?: string };
-      const enriched = await Promise.all((journals as Journal[]).map(async (j) => {
+      const enriched = await Promise.all((result.journals as Journal[]).map(async (j) => {
         const pet = storage.getPet(j.petId) as Pet | null;
         let owner: User | null = null;
         if (pet?.ownerId) {
@@ -8757,7 +8770,16 @@ app.get('/api/search', async (req, res) => {
         };
       }));
 
-      return res.json({ success: true, journals: enriched });
+      return res.json({
+        success: true,
+        journals: enriched,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          totalPages: result.totalPages,
+        },
+      });
     } catch (error) {
       logServerError('훈련사 알림장 목록 조회 오류:', error, req);
       return res.status(500).json({
