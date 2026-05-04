@@ -15,6 +15,41 @@ import {
 } from '@/components/ui/select';
 import { Search, X, RotateCcw } from 'lucide-react';
 
+type PeriodPreset = 'all' | 'today' | 'week' | 'month' | 'custom';
+
+function pad(n: number) { return String(n).padStart(2, '0'); }
+function toISODate(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+
+function rangeFromPreset(p: PeriodPreset): { from: string; to: string } {
+  if (p === 'all' || p === 'custom') return { from: '', to: '' };
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (p === 'today') {
+    const s = toISODate(start);
+    return { from: s, to: s };
+  }
+  if (p === 'week') {
+    const s = new Date(start);
+    s.setDate(start.getDate() - start.getDay()); // 일요일 시작
+    const e = new Date(s);
+    e.setDate(s.getDate() + 6);
+    return { from: toISODate(s), to: toISODate(e) };
+  }
+  // month
+  const s = new Date(today.getFullYear(), today.getMonth(), 1);
+  const e = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  return { from: toISODate(s), to: toISODate(e) };
+}
+
+function detectPreset(from: string, to: string): PeriodPreset {
+  if (!from && !to) return 'all';
+  for (const p of ['today', 'week', 'month'] as const) {
+    const r = rangeFromPreset(p);
+    if (r.from === from && r.to === to) return p;
+  }
+  return 'custom';
+}
+
 export interface NotebookFilters {
   q: string;
   petId: string;
@@ -159,6 +194,26 @@ export function NotebookFilterBar({
   };
 
   const active = hasActiveFilters(filters);
+  const currentPreset: PeriodPreset = detectPreset(filters.from, filters.to);
+
+  const applyPreset = (p: PeriodPreset) => {
+    if (p === 'custom') {
+      // 사용자 지정: 기존 값 유지하되 비어있으면 오늘로 초기화하여 입력 유도
+      const next = filters.from || filters.to ? filters : { ...filters, from: toISODate(new Date()), to: toISODate(new Date()) };
+      onChange(next);
+      return;
+    }
+    const r = rangeFromPreset(p);
+    onChange({ ...filters, from: r.from, to: r.to });
+  };
+
+  const PRESETS: { value: PeriodPreset; label: string }[] = [
+    { value: 'all', label: '전체' },
+    { value: 'today', label: '오늘' },
+    { value: 'week', label: '이번 주' },
+    { value: 'month', label: '이번 달' },
+    { value: 'custom', label: '사용자 지정' },
+  ];
 
   const chips = useMemo(() => {
     const list: { key: keyof NotebookFilters; label: string; clear: () => void }[] = [];
@@ -169,11 +224,15 @@ export function NotebookFilterBar({
       const pet = pets.find((p) => String(p.id) === String(filters.petId));
       list.push({ key: 'petId', label: `반려동물: ${pet?.name || filters.petId}`, clear: () => onChange({ ...filters, petId: 'all' }) });
     }
-    if (filters.from) {
-      list.push({ key: 'from', label: `시작: ${filters.from}`, clear: () => onChange({ ...filters, from: '' }) });
-    }
-    if (filters.to) {
-      list.push({ key: 'to', label: `종료: ${filters.to}`, clear: () => onChange({ ...filters, to: '' }) });
+    if (filters.from || filters.to) {
+      const preset = detectPreset(filters.from, filters.to);
+      const presetLabel: Record<PeriodPreset, string> = {
+        all: '전체', today: '오늘', week: '이번 주', month: '이번 달', custom: '사용자 지정',
+      };
+      const label = preset === 'custom'
+        ? `기간: ${filters.from || '…'} ~ ${filters.to || '…'}`
+        : `기간: ${presetLabel[preset]}`;
+      list.push({ key: 'from', label, clear: () => onChange({ ...filters, from: '', to: '' }) });
     }
     if (filters.category && filters.category !== 'all') {
       list.push({ key: 'category', label: `분류: ${filters.category}`, clear: () => onChange({ ...filters, category: 'all' }) });
@@ -245,27 +304,49 @@ export function NotebookFilterBar({
             </Select>
           </div>
 
-          {/* 기간 */}
-          <div>
-            <Label className="text-xs text-gray-500 mb-1 block">시작일</Label>
-            <Input
-              type="date"
-              value={filters.from}
-              onChange={(e) => onChange({ ...filters, from: e.target.value })}
-              className="w-[150px]"
-              data-testid="input-notebook-from"
-            />
+          {/* 기간 프리셋 + 사용자 지정 */}
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-gray-500 block">기간</Label>
+            <div className="flex flex-wrap gap-1" data-testid="notebook-period-presets">
+              {PRESETS.map((p) => (
+                <Button
+                  key={p.value}
+                  type="button"
+                  size="sm"
+                  variant={currentPreset === p.value ? 'default' : 'outline'}
+                  onClick={() => applyPreset(p.value)}
+                  data-testid={`button-notebook-period-${p.value}`}
+                >
+                  {p.label}
+                </Button>
+              ))}
+            </div>
           </div>
-          <div>
-            <Label className="text-xs text-gray-500 mb-1 block">종료일</Label>
-            <Input
-              type="date"
-              value={filters.to}
-              onChange={(e) => onChange({ ...filters, to: e.target.value })}
-              className="w-[150px]"
-              data-testid="input-notebook-to"
-            />
-          </div>
+
+          {currentPreset === 'custom' && (
+            <>
+              <div>
+                <Label className="text-xs text-gray-500 mb-1 block">시작일</Label>
+                <Input
+                  type="date"
+                  value={filters.from}
+                  onChange={(e) => onChange({ ...filters, from: e.target.value })}
+                  className="w-[150px]"
+                  data-testid="input-notebook-from"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500 mb-1 block">종료일</Label>
+                <Input
+                  type="date"
+                  value={filters.to}
+                  onChange={(e) => onChange({ ...filters, to: e.target.value })}
+                  className="w-[150px]"
+                  data-testid="input-notebook-to"
+                />
+              </div>
+            </>
+          )}
 
           {/* 미읽음만 */}
           {!hideUnread && (
