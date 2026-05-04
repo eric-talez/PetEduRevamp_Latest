@@ -8715,24 +8715,9 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
-  // 견주 알림장 목록 조회 API (기존)
-  app.get("/api/notebook/entries", async (req, res) => {
-    try {
-      const userId = req.session?.user?.id || 108; // 기본값: 김지영
-      const journals = await storage.getTrainingJournalsByOwner(userId);
-      
-      return res.json({
-        success: true,
-        journals
-      });
-    } catch (error) {
-      logServerError('알림장 목록 조회 오류:', error, req);
-      return res.status(500).json({
-        success: false,
-        message: "알림장 목록 조회 중 오류가 발생했습니다."
-      });
-    }
-  });
+  // [Task #93] 견주 알림장 목록 조회 API는 위쪽(/api/notebook/entries, requireAuth + trainingJournalQuerySchema)으로 통합됨.
+  // 라우트 등록 순서상 위 정의가 우선 매칭되며, 검색·필터(q, petId, from, to, category, unreadOnly)를
+  // 일관되게 적용한다. 본 위치에 있던 무인증·무필터 레거시 핸들러는 제거됨.
 
   // 훈련사 알림장 목록 조회 API (검색·필터 지원 - Task #93)
   app.get("/api/trainer/journals", requireAuth('trainer'), async (req, res) => {

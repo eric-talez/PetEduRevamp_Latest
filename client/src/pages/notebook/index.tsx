@@ -1856,7 +1856,9 @@ export default function NotebookPage() {
       <NotebookFilterBar
         filters={filters}
         onChange={setFilters}
-        pets={(pets || []).map((p: any) => ({ id: p.id ?? p.petId, name: p.name }))}
+        pets={((pets ?? []) as Array<{ id?: string | number; petId?: string | number; name?: string }>)
+          .map((p): PetOption => ({ id: (p.id ?? p.petId ?? '') as string | number, name: p.name ?? '반려동물' }))
+          .filter((p) => p.id !== '')}
       />
 
       {/* 보조 필터: 표시 토글·정렬 */}
