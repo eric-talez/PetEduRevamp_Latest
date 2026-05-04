@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link as WouterLink } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -173,6 +174,40 @@ export default function NotebookPage() {
   const petsQuery = useQuery({
     queryKey: ['/api/pets'],
   });
+
+  const queryClient = useQueryClient();
+
+  const apiTemplatesQuery = useQuery<{ data: Array<{ id: number; name: string; body: string; category: string | null; homeworkPreset: { items?: string[]; note?: string | null } | null; isSystem: boolean; instituteId: number | null }> }>({
+    queryKey: ['/api/notebook/templates'],
+    enabled: userRole === 'trainer',
+  });
+  const apiTemplates = apiTemplatesQuery.data?.data ?? [];
+  const [selectedApiTemplate, setSelectedApiTemplate] = useState<string>('');
+
+  const applyApiTemplate = async (idStr: string) => {
+    const id = Number(idStr);
+    const tpl = apiTemplates.find((t) => t.id === id);
+    if (!tpl) return;
+    setSelectedApiTemplate(idStr);
+    const items = tpl.homeworkPreset?.items ?? [];
+    const note = tpl.homeworkPreset?.note ?? '';
+    const homeworkText = [
+      items.length > 0 ? items.map((it) => `• ${it}`).join('\n') : '',
+      note ? `\n메모: ${note}` : '',
+    ].join('').trim();
+    setNewEntry((prev) => ({
+      ...prev,
+      title: prev.title || tpl.name,
+      content: prev.content ? `${prev.content}\n\n${tpl.body}` : tpl.body,
+      notes: homeworkText ? (prev.notes ? `${prev.notes}\n\n[숙제]\n${homeworkText}` : `[숙제]\n${homeworkText}`) : prev.notes,
+      tags: tpl.category && !prev.tags.includes(tpl.category) ? [...prev.tags, tpl.category] : prev.tags,
+    }));
+    try {
+      await secureRequest(`/api/notebook/templates/${id}/use`, { method: 'POST' });
+      queryClient.invalidateQueries({ queryKey: ['/api/notebook/templates'] });
+    } catch {}
+    toast({ title: '템플릿 적용 완료', description: `${tpl.name} 템플릿을 불러왔어요.` });
+  };
   
   const petsData = petsQuery.data as any;
   const pets = Array.isArray(petsData) 
@@ -1133,6 +1168,33 @@ export default function NotebookPage() {
                   {/* Tab Content */}
                   {activeTab === 'basic' && (
                     <div className="space-y-4">
+                  {userRole === 'trainer' && (
+                    <div className="flex items-end gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium mb-2 block flex items-center gap-1">
+                          <FileText className="h-3.5 w-3.5" /> 템플릿에서 시작
+                        </label>
+                        <Select value={selectedApiTemplate} onValueChange={applyApiTemplate}>
+                          <SelectTrigger data-testid="select-api-template">
+                            <SelectValue placeholder={apiTemplates.length === 0 ? '저장된 템플릿이 없어요' : '템플릿을 선택하세요'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {apiTemplates.map((t) => (
+                              <SelectItem key={t.id} value={String(t.id)} data-testid={`option-template-${t.id}`}>
+                                {t.isSystem ? '⭐ ' : t.instituteId ? '🏫 ' : ''}{t.name}
+                                {t.category ? ` · ${t.category}` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <WouterLink href="/trainer/notebook/templates">
+                        <Button type="button" variant="outline" size="sm" data-testid="link-manage-templates">
+                          템플릿 관리
+                        </Button>
+                      </WouterLink>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium mb-2 block">반려동물 이름 *</label>

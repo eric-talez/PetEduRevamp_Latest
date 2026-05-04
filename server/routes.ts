@@ -4692,6 +4692,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ 알림장 템플릿 (Task #94) ============
+  // 트레이너만 사용. 본인 + 같은 기관 공유 + 시스템 시드 5종을 통합 조회.
+  // 본인이 만든 템플릿만 수정/삭제 가능. 시스템 템플릿은 복제 후 사용.
+  const { insertNotebookTemplateSchema } = await import("../shared/schema");
+
+  const getInstituteIdsForTrainer = async (userId: number): Promise<number[]> => {
+    const ids = new Set<number>();
+    try {
+      const rows = await db.select({ instituteId: trainerInstitutes.instituteId })
+        .from(trainerInstitutes)
+        .where(and(eq(trainerInstitutes.trainerId, userId), eq(trainerInstitutes.status, 'active')));
+      for (const r of rows as any[]) if (r.instituteId != null) ids.add(Number(r.instituteId));
+    } catch {
+      // ignore — fall back to memory
+    }
+    for (const id of storage.getInstituteIdsForTrainer(userId)) ids.add(id);
+    return Array.from(ids);
+  };
+
+  // 트레이너 컨텍스트 (현재 userId + 소속 instituteIds)
+  app.get("/api/notebook/templates/context", requireAuth('trainer'), async (req, res) => {
+    try {
+      const user = req.session.user!;
+      const instituteIds = await getInstituteIdsForTrainer(user.id);
+      res.json({ success: true, data: { userId: user.id, instituteIds } });
+    } catch (error) {
+      logServerError('알림장 템플릿 컨텍스트 조회 오류:', error, req);
+      res.status(500).json({ error: '컨텍스트 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 목록 (본인 + 기관 공유 + 시스템)
+  app.get("/api/notebook/templates", requireAuth('trainer'), async (req, res) => {
+    try {
+      const user = req.session.user!;
+      const instituteIds = await getInstituteIdsForTrainer(user.id);
+      const templates = storage.listNotebookTemplatesForUser(user.id, instituteIds);
+      res.json({ success: true, data: templates });
+    } catch (error) {
+      logServerError('알림장 템플릿 목록 조회 오류:', error, req);
+      res.status(500).json({ error: '템플릿 목록 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 단건 조회
+  app.get("/api/notebook/templates/:id", requireAuth('trainer'), async (req, res) => {
+    try {
+      const user = req.session.user!;
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const tpl = storage.getNotebookTemplate(id);
+      if (!tpl) return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.', code: 'TEMPLATE_NOT_FOUND' });
+      const instituteIds = await getInstituteIdsForTrainer(user.id);
+      const visible = tpl.isSystem || tpl.ownerUserId === user.id || (tpl.instituteId && instituteIds.includes(tpl.instituteId));
+      if (!visible) return res.status(403).json({ error: '접근 권한이 없습니다.', code: 'FORBIDDEN' });
+      res.json({ success: true, data: tpl });
+    } catch (error) {
+      logServerError('알림장 템플릿 조회 오류:', error, req);
+      res.status(500).json({ error: '템플릿 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 생성
+  app.post("/api/notebook/templates", requireAuth('trainer'), csrfProtection, async (req, res) => {
+    try {
+      const user = req.session.user!;
+      const parsed = insertNotebookTemplateSchema.parse(req.body || {});
+      let instituteId: number | null = parsed.instituteId ?? null;
+      if (instituteId != null) {
+        const allowed = await getInstituteIdsForTrainer(user.id);
+        if (!allowed.includes(instituteId)) {
+          return res.status(403).json({ error: '해당 기관에 공유할 권한이 없습니다.', code: 'FORBIDDEN_INSTITUTE' });
+        }
+      }
+      const created = storage.createNotebookTemplate({
+        ownerUserId: user.id,
+        instituteId,
+        name: parsed.name,
+        body: parsed.body,
+        category: parsed.category ?? null,
+        homeworkPreset: parsed.homeworkPreset ?? null,
+      });
+      res.status(201).json({ success: true, data: created });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ error: '입력 데이터가 올바르지 않습니다.', code: 'VALIDATION_ERROR', details: error.errors });
+      }
+      logServerError('알림장 템플릿 생성 오류:', error, req);
+      res.status(500).json({ error: '템플릿 생성 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 수정 (본인 소유만)
+  app.patch("/api/notebook/templates/:id", requireAuth('trainer'), csrfProtection, async (req, res) => {
+    try {
+      const user = req.session.user!;
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const tpl = storage.getNotebookTemplate(id);
+      if (!tpl) return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.', code: 'TEMPLATE_NOT_FOUND' });
+      if (tpl.isSystem) return res.status(403).json({ error: '시스템 템플릿은 수정할 수 없습니다. 복제 후 사용해주세요.', code: 'SYSTEM_TEMPLATE_READONLY' });
+      if (tpl.ownerUserId !== user.id) return res.status(403).json({ error: '본인이 만든 템플릿만 수정할 수 있습니다.', code: 'FORBIDDEN' });
+      const parsed = insertNotebookTemplateSchema.partial().parse(req.body || {});
+      if (parsed.instituteId !== undefined && parsed.instituteId !== null) {
+        const allowed = await getInstituteIdsForTrainer(user.id);
+        if (!allowed.includes(parsed.instituteId)) {
+          return res.status(403).json({ error: '해당 기관에 공유할 권한이 없습니다.', code: 'FORBIDDEN_INSTITUTE' });
+        }
+      }
+      const updated = storage.updateNotebookTemplate(id, {
+        name: parsed.name,
+        body: parsed.body,
+        category: parsed.category ?? undefined,
+        homeworkPreset: parsed.homeworkPreset ?? undefined,
+        instituteId: parsed.instituteId ?? undefined,
+      });
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ error: '입력 데이터가 올바르지 않습니다.', code: 'VALIDATION_ERROR', details: error.errors });
+      }
+      logServerError('알림장 템플릿 수정 오류:', error, req);
+      res.status(500).json({ error: '템플릿 수정 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 삭제 (본인 소유만)
+  app.delete("/api/notebook/templates/:id", requireAuth('trainer'), csrfProtection, async (req, res) => {
+    try {
+      const user = req.session.user!;
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const tpl = storage.getNotebookTemplate(id);
+      if (!tpl) return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.', code: 'TEMPLATE_NOT_FOUND' });
+      if (tpl.isSystem) return res.status(403).json({ error: '시스템 템플릿은 삭제할 수 없습니다.', code: 'SYSTEM_TEMPLATE_READONLY' });
+      if (tpl.ownerUserId !== user.id) return res.status(403).json({ error: '본인이 만든 템플릿만 삭제할 수 있습니다.', code: 'FORBIDDEN' });
+      storage.deleteNotebookTemplate(id);
+      res.json({ success: true });
+    } catch (error) {
+      logServerError('알림장 템플릿 삭제 오류:', error, req);
+      res.status(500).json({ error: '템플릿 삭제 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 복제 (시스템/기관 공유 → 본인 템플릿)
+  app.post("/api/notebook/templates/:id/duplicate", requireAuth('trainer'), csrfProtection, async (req, res) => {
+    try {
+      const user = req.session.user!;
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const tpl = storage.getNotebookTemplate(id);
+      if (!tpl) return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.', code: 'TEMPLATE_NOT_FOUND' });
+      const instituteIds = await getInstituteIdsForTrainer(user.id);
+      const visible = tpl.isSystem || tpl.ownerUserId === user.id || (tpl.instituteId && instituteIds.includes(tpl.instituteId));
+      if (!visible) return res.status(403).json({ error: '접근 권한이 없습니다.', code: 'FORBIDDEN' });
+      const dup = storage.duplicateNotebookTemplate(id, user.id);
+      res.status(201).json({ success: true, data: dup });
+    } catch (error) {
+      logServerError('알림장 템플릿 복제 오류:', error, req);
+      res.status(500).json({ error: '템플릿 복제 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 사용 카운트 증분 — 폼에 적용 시 호출
+  app.post("/api/notebook/templates/:id/use", requireAuth('trainer'), csrfProtection, async (req, res) => {
+    try {
+      const user = req.session.user!;
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const tpl = storage.getNotebookTemplate(id);
+      if (!tpl) return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.', code: 'TEMPLATE_NOT_FOUND' });
+      const instituteIds = await getInstituteIdsForTrainer(user.id);
+      const visible = tpl.isSystem || tpl.ownerUserId === user.id || (tpl.instituteId && instituteIds.includes(tpl.instituteId));
+      if (!visible) return res.status(403).json({ error: '접근 권한이 없습니다.', code: 'FORBIDDEN' });
+      storage.incrementNotebookTemplateUsage(id);
+      res.json({ success: true, data: storage.getNotebookTemplate(id) });
+    } catch (error) {
+      logServerError('알림장 템플릿 사용 카운트 오류:', error, req);
+      res.status(500).json({ error: '사용 기록 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   // 1. 새 훈련 일지 생성
   app.post("/api/notebook/entries", requireAuth('trainer'), csrfProtection, async (req, res) => {
     try {

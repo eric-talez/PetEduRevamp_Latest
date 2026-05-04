@@ -1124,6 +1124,43 @@ export const insertJournalReactionSchema = createInsertSchema(journalReactions).
 export type JournalReaction = typeof journalReactions.$inferSelect;
 export type InsertJournalReaction = z.infer<typeof insertJournalReactionSchema>;
 
+// 알림장 템플릿 (Task #94)
+// 트레이너가 자주 쓰는 양식을 저장/복제해서 작성 시간을 단축. 본인용 + 기관 공유 + 시스템 시드(5종) 지원.
+export const notebookTemplates = pgTable("notebook_templates", {
+  id: serial("id").primaryKey(),
+  ownerUserId: integer("owner_user_id").references(() => users.id), // 시스템 템플릿은 null
+  instituteId: integer("institute_id").references(() => institutes.id), // 기관 공유시 채움
+  name: varchar("name", { length: 120 }).notNull(),
+  body: text("body").notNull(),
+  category: varchar("category", { length: 50 }),
+  homeworkPreset: jsonb("homework_preset"), // { items: string[], note?: string }
+  isSystem: boolean("is_system").default(false).notNull(),
+  usageCount: integer("usage_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertNotebookTemplateSchema = createInsertSchema(notebookTemplates).omit({
+  id: true,
+  ownerUserId: true,
+  isSystem: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().trim().min(1, '템플릿 이름을 입력해주세요').max(120),
+  body: z.string().trim().min(1, '본문을 입력해주세요'),
+  category: z.string().trim().max(50).optional().nullable(),
+  instituteId: z.number().int().positive().optional().nullable(),
+  homeworkPreset: z.object({
+    items: z.array(z.string().trim().min(1)).default([]),
+    note: z.string().optional().nullable(),
+  }).optional().nullable(),
+});
+
+export type NotebookTemplate = typeof notebookTemplates.$inferSelect;
+export type InsertNotebookTemplate = z.infer<typeof insertNotebookTemplateSchema>;
+
 // 알림장 서비스 요청 테이블 - 견주가 추가 서비스 요청
 export const journalServiceRequests = pgTable("journal_service_requests", {
   id: serial("id").primaryKey(),

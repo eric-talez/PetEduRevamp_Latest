@@ -2750,6 +2750,150 @@ class Storage {
     return false;
   }
 
+  // ====== 알림장 템플릿 (Task #94) ======
+  notebookTemplates: any[] = [];
+  private nextTemplateId = 1;
+
+  private ensureNotebookTemplatesSeeded() {
+    if (this.notebookTemplates.length > 0) return;
+    const now = new Date().toISOString();
+    const seeds = [
+      {
+        name: '첫 수업 인사 알림장',
+        category: '사회화',
+        body: '오늘은 첫 수업이라 ○○이의 성격과 컨디션을 먼저 살펴봤어요.\n• 새로운 환경 적응 정도\n• 사람·다른 강아지 반응\n• 기본 명령(앉아/엎드려) 가능 여부\n\n앞으로의 수업 방향을 보호자님과 함께 정해갈게요.',
+        homeworkPreset: { items: ['집에서 이름 부르기 5회 × 3세트', '간식 보상으로 앉아 연습 10회'], note: '훈련은 한 번에 5분을 넘기지 말아주세요.' },
+      },
+      {
+        name: '주간 점검 알림장',
+        category: '기본훈련',
+        body: '이번 주 진도 요약입니다.\n1) 잘한 점\n2) 보완할 점\n3) 다음 주 목표\n\n전반적으로 ○○이는 ___ 부분에서 발전이 보이고 있어요.',
+        homeworkPreset: { items: ['아이컨택 10초 유지 × 5회', '리드워크 5분 산책 시 적용'], note: '꾸준함이 가장 중요합니다.' },
+      },
+      {
+        name: '노즈워크 평가 알림장',
+        category: '노즈워크',
+        body: '오늘은 노즈워크 평가를 진행했어요.\n• 탐색 시간: __분\n• 성공률: __%\n• 집중 지속 시간: __분\n\n후각 활동은 정신적 만족감을 크게 높여줍니다.',
+        homeworkPreset: { items: ['스니핑 매트 또는 수건말이로 매일 1회 노즈워크', '실내 숨바꼭질 3회'], note: '식사량 조절을 위해 일반 사료를 사용하세요.' },
+      },
+      {
+        name: '사회화 수업 알림장',
+        category: '사회화',
+        body: '사회화 수업에서는 다양한 자극에 대한 반응을 관찰했어요.\n• 사람: \n• 다른 강아지: \n• 환경음/이동수단: \n\n무리하지 않고 점진적으로 노출을 확대해 갑니다.',
+        homeworkPreset: { items: ['하루 1회 새로운 산책 코스 산책', '익숙하지 않은 사람에게 인사 시키기 (긍정 보상)'], note: '회피·짖음이 심해지면 즉시 거리 두기로 전환해주세요.' },
+      },
+      {
+        name: '마지막 수업 알림장',
+        category: '기본훈련',
+        body: '오랜 기간 함께한 수업이 마무리되었습니다.\n• 가장 큰 성장 포인트\n• 보호자님께 당부드리는 점\n• 향후 케어 가이드\n\n앞으로도 ○○이의 행복한 일상을 응원합니다.',
+        homeworkPreset: { items: ['배운 명령어 주 3회 복습', '월 1회 간이 자가점검'], note: '고민이 생기면 언제든 문의 주세요.' },
+      },
+    ];
+    for (const s of seeds) {
+      this.notebookTemplates.push({
+        id: this.nextTemplateId++,
+        ownerUserId: null,
+        instituteId: null,
+        name: s.name,
+        body: s.body,
+        category: s.category,
+        homeworkPreset: s.homeworkPreset,
+        isSystem: true,
+        usageCount: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  /** 트레이너의 소속 기관 id 목록 (메모리 기반, DB 비동기 필요시 별도 메서드 사용) */
+  getInstituteIdsForTrainer(userId: number): number[] {
+    const ids = new Set<number>();
+    for (const inst of (this.institutes || [])) {
+      if (inst?.trainerId === userId || inst?.directorId === userId) ids.add(inst.id);
+    }
+    return Array.from(ids);
+  }
+
+  listNotebookTemplatesForUser(userId: number, instituteIds: number[] = []): any[] {
+    this.ensureNotebookTemplatesSeeded();
+    const setInst = new Set(instituteIds);
+    return this.notebookTemplates
+      .filter(t => t.isSystem || t.ownerUserId === userId || (t.instituteId && setInst.has(t.instituteId)))
+      .sort((a, b) => {
+        // 시스템 → 본인 → 기관
+        const rank = (t: any) => t.isSystem ? 0 : (t.ownerUserId === userId ? 1 : 2);
+        const ra = rank(a), rb = rank(b);
+        if (ra !== rb) return ra - rb;
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      });
+  }
+
+  getNotebookTemplate(id: number): any | null {
+    this.ensureNotebookTemplatesSeeded();
+    return this.notebookTemplates.find(t => t.id === id) || null;
+  }
+
+  createNotebookTemplate(data: { ownerUserId: number; instituteId?: number | null; name: string; body: string; category?: string | null; homeworkPreset?: any | null }): any {
+    this.ensureNotebookTemplatesSeeded();
+    const now = new Date().toISOString();
+    const tpl = {
+      id: this.nextTemplateId++,
+      ownerUserId: data.ownerUserId,
+      instituteId: data.instituteId ?? null,
+      name: data.name,
+      body: data.body,
+      category: data.category ?? null,
+      homeworkPreset: data.homeworkPreset ?? null,
+      isSystem: false,
+      usageCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.notebookTemplates.push(tpl);
+    return tpl;
+  }
+
+  updateNotebookTemplate(id: number, data: Partial<{ name: string; body: string; category: string | null; homeworkPreset: any | null; instituteId: number | null }>): any | null {
+    const tpl = this.getNotebookTemplate(id);
+    if (!tpl) return null;
+    if (data.name !== undefined) tpl.name = data.name;
+    if (data.body !== undefined) tpl.body = data.body;
+    if (data.category !== undefined) tpl.category = data.category;
+    if (data.homeworkPreset !== undefined) tpl.homeworkPreset = data.homeworkPreset;
+    if (data.instituteId !== undefined) tpl.instituteId = data.instituteId;
+    tpl.updatedAt = new Date().toISOString();
+    return tpl;
+  }
+
+  deleteNotebookTemplate(id: number): boolean {
+    const idx = this.notebookTemplates.findIndex(t => t.id === id);
+    if (idx === -1) return false;
+    this.notebookTemplates.splice(idx, 1);
+    return true;
+  }
+
+  duplicateNotebookTemplate(id: number, ownerUserId: number): any | null {
+    const src = this.getNotebookTemplate(id);
+    if (!src) return null;
+    return this.createNotebookTemplate({
+      ownerUserId,
+      instituteId: null,
+      name: `${src.name} (복사본)`,
+      body: src.body,
+      category: src.category,
+      homeworkPreset: src.homeworkPreset ? JSON.parse(JSON.stringify(src.homeworkPreset)) : null,
+    });
+  }
+
+  incrementNotebookTemplateUsage(id: number): void {
+    const tpl = this.getNotebookTemplate(id);
+    if (tpl) {
+      tpl.usageCount = (tpl.usageCount || 0) + 1;
+      tpl.updatedAt = new Date().toISOString();
+    }
+  }
+
   // ====== 알림장 댓글 ======
   getJournalComments(journalId: number): any[] {
     return (this.journalComments || [])

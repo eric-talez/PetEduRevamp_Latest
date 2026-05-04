@@ -894,6 +894,17 @@ function AuthenticatedRoutes() {
           }}
         </Route>
 
+        <Route path="/trainer/notebook/templates">
+          {() => {
+            const TemplatesPage = lazy(() => import('./pages/trainer/notebook/templates'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedTrainerRoute component={TemplatesPage} />
+              </Suspense>
+            );
+          }}
+        </Route>
+
         <Route path="/institute/qr-codes">
           {() => {
             const QrCodeManagement = lazy(() => import('./pages/institute/qr-checkin/QrCodeManagement'));
