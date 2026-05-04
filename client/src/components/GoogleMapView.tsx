@@ -129,14 +129,16 @@ function GoogleMapViewInner({
     try {
       // 모바일 환경 감지
       const isMobile = window.innerWidth < 768;
+      const isCompact = window.innerWidth < 1024; // 하단 네비가 보이는 구간에서는 컨트롤을 숨겨 겹침 방지
       
       const mapOptions: google.maps.MapOptions = {
         center: { lat: center.lat, lng: center.lng },
         zoom: zoom,
-        zoomControl: true,
+        zoomControl: !isCompact,
         mapTypeControl: !isMobile, // 모바일에서는 지도 타입 컨트롤 숨김
         streetViewControl: !isMobile, // 모바일에서는 스트리트뷰 컨트롤 숨김
-        fullscreenControl: true,
+        fullscreenControl: !isCompact,
+        keyboardShortcuts: !isCompact,
         gestureHandling: isMobile ? 'greedy' : 'cooperative', // 모바일에서 스크롤 처리 개선
         styles: [
           {

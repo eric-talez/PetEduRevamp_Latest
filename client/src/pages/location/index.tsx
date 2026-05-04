@@ -1533,9 +1533,9 @@ function LocationPageContent() {
   const { currentLocation, nearbyPlaces, selectedPlace, setSelectedPlace } = useMapService();
   
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-12rem)]">
+    <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-16rem)] lg:h-[calc(100vh-12rem)]">
       {/* 왼쪽: 검색 컨트롤 및 결과 목록 */}
-      <div className="w-full lg:w-2/5 flex flex-col space-y-4 overflow-hidden">
+      <div className="w-full lg:w-2/5 lg:flex-shrink-0 flex flex-col space-y-4 lg:overflow-hidden min-w-0">
         <Card className="flex-shrink-0">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">위치 기반 서비스</CardTitle>
@@ -1561,8 +1561,8 @@ function LocationPageContent() {
       </div>
 
       {/* 오른쪽: 지도 */}
-      <div className="w-full lg:w-3/5 flex-shrink-0 min-h-[400px] lg:min-h-0">
-        <Card className="h-full min-h-[400px] lg:min-h-0">
+      <div className="w-full lg:flex-1 min-w-0 min-h-[280px] max-h-[55vh] lg:max-h-none lg:min-h-0">
+        <Card className="h-full min-h-[280px] lg:min-h-0">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">지도</CardTitle>
@@ -1607,11 +1607,11 @@ function LocationPageContent() {
  */
 export default function LocationPage() {
   return (
-    <div className="w-full h-screen overflow-hidden">
+    <div className="w-full max-w-full overflow-x-hidden">
       <div className="px-4 lg:px-6 py-4">
         <h1 className="text-2xl lg:text-3xl font-bold mb-4">근처 훈련소 찾기</h1>
       </div>
-      <div className="px-4 lg:px-6 pb-4">
+      <div className="px-4 lg:px-6 pb-24 lg:pb-4">
         <MapServiceProvider>
           <LocationPageContent />
         </MapServiceProvider>

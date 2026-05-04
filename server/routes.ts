@@ -20,7 +20,6 @@ import { productRoutes } from "./routes/products";
 import { simpleProductRoutes } from "./routes/simple-products";
 // import { registerNotificationRoutes } from "./routes/notification-routes";
 import { registerEmailNotificationRoutes } from "./routes/email-notifications";
-import { registerNotebookReportRoutes } from "./routes/notebook-report";
 import { registerUploadRoutes } from "./routes/upload";
 import { notificationService } from "./notifications/notification-service";
 import OpenAI from "openai";
@@ -822,7 +821,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 이메일 알림 (SendGrid) 라우트 등록 - Task #24
   registerEmailNotificationRoutes(app);
-  registerNotebookReportRoutes(app);
 
   // 날씨 API 라우트 등록
   app.use('/api/weather', weatherRoutes);
@@ -4647,191 +4645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ 훈련 일지 (알림장) API ============
   
-  // ============ AI 알림장 작성 도우미 ============
-  // POST /api/notebook/draft — 키워드 기반 알림장 초안 생성 (트레이너당 30회/일)
-  const NOTEBOOK_AI_DAILY_LIMIT = 30;
-  const notebookDraftDailyCounter = new Map<string, number>(); // `${userId}:${YYYY-MM-DD}` → count
-
-  // 결과 텍스트의 흔한 개인정보(휴대폰/이메일/주민번호 일부) 마스킹
-  const maskPersonalInfo = (text: string): string => {
-    if (!text) return text;
-    return text
-      .replace(/\b(\d{2,3})-?\d{3,4}-?\d{4}\b/g, '$1-****-****')
-      .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '***@***')
-      .replace(/\b\d{6}-?\d{7}\b/g, '******-*******');
-  };
-
-  type NotebookDraftTone = 'friendly' | 'formal' | 'short' | 'detailed';
-  interface NotebookDraftJson {
-    title?: string;
-    content?: string;
-    behaviorNotes?: string;
-    homeworkInstructions?: string;
-    nextGoals?: string;
-  }
-  interface OpenAiUsage { prompt_tokens?: number; completion_tokens?: number }
-  interface LiveStreamLike { title?: string; hostId?: number | string }
-
-  app.post('/api/notebook/draft', requireAuth('trainer'), csrfProtection, async (req, res) => {
-    const { notebookDraftRequestSchema } = await import('@shared/schema');
-    const parsed = notebookDraftRequestSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: '입력값이 올바르지 않습니다.', details: parsed.error.errors });
-    }
-    const { keywords, tone, petId, streamId } = parsed.data;
-    const currentUser = req.session.user!;
-
-    // 일일 호출 제한 — 카운터/환불 상태는 try 바깥에 hoist 해 catch 블록에서도 접근 가능
-    const today = new Date().toISOString().slice(0, 10);
-    const counterKey = `${currentUser.id}:${today}`;
-    const before = notebookDraftDailyCounter.get(counterKey) || 0;
-    if (before >= NOTEBOOK_AI_DAILY_LIMIT) {
-      return res.status(429).json({
-        error: `오늘 AI 초안 생성 한도(${NOTEBOOK_AI_DAILY_LIMIT}회)를 모두 사용했습니다. 내일 다시 시도해 주세요.`,
-        remaining: 0, limit: NOTEBOOK_AI_DAILY_LIMIT,
-      });
-    }
-    const reservedCount = before + 1;
-    notebookDraftDailyCounter.set(counterKey, reservedCount);
-    let quotaCommitted = false;
-    const refundQuota = (): void => {
-      if (quotaCommitted) return;
-      const cur = notebookDraftDailyCounter.get(counterKey) || 0;
-      if (cur > 0) notebookDraftDailyCounter.set(counterKey, cur - 1);
-    };
-
-    try {
-      // 컨텍스트 빌더
-      let petName = '반려동물';
-      let petBreed = '';
-      let courseTitle = '';
-      let lastJournalSummary = '';
-      try {
-        if (petId) {
-          const pet = storage.getPet(petId);
-          if (pet) {
-            if (!storage.canUserCreateTrainingJournal(currentUser.id, currentUser.role, petId)) {
-              refundQuota();
-              return res.status(403).json({ error: '해당 반려동물의 컨텍스트 사용 권한이 없습니다.' });
-            }
-            petName = pet.name || petName;
-            petBreed = pet.breed || '';
-            type JournalLite = { petId?: number; title?: string; nextGoals?: string; createdAt?: string };
-            const all: JournalLite[] = storage.trainingJournals || [];
-            const recent = all
-              .filter((j) => j.petId === petId)
-              .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())[0];
-            if (recent) {
-              lastJournalSummary = `직전 알림장 제목: "${recent.title || ''}". 직전 다음 목표: "${(recent.nextGoals || '').slice(0, 200)}".`;
-            }
-          }
-        }
-        // streamId 컨텍스트: 호스트(현재 트레이너) 소유 스트림에 한해 제목 사용 (IDOR 방지)
-        const storageWithStream = storage as unknown as { getLiveStream?: (id: number) => LiveStreamLike | undefined };
-        if (streamId && typeof storageWithStream.getLiveStream === 'function') {
-          const stream = storageWithStream.getLiveStream(streamId);
-          if (stream?.title && Number(stream.hostId) === Number(currentUser.id)) {
-            courseTitle = stream.title;
-          }
-        }
-      } catch (ctxErr) {
-        logServerError('AI 초안 컨텍스트 빌더 경고:', ctxErr, req);
-      }
-
-      const toneGuide: Record<NotebookDraftTone, string> = {
-        friendly: '따뜻하고 친근한 보호자에게 말하듯 한국어 존댓말 사용. 이모지는 절제해서 0~1개.',
-        formal: '공식적이고 전문적인 한국어 존댓말. 이모지 사용 금지.',
-        short: '핵심만 담아 짧고 간결하게. 각 항목 2~3문장 이내.',
-        detailed: '관찰·근거·다음 단계까지 상세히. 각 항목 4~6문장.',
-      };
-
-      const systemPrompt = `당신은 반려동물 전문 훈련사이며, 보호자에게 보낼 "알림장" 초안을 작성합니다.
-- 출력 언어: 한국어
-- 톤: ${toneGuide[tone as NotebookDraftTone]}
-- 반드시 다음 JSON 스키마로만 응답하세요(설명·마크다운 없이):
-{
-  "title": "오늘의 알림장 제목 (40자 이내)",
-  "content": "본문 (훈련 내용 중심, 200~600자)",
-  "behaviorNotes": "오늘 관찰된 행동/특이사항",
-  "homeworkInstructions": "보호자 숙제(집에서 할 것)",
-  "nextGoals": "다음 수업 목표"
-}
-- 개인정보(전화번호/이메일/실명 풀네임)는 출력하지 말 것
-- 사실을 지어내지 말고, 키워드에서 명시되지 않은 수치는 사용하지 말 것`;
-
-      const userPrompt = `반려동물: ${petName}${petBreed ? ` (${petBreed})` : ''}
-${courseTitle ? `수업/스트림: ${courseTitle}` : ''}
-${lastJournalSummary}
-훈련사가 입력한 오늘의 키워드/메모:
-"""
-${keywords}
-"""`;
-
-      const startedAt = Date.now();
-      const OpenAI = (await import('openai')).default;
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_TALEZ || process.env.OPENAI_API_KEY });
-      const model = 'gpt-4o-mini';
-      const completion = await openai.chat.completions.create({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.6,
-        response_format: { type: 'json_object' },
-      });
-      const responseTime = Date.now() - startedAt;
-      const raw = completion.choices?.[0]?.message?.content || '{}';
-      let draft: NotebookDraftJson;
-      try {
-        draft = JSON.parse(raw) as NotebookDraftJson;
-      } catch {
-        refundQuota();
-        return res.status(502).json({ error: 'AI 응답을 해석하지 못했습니다. 다시 시도해 주세요.' });
-      }
-
-      const safeDraft = {
-        title: maskPersonalInfo(String(draft.title || '').slice(0, 200)),
-        content: maskPersonalInfo(String(draft.content || '').slice(0, 5000)),
-        behaviorNotes: maskPersonalInfo(String(draft.behaviorNotes || '').slice(0, 2000)),
-        homeworkInstructions: maskPersonalInfo(String(draft.homeworkInstructions || '').slice(0, 2000)),
-        nextGoals: maskPersonalInfo(String(draft.nextGoals || '').slice(0, 2000)),
-      };
-
-      // 응답 직전에 quota commit — 이후 로깅 실패는 quota에 영향 주지 않음
-      quotaCommitted = true;
-      try {
-        const { aiUsageService } = await import('./services/ai-usage-service');
-        const usage: OpenAiUsage = completion.usage || {};
-        await aiUsageService.logUsage({
-          userId: currentUser.id,
-          provider: 'openai',
-          model,
-          requestType: 'notebook_draft',
-          inputTokens: usage.prompt_tokens || 0,
-          outputTokens: usage.completion_tokens || 0,
-          responseTime,
-          requestData: { tone, hasPet: !!petId, hasStream: !!streamId, kwLen: keywords.length },
-        });
-      } catch (logErr) {
-        logServerError('AI 사용량 로깅 실패(무시):', logErr, req);
-      }
-
-      return res.json({
-        success: true,
-        draft: safeDraft,
-        usage: { used: reservedCount, limit: NOTEBOOK_AI_DAILY_LIMIT, remaining: NOTEBOOK_AI_DAILY_LIMIT - reservedCount },
-      });
-    } catch (error: unknown) {
-      // OpenAI 호출 실패 → 예약된 quota 환불
-      refundQuota();
-      logServerError('AI 알림장 초안 생성 오류:', error, req);
-      const status = (error as { status?: number })?.status === 429 ? 429 : 500;
-      return res.status(status).json({ error: 'AI 초안 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' });
-    }
-  });
-
-  // (legacy) AI 알림장 내용 생성 — 하위호환
+  // AI 알림장 내용 생성
   app.post("/api/notebook/ai-generate", requireAuth('trainer'), async (req, res) => {
     try {
       const { petName, petBreed, activities, additionalContext } = req.body;
@@ -5048,10 +4862,16 @@ ${keywords}
         });
       }
 
-      // 읽음/마지막 조회 시각 업데이트 (보호자가 조회할 때)
-      // - readAt: 최초 1회만, lastViewedAt: 매 조회마다 갱신
-      if (currentUser.role === 'pet-owner' && journal.petOwnerId === currentUser.id) {
-        storage.markJournalRead(journalId);
+      // 읽음 상태 업데이트 (견주가 조회할 때)
+      if (currentUser.role === 'pet-owner' && !journal.isRead) {
+        storage.updateTrainingJournal(journalId, {
+          isRead: true,
+          readAt: new Date().toISOString(),
+          status: 'read'
+        });
+        journal.isRead = true;
+        journal.readAt = new Date().toISOString();
+        journal.status = 'read';
       }
 
       res.json({
@@ -5180,32 +5000,6 @@ ${keywords}
     }
   });
 
-  // PDF 임베드용 사진 버퍼 로더 (첫 1~2장)
-  async function loadNotebookPhotoBuffers(journalId: number): Promise<Buffer[]> {
-    try {
-      const atts = storage.getNotebookAttachmentsByJournal(journalId)
-        .filter((a: any) => a.kind === 'image')
-        .slice(0, 2);
-      if (atts.length === 0) return [];
-      const { ObjectStorageService } = await import('./objectStorage');
-      const svc = new ObjectStorageService();
-      const buffers: Buffer[] = [];
-      for (const a of atts) {
-        try {
-          const file = svc.getPrivateFileByKey(a.storageKey);
-          const [buf] = await file.download();
-          buffers.push(buf);
-        } catch (e) {
-          logServerError('[알림장 PDF] 사진 다운로드 실패(스킵):', e);
-        }
-      }
-      return buffers;
-    } catch (err) {
-      logServerError('[알림장 PDF] 사진 로드 실패:', err);
-      return [];
-    }
-  }
-
   // 알림장 PDF 내보내기 (인증 필요)
   app.get("/api/notebook/entries/:id/pdf", requireAuth(), async (req, res) => {
     try {
@@ -5225,9 +5019,8 @@ ${keywords}
       const pet = journal.petId ? storage.getPetById(journal.petId) : null;
       const trainer = journal.trainerId ? storage.getUser(journal.trainerId) : null;
       const owner = journal.petOwnerId ? storage.getUser(journal.petOwnerId) : null;
-      const photoBuffers = await loadNotebookPhotoBuffers(journalId);
       const { generateNotebookPdf } = await import('./services/notebook-pdf');
-      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner, photoBuffers });
+      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner });
 
       const safeName = (pet?.name || 'pet').toString().replace(/[^a-zA-Z0-9가-힣_-]/g, '_').slice(0, 40) || 'pet';
       const filename = `talez-notebook-${safeName}-${journalId}.pdf`;
@@ -5303,9 +5096,8 @@ ${keywords}
       const pet = journal.petId ? storage.getPetById(journal.petId) : null;
       const trainer = journal.trainerId ? storage.getUser(journal.trainerId) : null;
       const owner = journal.petOwnerId ? storage.getUser(journal.petOwnerId) : null;
-      const photoBuffers = await loadNotebookPhotoBuffers(journal.id);
       const { generateNotebookPdf } = await import('./services/notebook-pdf');
-      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner, photoBuffers });
+      const buffer = await generateNotebookPdf({ journal, pet, trainer, owner });
 
       const safeName = (pet?.name || 'pet').toString().replace(/[^a-zA-Z0-9가-힣_-]/g, '_').slice(0, 40) || 'pet';
       const filename = `talez-notebook-${safeName}-${journal.id}.pdf`;
@@ -5336,7 +5128,6 @@ ${keywords}
         content: c.content,
         parentCommentId: c.parentCommentId ?? null,
         createdAt: c.createdAt,
-        updatedAt: c.updatedAt ?? null,
         canDelete: c.authorId === currentUserId,
       };
     });
@@ -5350,14 +5141,7 @@ ${keywords}
       if (r.userId === currentUserId) reactionMap[r.emoji].mine = true;
     });
 
-    // 본인 작성이 아닌 댓글 중 (작성자 본인 ID 기준) 표시
-    const commentsWithFlags = comments.map((c: any) => ({
-      ...c,
-      canEdit: c.authorId === currentUserId,
-      canReport: c.authorId !== currentUserId,
-    }));
-
-    return { comments: commentsWithFlags, reactions: reactionMap, total: comments.length };
+    return { comments, reactions: reactionMap, total: comments.length };
   };
 
   // 댓글/반응 조회
@@ -5382,10 +5166,10 @@ ${keywords}
     }
   });
 
-  // 댓글 카운트 (목록 뱃지용) — { [journalId]: { total, new } }
+  // 댓글 카운트 (목록 뱃지용)
   app.get('/api/notebook/comments/counts', requireAuth(), async (req, res) => {
     try {
-      const raw = String(req.query.journalIds || req.query.ids || '').trim();
+      const raw = String(req.query.journalIds || '').trim();
       if (!raw) return res.json({ success: true, counts: {} });
       const ids = raw.split(',').map(s => parseInt(s, 10)).filter(n => Number.isFinite(n));
       if (ids.length === 0) return res.json({ success: true, counts: {} });
@@ -5394,72 +5178,10 @@ ${keywords}
         const j = storage.getTrainingJournalById(id);
         return j && storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, j);
       });
-      res.json({ success: true, counts: storage.getJournalCommentCounts(accessible, currentUser.id) });
+      res.json({ success: true, counts: storage.getJournalCommentCounts(accessible) });
     } catch (error) {
       logServerError('[알림장 댓글] 카운트 조회 실패:', error, req);
       res.status(500).json({ error: '카운트 조회 실패', code: 'COMMENTS_COUNT_FAILED' });
-    }
-  });
-
-  // 알림장 읽음 확인 (보호자 전용) — 상세 모달 열릴 때마다 호출
-  // 최초 1회만 readAt 기록, lastViewedAt은 매 호출 시 갱신
-  app.patch('/api/notebook/entries/:id/read', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      if (!Number.isFinite(journalId)) {
-        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
-      }
-      const currentUser = req.session.user!;
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal) {
-        return res.status(404).json({ error: '훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
-      }
-      // 보호자(소유자)만 읽음 표시 가능 — IDOR/오작동 방지
-      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '접근 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
-      }
-      if (currentUser.role !== 'pet-owner' || journal.petOwnerId !== currentUser.id) {
-        // 트레이너/관리자/그 외 역할은 읽음 처리 불가 (조회는 허용)
-        return res.status(403).json({ error: '보호자만 읽음 처리할 수 있습니다.', code: 'OWNER_ONLY' });
-      }
-      const result = storage.markJournalRead(journalId);
-      return res.json({ success: true, data: result });
-    } catch (error) {
-      logServerError('[알림장] 읽음 처리(PATCH) 실패:', error, req);
-      res.status(500).json({ error: '읽음 처리 실패', code: 'MARK_READ_FAILED' });
-    }
-  });
-
-  // 트레이너의 미읽음 알림장 개수 (사이드바 뱃지용)
-  app.get('/api/trainer/journals/unread-count', requireAuth('trainer'), async (req, res) => {
-    try {
-      const trainerId = req.session.user!.id;
-      const count = storage.getUnreadJournalCountForTrainer(trainerId);
-      return res.json({ success: true, count });
-    } catch (error) {
-      logServerError('[알림장] 미읽음 카운트 조회 실패:', error, req);
-      res.status(500).json({ success: false, count: 0 });
-    }
-  });
-
-  // 알림장 읽음 처리 (목록 뱃지의 "새 댓글 N" 초기화)
-  app.post('/api/notebook/entries/:id/mark-read', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      if (!Number.isFinite(journalId)) {
-        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
-      }
-      const currentUser = req.session.user!;
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal) return res.status(404).json({ error: '훈련 일지 없음', code: 'JOURNAL_NOT_FOUND' });
-      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '접근 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
-      }
-      storage.markJournalCommentsRead(currentUser.id, journalId);
-      res.json({ success: true });
-    } catch (error) {
-      logServerError('[알림장 댓글] 읽음 처리 실패:', error, req);
-      res.status(500).json({ error: '읽음 처리 실패', code: 'MARK_READ_FAILED' });
     }
   });
 
@@ -5527,96 +5249,30 @@ ${keywords}
     }
   });
 
-  // 댓글 수정 (작성자 본인만)
-  app.patch('/api/notebook/entries/:id/comments/:commentId', requireAuth(), csrfProtection, async (req, res) => {
+  // 댓글 삭제 (작성자 본인만)
+  app.delete('/api/notebook/comments/:commentId', requireAuth(), csrfProtection, async (req, res) => {
     try {
-      const journalId = parseInt(req.params.id, 10);
       const commentId = parseInt(req.params.commentId, 10);
-      if (!Number.isFinite(journalId) || !Number.isFinite(commentId)) {
-        return res.status(400).json({ error: '올바른 ID가 필요합니다.', code: 'INVALID_ID' });
+      if (!Number.isFinite(commentId)) {
+        return res.status(400).json({ error: '올바른 댓글 ID가 필요합니다.', code: 'INVALID_COMMENT_ID' });
       }
       const currentUser = req.session.user!;
       const comment = storage.getJournalCommentById(commentId);
-      if (!comment || comment.journalId !== journalId) {
+      if (!comment) {
         return res.status(404).json({ error: '해당 댓글을 찾을 수 없습니다.', code: 'COMMENT_NOT_FOUND' });
-      }
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal || !storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '댓글에 접근할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
-      }
-      if (comment.authorId !== currentUser.id) {
-        return res.status(403).json({ error: '본인이 작성한 댓글만 수정할 수 있습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
-      }
-      const content = String(req.body?.content || '').trim();
-      if (content.length < 1 || content.length > 2000) {
-        return res.status(400).json({ error: '댓글은 1~2000자 사이여야 합니다.', code: 'INVALID_CONTENT' });
-      }
-      storage.updateJournalComment(commentId, content);
-      res.json({ success: true, ...buildJournalCommentsResponse(journalId, currentUser.id) });
-    } catch (error) {
-      logServerError('[알림장 댓글] 수정 실패:', error, req);
-      res.status(500).json({ error: '댓글 수정 중 오류가 발생했습니다.', code: 'COMMENT_UPDATE_FAILED' });
-    }
-  });
-
-  // 댓글 삭제 (작성자 본인만, /entries/:id/comments/:commentId 경로)
-  app.delete('/api/notebook/entries/:id/comments/:commentId', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      const commentId = parseInt(req.params.commentId, 10);
-      if (!Number.isFinite(journalId) || !Number.isFinite(commentId)) {
-        return res.status(400).json({ error: '올바른 ID가 필요합니다.', code: 'INVALID_ID' });
-      }
-      const currentUser = req.session.user!;
-      const comment = storage.getJournalCommentById(commentId);
-      if (!comment || comment.journalId !== journalId) {
-        return res.status(404).json({ error: '해당 댓글을 찾을 수 없습니다.', code: 'COMMENT_NOT_FOUND' });
-      }
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal || !storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '댓글에 접근할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
       }
       if (comment.authorId !== currentUser.id && currentUser.role !== 'admin') {
         return res.status(403).json({ error: '본인이 작성한 댓글만 삭제할 수 있습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
       }
       storage.deleteJournalComment(commentId);
-      res.json({ success: true, ...buildJournalCommentsResponse(journalId, currentUser.id) });
+      res.json({ success: true, ...buildJournalCommentsResponse(comment.journalId, currentUser.id) });
     } catch (error) {
       logServerError('[알림장 댓글] 삭제 실패:', error, req);
       res.status(500).json({ error: '댓글 삭제 중 오류가 발생했습니다.', code: 'COMMENT_DELETE_FAILED' });
     }
   });
 
-  // 댓글 신고 (타인 댓글만)
-  app.post('/api/notebook/entries/:id/comments/:commentId/report', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      const commentId = parseInt(req.params.commentId, 10);
-      if (!Number.isFinite(journalId) || !Number.isFinite(commentId)) {
-        return res.status(400).json({ error: '올바른 ID가 필요합니다.', code: 'INVALID_ID' });
-      }
-      const currentUser = req.session.user!;
-      const comment = storage.getJournalCommentById(commentId);
-      if (!comment || comment.journalId !== journalId) {
-        return res.status(404).json({ error: '해당 댓글을 찾을 수 없습니다.', code: 'COMMENT_NOT_FOUND' });
-      }
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal || !storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '신고할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
-      }
-      if (comment.authorId === currentUser.id) {
-        return res.status(400).json({ error: '본인 댓글은 신고할 수 없습니다.', code: 'CANNOT_REPORT_OWN' });
-      }
-      const reason = req.body?.reason ? String(req.body.reason).trim().slice(0, 500) : undefined;
-      storage.reportJournalComment({ commentId, reporterId: currentUser.id, reason });
-      res.json({ success: true, message: '신고가 접수되었습니다. 관리자가 검토 후 조치합니다.' });
-    } catch (error) {
-      logServerError('[알림장 댓글] 신고 실패:', error, req);
-      res.status(500).json({ error: '신고 처리 중 오류가 발생했습니다.', code: 'COMMENT_REPORT_FAILED' });
-    }
-  });
-
-  // 이모지 반응 추가
+  // 이모지 반응 토글
   app.post('/api/notebook/entries/:id/reactions', requireAuth(), csrfProtection, async (req, res) => {
     try {
       const journalId = parseInt(req.params.id, 10);
@@ -5629,285 +5285,17 @@ ${keywords}
       }
       const currentUser = req.session.user!;
       const journal = storage.getTrainingJournalById(journalId);
-      if (!journal) return res.status(404).json({ error: '훈련 일지 없음', code: 'JOURNAL_NOT_FOUND' });
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
       if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
         return res.status(403).json({ error: '반응을 남길 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
       }
-      storage.addJournalReaction(journalId, currentUser.id, emoji);
-      res.json({ success: true, ...buildJournalCommentsResponse(journalId, currentUser.id) });
+      const result = storage.toggleJournalReaction(journalId, currentUser.id, emoji);
+      res.json({ success: true, added: result.added, ...buildJournalCommentsResponse(journalId, currentUser.id) });
     } catch (error) {
-      logServerError('[알림장 반응] 추가 실패:', error, req);
-      res.status(500).json({ error: '반응 처리 중 오류가 발생했습니다.', code: 'REACTION_ADD_FAILED' });
-    }
-  });
-
-  // 이모지 반응 제거
-  app.delete('/api/notebook/entries/:id/reactions', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      if (!Number.isFinite(journalId)) {
-        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
-      }
-      const emoji = String(req.body?.emoji || req.query?.emoji || '').trim();
-      if (!ALLOWED_REACTION_EMOJIS.includes(emoji)) {
-        return res.status(400).json({ error: '허용되지 않는 이모지입니다.', code: 'INVALID_EMOJI', allowed: ALLOWED_REACTION_EMOJIS });
-      }
-      const currentUser = req.session.user!;
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal) return res.status(404).json({ error: '훈련 일지 없음', code: 'JOURNAL_NOT_FOUND' });
-      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '반응을 취소할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
-      }
-      storage.removeJournalReaction(journalId, currentUser.id, emoji);
-      res.json({ success: true, ...buildJournalCommentsResponse(journalId, currentUser.id) });
-    } catch (error) {
-      logServerError('[알림장 반응] 제거 실패:', error, req);
-      res.status(500).json({ error: '반응 처리 중 오류가 발생했습니다.', code: 'REACTION_REMOVE_FAILED' });
-    }
-  });
-
-  // ============ 알림장 숙제 체크리스트 ============
-  type HomeworkItem = {
-    id: number;
-    journalId: number;
-    label: string;
-    dueDate: string | null;
-    completedAt: string | null;
-    completedByUserId: number | null;
-    sortOrder: number;
-    createdAt: string;
-  };
-  const homeworkStore = (): HomeworkItem[] => {
-    if (!storage.notebookHomeworkItems) storage.notebookHomeworkItems = [];
-    return storage.notebookHomeworkItems as HomeworkItem[];
-  };
-  const nextHomeworkId = (): number => {
-    const arr = homeworkStore();
-    return (arr.reduce((m, x) => Math.max(m, x.id || 0), 0) || 0) + 1;
-  };
-  const listHomeworkForJournal = (journalId: number): HomeworkItem[] =>
-    homeworkStore()
-      .filter((h) => h.journalId === journalId)
-      .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.id - b.id));
-
-  const parseDueDate = (raw: unknown): string | null => {
-    if (raw == null || raw === '') return null;
-    const d = new Date(String(raw));
-    if (isNaN(d.getTime())) return null;
-    return d.toISOString();
-  };
-
-  // GET 숙제 목록 — 일지 접근 권한 필요
-  app.get('/api/notebook/entries/:id/homework', requireAuth(), async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      if (!Number.isFinite(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
-      const currentUser = req.session.user!;
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal) return res.status(404).json({ error: '훈련 일지 없음' });
-      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '권한이 없습니다.' });
-      }
-      const items = listHomeworkForJournal(journalId);
-      const total = items.length;
-      const completed = items.filter((i) => !!i.completedAt).length;
-      res.json({ success: true, items, stats: { total, completed, completionRate: total ? Math.round((completed / total) * 100) : 0 } });
-    } catch (error) {
-      logServerError('[알림장 숙제] 조회 실패:', error, req);
-      res.status(500).json({ error: '조회 중 오류가 발생했습니다.' });
-    }
-  });
-
-  // POST 숙제 추가 — 트레이너 전용. body: {label, dueDate?} 또는 {items: [...]}
-  app.post('/api/notebook/entries/:id/homework', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      if (!Number.isFinite(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
-      const currentUser = req.session.user!;
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal) return res.status(404).json({ error: '훈련 일지 없음' });
-      if (!storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '숙제를 추가할 권한이 없습니다.' });
-      }
-
-      const arr = homeworkStore();
-      const existing = listHomeworkForJournal(journalId);
-      let baseSort = existing.length ? Math.max(...existing.map((i) => i.sortOrder)) + 1 : 0;
-      const created: HomeworkItem[] = [];
-
-      const incoming: Array<{ label: string; dueDate?: string | null }> = Array.isArray(req.body?.items)
-        ? req.body.items
-        : (req.body?.label ? [{ label: req.body.label, dueDate: req.body.dueDate }] : []);
-      if (incoming.length === 0) return res.status(400).json({ error: '추가할 항목이 없습니다.' });
-      if (existing.length + incoming.length > 50) {
-        return res.status(400).json({ error: '한 알림장에 최대 50개까지 추가할 수 있습니다.' });
-      }
-
-      for (const raw of incoming) {
-        const label = String(raw.label || '').trim().slice(0, 200);
-        if (!label) continue;
-        const item: HomeworkItem = {
-          id: nextHomeworkId(),
-          journalId,
-          label,
-          dueDate: parseDueDate(raw.dueDate),
-          completedAt: null,
-          completedByUserId: null,
-          sortOrder: baseSort++,
-          createdAt: new Date().toISOString(),
-        };
-        arr.push(item);
-        created.push(item);
-      }
-      res.json({ success: true, items: listHomeworkForJournal(journalId), created });
-    } catch (error) {
-      logServerError('[알림장 숙제] 추가 실패:', error, req);
-      res.status(500).json({ error: '추가 중 오류가 발생했습니다.' });
-    }
-  });
-
-  // PATCH 숙제 수정(라벨/마감일/순서) — 트레이너 전용
-  app.patch('/api/notebook/homework/:itemId', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const itemId = parseInt(req.params.itemId, 10);
-      if (!Number.isFinite(itemId)) return res.status(400).json({ error: '올바른 ID가 필요합니다.' });
-      const currentUser = req.session.user!;
-      const item = homeworkStore().find((i) => i.id === itemId);
-      if (!item) return res.status(404).json({ error: '항목을 찾을 수 없습니다.' });
-      const journal = storage.getTrainingJournalById(item.journalId);
-      if (!journal || !storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '권한이 없습니다.' });
-      }
-      if (typeof req.body?.label === 'string') {
-        const label = req.body.label.trim().slice(0, 200);
-        if (label) item.label = label;
-      }
-      if ('dueDate' in (req.body || {})) item.dueDate = parseDueDate(req.body.dueDate);
-      if (typeof req.body?.sortOrder === 'number') item.sortOrder = req.body.sortOrder;
-      res.json({ success: true, item });
-    } catch (error) {
-      logServerError('[알림장 숙제] 수정 실패:', error, req);
-      res.status(500).json({ error: '수정 중 오류가 발생했습니다.' });
-    }
-  });
-
-  // DELETE 숙제 삭제 — 트레이너 전용
-  app.delete('/api/notebook/homework/:itemId', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const itemId = parseInt(req.params.itemId, 10);
-      if (!Number.isFinite(itemId)) return res.status(400).json({ error: '올바른 ID가 필요합니다.' });
-      const currentUser = req.session.user!;
-      const arr = homeworkStore();
-      const idx = arr.findIndex((i) => i.id === itemId);
-      if (idx < 0) return res.status(404).json({ error: '항목을 찾을 수 없습니다.' });
-      const item = arr[idx];
-      const journal = storage.getTrainingJournalById(item.journalId);
-      if (!journal || !storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '권한이 없습니다.' });
-      }
-      arr.splice(idx, 1);
-      res.json({ success: true });
-    } catch (error) {
-      logServerError('[알림장 숙제] 삭제 실패:', error, req);
-      res.status(500).json({ error: '삭제 중 오류가 발생했습니다.' });
-    }
-  });
-
-  // PATCH 완료 토글 — 보호자(또는 트레이너) 가능. body: {completed: boolean}
-  app.patch('/api/notebook/homework/:itemId/complete', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const itemId = parseInt(req.params.itemId, 10);
-      if (!Number.isFinite(itemId)) return res.status(400).json({ error: '올바른 ID가 필요합니다.' });
-      const currentUser = req.session.user!;
-      const item = homeworkStore().find((i) => i.id === itemId);
-      if (!item) return res.status(404).json({ error: '항목을 찾을 수 없습니다.' });
-      const journal = storage.getTrainingJournalById(item.journalId);
-      if (!journal || !storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '권한이 없습니다.' });
-      }
-      const completed = req.body?.completed !== false; // default true
-      const wasCompleted = !!item.completedAt;
-      item.completedAt = completed ? new Date().toISOString() : null;
-      item.completedByUserId = completed ? currentUser.id : null;
-
-      // 모든 항목 완료 시 트레이너 알림(전이 발생 시에만)
-      const all = listHomeworkForJournal(item.journalId);
-      const allDone = all.length > 0 && all.every((i) => !!i.completedAt);
-      if (completed && !wasCompleted && allDone && journal.trainerId && journal.trainerId !== currentUser.id) {
-        try {
-          const { notificationService } = await import('./notifications/notification-service');
-          const pet = storage.getPet(journal.petId);
-          await notificationService.sendNotification({
-            userId: journal.trainerId,
-            type: 'training',
-            title: '숙제가 모두 완료됐어요',
-            message: `${pet?.name || '반려동물'}의 "${journal.title || '알림장'}" 숙제 ${all.length}개가 모두 완료되었습니다.`,
-            actionUrl: `/trainer/notebook?journalId=${journal.id}`,
-            data: { journalId: journal.id, petId: journal.petId, totalItems: all.length },
-          });
-        } catch (e) {
-          logServerError('[알림장 숙제] 완료 알림 실패:', e, req);
-        }
-      }
-      const total = all.length;
-      const completedCount = all.filter((i) => !!i.completedAt).length;
-      res.json({
-        success: true,
-        item,
-        stats: { total, completed: completedCount, completionRate: total ? Math.round((completedCount / total) * 100) : 0 },
-        allCompleted: allDone,
-      });
-    } catch (error) {
-      logServerError('[알림장 숙제] 완료 토글 실패:', error, req);
-      res.status(500).json({ error: '처리 중 오류가 발생했습니다.' });
-    }
-  });
-
-  // GET 보호자 — 마감 지난 미완료 숙제 카운트(홈 카드 빨간 뱃지)
-  app.get('/api/notebook/homework/overdue-count', requireAuth(), async (req, res) => {
-    try {
-      const currentUser = req.session.user!;
-      const journals = (storage.trainingJournals || []).filter(
-        (j: any) => storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, j),
-      );
-      const journalIds = new Set(journals.map((j: any) => j.id));
-      const now = Date.now();
-      const overdue = homeworkStore().filter((h) =>
-        journalIds.has(h.journalId) && !h.completedAt && h.dueDate && new Date(h.dueDate).getTime() < now,
-      );
-      res.json({ success: true, overdue: overdue.length });
-    } catch (error) {
-      logServerError('[알림장 숙제] overdue 카운트 실패:', error, req);
-      res.status(500).json({ error: '조회 중 오류가 발생했습니다.', overdue: 0 });
-    }
-  });
-
-  // GET 트레이너 — 펫별 주간 숙제 완료율
-  app.get('/api/notebook/homework/weekly-stats', requireAuth('trainer'), async (req, res) => {
-    try {
-      const currentUser = req.session.user!;
-      const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const myJournals = (storage.trainingJournals || []).filter((j: any) =>
-        j.trainerId === currentUser.id &&
-        new Date(j.trainingDate || j.createdAt || 0).getTime() >= since,
-      );
-      const byPet = new Map<number, { total: number; completed: number }>();
-      for (const j of myJournals) {
-        const items = listHomeworkForJournal(j.id);
-        if (!items.length) continue;
-        const stat = byPet.get(j.petId) || { total: 0, completed: 0 };
-        stat.total += items.length;
-        stat.completed += items.filter((i) => !!i.completedAt).length;
-        byPet.set(j.petId, stat);
-      }
-      const result: Record<string, { total: number; completed: number; rate: number }> = {};
-      byPet.forEach((s, petId) => {
-        result[String(petId)] = { ...s, rate: s.total ? Math.round((s.completed / s.total) * 100) : 0 };
-      });
-      res.json({ success: true, stats: result });
-    } catch (error) {
-      logServerError('[알림장 숙제] 주간 통계 실패:', error, req);
-      res.status(500).json({ error: '조회 중 오류가 발생했습니다.', stats: {} });
+      logServerError('[알림장 반응] 토글 실패:', error, req);
+      res.status(500).json({ error: '반응 처리 중 오류가 발생했습니다.', code: 'REACTION_TOGGLE_FAILED' });
     }
   });
 
@@ -6368,10 +5756,16 @@ ${keywords}
         });
       }
 
-      // 읽음/마지막 조회 시각 업데이트 (보호자가 조회할 때)
-      // - readAt: 최초 1회만, lastViewedAt: 매 조회마다 갱신
-      if (currentUser.role === 'pet-owner' && journal.petOwnerId === currentUser.id) {
-        storage.markJournalRead(journalId);
+      // 읽음 상태 업데이트 (견주가 조회할 때)
+      if (currentUser.role === 'pet-owner' && !journal.isRead) {
+        storage.updateTrainingJournal(journalId, {
+          isRead: true,
+          readAt: new Date().toISOString(),
+          status: 'read'
+        });
+        journal.isRead = true;
+        journal.readAt = new Date().toISOString();
+        journal.status = 'read';
       }
 
       res.json({
@@ -9429,345 +8823,6 @@ app.get('/api/search', async (req, res) => {
       return res.status(500).json({ success: false, error: '음성 인식 중 오류가 발생했습니다.' });
     }
   });
-
-  // ============ 알림장 사진/영상 첨부 API ============
-  const NOTEBOOK_IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10MB / 장
-  const NOTEBOOK_VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 50MB / 영상
-  const NOTEBOOK_VIDEO_MAX_DURATION_SEC = 60;
-  const NOTEBOOK_MAX_IMAGES = 5;
-  const NOTEBOOK_MAX_VIDEOS = 1;
-  const NOTEBOOK_SIGNED_URL_TTL_SEC = 5 * 60; // 5분
-  const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-  const ALLOWED_VIDEO_MIME = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
-
-  const notebookAttachmentUpload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: NOTEBOOK_VIDEO_MAX_BYTES },
-  });
-
-  const buildAttachmentResponse = (a: any) => ({
-    id: a.id,
-    journalId: a.journalId,
-    kind: a.kind,
-    mimeType: a.mimeType,
-    sizeBytes: a.sizeBytes,
-    sortOrder: a.sortOrder,
-    createdAt: a.createdAt,
-    url: `/api/notebook/attachments/${a.id}`,
-    thumbnailUrl: a.thumbnailKey ? `/api/notebook/attachments/${a.id}/thumbnail` : null,
-  });
-
-  // 첨부파일 목록 조회
-  app.get('/api/notebook/entries/:id/attachments', requireAuth(), async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      if (Number.isNaN(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal) return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.' });
-      const currentUser = req.session.user!;
-      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '접근 권한이 없습니다.' });
-      }
-      const list = storage.getNotebookAttachmentsByJournal(journalId).map(buildAttachmentResponse);
-      return res.json({ success: true, attachments: list });
-    } catch (error) {
-      logServerError('알림장 첨부파일 목록 오류:', error, req);
-      return res.status(500).json({ error: '첨부파일 목록 조회 중 오류가 발생했습니다.' });
-    }
-  });
-
-  // multer 에러 핸들러: LIMIT_FILE_SIZE 등을 4xx JSON 으로 매핑
-  const notebookAttachmentUploadHandler = (req: any, res: any, next: any) => {
-    notebookAttachmentUpload.single('file')(req, res, (err: any) => {
-      if (!err) return next();
-      const isMulter = err && err.name === 'MulterError';
-      const code = isMulter ? err.code : null;
-      if (code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ error: '파일 크기가 너무 큽니다. 영상은 50MB, 사진은 10MB 까지 업로드 가능합니다.' });
-      }
-      if (code === 'LIMIT_UNEXPECTED_FILE') {
-        return res.status(400).json({ error: "예상치 못한 필드입니다. 'file' 필드명으로 업로드해 주세요." });
-      }
-      if (isMulter) {
-        return res.status(400).json({ error: `업로드 오류: ${err.message || code}` });
-      }
-      logServerError('알림장 첨부 multer 오류:', err, req);
-      return res.status(500).json({ error: '업로드 처리 중 오류가 발생했습니다.' });
-    });
-  };
-
-  // 첨부파일 업로드 (트레이너/관리자)
-  app.post(
-    '/api/notebook/entries/:id/attachments',
-    requireAuth(),
-    csrfProtection,
-    notebookAttachmentUploadHandler,
-    async (req, res) => {
-      try {
-        const journalId = parseInt(req.params.id, 10);
-        if (Number.isNaN(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
-        const journal = storage.getTrainingJournalById(journalId);
-        if (!journal) return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.' });
-
-        const currentUser = req.session.user!;
-        if (!storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
-          return res.status(403).json({ error: '첨부파일을 추가할 권한이 없습니다.' });
-        }
-        if (!req.file) return res.status(400).json({ error: '파일이 필요합니다.' });
-
-        const mime = (req.file.mimetype || '').toLowerCase();
-        let kind: 'image' | 'video';
-        if (ALLOWED_IMAGE_MIME.has(mime)) kind = 'image';
-        else if (ALLOWED_VIDEO_MIME.has(mime)) kind = 'video';
-        else return res.status(400).json({ error: '허용되지 않은 파일 형식입니다. (jpeg/png/webp/gif/mp4/webm/mov)' });
-
-        if (kind === 'image' && req.file.size > NOTEBOOK_IMAGE_MAX_BYTES) {
-          return res.status(400).json({ error: `이미지는 최대 ${Math.round(NOTEBOOK_IMAGE_MAX_BYTES / 1024 / 1024)}MB 까지 업로드 가능합니다.` });
-        }
-        if (kind === 'video' && req.file.size > NOTEBOOK_VIDEO_MAX_BYTES) {
-          return res.status(400).json({ error: `영상은 최대 ${Math.round(NOTEBOOK_VIDEO_MAX_BYTES / 1024 / 1024)}MB 까지 업로드 가능합니다.` });
-        }
-
-        const existingImages = storage.countNotebookAttachmentsByJournal(journalId, 'image');
-        const existingVideos = storage.countNotebookAttachmentsByJournal(journalId, 'video');
-        if (kind === 'image' && existingImages >= NOTEBOOK_MAX_IMAGES) {
-          return res.status(400).json({ error: `사진은 최대 ${NOTEBOOK_MAX_IMAGES}장까지 업로드할 수 있습니다.` });
-        }
-        if (kind === 'video' && existingVideos >= NOTEBOOK_MAX_VIDEOS) {
-          return res.status(400).json({ error: `영상은 알림장당 ${NOTEBOOK_MAX_VIDEOS}개만 업로드할 수 있습니다.` });
-        }
-
-        const { ObjectStorageService } = await import('./objectStorage');
-        const objectStorageService = new ObjectStorageService();
-        const extMap: Record<string, string> = {
-          'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
-          'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov',
-        };
-        const ext = extMap[mime] || 'bin';
-        const subdir = `notebook/${journalId}/${kind}s`;
-
-        // 이미지는 즉시 업로드 / 영상은 duration 검증 후 업로드
-        let imageStorageKey: string | null = null;
-        if (kind === 'image') {
-          imageStorageKey = await objectStorageService.uploadBufferToPrivate(req.file.buffer, {
-            mimeType: mime, ext, subdir,
-          });
-        }
-
-        // 영상: 임시저장 → ffprobe로 60초 검증 → 업로드 + 썸네일
-        let thumbnailKey: string | null = null;
-        let videoStorageKey: string | null = null;
-        if (kind === 'video') {
-          const fsMod = await import('fs');
-          const pathMod = await import('path');
-          const osMod = await import('os');
-          const ffmpegLib: any = (await import('fluent-ffmpeg')).default;
-          const tmpDir = fsMod.mkdtempSync(pathMod.join(osMod.tmpdir(), 'notebook-vid-'));
-          try {
-            const inputPath = pathMod.join(tmpDir, `in.${ext}`);
-            fsMod.writeFileSync(inputPath, req.file.buffer);
-
-            // 길이 검증 (ffprobe)
-            const meta: any = await new Promise((resolve, reject) => {
-              ffmpegLib.ffprobe(inputPath, (err: any, data: any) => err ? reject(err) : resolve(data));
-            }).catch((err) => {
-              logServerError('영상 ffprobe 실패:', err, req);
-              return null;
-            });
-            const duration = Number(meta?.format?.duration || 0);
-            if (!Number.isFinite(duration) || duration <= 0) {
-              return res.status(400).json({ error: '영상 길이를 확인할 수 없습니다. 다른 파일을 시도해 주세요.' });
-            }
-            if (duration > NOTEBOOK_VIDEO_MAX_DURATION_SEC + 0.5) {
-              return res.status(400).json({ error: `영상은 최대 ${NOTEBOOK_VIDEO_MAX_DURATION_SEC}초까지 업로드 가능합니다. (현재 약 ${Math.round(duration)}초)` });
-            }
-
-            // 본 영상 업로드
-            videoStorageKey = await objectStorageService.uploadBufferToPrivate(req.file.buffer, {
-              mimeType: mime, ext, subdir,
-            });
-
-            // 첫 프레임 썸네일
-            try {
-              const thumbPath = pathMod.join(tmpDir, 'thumb.jpg');
-              await new Promise<void>((resolve, reject) => {
-                ffmpegLib(inputPath)
-                  .on('end', () => resolve())
-                  .on('error', (err: any) => reject(err))
-                  .screenshots({ timestamps: ['00:00:00.500'], filename: 'thumb.jpg', folder: tmpDir, size: '640x?' });
-              });
-              const thumbBuf = fsMod.readFileSync(thumbPath);
-              thumbnailKey = await objectStorageService.uploadBufferToPrivate(thumbBuf, {
-                mimeType: 'image/jpeg', ext: 'jpg', subdir: `notebook/${journalId}/thumbs`,
-              });
-            } catch (thumbErr) {
-              logServerError('영상 썸네일 생성 실패(스킵):', thumbErr, req);
-            }
-          } finally {
-            try { fsMod.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-          }
-        }
-
-        const finalStorageKey = kind === 'video' ? videoStorageKey! : imageStorageKey!;
-        if (!finalStorageKey) {
-          return res.status(500).json({ error: '파일 업로드에 실패했습니다.' });
-        }
-
-        const attachment = storage.createNotebookAttachment({
-          journalId,
-          kind,
-          storageKey: finalStorageKey,
-          thumbnailKey,
-          sizeBytes: req.file.size,
-          mimeType: mime,
-          uploadedBy: currentUser.id,
-        });
-
-        return res.status(201).json({ success: true, attachment: buildAttachmentResponse(attachment) });
-      } catch (error: any) {
-        logServerError('알림장 첨부파일 업로드 오류:', error, req);
-        return res.status(500).json({ error: '첨부파일 업로드 중 오류가 발생했습니다.' });
-      }
-    },
-  );
-
-  // 첨부파일 재정렬 (트레이너/관리자)
-  app.patch('/api/notebook/entries/:id/attachments/reorder', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const journalId = parseInt(req.params.id, 10);
-      if (Number.isNaN(journalId)) return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.' });
-      const journal = storage.getTrainingJournalById(journalId);
-      if (!journal) return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.' });
-      const currentUser = req.session.user!;
-      if (!storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '재정렬 권한이 없습니다.' });
-      }
-      const orderedIds: any[] = Array.isArray(req.body?.orderedIds) ? req.body.orderedIds : [];
-      if (orderedIds.length === 0) return res.status(400).json({ error: 'orderedIds 배열이 필요합니다.' });
-
-      const existing = storage.getNotebookAttachmentsByJournal(journalId);
-      const existingIds = new Set(existing.map(a => a.id));
-      const normalized = orderedIds.map((v) => parseInt(String(v), 10)).filter((n) => Number.isFinite(n));
-      if (normalized.length !== existing.length || !normalized.every(id => existingIds.has(id))) {
-        return res.status(400).json({ error: '잘못된 첨부파일 ID 목록입니다.' });
-      }
-      normalized.forEach((attId, idx) => {
-        const att = storage.getNotebookAttachmentById(attId);
-        if (att) att.sortOrder = idx;
-      });
-      const list = storage.getNotebookAttachmentsByJournal(journalId).map(buildAttachmentResponse);
-      return res.json({ success: true, attachments: list });
-    } catch (error) {
-      logServerError('알림장 첨부 재정렬 오류:', error, req);
-      return res.status(500).json({ error: '재정렬 중 오류가 발생했습니다.' });
-    }
-  });
-
-  // 첨부파일 삭제
-  app.delete('/api/notebook/attachments/:id', requireAuth(), csrfProtection, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) return res.status(400).json({ error: '올바른 첨부 ID가 필요합니다.' });
-      const att = storage.getNotebookAttachmentById(id);
-      if (!att) return res.status(404).json({ error: '첨부파일을 찾을 수 없습니다.' });
-      const journal = storage.getTrainingJournalById(att.journalId);
-      const currentUser = req.session.user!;
-      if (!journal || !storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '삭제 권한이 없습니다.' });
-      }
-      storage.deleteNotebookAttachment(id);
-      try {
-        const { ObjectStorageService } = await import('./objectStorage');
-        const svc = new ObjectStorageService();
-        await svc.deletePrivateByKey(att.storageKey);
-        if (att.thumbnailKey) await svc.deletePrivateByKey(att.thumbnailKey);
-      } catch (e) {
-        logServerError('첨부 객체 삭제 실패(무시):', e, req);
-      }
-      return res.json({ success: true });
-    } catch (error) {
-      logServerError('알림장 첨부파일 삭제 오류:', error, req);
-      return res.status(500).json({ error: '첨부파일 삭제 중 오류가 발생했습니다.' });
-    }
-  });
-
-  // 권한 검증 후 GCS 단기 서명 URL 로 302 리다이렉트.
-  // (브라우저는 서명 URL 로 직접 GCS 요청 → Range 등은 GCS가 처리)
-  const redirectToSignedUrl = async (req: any, res: any, useThumb: boolean) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) return res.status(400).json({ error: '올바른 첨부 ID가 필요합니다.' });
-      const att = storage.getNotebookAttachmentById(id);
-      if (!att) return res.status(404).json({ error: '첨부파일을 찾을 수 없습니다.' });
-      const journal = storage.getTrainingJournalById(att.journalId);
-      const currentUser = req.session.user!;
-      if (!journal || !storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
-        return res.status(403).json({ error: '접근 권한이 없습니다.' });
-      }
-
-      const key = useThumb && att.thumbnailKey ? att.thumbnailKey : att.storageKey;
-      const mime = useThumb && att.thumbnailKey ? 'image/jpeg' : att.mimeType;
-
-      const { ObjectStorageService } = await import('./objectStorage');
-      const svc = new ObjectStorageService();
-      const file = svc.getPrivateFileByKey(key);
-      const [exists] = await file.exists();
-      if (!exists) return res.status(404).json({ error: '파일이 존재하지 않습니다.' });
-
-      try {
-        const [signedUrl] = await file.getSignedUrl({
-          version: 'v4',
-          action: 'read',
-          expires: Date.now() + NOTEBOOK_SIGNED_URL_TTL_SEC * 1000,
-          responseType: mime,
-        });
-        res.setHeader('Cache-Control', 'private, no-store');
-        return res.redirect(302, signedUrl);
-      } catch (signErr) {
-        // 서명 URL 발급 실패 시 권한 가드된 프록시 스트리밍으로 폴백
-        logServerError('서명 URL 발급 실패(스트리밍 폴백):', signErr, req);
-        const [metadata] = await file.getMetadata();
-        const totalSize = Number(metadata.size || 0);
-        const range = req.headers.range as string | undefined;
-        if (range && totalSize > 0) {
-          const m = /bytes=(\d*)-(\d*)/.exec(range);
-          if (m) {
-            const start = m[1] ? parseInt(m[1], 10) : 0;
-            const end = m[2] ? parseInt(m[2], 10) : totalSize - 1;
-            if (
-              !Number.isFinite(start) || !Number.isFinite(end) ||
-              start < 0 || end < 0 || start > end ||
-              start >= totalSize || end >= totalSize
-            ) {
-              res.status(416).set({ 'Content-Range': `bytes */${totalSize}` }).end();
-              return;
-            }
-            res.status(206).set({
-              'Content-Type': mime,
-              'Content-Length': String(end - start + 1),
-              'Content-Range': `bytes ${start}-${end}/${totalSize}`,
-              'Accept-Ranges': 'bytes',
-              'Cache-Control': 'private, max-age=300',
-            });
-            file.createReadStream({ start, end }).on('error', () => { if (!res.headersSent) res.status(500).end(); }).pipe(res);
-            return;
-          }
-        }
-        res.set({
-          'Content-Type': mime,
-          'Content-Length': String(totalSize),
-          'Accept-Ranges': 'bytes',
-          'Cache-Control': 'private, max-age=300',
-        });
-        file.createReadStream().on('error', () => { if (!res.headersSent) res.status(500).end(); }).pipe(res);
-      }
-    } catch (error) {
-      logServerError('알림장 첨부파일 전송 오류:', error, req);
-      if (!res.headersSent) res.status(500).json({ error: '파일 전송 중 오류가 발생했습니다.' });
-    }
-  };
-  app.get('/api/notebook/attachments/:id', requireAuth(), (req, res) => redirectToSignedUrl(req, res, false));
-  app.get('/api/notebook/attachments/:id/thumbnail', requireAuth(), (req, res) => redirectToSignedUrl(req, res, true));
 
   // 반려동물 훈련사 할당 API
   app.post("/api/pets/:petId/assign-trainer", async (req, res) => {

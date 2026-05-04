@@ -42,9 +42,6 @@ import { useToast } from '@/hooks/use-toast';
 import { format, subDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
-import { JournalAttachmentManager } from '@/components/notebook/JournalAttachmentManager';
-import { JournalHomeworkChecklist } from '@/components/notebook/JournalHomeworkChecklist';
-import { ListChecks, X as XIcon } from 'lucide-react';
 
 interface Journal {
   id: number;
@@ -81,20 +78,9 @@ interface Journal {
   status: 'draft' | 'sent' | 'read' | 'replied';
   createdAt: string;
   updatedAt: string;
-  isRead?: boolean;
   readAt?: string;
-  lastViewedAt?: string;
   replyMessage?: string;
 }
-
-// "MM/DD HH:mm" 포맷터
-const formatReadTimestamp = (iso?: string | null): string => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
 
 interface Student {
   id: number;
@@ -166,25 +152,6 @@ export default function TrainerNotebookPage() {
     },
     enabled: !!streamId && isAuthenticated,
   });
-
-  type AiDraftTone = 'friendly' | 'formal' | 'short' | 'detailed';
-  type AiDraftFields = {
-    title: string;
-    content: string;
-    behaviorNotes: string;
-    homeworkInstructions: string;
-    nextGoals: string;
-  };
-  const [aiKeywords, setAiKeywords] = useState('');
-  const [aiTone, setAiTone] = useState<AiDraftTone>('friendly');
-  const [aiUsageInfo, setAiUsageInfo] = useState<{ used: number; limit: number; remaining: number } | null>(null);
-  const [isAiDraftFlag, setIsAiDraftFlag] = useState(false);
-  // AI 초안 적용 직전의 본문 스냅샷 — "AI 초안 취소" 시 복원
-  const [aiDraftBackup, setAiDraftBackup] = useState<AiDraftFields | null>(null);
-
-  const [draftHomework, setDraftHomework] = useState<Array<{ label: string; dueDate: string }>>([]);
-  const [draftHomeworkLabel, setDraftHomeworkLabel] = useState('');
-  const [draftHomeworkDue, setDraftHomeworkDue] = useState('');
 
   const [notebookForm, setNotebookForm] = useState({
     title: '',
@@ -271,61 +238,6 @@ export default function TrainerNotebookPage() {
     generateAIContentMutation.mutate();
   };
 
-  // AI 초안 생성 mutation (POST /api/notebook/draft)
-  const generateDraftMutation = useMutation({
-    mutationFn: async () => {
-      const { secureRequest } = await import('@/lib/csrf');
-      const res = await secureRequest('/api/notebook/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          keywords: aiKeywords,
-          tone: aiTone,
-          petId: notebookForm.petId ? Number(notebookForm.petId) : undefined,
-          streamId: streamId || undefined,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error || `요청 실패 (${res.status})`);
-      return json;
-    },
-    onSuccess: (data) => {
-      const d = (data?.draft || {}) as Partial<AiDraftFields>;
-      setNotebookForm(prev => {
-        // 적용 직전 스냅샷 저장(취소 시 복원)
-        setAiDraftBackup({
-          title: prev.title,
-          content: prev.content,
-          behaviorNotes: prev.behaviorNotes,
-          homeworkInstructions: prev.homeworkInstructions,
-          nextGoals: prev.nextGoals,
-        });
-        return {
-          ...prev,
-          title: d.title || prev.title,
-          content: d.content || prev.content,
-          behaviorNotes: d.behaviorNotes || prev.behaviorNotes,
-          homeworkInstructions: d.homeworkInstructions || prev.homeworkInstructions,
-          nextGoals: d.nextGoals || prev.nextGoals,
-        };
-      });
-      setIsAiDraftFlag(true);
-      if (data?.usage) setAiUsageInfo(data.usage);
-      toast({
-        title: 'AI 초안 생성 완료',
-        description: '내용을 검토하고 자유롭게 편집해 주세요. 마음에 들지 않으면 "AI 초안 취소"를 누르세요.',
-      });
-      setActiveTab('basic');
-    },
-    onError: (err: any) => {
-      toast({
-        title: 'AI 초안 생성 실패',
-        description: err?.message || '잠시 후 다시 시도해 주세요.',
-        variant: 'destructive',
-      });
-    },
-  });
-
   // 알림장 생성 mutation
   const createNotebookMutation = useMutation({
     mutationFn: async (notebookData: any) => {
@@ -341,7 +253,6 @@ export default function TrainerNotebookPage() {
         homeworkInstructions: notebookData.homeworkInstructions,
         nextGoals: notebookData.nextGoals,
         attachments: notebookData.attachments || [],
-        isAiDraft: isAiDraftFlag,
       };
       const response = await secureRequest('/api/notebook/entries', {
         method: 'POST',
@@ -352,21 +263,6 @@ export default function TrainerNotebookPage() {
       if (!response.ok || data?.success === false) {
         const msg = data?.error || data?.message || `요청 실패 (${response.status})`;
         throw new Error(msg);
-      }
-      // 작성 시 입력한 숙제 항목을 새 일지에 일괄 저장
-      const newJournalId = data?.data?.id;
-      if (Number.isFinite(newJournalId) && draftHomework.length > 0) {
-        try {
-          await secureRequest(`/api/notebook/entries/${newJournalId}/homework`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              items: draftHomework.map(h => ({ label: h.label, dueDate: h.dueDate || null })),
-            }),
-          });
-        } catch (e) {
-          console.warn('숙제 저장 실패(알림장은 생성됨):', e);
-        }
       }
       return data;
     },
@@ -395,14 +291,6 @@ export default function TrainerNotebookPage() {
         }
       });
       queryClient.invalidateQueries({ queryKey: ['/api/trainer/journals'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/notebook/homework/weekly-stats'] });
-      setIsAiDraftFlag(false);
-      setAiKeywords('');
-      setAiUsageInfo(null);
-      setAiDraftBackup(null);
-      setDraftHomework([]);
-      setDraftHomeworkLabel('');
-      setDraftHomeworkDue('');
     },
     onError: (error) => {
       toast({
@@ -474,7 +362,7 @@ export default function TrainerNotebookPage() {
         pet?: { id: number; name: string; breed?: string; age?: number };
         owner?: { id: number; name: string; email: string };
       };
-      const list: (RawJournal & { isRead?: boolean; lastViewedAt?: string })[] = json.journals || [];
+      const list: RawJournal[] = json.journals || [];
       return list.map((j) => ({
         id: j.id,
         title: j.title || '훈련 일지',
@@ -502,9 +390,7 @@ export default function TrainerNotebookPage() {
         status: (j.status || 'sent') as Journal['status'],
         createdAt: j.createdAt || new Date().toISOString(),
         updatedAt: j.updatedAt || j.createdAt || new Date().toISOString(),
-        isRead: !!j.isRead,
         readAt: j.readAt,
-        lastViewedAt: j.lastViewedAt,
         replyMessage: j.replyMessage,
       })) as Journal[];
     },
@@ -599,36 +485,6 @@ export default function TrainerNotebookPage() {
     setSelectedJournal(journal);
     setIsJournalDetailOpen(true);
   };
-
-  // 댓글 카운트 (목록 뱃지)
-  const journalIdsKey = useMemo(
-    () => (filteredJournals || []).map(j => j.id).sort((a, b) => a - b).join(','),
-    [filteredJournals],
-  );
-  const { data: weeklyHomeworkStats } = useQuery<{ success: boolean; stats: Record<string, { total: number; completed: number; rate: number }> }>({
-    queryKey: ['/api/notebook/homework/weekly-stats'],
-    queryFn: async () => {
-      const res = await fetch('/api/notebook/homework/weekly-stats', { credentials: 'include' });
-      if (!res.ok) return { success: true, stats: {} };
-      return res.json();
-    },
-    enabled: isAuthenticated,
-    refetchInterval: 60000,
-  });
-  const homeworkStatsByPet = weeklyHomeworkStats?.stats || {};
-
-  const { data: commentCountsData } = useQuery<{ success: boolean; counts: Record<number, { total: number; new: number }> }>({
-    queryKey: ['/api/notebook/comments/counts', 'trainer', journalIdsKey],
-    queryFn: async () => {
-      if (!journalIdsKey) return { success: true, counts: {} };
-      const res = await fetch(`/api/notebook/comments/counts?journalIds=${journalIdsKey}`, { credentials: 'include' });
-      if (!res.ok) return { success: true, counts: {} };
-      return res.json();
-    },
-    enabled: !!journalIdsKey,
-    refetchInterval: 30000,
-  });
-  const commentCounts = commentCountsData?.counts || {};
 
   return (
     <div className="p-6 space-y-6">
@@ -880,74 +736,6 @@ export default function TrainerNotebookPage() {
                         rows={3}
                       />
                     </div>
-
-                    {/* 숙제 체크리스트(작성 시 입력) */}
-                    <div className="border rounded-lg p-4 bg-muted/30">
-                      <div className="flex items-center gap-2 mb-3">
-                        <ListChecks className="h-4 w-4 text-primary" />
-                        <Label className="font-semibold">숙제 체크리스트 (선택)</Label>
-                        {draftHomework.length > 0 && (
-                          <Badge variant="secondary">{draftHomework.length}개</Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        보호자가 집에서 체크할 수 있는 숙제를 추가하세요. 모두 완료되면 알림이 도착합니다.
-                      </p>
-                      <div className="space-y-2 mb-3">
-                        {draftHomework.map((h, idx) => (
-                          <div key={idx} className="flex items-center gap-2 rounded-md border bg-background p-2" data-testid={`draft-homework-${idx}`}>
-                            <span className="flex-1 text-sm">{h.label}</span>
-                            {h.dueDate && (
-                              <span className="text-xs text-muted-foreground">마감 {h.dueDate}</span>
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => setDraftHomework(prev => prev.filter((_, i) => i !== idx))}
-                              data-testid={`button-draft-homework-remove-${idx}`}
-                            >
-                              <XIcon className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Input
-                          placeholder="새 숙제 (예: 매일 5분 앉아 훈련)"
-                          value={draftHomeworkLabel}
-                          onChange={(e) => setDraftHomeworkLabel(e.target.value)}
-                          maxLength={200}
-                          data-testid="input-draft-homework-label"
-                        />
-                        <Input
-                          type="date"
-                          value={draftHomeworkDue}
-                          onChange={(e) => setDraftHomeworkDue(e.target.value)}
-                          className="sm:w-44"
-                          data-testid="input-draft-homework-duedate"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            const label = draftHomeworkLabel.trim();
-                            if (!label) return;
-                            if (draftHomework.length >= 50) {
-                              toast({ title: '최대 50개까지 추가할 수 있습니다.', variant: 'destructive' });
-                              return;
-                            }
-                            setDraftHomework(prev => [...prev, { label, dueDate: draftHomeworkDue }]);
-                            setDraftHomeworkLabel('');
-                            setDraftHomeworkDue('');
-                          }}
-                          data-testid="button-draft-homework-add"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />추가
-                        </Button>
-                      </div>
-                    </div>
                   </div>
                 )}
 
@@ -1174,88 +962,33 @@ export default function TrainerNotebookPage() {
                 {/* AI Helper Tab */}
                 {activeTab === 'ai' && (
                   <div className="space-y-4">
-                    <div className="p-4 border border-primary/30 rounded-lg bg-primary/5">
+                    <div className="p-4 border border-primary/30 rounded-lg bg-primary/10">
                       <div className="flex items-center mb-2">
                         <Brain className="h-5 w-5 text-primary mr-2" />
-                        <h3 className="font-medium text-primary">AI 초안 생성 도우미</h3>
+                        <h3 className="font-medium text-primary">AI 알림장 도우미</h3>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        키워드만 입력하면 AI가 자연스러운 알림장 초안(제목/본문/관찰/숙제/다음 목표)을 자동으로 채워드립니다. 자유롭게 편집할 수 있어요.
+                      <p className="text-sm text-primary mb-4">
+                        AI가 입력된 정보를 바탕으로 알림장 내용을 자동으로 생성해드립니다.
                       </p>
-
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="ai-keywords">오늘의 키워드·메모</Label>
-                          <Textarea
-                            id="ai-keywords"
-                            value={aiKeywords}
-                            onChange={(e) => setAiKeywords(e.target.value)}
-                            placeholder='예: "앉아 90% 성공, 산만함, 다음 숙제: 노즈워크 5분 x 3회"'
-                            rows={4}
-                            data-testid="textarea-ai-keywords"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="ai-tone">톤</Label>
-                          <Select value={aiTone} onValueChange={(v) => setAiTone(v as AiDraftTone)}>
-                            <SelectTrigger id="ai-tone" data-testid="select-ai-tone">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="friendly">친근하게</SelectItem>
-                              <SelectItem value="formal">공식적으로</SelectItem>
-                              <SelectItem value="short">짧게</SelectItem>
-                              <SelectItem value="detailed">상세하게</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button
-                          className="w-full"
-                          onClick={() => generateDraftMutation.mutate()}
-                          disabled={generateDraftMutation.isPending || aiKeywords.trim().length < 2}
-                          data-testid="button-generate-ai-draft"
-                        >
-                          {generateDraftMutation.isPending ? (
-                            <>
-                              <Clock className="h-4 w-4 mr-2 animate-spin" />
-                              AI 초안 생성 중…
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-4 w-4 mr-2" />
-                              AI 초안 생성
-                            </>
-                          )}
-                        </Button>
-                        {isAiDraftFlag && aiDraftBackup && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => {
-                              setNotebookForm(prev => ({
-                                ...prev,
-                                title: aiDraftBackup.title,
-                                content: aiDraftBackup.content,
-                                behaviorNotes: aiDraftBackup.behaviorNotes,
-                                homeworkInstructions: aiDraftBackup.homeworkInstructions,
-                                nextGoals: aiDraftBackup.nextGoals,
-                              }));
-                              setIsAiDraftFlag(false);
-                              setAiDraftBackup(null);
-                              toast({ title: 'AI 초안 취소', description: '이전 입력 내용으로 되돌렸습니다.' });
-                            }}
-                            data-testid="button-revert-ai-draft"
-                          >
-                            AI 초안 취소 (이전 내용 복원)
-                          </Button>
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={handleGenerateAIContent}
+                        disabled={generateAIContentMutation.isPending}
+                        data-testid="button-generate-ai-content"
+                      >
+                        {generateAIContentMutation.isPending ? (
+                          <>
+                            <Clock className="h-4 w-4 mr-2 animate-spin" />
+                            AI 생성 중...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            AI로 내용 생성하기
+                          </>
                         )}
-                        {aiUsageInfo && (
-                          <p className="text-xs text-muted-foreground text-right">
-                            오늘 사용: {aiUsageInfo.used} / {aiUsageInfo.limit} (남은 횟수 {aiUsageInfo.remaining}회)
-                          </p>
-                        )}
-                      </div>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -1427,54 +1160,6 @@ export default function TrainerNotebookPage() {
                           <FileText className="h-5 w-5 text-success" />
                           <h3 className="text-lg font-semibold">{journal.title}</h3>
                           {getStatusBadge(journal.status)}
-                          {journal.readAt ? (
-                            <Badge
-                              variant="outline"
-                              className="ml-1 border-emerald-300 bg-emerald-50 text-emerald-700"
-                              data-testid={`badge-read-${journal.id}`}
-                              title={`보호자가 ${new Date(journal.readAt).toLocaleString()}에 읽음`}
-                            >
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              읽음 ✓ {formatReadTimestamp(journal.readAt)}
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="ml-1 border-amber-300 bg-amber-50 text-amber-700"
-                              data-testid={`badge-unread-${journal.id}`}
-                              title="보호자가 아직 알림장을 열어보지 않았습니다"
-                            >
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              미읽음
-                            </Badge>
-                          )}
-                          {commentCounts[journal.id]?.new > 0 && (
-                            <Badge
-                              variant="destructive"
-                              className="ml-1"
-                              data-testid={`badge-new-comments-${journal.id}`}
-                            >
-                              <MessageSquare className="h-3 w-3 mr-1" />
-                              새 댓글 {commentCounts[journal.id].new}
-                            </Badge>
-                          )}
-                          {commentCounts[journal.id]?.new === 0 && commentCounts[journal.id]?.total > 0 && (
-                            <Badge variant="secondary" className="ml-1">
-                              <MessageSquare className="h-3 w-3 mr-1" />
-                              {commentCounts[journal.id].total}
-                            </Badge>
-                          )}
-                          {homeworkStatsByPet[String(journal.student.pet.id)] && homeworkStatsByPet[String(journal.student.pet.id)].total > 0 && (
-                            <Badge
-                              variant={homeworkStatsByPet[String(journal.student.pet.id)].rate === 100 ? 'default' : 'outline'}
-                              className="ml-1"
-                              data-testid={`badge-homework-week-${journal.student.pet.id}`}
-                              title="이번 주 숙제 완료율"
-                            >
-                              <ListChecks className="h-3 w-3 mr-1" />
-                              주간 {homeworkStatsByPet[String(journal.student.pet.id)].rate}%
-                            </Badge>
-                          )}
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
@@ -1514,6 +1199,12 @@ export default function TrainerNotebookPage() {
                               ))}
                             </div>
                           </div>
+                          {journal.readAt && (
+                            <div className="flex items-center gap-1 text-success">
+                              <CheckCircle className="h-4 w-4" />
+                              <span>읽음: {new Date(journal.readAt).toLocaleDateString()}</span>
+                            </div>
+                          )}
                         </div>
 
                         {journal.replyMessage && (
@@ -1689,25 +1380,14 @@ export default function TrainerNotebookPage() {
                   <FileText className="h-6 w-6 text-success" />
                   {selectedJournal.title}
                 </DialogTitle>
-                <div className="flex items-center gap-2 mt-2 flex-wrap" data-testid="journal-detail-status">
+                <div className="flex items-center gap-2 mt-2">
                   {getStatusBadge(selectedJournal.status)}
                   <span className="text-sm text-gray-500">
-                    작성: {new Date(selectedJournal.createdAt).toLocaleString()}
+                    작성: {new Date(selectedJournal.createdAt).toLocaleDateString()}
                   </span>
-                  {selectedJournal.readAt ? (
-                    <span className="text-sm text-emerald-700 inline-flex items-center gap-1" data-testid="journal-detail-read-at">
-                      <CheckCircle className="h-3.5 w-3.5" />
-                      읽음 ✓ {formatReadTimestamp(selectedJournal.readAt)}
-                    </span>
-                  ) : (
-                    <span className="text-sm text-amber-700 inline-flex items-center gap-1" data-testid="journal-detail-unread">
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      미읽음
-                    </span>
-                  )}
-                  {selectedJournal.lastViewedAt && (
-                    <span className="text-xs text-gray-500" data-testid="journal-detail-last-viewed">
-                      · 마지막 조회 {formatReadTimestamp(selectedJournal.lastViewedAt)}
+                  {selectedJournal.readAt && (
+                    <span className="text-sm text-success">
+                      읽음: {new Date(selectedJournal.readAt).toLocaleDateString()}
                     </span>
                   )}
                 </div>
@@ -1793,12 +1473,6 @@ export default function TrainerNotebookPage() {
                     </div>
                   </div>
                 )}
-
-                {/* 사진·영상 첨부 (트레이너 편집) */}
-                <JournalAttachmentManager journalId={selectedJournal.id} canEdit={true} />
-
-                {/* 숙제 체크리스트 (트레이너 편집) */}
-                <JournalHomeworkChecklist journalId={selectedJournal.id} canEdit={true} />
 
                 {/* 댓글 & 이모지 반응 */}
                 <JournalCommentSection journalId={selectedJournal.id} />

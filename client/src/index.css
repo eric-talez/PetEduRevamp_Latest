@@ -122,6 +122,7 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
@@ -131,6 +132,21 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+  }
+
+  /* 모바일/태블릿에서 Google Maps 컨트롤이 하단 네비와 겹치지 않도록 숨김 */
+  @media (max-width: 1023px) {
+    .gm-fullscreen-control,
+    .gm-bundled-control,
+    .gm-svpc,
+    .gm-style-cc,
+    .gm-style .gmnoprint a,
+    .gm-style .gmnoprint button,
+    .gm-style-mtc,
+    .gmnoscreen {
+      display: none !important;
+    }
   }
 
   /* 포커스 아웃라인 개선 */

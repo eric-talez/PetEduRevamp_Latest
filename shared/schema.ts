@@ -1064,7 +1064,6 @@ export const trainingJournals = pgTable("training_journals", {
   readAt: timestamp("read_at"),
   lastViewedAt: timestamp("last_viewed_at"), // 보호자가 마지막으로 알림장을 연 시각
   status: varchar("status", { length: 20 }).default("sent"), // sent, read, replied
-  isAiDraft: boolean("is_ai_draft").default(false), // AI 초안에서 시작했는지 여부
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1099,87 +1098,6 @@ export const journalReactions = pgTable("journal_reactions", {
   userId: integer("user_id").references(() => users.id).notNull(),
   emoji: varchar("emoji", { length: 16 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-}, (table) => ({
-  uniqueReaction: uniqueIndex("journal_reactions_journal_user_emoji_uq").on(
-    table.journalId, table.userId, table.emoji,
-  ),
-}));
-
-// 알림장 댓글 신고 - 타인 댓글 신고
-export const journalCommentReports = pgTable("journal_comment_reports", {
-  id: serial("id").primaryKey(),
-  commentId: integer("comment_id").references(() => journalComments.id).notNull(),
-  reporterId: integer("reporter_id").references(() => users.id).notNull(),
-  reason: text("reason"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertJournalCommentReportSchema = createInsertSchema(journalCommentReports).omit({
-  id: true,
-  reporterId: true,
-  createdAt: true,
-}).extend({
-  reason: z.string().trim().max(500, '신고 사유는 최대 500자까지 입력할 수 있습니다').optional(),
-});
-
-export type JournalCommentReport = typeof journalCommentReports.$inferSelect;
-
-// 알림장 사진/영상 첨부
-export const notebookAttachments = pgTable("notebook_attachments", {
-  id: serial("id").primaryKey(),
-  journalId: integer("journal_id").references(() => trainingJournals.id).notNull(),
-  kind: varchar("kind", { length: 16 }).notNull(), // 'image' | 'video'
-  storageKey: text("storage_key").notNull(),
-  thumbnailKey: text("thumbnail_key"),
-  sizeBytes: integer("size_bytes").notNull(),
-  mimeType: varchar("mime_type", { length: 100 }).notNull(),
-  sortOrder: integer("sort_order").default(0).notNull(),
-  uploadedBy: integer("uploaded_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (t) => ({
-  byJournal: index("idx_notebook_attachments_journal").on(t.journalId),
-}));
-
-export const insertNotebookAttachmentSchema = createInsertSchema(notebookAttachments).omit({
-  id: true,
-  createdAt: true,
-});
-export type NotebookAttachment = typeof notebookAttachments.$inferSelect;
-export type InsertNotebookAttachment = z.infer<typeof insertNotebookAttachmentSchema>;
-
-// 알림장 숙제 체크리스트 — 보호자가 집에서 수행할 액션 아이템
-export const notebookHomeworkItems = pgTable("notebook_homework_items", {
-  id: serial("id").primaryKey(),
-  journalId: integer("journal_id").references(() => trainingJournals.id).notNull(),
-  label: varchar("label", { length: 200 }).notNull(),
-  dueDate: timestamp("due_date"),
-  completedAt: timestamp("completed_at"),
-  completedByUserId: integer("completed_by_user_id").references(() => users.id),
-  sortOrder: integer("sort_order").default(0).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (t) => ({
-  byJournal: index("idx_notebook_homework_journal").on(t.journalId),
-}));
-
-export const insertNotebookHomeworkItemSchema = createInsertSchema(notebookHomeworkItems).omit({
-  id: true,
-  completedAt: true,
-  completedByUserId: true,
-  createdAt: true,
-}).extend({
-  label: z.string().trim().min(1, '숙제 내용을 입력해 주세요').max(200, '최대 200자까지 입력할 수 있습니다'),
-  dueDate: z.union([z.string(), z.date(), z.null()]).optional(),
-  sortOrder: z.number().int().min(0).optional(),
-});
-export type NotebookHomeworkItem = typeof notebookHomeworkItems.$inferSelect;
-export type InsertNotebookHomeworkItem = z.infer<typeof insertNotebookHomeworkItemSchema>;
-
-// Bulk 입력(작성 시 한꺼번에 저장)
-export const notebookHomeworkBulkSchema = z.object({
-  items: z.array(z.object({
-    label: z.string().trim().min(1).max(200),
-    dueDate: z.union([z.string(), z.null()]).optional(),
-  })).max(50, '한 알림장에 최대 50개까지 추가할 수 있습니다'),
 });
 
 export const insertJournalCommentSchema = createInsertSchema(journalComments).omit({
@@ -2263,18 +2181,8 @@ export const insertTrainingJournalSchema = createInsertSchema(trainingJournals).
   behaviorNotes: z.string().max(2000, "행동 관찰 노트는 2000자를 초과할 수 없습니다").optional().nullable(),
   homeworkInstructions: z.string().max(2000, "숙제 내용은 2000자를 초과할 수 없습니다").optional().nullable(),
   nextGoals: z.string().max(2000, "다음 목표는 2000자를 초과할 수 없습니다").optional().nullable(),
-  attachments: z.array(z.string().url("올바른 URL 형식이 아닙니다")).optional().nullable().default([]),
-  isAiDraft: z.boolean().optional(),
+  attachments: z.array(z.string().url("올바른 URL 형식이 아닙니다")).optional().nullable().default([])
 });
-
-// AI 초안 생성 요청 스키마
-export const notebookDraftRequestSchema = z.object({
-  keywords: z.string().trim().min(2, "키워드는 2자 이상 입력해주세요").max(500, "키워드는 500자를 초과할 수 없습니다"),
-  tone: z.enum(["friendly", "formal", "short", "detailed"]).default("friendly"),
-  petId: z.coerce.number().int().positive().optional(),
-  streamId: z.coerce.number().int().positive().optional(),
-});
-export type NotebookDraftRequest = z.infer<typeof notebookDraftRequestSchema>;
 
 export const updateTrainingJournalSchema = z.object({
   title: z.string().min(1, "제목은 필수입니다").max(200, "제목은 200자를 초과할 수 없습니다").optional(),

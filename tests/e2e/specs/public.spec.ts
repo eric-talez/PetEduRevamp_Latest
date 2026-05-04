@@ -16,22 +16,10 @@ const PUBLIC_PAGES: PageDef[] = [
   {
     name: "institutes",
     url: "/institutes",
-    skipOn: {
-      // 모바일/태블릿(<1024px)에서 카드 그리드 일부가 하단 네비와 14px 가량 겹침
-      "mobile-iphone-se": "follow-up #83 — /institutes 카드 그리드가 MobileBottomNav 와 겹침",
-      "tablet-ipad": "follow-up #83 — /institutes 카드 그리드가 MobileBottomNav 와 겹침",
-    },
   },
   {
     name: "locations",
     url: "/locations",
-    skipOn: {
-      // 데스크톱: 지도/사이드 패널 고정폭으로 16px 가량 가로 스크롤 발생
-      desktop: "follow-up #83 — /locations 데스크톱(1280px)에서 16px 가량 가로 스크롤",
-      // 모바일/태블릿: MobileBottomNav 와 지도 컨트롤 버튼이 겹침
-      "mobile-iphone-se": "follow-up #83 — /locations 지도 컨트롤이 MobileBottomNav 와 겹침",
-      "tablet-ipad": "follow-up #83 — /locations 지도 컨트롤이 MobileBottomNav 와 겹침",
-    },
   },
 ];
 

@@ -907,9 +907,9 @@ export default function LocationServices() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-24 lg:pb-8 overflow-x-hidden max-w-full">
       {/* Hero Banner */}
-      <div className="relative h-72 rounded-2xl overflow-hidden mb-8 bg-cover bg-center" style={{ backgroundImage: `url("${InstitutesBannerImage}")` }}>
+      <div className="relative h-56 sm:h-64 md:h-72 rounded-2xl overflow-hidden mb-6 bg-cover bg-center" style={{ backgroundImage: `url("${InstitutesBannerImage}")` }}>
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
         
         <div className="relative h-full flex flex-col justify-center px-6 md:px-10">
@@ -975,7 +975,7 @@ export default function LocationServices() {
       {/* Advanced Filters Section */}
       <div className="mb-8 flex flex-col gap-4">
         {/* 주요 필터 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* 서비스 종류 필터 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">서비스 종류</label>
@@ -1119,9 +1119,9 @@ export default function LocationServices() {
           </div>
           
           {/* 서비스 카테고리 */}
-          <div>
+          <div className="pt-10 md:pt-0">
             <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">서비스 카테고리</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex md:flex-wrap gap-2 overflow-x-auto md:overflow-x-visible pb-1 -mx-1 px-1 snap-x">
           
           <Button
             variant={filter === "교육 센터" ? "default" : "outline"}
@@ -1278,7 +1278,7 @@ export default function LocationServices() {
           {/* 특별 조건 */}
           <div>
             <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">특별 조건</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex md:flex-wrap gap-2 overflow-x-auto md:overflow-x-visible pb-1 -mx-1 px-1 snap-x">
               <Button
                 variant={specialFilter === "certification" ? "default" : "outline"}
                 size="sm"
