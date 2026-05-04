@@ -1085,6 +1085,17 @@ function AuthenticatedRoutes() {
           )}
         </Route>
 
+        <Route path="/trainer/email-certificates">
+          {() => {
+            const TrainerEmailCertificates = lazy(() => import('./pages/trainer/email-certificates'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedTrainerRoute component={TrainerEmailCertificates} />
+              </Suspense>
+            );
+          }}
+        </Route>
+
         <Route path="/trainer/substitute-board">
           {() => (
             <Suspense fallback={<SimpleLoading />}>

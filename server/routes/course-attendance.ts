@@ -144,6 +144,7 @@ export async function notifyCertificateEmailForCourse(
       petName: pet?.name || null,
       courseId,
       courseTitle: course.title || `코스 #${courseId}`,
+      trainerId: course.instructorId ?? null,
       trainerName: trainer?.name || "담당 트레이너",
       instituteName: "왕짱스쿨",
       certificateNo,

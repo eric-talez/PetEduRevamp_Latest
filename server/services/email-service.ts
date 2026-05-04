@@ -702,6 +702,7 @@ export interface ListLogsQuery {
   status?: string;
   templateKey?: string;
   search?: string;
+  trainerId?: number;
   limit?: number;
   offset?: number;
 }
@@ -711,6 +712,9 @@ export async function listEmailLogs(q: ListLogsQuery = {}) {
   if (q.status) conds.push(eq(emailLogs.status, q.status));
   if (q.templateKey) conds.push(eq(emailLogs.templateKey, q.templateKey));
   if (q.search) conds.push(ilike(emailLogs.recipient, `%${q.search}%`));
+  if (q.trainerId !== undefined && q.trainerId !== null) {
+    conds.push(sql`${emailLogs.payload}->>'trainerId' = ${String(q.trainerId)}`);
+  }
   const where = conds.length ? and(...conds) : undefined;
   const limit = Math.min(q.limit ?? 50, 200);
   const offset = q.offset ?? 0;

@@ -53,6 +53,7 @@ export interface TriggerCertificateEmailParams {
   petName?: string | null;
   courseId: number;
   courseTitle: string;
+  trainerId?: number | null;
   trainerName?: string | null;
   instituteName?: string | null;
   certificateNo: string;
@@ -136,7 +137,9 @@ export async function triggerCertificateEmail(
       name: params.userName || "보호자",
       userName: params.userName || "보호자",
       petName: params.petName || "반려동물",
+      courseId: params.courseId,
       courseTitle: params.courseTitle,
+      trainerId: params.trainerId ?? null,
       trainerName: params.trainerName || "담당 트레이너",
       instituteName: params.instituteName || "왕짱스쿨",
       certificateNo: params.certificateNo,
