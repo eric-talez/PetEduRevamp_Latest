@@ -4801,13 +4801,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ error: '해당 기관에 공유할 권한이 없습니다.', code: 'FORBIDDEN_INSTITUTE' });
         }
       }
-      const updated = storage.updateNotebookTemplate(id, {
-        name: parsed.name,
-        body: parsed.body,
-        category: parsed.category ?? undefined,
-        homeworkPreset: parsed.homeworkPreset ?? undefined,
-        instituteId: parsed.instituteId ?? undefined,
-      });
+      const patch: Record<string, unknown> = {};
+      if (parsed.name !== undefined) patch.name = parsed.name;
+      if (parsed.body !== undefined) patch.body = parsed.body;
+      if (parsed.category !== undefined) patch.category = parsed.category;
+      if (parsed.homeworkPreset !== undefined) patch.homeworkPreset = parsed.homeworkPreset;
+      if (parsed.instituteId !== undefined) patch.instituteId = parsed.instituteId;
+      const updated = storage.updateNotebookTemplate(id, patch);
       res.json({ success: true, data: updated });
     } catch (error: any) {
       if (error?.name === 'ZodError') {

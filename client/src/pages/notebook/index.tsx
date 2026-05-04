@@ -197,10 +197,10 @@ export default function NotebookPage() {
     ].join('').trim();
     setNewEntry((prev) => ({
       ...prev,
-      title: prev.title || tpl.name,
-      content: prev.content ? `${prev.content}\n\n${tpl.body}` : tpl.body,
-      notes: homeworkText ? (prev.notes ? `${prev.notes}\n\n[숙제]\n${homeworkText}` : `[숙제]\n${homeworkText}`) : prev.notes,
-      tags: tpl.category && !prev.tags.includes(tpl.category) ? [...prev.tags, tpl.category] : prev.tags,
+      title: tpl.name,
+      content: tpl.body,
+      notes: homeworkText ? `[숙제]\n${homeworkText}` : '',
+      tags: tpl.category ? [tpl.category] : [],
     }));
     try {
       await secureRequest(`/api/notebook/templates/${id}/use`, { method: 'POST' });
