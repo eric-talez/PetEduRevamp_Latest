@@ -109,7 +109,7 @@ export default function ChatbotPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 pb-[calc(env(safe-area-inset-bottom)+5rem)] lg:pb-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
@@ -132,7 +132,7 @@ export default function ChatbotPage() {
         </div>
 
         {/* Chat Container */}
-        <Card className="h-[600px] flex flex-col">
+        <Card className="h-[calc(100dvh-18rem)] min-h-[360px] lg:h-[600px] flex flex-col">
           {/* Messages */}
           <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
             <div className="space-y-4">
@@ -236,7 +236,7 @@ export default function ChatbotPage() {
 
         {/* CTA for non-authenticated users */}
         {!isAuthenticated && (
-          <Card className="mt-4 p-6 text-center bg-gradient-to-r from-primary/5 to-secondary/5">
+          <Card className="mt-4 p-6 text-center bg-gradient-to-r from-primary/5 to-secondary/5 hidden lg:block">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
               더 전문적인 상담이 필요하시나요?
             </h3>

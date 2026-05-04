@@ -9,8 +9,6 @@ type PageDef = {
   skipOn?: Partial<Record<ProjectName, string>>;
 };
 
-const CHATBOT_COMPOSER_SKIP =
-  "follow-up #84 — 챗봇 composer fixed 영역이 MobileBottomNav 와 겹침";
 
 const OWNER_PAGES: PageDef[] = [
   { name: "profile", url: "/profile" },
@@ -21,10 +19,6 @@ const OWNER_PAGES: PageDef[] = [
   {
     name: "chatbot",
     url: "/chatbot",
-    skipOn: {
-      "mobile-iphone-se": CHATBOT_COMPOSER_SKIP,
-      "tablet-ipad": CHATBOT_COMPOSER_SKIP,
-    },
   },
   // 알림장(저널) — 라우트 미등록 시 SimpleApp 의 NotFound 페이지로 폴백되며,
   // 그 경우에도 반응형 검증(가로 스크롤/네비 겹침)은 의미가 있다.
