@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { LocalErrorBoundary } from '@/components/ErrorBoundary';
+import { Plus, Minus, Maximize2, Minimize2 } from 'lucide-react';
 
 interface GoogleMapViewProps {
   locations?: Array<{
@@ -65,10 +66,50 @@ function GoogleMapViewInner({
   userLocation = null
 }: GoogleMapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCustomControls, setShowCustomControls] = useState<boolean>(
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onResize = () => setShowCustomControls(window.innerWidth < 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () =>
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    if (!map) return;
+    const z = map.getZoom();
+    if (typeof z === 'number') map.setZoom(z + 1);
+  }, [map]);
+
+  const handleZoomOut = useCallback(() => {
+    if (!map) return;
+    const z = map.getZoom();
+    if (typeof z === 'number') map.setZoom(z - 1);
+  }, [map]);
+
+  const handleToggleFullscreen = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  }, []);
 
   // 구글 맵 스크립트 로드
   useEffect(() => {
@@ -323,14 +364,58 @@ function GoogleMapViewInner({
   }
 
   return (
-    <div 
-      ref={mapRef} 
-      className="w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
-      style={{ 
+    <div
+      ref={containerRef}
+      className="relative w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+      style={{
         height,
-        minHeight: '300px' // 모바일에서 최소 높이 보장
+        minHeight: '300px',
       }}
-    />
+    >
+      <div
+        ref={mapRef}
+        className="w-full h-full"
+        style={{ minHeight: '300px' }}
+      />
+      {showCustomControls && !isLoading && !error && (
+        <div
+          className="absolute top-2 left-2 z-10 flex flex-col gap-1.5"
+          data-testid="map-custom-controls"
+        >
+          <div className="flex flex-col rounded-md shadow-md overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              aria-label="지도 확대"
+              data-testid="button-map-zoom-in"
+              className="w-10 h-10 flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+            <div className="h-px bg-gray-200 dark:bg-gray-700" />
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              aria-label="지도 축소"
+              data-testid="button-map-zoom-out"
+              className="w-10 h-10 flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors"
+            >
+              <Minus className="w-5 h-5" />
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleFullscreen}
+            aria-label={isFullscreen ? '전체화면 종료' : '전체화면 보기'}
+            aria-pressed={isFullscreen}
+            data-testid="button-map-fullscreen"
+            className="w-10 h-10 flex items-center justify-center rounded-md shadow-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors"
+          >
+            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
