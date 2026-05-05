@@ -8,6 +8,7 @@ import session from 'express-session';
 import jwt from 'jsonwebtoken';
 import { hashPassword, setupLocalAuth } from './local-auth';
 import { setupSocialAuth } from './social-auth';
+import { setupPhoneVerificationRoutes } from './phone-verification';
 import { storage } from '../storage';
 import { db } from '../db';
 import { User as SelectUser, users, friendInvitations, educationCredits } from '../../shared/schema';
@@ -499,7 +500,7 @@ function setupAuthRoutes(app: Express) {
   // 회원가입 API (표준화 적용) - 비인증 상태에서 접근하므로 CSRF 보호 제외
   router.post('/register', async (req, res) => {
     try {
-      const { username, password, email, name, phoneNumber, birthDate, gender, role, inviteCode } = req.body;
+      const { username, password, email, name, phoneNumber, phoneVerificationToken, birthDate, gender, role, inviteCode } = req.body;
       
       // 소셜 로그인 정보 확인
       const socialSignup = req.session.socialSignup;
@@ -527,7 +528,44 @@ function setupAuthRoutes(app: Express) {
           );
         }
       }
-      
+
+      // ─── 이메일/비밀번호 가입 시 휴대폰 인증 토큰 검증 ───
+      let verifiedPhone: string | null = null;
+      if (!socialSignup) {
+        if (!phoneNumber || !phoneVerificationToken) {
+          return res.error(
+            ApiErrorCode.MISSING_REQUIRED_FIELD,
+            '휴대폰 본인 인증을 완료해주세요.'
+          );
+        }
+        try {
+          const { verifyPhoneToken, normalizePhoneNumber } = await import('../services/twilio-verify');
+          const tokenPhone = verifyPhoneToken(phoneVerificationToken, 'register');
+          const inputPhone = normalizePhoneNumber(phoneNumber);
+          if (tokenPhone !== inputPhone) {
+            return res.error(
+              ApiErrorCode.VALIDATION_ERROR,
+              '인증된 휴대폰 번호와 입력한 번호가 일치하지 않습니다.'
+            );
+          }
+          verifiedPhone = inputPhone;
+        } catch (e) {
+          return res.error(
+            ApiErrorCode.VALIDATION_ERROR,
+            '휴대폰 인증이 만료되었거나 유효하지 않습니다. 다시 인증해주세요.'
+          );
+        }
+
+        // 동일 휴대폰 번호로 이미 가입된 계정이 있는지 확인 (소셜 가입자 제외)
+        const dupPhoneUser = await (storage as any).getUserByPhoneNumber?.(verifiedPhone);
+        if (dupPhoneUser && !dupPhoneUser.provider) {
+          return res.error(
+            ApiErrorCode.RESOURCE_ALREADY_EXISTS,
+            '이미 해당 휴대폰 번호로 가입된 계정이 있습니다.'
+          );
+        }
+      }
+
       // 기존 사용자 확인
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
@@ -555,7 +593,8 @@ function setupAuthRoutes(app: Express) {
         password: hashedPassword,
         email,
         name,
-        phoneNumber: phoneNumber || undefined,
+        phoneNumber: verifiedPhone || phoneNumber || undefined,
+        phoneVerifiedAt: verifiedPhone ? new Date() : undefined,
         birthDate: birthDate || undefined,
         gender: gender || undefined,
         role: (role as UserRole) || 'pet-owner',
@@ -702,6 +741,13 @@ function setupAuthRoutes(app: Express) {
   
   // 라우터를 /api/auth 경로에 마운트
   app.use('/api/auth', router);
-  
+
+  // 휴대폰(SMS) 인증 라우트 마운트
+  try {
+    setupPhoneVerificationRoutes(app);
+  } catch (e) {
+    console.error('[Auth] 휴대폰 인증 라우트 등록 실패:', e);
+  }
+
   console.log('[Auth] 인증 라우트 등록 완료');
 }

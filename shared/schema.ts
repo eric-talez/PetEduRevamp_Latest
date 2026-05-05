@@ -12,7 +12,8 @@ export const users = pgTable("users", {
   role: varchar("role", { length: 50 }).notNull().default("pet-owner"),
   name: varchar("name", { length: 100 }),
   phone: varchar("phone", { length: 20 }),
-  phoneNumber: varchar("phone_number", { length: 20 }), // 새로운 휴대폰 번호 필드
+  phoneNumber: varchar("phone_number", { length: 20 }), // 새로운 휴대폰 번호 필드 (휴대폰 인증 시 저장)
+  phoneVerifiedAt: timestamp("phone_verified_at"), // 휴대폰 인증 완료 시각 (SMS OTP 검증 성공 시 기록)
   birthDate: varchar("birth_date", { length: 10 }), // YYYY-MM-DD 형식
   age: integer("age"), // 연령
   gender: varchar("gender", { length: 10 }), // 성별 (male/female)

@@ -1267,6 +1267,70 @@ class Storage {
     return this.users?.find(user => user.email === email);
   }
 
+  /**
+   * 휴대폰 번호(E.164 또는 원본 형식)로 사용자 조회. DB 우선, 메모리 fallback.
+   */
+  async getUserByPhoneNumber(phoneNumber: string) {
+    if (!phoneNumber) return null;
+    try {
+      const variants = new Set<string>([phoneNumber]);
+      // +821012345678 ↔ 01012345678 양방향 매칭
+      if (phoneNumber.startsWith('+82')) {
+        variants.add('0' + phoneNumber.slice(3));
+      } else if (phoneNumber.startsWith('0')) {
+        variants.add('+82' + phoneNumber.slice(1));
+      }
+      const list = Array.from(variants);
+      const [user] = await db.select()
+        .from(usersTable)
+        .where(sql`${usersTable.phoneNumber} IN (${sql.join(list.map(v => sql`${v}`), sql`, `)})`)
+        .limit(1);
+      if (user) return user;
+    } catch (error) {
+      logServerError('[DB] getUserByPhoneNumber 오류:', error);
+    }
+    return this.users?.find(u => u.phoneNumber === phoneNumber) || null;
+  }
+
+  /**
+   * 비밀번호 업데이트(해시값 저장). DB + 메모리 동시 갱신.
+   */
+  async updateUserPassword(userId: number, hashedPassword: string) {
+    try {
+      await db.update(usersTable)
+        .set({ password: hashedPassword })
+        .where(eq(usersTable.id, userId));
+    } catch (error) {
+      logServerError('[DB] updateUserPassword 오류:', error);
+    }
+    const idx = this.users?.findIndex(u => u.id === userId);
+    if (idx !== undefined && idx !== -1 && this.users) {
+      this.users[idx] = { ...this.users[idx], password: hashedPassword };
+    }
+    return true;
+  }
+
+  /**
+   * 휴대폰 인증 완료 시각 기록 (선택적 — 컬럼이 없을 수도 있어 실패해도 무시).
+   */
+  async markPhoneVerified(userId: number, phoneNumber: string) {
+    try {
+      await db.update(usersTable)
+        .set({ phoneNumber, phoneVerifiedAt: new Date() } as any)
+        .where(eq(usersTable.id, userId));
+    } catch (error) {
+      logServerError('[DB] markPhoneVerified 오류:', error);
+    }
+    const idx = this.users?.findIndex(u => u.id === userId);
+    if (idx !== undefined && idx !== -1 && this.users) {
+      this.users[idx] = {
+        ...this.users[idx],
+        phoneNumber,
+        phoneVerifiedAt: new Date().toISOString(),
+      };
+    }
+  }
+
   async getUserByUsername(usernameOrEmail: string) {
     try {
       // 데이터베이스에서 먼저 조회 (username 또는 email로 검색)
@@ -1329,6 +1393,7 @@ class Storage {
         role: userData.role || 'pet-owner',
         phone: userData.phone,
         phoneNumber: userData.phoneNumber,
+        phoneVerifiedAt: userData.phoneVerifiedAt,
         birthDate: userData.birthDate,
         gender: userData.gender,
         age: userData.age,

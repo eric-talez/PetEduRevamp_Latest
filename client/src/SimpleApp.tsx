@@ -26,6 +26,7 @@ import MyCourses from "@/pages/my-courses";
 import MyPets from "@/pages/my-pets";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
+import PasswordResetPage from "@/pages/auth/PasswordResetPage";
 import NotFound from "@/pages/not-found";
 import VideoTrainingPage from "@/pages/VideoTraining";
 import Certificates from "@/pages/Certificates";
@@ -2008,6 +2009,8 @@ function UnauthenticatedRoutes() {
       <Switch>
         <Route path="/auth" component={Login} />
         <Route path="/auth/register" component={Register} />
+        <Route path="/auth/reset-password" component={PasswordResetPage} />
+        <Route path="/auth/forgot-password" component={PasswordResetPage} />
         <Route path="/chatbot" component={ChatbotPage} />
 
         {/* 수료증 진위 확인 (공개) */}

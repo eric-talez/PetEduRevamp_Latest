@@ -52,6 +52,8 @@ TALEZ is built for modularity, scalability, and performance, leveraging modern w
 - **Video Class Enhancements**: Post-class hooks for notifications and journal prompting, and refund wiring with settlement cancellation logic.
 - **매장 QR 주문 (Offline Store QR Ordering)**: 테이블 QR로 고객이 모바일에서 메뉴를 주문하면, 관리자 태블릿 화면에 실시간(10초 폴링) 표시되고 직원이 포스기에 수기 입력하는 흐름. 결제·POS 연동 없음 (확인 다이얼로그에서 "결제는 카운터에서 진행해주세요"). 5개 카테고리(COFFEE/NON-COFFEE/SIGNATURE FOOD/BAR/SET MENU), 21개 시드 메뉴, 5단계 상태(pending→confirmed→preparing→served / cancelled). Tables: `storeMenuItems`, `storeOrders`, `storeOrderItems` (주문 시 메뉴명·가격 스냅샷). 주문번호 형식 `YYMMDD-NNNN`. Routes: 공개 `/customer/order` (모바일), 관리자 `/admin/store-orders`(주문 접수)·`/admin/store-menu`(메뉴 CRUD+품절 토글). API: `GET/POST /api/store/menu|orders` (공개), `GET/POST/PATCH/DELETE /api/admin/store/menu(/:id)`, `GET /api/admin/store/orders`, `PATCH /api/admin/store/orders/:id/status` (requireAuth('admin')+CSRF).
 
+- **휴대폰 SMS 인증 (Twilio Verify)**: 이메일/비밀번호 회원가입 및 비밀번호 재설정 시 한국 휴대폰 번호 SMS 인증 (Twilio Verify Service). 소셜 로그인(Kakao/Naver/Google)은 영향 없음. E.164 정규화(+82), 60초 재발송 쿨다운, 휴대폰당 5회/일·IP당 20회/일 발송 제한, 10분간 5회 검증 시도 제한, 가입 시 중복 휴대폰 차단. Tables: `users.phone_verified_at`. Routes: `POST /api/auth/phone/send-code` · `/phone/verify-code` (가입용, 10분 JWT 발급) · `/api/auth/password-reset/send-code` · `/password-reset/verify-code` · `/password-reset/confirm` (account enumeration 방지를 위해 항상 동일 응답). 환경변수: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`, `PHONE_VERIFY_JWT_SECRET`(미설정 시 `JWT_SECRET` 폴백). 클라이언트: `/auth/register` 휴대폰+인증코드 UI, `/auth/forgot-password` & `/auth/reset-password`(SMS 코드 → 새 비밀번호) 페이지.
+
 ## External Dependencies
 - **Database**: PostgreSQL (Neon serverless)
 - **Email**: SendGrid
