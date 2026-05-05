@@ -1066,6 +1066,7 @@ export const trainingJournals = pgTable("training_journals", {
   lastViewedAt: timestamp("last_viewed_at"), // 보호자가 마지막으로 알림장을 연 시각
   status: varchar("status", { length: 20 }).default("sent"), // sent, read, replied
   category: varchar("category", { length: 50 }), // 분류(예: 기본훈련, 행동교정, 사회화 등)
+  isAiDraft: boolean("is_ai_draft").default(false), // AI 초안에서 시작 여부
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
@@ -2290,7 +2291,8 @@ export const insertTrainingJournalSchema = createInsertSchema(trainingJournals).
   behaviorNotes: z.string().max(2000, "행동 관찰 노트는 2000자를 초과할 수 없습니다").optional().nullable(),
   homeworkInstructions: z.string().max(2000, "숙제 내용은 2000자를 초과할 수 없습니다").optional().nullable(),
   nextGoals: z.string().max(2000, "다음 목표는 2000자를 초과할 수 없습니다").optional().nullable(),
-  attachments: z.array(z.string().url("올바른 URL 형식이 아닙니다")).optional().nullable().default([])
+  attachments: z.array(z.string().url("올바른 URL 형식이 아닙니다")).optional().nullable().default([]),
+  isAiDraft: z.boolean().optional().default(false)
 });
 
 export const updateTrainingJournalSchema = z.object({

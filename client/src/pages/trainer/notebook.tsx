@@ -97,6 +97,7 @@ interface Journal {
   readAt?: string;
   replyMessage?: string;
   category?: string | null;
+  isAiDraft?: boolean;
 }
 
 interface Student {
@@ -241,6 +242,8 @@ export default function TrainerNotebookPage() {
       meal: { times: [], amount: '', notes: '' }
     }
   });
+  // Task #102 — AI 초안에서 시작했는지 추적 (createNotebookMutation 페이로드에 포함)
+  const [isAiDraftUsed, setIsAiDraftUsed] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -278,6 +281,7 @@ export default function TrainerNotebookPage() {
           ...prev,
           content: data.plan
         }));
+        setIsAiDraftUsed(true);
         toast({
           title: "AI 내용 생성 완료",
           description: "알림장 내용이 자동으로 생성되었습니다. 수정 후 저장하세요."
@@ -326,6 +330,9 @@ export default function TrainerNotebookPage() {
       };
       if (notebookData.category && notebookData.category.trim()) {
         payload.category = notebookData.category.trim();
+      }
+      if (notebookData.isAiDraft) {
+        payload.isAiDraft = true;
       }
       const response = await secureRequest('/api/notebook/entries', {
         method: 'POST',
@@ -383,6 +390,7 @@ export default function TrainerNotebookPage() {
           meal: { times: [], amount: '', notes: '' }
         }
       });
+      setIsAiDraftUsed(false);
       queryClient.invalidateQueries({ queryKey: ['/api/trainer/journals'] });
     },
     onError: (error) => {
@@ -420,7 +428,7 @@ export default function TrainerNotebookPage() {
       return;
     }
 
-    createNotebookMutation.mutate(notebookForm);
+    createNotebookMutation.mutate({ ...notebookForm, isAiDraft: isAiDraftUsed });
   };
 
   // 알림장 목록 조회 (실제 API) - Task #93: 서버측 검색·필터 적용 / Task #112: 페이지네이션
@@ -457,6 +465,7 @@ export default function TrainerNotebookPage() {
         updatedAt?: string;
         readAt?: string;
         replyMessage?: string;
+        isAiDraft?: boolean;
         pet?: { id: number; name: string; breed?: string; age?: number };
         owner?: { id: number; name: string; email: string };
       };
@@ -491,6 +500,7 @@ export default function TrainerNotebookPage() {
         readAt: j.readAt,
         replyMessage: j.replyMessage,
         category: j.category ?? null,
+        isAiDraft: Boolean(j.isAiDraft),
       })) as Journal[];
       const pagination = json.pagination || { page, limit: pageSize, total: mapped.length, totalPages: 1 };
       return { journals: mapped, pagination };
@@ -1421,6 +1431,17 @@ export default function TrainerNotebookPage() {
                             >
                               <ListChecks className="h-3 w-3 mr-1" />
                               주간 {homeworkStatsByPet[String(journal.student.pet.id)].rate}%
+                            </Badge>
+                          )}
+                          {journal.isAiDraft && (
+                            <Badge
+                              variant="secondary"
+                              className="gap-1"
+                              title="AI 초안에서 작성을 시작한 알림장"
+                              data-testid={`badge-ai-draft-${journal.id}`}
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              AI 초안
                             </Badge>
                           )}
                         </div>
