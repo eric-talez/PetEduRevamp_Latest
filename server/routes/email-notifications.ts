@@ -284,6 +284,45 @@ export function registerEmailNotificationRoutes(app: Express) {
     }
   });
 
+  // ----- 개발/테스트 전용: 이메일 로그 시드 -----
+  // e2e 에서 트레이너 본인 코스의 실패 수료증 로그를 안정적으로 만들기 위한
+  // 시드 엔드포인트. 프로덕션에서는 절대 노출되지 않는다.
+  if (process.env.NODE_ENV !== "production") {
+    app.post("/api/test/seed-email-log", async (req, res) => {
+      const u: any = (req as any).user || (req as any).session?.user;
+      if (!u?.id) return res.status(401).json({ error: "인증이 필요합니다" });
+      try {
+        const schema = z.object({
+          templateKey: z.string().min(1),
+          status: z.enum(["queued", "sent", "failed", "skipped"]).default("failed"),
+          recipient: z.string().email(),
+          subject: z.string().nullable().optional(),
+          payload: z.record(z.any()).optional(),
+          lastError: z.string().nullable().optional(),
+        });
+        const data = schema.parse(req.body);
+        // payload.trainerId 가 비어있으면 호출자(본인) 로 자동 설정
+        const payload = { ...(data.payload || {}) } as Record<string, any>;
+        if (payload.trainerId == null) payload.trainerId = u.id;
+        const [row] = await db
+          .insert(emailLogs)
+          .values({
+            templateKey: data.templateKey,
+            recipient: data.recipient,
+            subject: data.subject ?? null,
+            status: data.status,
+            attempts: data.status === "failed" ? 1 : 0,
+            lastError: data.lastError ?? null,
+            payload,
+          } as any)
+          .returning();
+        res.status(201).json({ id: row.id, log: row });
+      } catch (err: any) {
+        res.status(400).json({ error: err?.message || "시드 실패" });
+      }
+    });
+  }
+
   app.post("/api/admin/email-logs/:id/resend", async (req, res) => {
     if (!requireAdmin(req, res)) return;
     const id = parseInt(req.params.id, 10);
