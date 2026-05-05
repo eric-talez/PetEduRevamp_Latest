@@ -1,0 +1,94 @@
+name: E2E Public Responsive Regression
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  public-responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [mobile-iphone-se, tablet-ipad, desktop]
+
+    env:
+      NODE_ENV: test
+      PORT: "5000"
+      E2E_BASE_URL: http://localhost:5000
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium (with system deps)
+        # ubuntu-latest 러너에서는 sudo 가 가능하므로 --with-deps 로
+        # 시스템 라이브러리까지 한 번에 설치한다. 일시 네트워크 실패 대비 3회 재시도.
+        run: |
+          for i in 1 2 3; do
+            if npx --yes playwright install --with-deps chromium; then
+              exit 0
+            fi
+            echo "playwright install attempt $i failed, retrying..." >&2
+            sleep 5
+          done
+          echo "playwright install failed after 3 attempts" >&2
+          exit 1
+
+      - name: Start dev server
+        run: |
+          npm run dev > /tmp/dev-server.log 2>&1 &
+          echo $! > /tmp/dev-server.pid
+          # 서버가 csrf 엔드포인트를 응답할 때까지 최대 90초 대기
+          for i in $(seq 1 90); do
+            if curl -sf -o /dev/null --max-time 2 "$E2E_BASE_URL/api/auth/csrf"; then
+              echo "dev server ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "dev server failed to start" >&2
+          tail -100 /tmp/dev-server.log >&2 || true
+          exit 1
+
+      - name: Run public.spec.ts (${{ matrix.project }})
+        run: npx playwright test tests/e2e/specs/public.spec.ts --project=${{ matrix.project }}
+
+      - name: Stop dev server
+        if: always()
+        run: |
+          if [ -f /tmp/dev-server.pid ]; then
+            kill "$(cat /tmp/dev-server.pid)" 2>/dev/null || true
+          fi
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

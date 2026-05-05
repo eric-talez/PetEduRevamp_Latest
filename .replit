@@ -103,4 +103,4 @@ VITE_SHOP_URL = "https://store.funnytalez.com/"
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 60000
+timeoutMs = 900000

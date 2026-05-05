@@ -56,6 +56,15 @@ export async function expectNoBottomNavOverlap(
   if ((await nav.count()) === 0) {
     return; // 비로그인 일부 라우트에서 미렌더되는 경우가 있을 수 있음
   }
+
+  // 페이지 맨 아래까지 스크롤한 뒤 측정한다.
+  // 초기 스크롤 위치에서는 본문 중간의 어떤 인터랙션 요소가 우연히 하단 네비
+  // 영역에 들어올 수 있는데, 이는 사용자가 살짝 스크롤만 해도 가려짐이 해소되는
+  // 정상적인 모바일 UX 다. 진짜 회귀는 "끝까지 스크롤해도 마지막 인터랙션 요소가
+  // 하단 네비에 가려져 클릭이 불가능한 경우" 이므로, 스크롤 끝에서 검사한다.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(200);
+
   const navBox = await nav.boundingBox();
   if (!navBox) return;
 
