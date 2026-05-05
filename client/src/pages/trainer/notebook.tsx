@@ -1312,31 +1312,29 @@ export default function TrainerNotebookPage() {
                           <Eye className="h-4 w-4 mr-2" />
                           상세보기
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditDialog(journal);
+                          }}
+                          data-testid={`button-edit-journal-${journal.id}`}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          편집
+                        </Button>
                         {journal.status === 'draft' && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditDialog(journal);
-                              }}
-                              data-testid={`button-edit-journal-${journal.id}`}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              편집
-                            </Button>
-                            <Button 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                sendJournalMutation.mutate(journal.id);
-                              }}
-                            >
-                              <Send className="h-4 w-4 mr-2" />
-                              전송
-                            </Button>
-                          </>
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              sendJournalMutation.mutate(journal.id);
+                            }}
+                          >
+                            <Send className="h-4 w-4 mr-2" />
+                            전송
+                          </Button>
                         )}
                         {journal.status === 'draft' && (
                           <Button 
@@ -1621,24 +1619,22 @@ export default function TrainerNotebookPage() {
                 <Button variant="outline" onClick={() => setIsJournalDetailOpen(false)}>
                   닫기
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    openEditDialog(selectedJournal);
+                    setIsJournalDetailOpen(false);
+                  }}
+                  data-testid="button-edit-journal-detail"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  편집
+                </Button>
                 {selectedJournal.status === 'draft' && (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        openEditDialog(selectedJournal);
-                        setIsJournalDetailOpen(false);
-                      }}
-                      data-testid="button-edit-journal-detail"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      편집
-                    </Button>
-                    <Button onClick={() => sendJournalMutation.mutate(selectedJournal.id)}>
-                      <Send className="h-4 w-4 mr-2" />
-                      전송
-                    </Button>
-                  </>
+                  <Button onClick={() => sendJournalMutation.mutate(selectedJournal.id)}>
+                    <Send className="h-4 w-4 mr-2" />
+                    전송
+                  </Button>
                 )}
               </DialogFooter>
             </>
