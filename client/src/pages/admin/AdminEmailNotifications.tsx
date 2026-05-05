@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, RefreshCw, Send, Eye, AlertTriangle } from "lucide-react";
+import { Mail, RefreshCw, Send, Eye, AlertTriangle, BellRing, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getCSRFToken } from "@/lib/csrf";
 
@@ -71,6 +71,23 @@ async function getCsrfHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+interface ResendRequestItem {
+  id: number;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  actionUrl: string | null;
+  metadata: {
+    source?: string;
+    emailLogId?: number;
+    trainerId?: number;
+    recipient?: string;
+    courseId?: number | null;
+    certificateNo?: string | null;
+  } | null;
+}
+
 interface EmailServiceStatus {
   configured: boolean;
   apiKeyPresent: boolean;
@@ -111,6 +128,18 @@ export default function AdminEmailNotifications() {
   const [loadingCerts, setLoadingCerts] = useState(true);
   const [certOffset, setCertOffset] = useState(0);
   const CERT_PAGE_SIZE = 50;
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window === "undefined") return "templates";
+    const h = window.location.hash.replace("#", "");
+    if (h === "requests" || h === "logs" || h === "certificates" || h === "templates") {
+      return h;
+    }
+    return "templates";
+  });
+  const [resendRequests, setResendRequests] = useState<ResendRequestItem[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+  const [showOnlyUnreadRequests, setShowOnlyUnreadRequests] = useState(true);
+  const [processingRequestId, setProcessingRequestId] = useState<number | null>(null);
 
   async function loadStatus() {
     try {
@@ -182,14 +211,123 @@ export default function AdminEmailNotifications() {
     }
   }
 
+  async function loadResendRequests() {
+    setLoadingRequests(true);
+    try {
+      const r = await fetch(`/api/notifications?page=1&limit=100`, {
+        credentials: "include",
+      });
+      if (!r.ok) throw new Error();
+      const data = await r.json();
+      const list: any[] = Array.isArray(data) ? data : data.notifications || [];
+      const filtered: ResendRequestItem[] = list
+        .filter((n) => {
+          const meta = n.metadata || n.data || null;
+          return meta && meta.source === "trainer-cert-resend-request";
+        })
+        .map((n) => ({
+          id: n.id,
+          title: n.title,
+          message: n.message,
+          isRead: !!n.isRead,
+          createdAt: n.createdAt,
+          actionUrl: n.actionUrl ?? null,
+          metadata: n.metadata || n.data || null,
+        }));
+      setResendRequests(filtered);
+    } catch {
+      toast({
+        title: "재발송 요청을 불러오지 못했습니다",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingRequests(false);
+    }
+  }
+
+  async function markRequestRead(notificationId: number) {
+    const headers = await getCsrfHeaders();
+    try {
+      await fetch(`/api/notifications/${notificationId}/read`, {
+        method: "PATCH",
+        credentials: "include",
+        headers,
+      });
+      setResendRequests((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+      );
+    } catch {
+      /* noop */
+    }
+  }
+
+  async function resendFromRequest(req: ResendRequestItem) {
+    const emailLogId = req.metadata?.emailLogId;
+    if (!emailLogId) {
+      toast({ title: "이메일 로그 정보를 찾을 수 없습니다", variant: "destructive" });
+      return;
+    }
+    setProcessingRequestId(req.id);
+    const headers = await getCsrfHeaders();
+    try {
+      const r = await fetch(`/api/admin/email-logs/${emailLogId}/resend`, {
+        method: "POST",
+        credentials: "include",
+        headers,
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.error || "재발송 실패");
+      }
+      await markRequestRead(req.id);
+      toast({ title: "재발송이 큐잉되었습니다" });
+      loadLogs();
+      loadCertLogs({ offset: 0 });
+    } catch (e: any) {
+      toast({ title: e?.message || "재발송 실패", variant: "destructive" });
+    } finally {
+      setProcessingRequestId(null);
+    }
+  }
+
   useEffect(() => {
     loadTemplates();
     loadLogs();
     loadCertLogs();
     loadStatus();
+    loadResendRequests();
     const id = setInterval(loadStatus, 30_000);
-    return () => clearInterval(id);
+    const reqTimer = setInterval(loadResendRequests, 60_000);
+    return () => {
+      clearInterval(id);
+      clearInterval(reqTimer);
+    };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => {
+      const h = window.location.hash.replace("#", "");
+      if (h === "requests" || h === "logs" || h === "certificates" || h === "templates") {
+        setActiveTab(h);
+      }
+    };
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
+
+  const unreadRequestCount = useMemo(
+    () => resendRequests.filter((r) => !r.isRead).length,
+    [resendRequests]
+  );
+
+  const visibleRequests = useMemo(
+    () =>
+      showOnlyUnreadRequests
+        ? resendRequests.filter((r) => !r.isRead)
+        : resendRequests,
+    [resendRequests, showOnlyUnreadRequests]
+  );
 
   const templateMap = useMemo(() => {
     const m: Record<string, Template> = {};
@@ -348,7 +486,16 @@ export default function AdminEmailNotifications() {
         </Alert>
       )}
 
-      <Tabs defaultValue="templates">
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => {
+          setActiveTab(v);
+          if (typeof window !== "undefined") {
+            history.replaceState(null, "", `#${v}`);
+          }
+          if (v === "requests") loadResendRequests();
+        }}
+      >
         <TabsList>
           <TabsTrigger value="templates" data-testid="tab-templates">
             템플릿
@@ -359,7 +506,147 @@ export default function AdminEmailNotifications() {
           <TabsTrigger value="certificates" data-testid="tab-certificates">
             수료증 발송
           </TabsTrigger>
+          <TabsTrigger value="requests" data-testid="tab-resend-requests">
+            <BellRing className="w-4 h-4 mr-1" />
+            재발송 요청
+            {unreadRequestCount > 0 && (
+              <Badge
+                className="ml-2 bg-destructive text-destructive-foreground"
+                data-testid="badge-resend-requests-unread"
+              >
+                {unreadRequestCount}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="requests">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between gap-3">
+                <span>트레이너 재발송 요청 ({resendRequests.length})</span>
+                <div className="flex items-center gap-2 text-sm font-normal">
+                  <Label htmlFor="filter-unread-requests" className="cursor-pointer">
+                    읽지 않음만 보기
+                  </Label>
+                  <Switch
+                    id="filter-unread-requests"
+                    data-testid="switch-only-unread-requests"
+                    checked={showOnlyUnreadRequests}
+                    onCheckedChange={setShowOnlyUnreadRequests}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={loadResendRequests}
+                    data-testid="button-refresh-requests"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-1" /> 새로고침
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingRequests ? (
+                <p>불러오는 중...</p>
+              ) : visibleRequests.length === 0 ? (
+                <div
+                  className="py-10 text-center text-gray-500"
+                  data-testid="text-no-resend-requests"
+                >
+                  {showOnlyUnreadRequests
+                    ? "읽지 않은 재발송 요청이 없습니다"
+                    : "재발송 요청이 없습니다"}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>요청 시각</TableHead>
+                      <TableHead>요청 내용</TableHead>
+                      <TableHead>이메일 로그</TableHead>
+                      <TableHead>수신자</TableHead>
+                      <TableHead>수료증 번호</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead className="w-56">작업</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleRequests.map((req) => {
+                      const meta = req.metadata || {};
+                      const isProcessing = processingRequestId === req.id;
+                      return (
+                        <TableRow
+                          key={req.id}
+                          className={!req.isRead ? "bg-warning/5" : ""}
+                          data-testid={`row-resend-request-${req.id}`}
+                        >
+                          <TableCell className="text-xs">
+                            {new Date(req.createdAt).toLocaleString("ko-KR")}
+                          </TableCell>
+                          <TableCell className="max-w-md">
+                            <div className="font-medium">{req.title}</div>
+                            <div className="text-xs text-gray-600 break-words">
+                              {req.message}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {meta.emailLogId ? (
+                              <code className="text-xs">#{meta.emailLogId}</code>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {meta.recipient || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs">
+                              {meta.certificateNo || "-"}
+                            </code>
+                          </TableCell>
+                          <TableCell>
+                            {req.isRead ? (
+                              <Badge className="bg-gray-100 text-gray-700">
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                완료/읽음
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-warning/10 text-warning">
+                                대기 중
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="space-x-2">
+                            <Button
+                              size="sm"
+                              onClick={() => resendFromRequest(req)}
+                              disabled={isProcessing || !meta.emailLogId}
+                              data-testid={`button-process-resend-${req.id}`}
+                            >
+                              <Send className="w-4 h-4 mr-1" />
+                              {isProcessing ? "처리 중..." : "1클릭 재발송"}
+                            </Button>
+                            {!req.isRead && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => markRequestRead(req.id)}
+                                data-testid={`button-mark-read-${req.id}`}
+                              >
+                                읽음 처리
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="templates">
           <Card>

@@ -264,7 +264,7 @@ export function registerEmailNotificationRoutes(app: Express) {
             type: "system",
             title: "수료증 이메일 재발송 요청",
             message,
-            actionUrl: "/admin/email-notifications",
+            actionUrl: "/admin/email-notifications#requests",
             data: {
               source: "trainer-cert-resend-request",
               emailLogId: id,
