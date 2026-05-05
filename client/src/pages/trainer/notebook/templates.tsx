@@ -68,9 +68,24 @@ export default function NotebookTemplatesPage() {
   const myInstitutes = contextData?.data?.institutes ?? [];
   const instituteNameById = new Map(myInstitutes.map((i) => [i.id, i.name]));
 
+  const [sharedInstituteFilter, setSharedInstituteFilter] = useState<string>('all');
+
   const systemTemplates = templates.filter((t) => t.isSystem);
   const myTemplates = templates.filter((t) => !t.isSystem && t.ownerUserId === myUserId && !t.instituteId);
   const sharedTemplates = templates.filter((t) => !t.isSystem && t.instituteId != null);
+
+  const sharedGroupsMap = new Map<number, { id: number; name: string; templates: NotebookTemplate[] }>();
+  for (const tpl of sharedTemplates) {
+    const id = tpl.instituteId as number;
+    if (!sharedGroupsMap.has(id)) {
+      sharedGroupsMap.set(id, { id, name: instituteNameById.get(id) ?? '기관', templates: [] });
+    }
+    sharedGroupsMap.get(id)!.templates.push(tpl);
+  }
+  const sharedGroups = Array.from(sharedGroupsMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const visibleSharedGroups = sharedInstituteFilter === 'all'
+    ? sharedGroups
+    : sharedGroups.filter((g) => String(g.id) === sharedInstituteFilter);
 
   const openCreate = () => {
     setEditingTpl(null);
@@ -274,8 +289,42 @@ export default function NotebookTemplatesPage() {
 
           {sharedTemplates.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold mb-3">기관 공유 템플릿 ({sharedTemplates.length})</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{sharedTemplates.map(renderCard)}</div>
+              <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                <h2 className="text-lg font-semibold">기관 공유 템플릿 ({sharedTemplates.length})</h2>
+                {sharedGroups.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="shared-institute-filter" className="text-xs text-gray-500">기관 필터</Label>
+                    <Select value={sharedInstituteFilter} onValueChange={setSharedInstituteFilter}>
+                      <SelectTrigger id="shared-institute-filter" className="w-48 h-9" data-testid="select-shared-institute-filter">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">전체 기관</SelectItem>
+                        {sharedGroups.map((g) => (
+                          <SelectItem key={g.id} value={String(g.id)} data-testid={`option-filter-institute-${g.id}`}>
+                            {g.name} ({g.templates.length})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-6">
+                {visibleSharedGroups.map((group) => (
+                  <div key={group.id} data-testid={`shared-group-${group.id}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      <h3 className="text-sm font-semibold text-gray-700">{group.name}</h3>
+                      <Badge variant="outline" className="text-xs">{group.templates.length}</Badge>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{group.templates.map(renderCard)}</div>
+                  </div>
+                ))}
+                {visibleSharedGroups.length === 0 && (
+                  <Card><CardContent className="py-8 text-center text-sm text-gray-500">선택한 기관에 공유된 템플릿이 없어요.</CardContent></Card>
+                )}
+              </div>
             </section>
           )}
 
