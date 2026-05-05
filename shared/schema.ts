@@ -3488,6 +3488,22 @@ export const EMAIL_CATEGORIES = [
 ] as const;
 export type EmailCategory = (typeof EMAIL_CATEGORIES)[number];
 
+// [Task #109] 사용자별 UI 환경설정 (key/value 형태) — 보호자 본인 읽음 시각 표시 등 가벼운 표시 옵션
+export const userUiPreferences = pgTable("user_ui_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  prefKey: varchar("pref_key", { length: 80 }).notNull(),
+  prefValue: text("pref_value"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userKeyUnique: uniqueIndex("user_ui_pref_user_key_uniq").on(table.userId, table.prefKey),
+}));
+export const insertUserUiPreferenceSchema = createInsertSchema(userUiPreferences).omit({
+  id: true, updatedAt: true,
+});
+export type InsertUserUiPreference = z.infer<typeof insertUserUiPreferenceSchema>;
+export type UserUiPreference = typeof userUiPreferences.$inferSelect;
+
 export const notebookReportPreferences = pgTable("notebook_report_preferences", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),

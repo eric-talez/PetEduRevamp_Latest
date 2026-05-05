@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, desc, or, ilike, inArray } from "drizzle-orm";
-import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles } from "../shared/schema";
+import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
 import { registerDashboardRoutes } from "./routes/dashboard";
@@ -5018,6 +5018,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: '훈련 일지 목록 조회 중 오류가 발생했습니다.',
         code: 'INTERNAL_SERVER_ERROR'
       });
+    }
+  });
+
+  // [Task #109] 사용자 UI 환경설정 — 보호자 본인 알림장 읽음 시각 표시 등 가벼운 키/값 설정
+  // 키 화이트리스트: 임의 키가 저장되지 않도록 명시적으로 허용
+  const ALLOWED_UI_PREF_KEYS = new Set<string>(["notebook.showOwnReadAt"]);
+
+  app.get("/api/user/ui-preferences", requireAuth(), async (req, res) => {
+    try {
+      const currentUser = req.session.user!;
+      const rows = await db
+        .select()
+        .from(userUiPreferences)
+        .where(eq(userUiPreferences.userId, currentUser.id));
+      const map: Record<string, string> = {};
+      for (const r of rows) {
+        if (ALLOWED_UI_PREF_KEYS.has(r.prefKey)) {
+          map[r.prefKey] = r.prefValue ?? "";
+        }
+      }
+      res.json({ success: true, preferences: map });
+    } catch (error) {
+      logServerError("UI 환경설정 조회 오류:", error, req);
+      res.status(500).json({ error: "환경설정 조회 중 오류가 발생했습니다.", code: "INTERNAL_SERVER_ERROR" });
+    }
+  });
+
+  app.patch("/api/user/ui-preferences", requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const currentUser = req.session.user!;
+      const schema = z.object({
+        key: z.string().min(1).max(80),
+        value: z.string().max(2000),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "잘못된 요청", code: "VALIDATION_ERROR", details: parsed.error.flatten() });
+      }
+      const { key, value } = parsed.data;
+      if (!ALLOWED_UI_PREF_KEYS.has(key)) {
+        return res.status(400).json({ error: "허용되지 않은 환경설정 키입니다.", code: "INVALID_PREF_KEY" });
+      }
+      const existing = await db
+        .select()
+        .from(userUiPreferences)
+        .where(and(eq(userUiPreferences.userId, currentUser.id), eq(userUiPreferences.prefKey, key)))
+        .limit(1);
+      if (existing.length === 0) {
+        await db.insert(userUiPreferences).values({ userId: currentUser.id, prefKey: key, prefValue: value });
+      } else {
+        await db
+          .update(userUiPreferences)
+          .set({ prefValue: value, updatedAt: new Date() })
+          .where(eq(userUiPreferences.id, existing[0].id));
+      }
+      res.json({ success: true, key, value });
+    } catch (error) {
+      logServerError("UI 환경설정 저장 오류:", error, req);
+      res.status(500).json({ error: "환경설정 저장 중 오류가 발생했습니다.", code: "INTERNAL_SERVER_ERROR" });
+    }
+  });
+
+  // [Task #109] 알림장 읽음/마지막 조회 시각 갱신 (보호자 전용)
+  app.patch("/api/notebook/entries/:id/read", requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id);
+      const currentUser = req.session.user!;
+      if (isNaN(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '해당 훈련 일지에 접근할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      // 보호자만 자신의 열람 이력으로 기록
+      if (currentUser.role !== 'pet-owner') {
+        return res.json({ success: true, data: { isRead: !!journal.isRead, readAt: journal.readAt || null, lastViewedAt: journal.lastViewedAt || null } });
+      }
+      const result = storage.markJournalRead(journalId);
+      return res.json({ success: true, data: result });
+    } catch (error) {
+      logServerError('알림장 읽음 처리 오류:', error, req);
+      res.status(500).json({ error: '읽음 처리 중 오류가 발생했습니다.', code: 'INTERNAL_SERVER_ERROR' });
     }
   });
 

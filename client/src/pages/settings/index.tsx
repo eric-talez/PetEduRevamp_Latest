@@ -3,12 +3,62 @@ import { useAuth } from "@/hooks/useAuth";
 import { Redirect } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeSettings } from "@/components/ThemeSettings";
 import { AccessibilitySettings } from "@/components/ui/AccessibilityControls";
 import { SecuritySessionsPanel } from "@/components/SecuritySessionsPanel";
 import EmailNotificationsSettings from "@/components/EmailNotificationsSettings";
 import NotebookReportSettings from "@/components/NotebookReportSettings";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+
+// [Task #109] 보호자 본인 알림장 읽음 시각 표시 토글 — 서버 영속(/api/user/ui-preferences)
+const NOTEBOOK_SHOW_OWN_READ_AT_KEY = "notebook.showOwnReadAt";
+
+function NotebookOwnReadAtToggle() {
+  const { toast } = useToast();
+  const prefsQuery = useQuery<{ success: boolean; preferences: Record<string, string> }>({
+    queryKey: ['/api/user/ui-preferences'],
+  });
+  const enabled = prefsQuery.data?.preferences?.[NOTEBOOK_SHOW_OWN_READ_AT_KEY] === "1";
+
+  const mutation = useMutation({
+    mutationFn: async (next: boolean) => {
+      const res = await apiRequest('PATCH', '/api/user/ui-preferences', {
+        key: NOTEBOOK_SHOW_OWN_READ_AT_KEY,
+        value: next ? "1" : "0",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user/ui-preferences'] });
+    },
+    onError: () => {
+      toast({ title: "환경설정 저장 실패", description: "잠시 후 다시 시도해주세요.", variant: "destructive" });
+    },
+  });
+
+  return (
+    <div
+      className="flex items-center justify-between border dark:border-gray-700 rounded-lg p-3 mt-4"
+      data-testid="row-notebook-own-readat"
+    >
+      <div>
+        <p className="font-medium">알림장에서 내 읽음 시각 표시</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          켜면 알림장 상세 화면에 내가 처음 읽은 시각과 마지막으로 연 시각이 표시됩니다.
+        </p>
+      </div>
+      <Switch
+        checked={enabled}
+        disabled={prefsQuery.isLoading || mutation.isPending}
+        onCheckedChange={(v) => mutation.mutate(v)}
+        data-testid="switch-notebook-own-readat"
+      />
+    </div>
+  );
+}
 
 interface SettingsPageProps {
   userRole?: string;
@@ -430,6 +480,11 @@ export default function SettingsPage({ userRole: propUserRole }: SettingsPagePro
                     변경사항 저장
                   </button>
                 </div>
+
+                {/* [Task #109] 보호자 본인 알림장 읽음 시각 표시 토글 */}
+                {userRole === 'pet-owner' && (
+                  <NotebookOwnReadAtToggle />
+                )}
 
                 <div className="border-t pt-6 mt-6">
                   <EmailNotificationsSettings />

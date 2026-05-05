@@ -42,7 +42,8 @@ import {
   Edit,
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  CheckCircle
 } from 'lucide-react';
 import { format, isToday, isYesterday, subDays, addDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -112,6 +113,8 @@ interface NotebookEntry {
   location: string;
   tags: string[];
   isRead: boolean;
+  readAt?: string | null;
+  lastViewedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -137,6 +140,12 @@ export default function NotebookPage() {
   const { toast } = useToast();
   const { isAuthenticated, userRole, userName } = useAuth();
   const [entries, setEntries] = useState<NotebookEntry[]>([]);
+  // [Task #109] 보호자 본인이 자신의 읽음 시각을 알림장 상세에서 볼지 여부 — 서버 환경설정 기반
+  const uiPrefsQuery = useQuery<{ success: boolean; preferences: Record<string, string> }>({
+    queryKey: ['/api/user/ui-preferences'],
+    enabled: isAuthenticated && userRole === 'pet-owner',
+  });
+  const showOwnReadAt = uiPrefsQuery.data?.preferences?.['notebook.showOwnReadAt'] === '1';
   const [filteredEntries, setFilteredEntries] = useState<NotebookEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   // Task #112 — 페이지네이션
@@ -438,6 +447,8 @@ export default function NotebookPage() {
           location?: string;
           tags?: string[];
           isRead?: boolean;
+          readAt?: string | null;
+          lastViewedAt?: string | null;
         };
         const list: NotebookEntryApi[] = data.data || data.entries || [];
         // 서버 trainingJournals 스키마를 NotebookEntry 표시 형식으로 매핑
@@ -461,6 +472,8 @@ export default function NotebookPage() {
           location: j.location || '',
           tags: j.tags || [],
           isRead: !!j.isRead,
+          readAt: j.readAt ?? null,
+          lastViewedAt: j.lastViewedAt ?? null,
           createdAt: j.createdAt || new Date().toISOString(),
           updatedAt: j.updatedAt || j.createdAt || new Date().toISOString(),
         }));
@@ -968,14 +981,38 @@ export default function NotebookPage() {
   // 알림장 읽음 처리 (보호자 전용) — 상세 모달 열릴 때마다 호출
   // 서버는 최초 1회만 readAt를 기록하고, lastViewedAt은 매번 갱신합니다.
   const markAsRead = async (entryId: string) => {
+    // [Task #109] 트레이너/관리자 화면 동작 변경 금지: 보호자만 읽음 상태를 갱신한다.
+    if (userRole !== 'pet-owner') return;
     try {
       const response = await secureRequest(`/api/notebook/entries/${entryId}/read`, {
         method: 'PATCH',
       });
       if (response.ok) {
+        type ReadResponse = { success?: boolean; data?: { isRead?: boolean; readAt?: string | null; lastViewedAt?: string | null } };
+        let payload: ReadResponse | null = null;
+        try { payload = (await response.json()) as ReadResponse; } catch {}
+        const data = payload?.data ?? {};
+        const nextIsRead = data.isRead ?? true;
         setEntries(prev => prev.map(entry =>
-          entry.id === entryId ? { ...entry, isRead: true } : entry
+          entry.id === entryId
+            ? {
+                ...entry,
+                isRead: nextIsRead,
+                readAt: data.readAt ?? entry.readAt ?? new Date().toISOString(),
+                lastViewedAt: data.lastViewedAt ?? new Date().toISOString(),
+              }
+            : entry
         ));
+        setSelectedEntry(prev =>
+          prev && prev.id === entryId
+            ? {
+                ...prev,
+                isRead: nextIsRead,
+                readAt: data.readAt ?? prev.readAt ?? new Date().toISOString(),
+                lastViewedAt: data.lastViewedAt ?? new Date().toISOString(),
+              }
+            : prev
+        );
       }
     } catch (error) {
       console.error('읽음 처리 실패:', error);
@@ -2354,6 +2391,33 @@ export default function NotebookPage() {
                 <div className="text-2xl ml-auto">{moodEmojis[selectedEntry.mood]}</div>
               </DialogTitle>
             </DialogHeader>
+
+            {/* [Task #109] 보호자 본인 읽음/마지막 조회 시각 (환경설정에서 켰을 때만 노출) */}
+            {userRole === 'pet-owner' && showOwnReadAt && (selectedEntry.readAt || selectedEntry.lastViewedAt) && (
+              <div
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-gray-400 -mt-2"
+                data-testid="own-read-indicator"
+              >
+                {selectedEntry.readAt && (
+                  <span className="inline-flex items-center gap-1">
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                    내가 처음 읽은 시각:{' '}
+                    {new Date(selectedEntry.readAt).toLocaleString('ko-KR', {
+                      month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+                    })}
+                  </span>
+                )}
+                {selectedEntry.lastViewedAt && (
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="h-3.5 w-3.5 text-gray-500" />
+                    마지막 조회:{' '}
+                    {new Date(selectedEntry.lastViewedAt).toLocaleString('ko-KR', {
+                      month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+                    })}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* PDF 다운로드 / 공유 링크 */}
             <div className="flex flex-wrap items-center gap-2 -mt-2 mb-2">
