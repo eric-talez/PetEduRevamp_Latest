@@ -428,6 +428,7 @@ import {
   validateQuery 
 } from './middleware/api-standards';
 import { recordAuditLog, logServerError } from './middleware/audit-logger';
+import { registerNotebookReadRoutes } from './routes/notebook-read';
 
 // 유료/무료 정보를 포함한 엑셀 파일에서 커리큘럼 정보 추출 함수
 function parseExcelCurriculumWithPricing(data: any[], filename: string) {
@@ -5041,7 +5042,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // 권한 확인
       if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
         return res.status(403).json({
           error: '해당 훈련 일지에 접근할 권한이 없습니다.',
@@ -5074,6 +5074,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // 3-2/3-3. 알림장 읽음 처리 + 훈련사 미읽음 카운트
+  registerNotebookReadRoutes(app, requireAuth);
 
   // 4. 훈련 일지 수정
   app.put("/api/notebook/entries/:id", requireAuth(), csrfProtection, async (req, res) => {
