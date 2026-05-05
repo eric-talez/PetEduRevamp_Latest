@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { and, eq, sql } from "drizzle-orm";
-import { emailLogs, notebookReportPreferences, users } from "../../shared/schema";
+import { emailLogs, notebookReportPreferences, users, type NotebookHomeworkItem as DbNotebookHomeworkItem } from "../../shared/schema";
 import { queueEmail, registerAttachmentBuilder } from "./email-service";
 import { generateNotebookReportPdf } from "./notebook-report-pdf";
 import { storage } from "../storage";
@@ -46,7 +46,7 @@ async function buildPdfFromVars(vars: Record<string, unknown>): Promise<Buffer> 
     ? (s.getUser?.(ownerId) ?? { id: ownerId, name: String(vars.ownerName ?? "보호자") })
     : { id: 0 };
 
-  const data = collectPeriodData(petId, periodStart, periodEnd);
+  const data = await collectPeriodDataWithDb(petId, periodStart, periodEnd);
   return generateNotebookReportPdf({
     periodType,
     periodStart,
@@ -115,6 +115,29 @@ export function collectPeriodData(petId: number, periodStart: Date, periodEnd: D
   return { journals, homeworkItems, comments, trainerNames };
 }
 
+// DB-backed 숙제 데이터를 함께 채워주는 비동기 버전 (Task #105)
+export async function collectPeriodDataWithDb(petId: number, periodStart: Date, periodEnd: Date): Promise<PeriodData> {
+  const base = collectPeriodData(petId, periodStart, periodEnd);
+  try {
+    const ids = base.journals.map((j) => j.id);
+    if (ids.length > 0) {
+      const dbItems: DbNotebookHomeworkItem[] = await storage.getHomeworkItemsForJournals(ids);
+      const merged: NotebookHomeworkItem[] = dbItems.map((row) => ({
+        id: row.id,
+        journalId: row.journalId,
+        label: row.label ?? "",
+        completed: !!row.completedAt,
+        dueDate: row.dueDate ?? null,
+        createdAt: row.createdAt ?? undefined,
+      }));
+      return { ...base, homeworkItems: merged };
+    }
+  } catch (err) {
+    logServerError("[notebookReport] homework DB load failed", err);
+  }
+  return base;
+}
+
 export function getWeeklyPeriod(now: Date): { start: Date; end: Date; key: string } {
   // 이전 주 (월~일) — KST 기준
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
@@ -158,7 +181,7 @@ export async function triggerNotebookReportEmail(args: SendReportArgs): Promise<
     const templateKey = args.periodType === "weekly" ? WEEKLY_KEY : MONTHLY_KEY;
     const periodKey = `${args.periodKey}-pet${args.petId}`;
 
-    const data = collectPeriodData(args.petId, args.periodStart, args.periodEnd);
+    const data = await collectPeriodDataWithDb(args.petId, args.periodStart, args.periodEnd);
     if (data.journals.length === 0) {
       return { sent: false, reason: "no-journals" };
     }

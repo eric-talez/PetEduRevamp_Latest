@@ -5548,6 +5548,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ====== 알림장 숙제 체크리스트 (DB-backed, Task #105) ======
+  const buildHomeworkResponse = async (journalId: number) => {
+    const items = await storage.listHomeworkItems(journalId);
+    const total = items.length;
+    const completed = items.filter(i => !!i.completedAt).length;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { items, stats: { total, completed, completionRate } };
+  };
+
+  app.get('/api/notebook/entries/:id/homework', requireAuth(), async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      if (!storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '숙제에 접근할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      res.json({ success: true, ...(await buildHomeworkResponse(journalId)) });
+    } catch (error) {
+      logServerError('[알림장 숙제] 조회 실패:', error, req);
+      res.status(500).json({ error: '숙제 조회 중 오류가 발생했습니다.', code: 'HOMEWORK_FETCH_FAILED' });
+    }
+  });
+
+  app.post('/api/notebook/entries/:id/homework', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const journalId = parseInt(req.params.id, 10);
+      if (!Number.isFinite(journalId)) {
+        return res.status(400).json({ error: '올바른 일지 ID가 필요합니다.', code: 'INVALID_JOURNAL_ID' });
+      }
+      const currentUser = req.session.user!;
+      const journal = storage.getTrainingJournalById(journalId);
+      if (!journal) {
+        return res.status(404).json({ error: '해당 훈련 일지를 찾을 수 없습니다.', code: 'JOURNAL_NOT_FOUND' });
+      }
+      if (!storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '숙제를 추가할 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      const label = String(req.body?.label || '').trim();
+      if (!label || label.length > 200) {
+        return res.status(400).json({ error: '숙제 내용은 1~200자로 입력해주세요.', code: 'INVALID_LABEL' });
+      }
+      let dueDate: Date | null = null;
+      if (req.body?.dueDate) {
+        const d = new Date(req.body.dueDate);
+        if (isNaN(d.getTime())) {
+          return res.status(400).json({ error: '올바른 마감일이 아닙니다.', code: 'INVALID_DUE_DATE' });
+        }
+        dueDate = d;
+      }
+      const item = await storage.createHomeworkItem({
+        journalId,
+        label,
+        dueDate,
+        createdByUserId: currentUser.id,
+      });
+      res.status(201).json({ success: true, item, ...(await buildHomeworkResponse(journalId)) });
+    } catch (error) {
+      logServerError('[알림장 숙제] 추가 실패:', error, req);
+      res.status(500).json({ error: '숙제 추가 중 오류가 발생했습니다.', code: 'HOMEWORK_CREATE_FAILED' });
+    }
+  });
+
+  app.patch('/api/notebook/homework/:id/complete', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ error: '올바른 숙제 ID가 필요합니다.', code: 'INVALID_HOMEWORK_ID' });
+      }
+      const currentUser = req.session.user!;
+      const item = await storage.getHomeworkItemById(id);
+      if (!item) {
+        return res.status(404).json({ error: '숙제를 찾을 수 없습니다.', code: 'HOMEWORK_NOT_FOUND' });
+      }
+      const journal = storage.getTrainingJournalById(item.journalId);
+      if (!journal || !storage.canUserAccessTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '숙제 처리 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      const completed = !!req.body?.completed;
+      await storage.setHomeworkCompletion(id, completed, currentUser.id);
+      const response = await buildHomeworkResponse(item.journalId);
+      const allCompleted = response.stats.total > 0 && response.stats.completed === response.stats.total;
+
+      if (completed && allCompleted && currentUser.id !== journal.trainerId) {
+        try {
+          const author = storage.getUser(currentUser.id);
+          const authorName = author?.name || author?.username || '보호자';
+          const journalTitle = journal.title || '훈련 알림장';
+          await notificationService.sendNotification({
+            userId: journal.trainerId,
+            type: 'message',
+            title: `${authorName}님이 모든 숙제를 완료했습니다`,
+            message: `[${journalTitle}] 모든 숙제 항목이 완료되었습니다.`,
+            data: { journalId: item.journalId },
+            actionUrl: `/trainer/notebook?journalId=${item.journalId}`,
+          });
+        } catch (notifErr) {
+          logServerError('[알림장 숙제] 알림 발송 실패:', notifErr, req);
+        }
+      }
+
+      res.json({ success: true, allCompleted, ...response });
+    } catch (error) {
+      logServerError('[알림장 숙제] 완료 토글 실패:', error, req);
+      res.status(500).json({ error: '숙제 처리 중 오류가 발생했습니다.', code: 'HOMEWORK_TOGGLE_FAILED' });
+    }
+  });
+
+  app.delete('/api/notebook/homework/:id', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ error: '올바른 숙제 ID가 필요합니다.', code: 'INVALID_HOMEWORK_ID' });
+      }
+      const currentUser = req.session.user!;
+      const item = await storage.getHomeworkItemById(id);
+      if (!item) {
+        return res.status(404).json({ error: '숙제를 찾을 수 없습니다.', code: 'HOMEWORK_NOT_FOUND' });
+      }
+      const journal = storage.getTrainingJournalById(item.journalId);
+      if (!journal || !storage.canUserModifyTrainingJournal(currentUser.id, currentUser.role, journal)) {
+        return res.status(403).json({ error: '숙제 삭제 권한이 없습니다.', code: 'INSUFFICIENT_PERMISSIONS' });
+      }
+      await storage.deleteHomeworkItem(id);
+      res.json({ success: true, ...(await buildHomeworkResponse(item.journalId)) });
+    } catch (error) {
+      logServerError('[알림장 숙제] 삭제 실패:', error, req);
+      res.status(500).json({ error: '숙제 삭제 중 오류가 발생했습니다.', code: 'HOMEWORK_DELETE_FAILED' });
+    }
+  });
+
+  app.get('/api/notebook/homework/overdue-count', requireAuth(), async (req, res) => {
+    try {
+      const currentUser = req.session.user!;
+      const count = await storage.getOverdueHomeworkCountForOwner(currentUser.id);
+      res.json({ success: true, count });
+    } catch (error) {
+      logServerError('[알림장 숙제] 지연 카운트 실패:', error, req);
+      res.status(500).json({ error: '지연 숙제 조회 실패', code: 'HOMEWORK_OVERDUE_COUNT_FAILED' });
+    }
+  });
+
+  app.get('/api/notebook/homework/weekly-stats', requireAuth(), async (req, res) => {
+    try {
+      const currentUser = req.session.user!;
+      const stats = await storage.getWeeklyHomeworkStatsForOwner(currentUser.id);
+      res.json({ success: true, stats });
+    } catch (error) {
+      logServerError('[알림장 숙제] 주간 통계 실패:', error, req);
+      res.status(500).json({ error: '주간 숙제 통계 조회 실패', code: 'HOMEWORK_WEEKLY_STATS_FAILED' });
+    }
+  });
+
   // 이모지 반응 토글
   app.post('/api/notebook/entries/:id/reactions', requireAuth(), csrfProtection, async (req, res) => {
     try {

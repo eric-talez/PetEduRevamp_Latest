@@ -26,6 +26,8 @@ import {
   type InsertContentReport,
   notebookTemplates,
   type NotebookTemplate,
+  notebookHomeworkItems,
+  type NotebookHomeworkItem,
   storeMenuItems,
   storeOrders,
   storeOrderItems,
@@ -3111,6 +3113,115 @@ class Storage {
   // ====== 알림장 이모지 반응 ======
   getJournalReactions(journalId: number): any[] {
     return (this.journalReactions || []).filter(r => r.journalId === journalId);
+  }
+
+  // ====== 알림장 숙제 체크리스트 (DB-backed, Task #105) ======
+  async listHomeworkItems(journalId: number): Promise<NotebookHomeworkItem[]> {
+    const rows = await db
+      .select()
+      .from(notebookHomeworkItems)
+      .where(eq(notebookHomeworkItems.journalId, journalId));
+    return rows.sort((a, b) => {
+      const so = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+      if (so !== 0) return so;
+      const at = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return at - bt;
+    });
+  }
+
+  async getHomeworkItemById(id: number): Promise<NotebookHomeworkItem | null> {
+    const rows = await db.select().from(notebookHomeworkItems).where(eq(notebookHomeworkItems.id, id)).limit(1);
+    return rows[0] ?? null;
+  }
+
+  async createHomeworkItem(data: {
+    journalId: number;
+    label: string;
+    dueDate?: Date | null;
+    sortOrder?: number;
+    createdByUserId?: number | null;
+  }): Promise<NotebookHomeworkItem> {
+    let sortOrder = data.sortOrder;
+    if (sortOrder === undefined) {
+      const existing = await this.listHomeworkItems(data.journalId);
+      sortOrder = existing.length;
+    }
+    const [row] = await db.insert(notebookHomeworkItems).values({
+      journalId: data.journalId,
+      label: data.label,
+      dueDate: data.dueDate ?? null,
+      sortOrder,
+      createdByUserId: data.createdByUserId ?? null,
+    }).returning();
+    return row;
+  }
+
+  async setHomeworkCompletion(id: number, completed: boolean, userId: number): Promise<NotebookHomeworkItem | null> {
+    const [row] = await db
+      .update(notebookHomeworkItems)
+      .set({
+        completedAt: completed ? new Date() : null,
+        completedByUserId: completed ? userId : null,
+      })
+      .where(eq(notebookHomeworkItems.id, id))
+      .returning();
+    return row ?? null;
+  }
+
+  async deleteHomeworkItem(id: number): Promise<boolean> {
+    const result = await db
+      .delete(notebookHomeworkItems)
+      .where(eq(notebookHomeworkItems.id, id))
+      .returning({ id: notebookHomeworkItems.id });
+    return result.length > 0;
+  }
+
+  async getOverdueHomeworkCountForOwner(userId: number): Promise<number> {
+    // 알림장은 현재 in-memory 저장소를 source-of-truth 로 사용하므로 동일 소스에서 ID 추출
+    const ids = (this.trainingJournals || [])
+      .filter((j: any) => j && j.petOwnerId === userId)
+      .map((j: any) => j.id as number);
+    if (ids.length === 0) return 0;
+    const now = new Date();
+    const rows = await db
+      .select({ id: notebookHomeworkItems.id })
+      .from(notebookHomeworkItems)
+      .where(and(
+        inArray(notebookHomeworkItems.journalId, ids),
+        sql`${notebookHomeworkItems.completedAt} is null`,
+        sql`${notebookHomeworkItems.dueDate} is not null`,
+        sql`${notebookHomeworkItems.dueDate} < ${now}`,
+      ));
+    return rows.length;
+  }
+
+  async getWeeklyHomeworkStatsForOwner(userId: number): Promise<{ total: number; completed: number; completionRate: number }> {
+    const ids = (this.trainingJournals || [])
+      .filter((j: any) => j && j.petOwnerId === userId)
+      .map((j: any) => j.id as number);
+    if (ids.length === 0) return { total: 0, completed: 0, completionRate: 0 };
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const rows = await db
+      .select()
+      .from(notebookHomeworkItems)
+      .where(and(
+        inArray(notebookHomeworkItems.journalId, ids),
+        sql`${notebookHomeworkItems.createdAt} >= ${weekAgo}`,
+      ));
+    const total = rows.length;
+    const completed = rows.filter(r => !!r.completedAt).length;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, completionRate };
+  }
+
+  async getHomeworkItemsForJournals(journalIds: number[]): Promise<NotebookHomeworkItem[]> {
+    if (journalIds.length === 0) return [];
+    const rows = await db
+      .select()
+      .from(notebookHomeworkItems)
+      .where(inArray(notebookHomeworkItems.journalId, journalIds));
+    return rows;
   }
 
   toggleJournalReaction(journalId: number, userId: number, emoji: string): { added: boolean } {

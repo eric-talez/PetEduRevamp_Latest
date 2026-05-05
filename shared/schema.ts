@@ -1097,6 +1097,38 @@ export const journalComments: any = pgTable("journal_comments", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// 알림장 숙제 체크리스트 테이블 - 보호자가 체크하고 트레이너가 부과
+// 주의: journalId 는 현재 in-memory trainingJournals 의 논리적 식별자이므로 DB FK 를 두지 않습니다.
+// (트레이닝 저널 자체의 DB 영속화는 본 작업 범위 밖이며 후속 작업에서 처리합니다)
+export const notebookHomeworkItems = pgTable("notebook_homework_items", {
+  id: serial("id").primaryKey(),
+  journalId: integer("journal_id").notNull(),
+  label: varchar("label", { length: 200 }).notNull(),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  completedByUserId: integer("completed_by_user_id").references(() => users.id),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  journalIdx: index("notebook_homework_items_journal_idx").on(table.journalId),
+}));
+
+export const insertNotebookHomeworkItemSchema = createInsertSchema(notebookHomeworkItems).omit({
+  id: true,
+  completedAt: true,
+  completedByUserId: true,
+  createdByUserId: true,
+  createdAt: true,
+}).extend({
+  label: z.string().trim().min(1, '숙제 내용을 입력해주세요').max(200, '숙제 내용은 200자 이하로 입력해주세요'),
+  dueDate: z.union([z.string(), z.date(), z.null()]).optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export type NotebookHomeworkItem = typeof notebookHomeworkItems.$inferSelect;
+export type InsertNotebookHomeworkItem = z.infer<typeof insertNotebookHomeworkItemSchema>;
+
 // 알림장 이모지 반응 테이블 - 사용자별 반응 (journal+user+emoji 유일)
 export const journalReactions = pgTable("journal_reactions", {
   id: serial("id").primaryKey(),
