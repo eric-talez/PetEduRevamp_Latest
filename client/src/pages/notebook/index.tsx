@@ -53,6 +53,7 @@ import { secureRequest, getCSRFToken } from '@/lib/csrf';
 import NotebookBannerImage from '@assets/stock_images/pet_training_journal_3a3d5b29.jpg';
 import { PageBanner } from '@/components/PageBanner';
 import { JournalCommentSection } from '@/components/notebook/JournalCommentSection';
+import { JournalHomeworkChecklist } from '@/components/notebook/JournalHomeworkChecklist';
 import {
   NotebookFilterBar,
   EMPTY_FILTERS,
@@ -2598,6 +2599,11 @@ export default function NotebookPage() {
                   <h4 className="font-medium text-warning mb-2">특별 노트</h4>
                   <p className="text-warning">{selectedEntry.notes}</p>
                 </div>
+              )}
+
+              {/* 숙제 체크리스트 (보호자 체크) */}
+              {Number.isFinite(Number(selectedEntry.id)) && (
+                <JournalHomeworkChecklist journalId={Number(selectedEntry.id)} canEdit={false} />
               )}
 
               {/* 댓글 & 이모지 반응 */}

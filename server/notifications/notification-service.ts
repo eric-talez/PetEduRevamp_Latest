@@ -272,6 +272,26 @@ export class NotificationService {
     }
   }
 
+  // 커스텀 WebSocket 이벤트 전송 (알림 저장 없이 실시간 dispatch만) — Task #104
+  sendCustomEvent(userId: number, payload: Record<string, any>): boolean {
+    const userConnections = this.connections.get(userId);
+    if (!userConnections || userConnections.length === 0) return false;
+    const data = JSON.stringify({ type: 'custom_event', data: payload });
+    let sent = false;
+    userConnections.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(data);
+          sent = true;
+        } catch (error) {
+          logServerError('[Notification] custom_event 전송 실패:', error);
+          this.removeConnection(userId, ws);
+        }
+      }
+    });
+    return sent;
+  }
+
   // FCM 푸시 알림 전송 (Private Helper)
   private async sendFCMNotification(
     userId: number,

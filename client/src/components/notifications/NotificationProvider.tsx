@@ -175,6 +175,11 @@ export function NotificationProvider({ children, userId }: NotificationProviderP
         } else if (data.type === 'notification_read' || data.type === 'all_notifications_read') {
           queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
           refreshUnreadCount();
+        } else if (data.type === 'custom_event') {
+          // Task #104 — 페이지가 자체적으로 구독할 수 있도록 글로벌 이벤트 디스패치
+          const payload = data.data || {};
+          const evtName = typeof payload.type === 'string' ? `ws:${payload.type}` : 'ws:custom';
+          window.dispatchEvent(new CustomEvent(evtName, { detail: payload }));
         }
       } catch (error) {
         console.error('[WebSocket] 메시지 파싱 오류:', error);
