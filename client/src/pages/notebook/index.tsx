@@ -62,6 +62,11 @@ import {
   type NotebookFilters,
   type PetOption,
 } from '@/components/notebook/NotebookFilterBar';
+import {
+  NotebookPagination,
+  parseNotebookPageSize,
+  type NotebookPageSize,
+} from '@/components/notebook/NotebookPagination';
 
 // 알림장 엔트리 타입 정의
 interface NotebookEntry {
@@ -149,10 +154,17 @@ export default function NotebookPage() {
   const showOwnReadAt = uiPrefsQuery.data?.preferences?.['notebook.showOwnReadAt'] === '1';
   const [filteredEntries, setFilteredEntries] = useState<NotebookEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  // Task #112 — 페이지네이션
-  const PAGE_SIZE = 20;
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; totalPages: number }>({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+  // Task #112/#118 — 페이지네이션 (페이지 번호 점프 + 페이지 크기 선택)
+  const [page, setPage] = useState<number>(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const p = Number(params.get('page'));
+    return Number.isFinite(p) && p >= 1 ? p : 1;
+  });
+  const [pageSize, setPageSize] = useState<NotebookPageSize>(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    return parseNotebookPageSize(params.get('limit'), 20);
+  });
+  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; totalPages: number }>({ page: 1, limit: pageSize, total: 0, totalPages: 1 });
   // Task #93 — 통합 검색·필터(서버측) 상태
   const [filters, setFilters] = useState<NotebookFilters>(() => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
@@ -415,7 +427,7 @@ export default function NotebookPage() {
       const queryParams = new URLSearchParams(filtersToApiParams(filters));
       if (selectedTrainer !== 'all') queryParams.set('trainerId', selectedTrainer);
       queryParams.set('page', String(page));
-      queryParams.set('limit', String(PAGE_SIZE));
+      queryParams.set('limit', String(pageSize));
 
       const response = await fetch(`/api/notebook/entries?${queryParams.toString()}`, { credentials: 'include' });
       const data = await response.json();
@@ -482,12 +494,12 @@ export default function NotebookPage() {
         if (data.pagination) {
           setPagination({
             page: Number(data.pagination.page) || 1,
-            limit: Number(data.pagination.limit) || PAGE_SIZE,
+            limit: Number(data.pagination.limit) || pageSize,
             total: Number(data.pagination.total) || mapped.length,
             totalPages: Number(data.pagination.totalPages) || 1,
           });
         } else {
-          setPagination({ page: 1, limit: PAGE_SIZE, total: mapped.length, totalPages: 1 });
+          setPagination({ page: 1, limit: pageSize, total: mapped.length, totalPages: 1 });
         }
       } else {
         throw new Error(data.error || '알림장을 불러올 수 없습니다');
@@ -502,10 +514,25 @@ export default function NotebookPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters, selectedTrainer, page, toast]);
+  }, [filters, selectedTrainer, page, pageSize, toast]);
 
-  // Task #112: 검색·필터 또는 훈련사 필터 변경 시 1페이지로 리셋
-  useEffect(() => { setPage(1); }, [filters, selectedTrainer]);
+  // Task #112: 검색·필터/훈련사/페이지 크기 변경 시 1페이지로 리셋
+  useEffect(() => { setPage(1); }, [filters, selectedTrainer, pageSize]);
+
+  // Task #118: page/limit 을 URL 쿼리에 반영(검색·필터의 q/petId/from/to/category/unreadOnly는 NotebookFilterBar 가 관리)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (page > 1) params.set('page', String(page));
+    else params.delete('page');
+    if (pageSize !== 20) params.set('limit', String(pageSize));
+    else params.delete('limit');
+    const qs = params.toString();
+    const next = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(null, '', next);
+    }
+  }, [page, pageSize]);
 
   // 마운트 및 필터 변경 시 알림장 자동 조회
   useEffect(() => {
@@ -2337,37 +2364,18 @@ export default function NotebookPage() {
         )}
       </div>
 
-      {/* 페이지네이션 (Task #112) */}
-      {pagination.total > 0 && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4" data-testid="owner-notebook-pagination">
-          <div className="text-sm text-gray-500">
-            전체 {pagination.total}개 중 {(pagination.page - 1) * pagination.limit + 1}–
-            {Math.min(pagination.page * pagination.limit, pagination.total)}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1 || isLoading}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              data-testid="button-owner-notebook-prev"
-            >
-              이전
-            </Button>
-            <span className="text-sm tabular-nums">
-              {pagination.page} / {pagination.totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= pagination.totalPages || isLoading}
-              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-              data-testid="button-owner-notebook-next"
-            >
-              다음
-            </Button>
-          </div>
-        </div>
+      {/* 페이지네이션 (Task #112/#118) */}
+      {pagination.total > 0 && (
+        <NotebookPagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          isLoading={isLoading}
+          onPageChange={(p) => setPage(p)}
+          onLimitChange={(l) => setPageSize(l)}
+          testIdPrefix="owner-notebook"
+        />
       )}
 
       {/* 알림장 상세 보기 모달 */}

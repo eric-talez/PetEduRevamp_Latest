@@ -53,6 +53,11 @@ import {
   type NotebookFilters,
   type PetOption,
 } from '@/components/notebook/NotebookFilterBar';
+import {
+  NotebookPagination,
+  parseNotebookPageSize,
+  type NotebookPageSize,
+} from '@/components/notebook/NotebookPagination';
 
 interface Journal {
   id: number;
@@ -139,11 +144,32 @@ export default function TrainerNotebookPage() {
     content: '',
     category: '',
   });
-  // Task #112 — 페이지네이션
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 20;
-  // 검색·필터 또는 상태 필터가 바뀌면 1페이지로 리셋
-  useEffect(() => { setPage(1); }, [filters, statusFilter]);
+  // Task #112/#118 — 페이지네이션 (페이지 번호 점프 + 페이지 크기 선택)
+  const [page, setPage] = useState<number>(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const p = Number(params.get('page'));
+    return Number.isFinite(p) && p >= 1 ? p : 1;
+  });
+  const [pageSize, setPageSize] = useState<NotebookPageSize>(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    return parseNotebookPageSize(params.get('limit'), 20);
+  });
+  // 검색·필터/상태 필터/페이지 크기 변경 시 1페이지로 리셋
+  useEffect(() => { setPage(1); }, [filters, statusFilter, pageSize]);
+  // Task #118: page/limit 을 URL 쿼리에 반영
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (page > 1) params.set('page', String(page));
+    else params.delete('page');
+    if (pageSize !== 20) params.set('limit', String(pageSize));
+    else params.delete('limit');
+    const qs = params.toString();
+    const next = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(null, '', next);
+    }
+  }, [page, pageSize]);
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'activities' | 'media' | 'ai'>('basic');
   const search = useSearch();
@@ -399,11 +425,11 @@ export default function TrainerNotebookPage() {
 
   // 알림장 목록 조회 (실제 API) - Task #93: 서버측 검색·필터 적용 / Task #112: 페이지네이션
   const { data: journalsResult, isLoading: journalsLoading } = useQuery<{ journals: Journal[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>({
-    queryKey: ['/api/trainer/journals', filters, page, PAGE_SIZE],
+    queryKey: ['/api/trainer/journals', filters, page, pageSize],
     queryFn: async () => {
       const params = new URLSearchParams(filtersToApiParams(filters));
       params.set('page', String(page));
-      params.set('limit', String(PAGE_SIZE));
+      params.set('limit', String(pageSize));
       const qs = params.toString();
       const res = await fetch(`/api/trainer/journals${qs ? `?${qs}` : ''}`, { credentials: 'include' });
       if (!res.ok) throw new Error('알림장 조회 실패');
@@ -466,7 +492,7 @@ export default function TrainerNotebookPage() {
         replyMessage: j.replyMessage,
         category: j.category ?? null,
       })) as Journal[];
-      const pagination = json.pagination || { page, limit: PAGE_SIZE, total: mapped.length, totalPages: 1 };
+      const pagination = json.pagination || { page, limit: pageSize, total: mapped.length, totalPages: 1 };
       return { journals: mapped, pagination };
     },
     enabled: isAuthenticated,
@@ -1538,37 +1564,18 @@ export default function TrainerNotebookPage() {
             )}
           </div>
 
-          {/* 페이지네이션 (Task #112) */}
-          {pagination && pagination.total > 0 && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4" data-testid="trainer-notebook-pagination">
-              <div className="text-sm text-gray-500">
-                전체 {pagination.total}개 중 {(pagination.page - 1) * pagination.limit + 1}–
-                {Math.min(pagination.page * pagination.limit, pagination.total)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1 || journalsLoading}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  data-testid="button-trainer-notebook-prev"
-                >
-                  이전
-                </Button>
-                <span className="text-sm tabular-nums">
-                  {pagination.page} / {pagination.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= pagination.totalPages || journalsLoading}
-                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                  data-testid="button-trainer-notebook-next"
-                >
-                  다음
-                </Button>
-              </div>
-            </div>
+          {/* 페이지네이션 (Task #112/#118) */}
+          {pagination && pagination.total > 0 && (
+            <NotebookPagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              limit={pagination.limit}
+              isLoading={journalsLoading}
+              onPageChange={(p) => setPage(p)}
+              onLimitChange={(l) => setPageSize(l)}
+              testIdPrefix="trainer-notebook"
+            />
           )}
         </TabsContent>
 
