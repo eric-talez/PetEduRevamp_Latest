@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
-import { sql, eq, and, isNotNull, desc, or, ilike } from "drizzle-orm";
+import { sql, eq, and, isNotNull, desc, or, ilike, inArray } from "drizzle-orm";
 import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
@@ -4705,7 +4705,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.session.user!;
       const instituteIds = await getInstituteIdsForTrainer(user.id);
-      res.json({ success: true, data: { userId: user.id, instituteIds } });
+      let instituteOptions: { id: number; name: string }[] = [];
+      if (instituteIds.length > 0) {
+        const rows = await db
+          .select({ id: institutes.id, name: institutes.name })
+          .from(institutes)
+          .where(inArray(institutes.id, instituteIds));
+        const byId = new Map(rows.map((r) => [Number(r.id), r.name as string]));
+        instituteOptions = instituteIds.map((id) => ({
+          id,
+          name: byId.get(id) ?? `기관 #${id}`,
+        }));
+      }
+      res.json({ success: true, data: { userId: user.id, instituteIds, institutes: instituteOptions } });
     } catch (error) {
       logServerError('알림장 템플릿 컨텍스트 조회 오류:', error, req);
       res.status(500).json({ error: '컨텍스트 조회 실패', code: 'INTERNAL_SERVER_ERROR' });

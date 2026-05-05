@@ -34,7 +34,7 @@ interface FormState {
   category: string;
   homeworkItems: string;
   homeworkNote: string;
-  shareWithInstitute: boolean;
+  shareInstituteId: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -43,7 +43,7 @@ const EMPTY_FORM: FormState = {
   category: '',
   homeworkItems: '',
   homeworkNote: '',
-  shareWithInstitute: false,
+  shareInstituteId: 'none',
 };
 
 const CATEGORY_OPTIONS = ['기본훈련', '행동교정', '사회화', '노즈워크', '어질리티', '기타'];
@@ -60,11 +60,13 @@ export default function NotebookTemplatesPage() {
   });
   const templates = data?.data ?? [];
 
-  const { data: contextData } = useQuery<{ data: { userId: number; instituteIds: number[] } }>({
+  const { data: contextData } = useQuery<{ data: { userId: number; instituteIds: number[]; institutes?: { id: number; name: string }[] } }>({
     queryKey: ['/api/notebook/templates/context'],
   });
   const myUserId = contextData?.data?.userId ?? null;
   const myInstituteIds = contextData?.data?.instituteIds ?? [];
+  const myInstitutes = contextData?.data?.institutes ?? [];
+  const instituteNameById = new Map(myInstitutes.map((i) => [i.id, i.name]));
 
   const systemTemplates = templates.filter((t) => t.isSystem);
   const myTemplates = templates.filter((t) => !t.isSystem && t.ownerUserId === myUserId && !t.instituteId);
@@ -85,7 +87,7 @@ export default function NotebookTemplatesPage() {
       category: tpl.category ?? '',
       homeworkItems: (tpl.homeworkPreset?.items ?? []).join('\n'),
       homeworkNote: tpl.homeworkPreset?.note ?? '',
-      shareWithInstitute: tpl.instituteId != null,
+      shareInstituteId: tpl.instituteId != null ? String(tpl.instituteId) : 'none',
     });
     setDialogOpen(true);
   };
@@ -107,11 +109,12 @@ export default function NotebookTemplatesPage() {
           : null,
       };
       const isEdit = editingTpl != null;
-      if (form.shareWithInstitute) {
-        if (myInstituteIds.length === 0) {
-          throw new Error('소속 기관이 없어 공유할 수 없습니다.');
+      if (form.shareInstituteId !== 'none') {
+        const selectedId = Number(form.shareInstituteId);
+        if (!Number.isFinite(selectedId) || !myInstituteIds.includes(selectedId)) {
+          throw new Error('선택한 기관에 공유할 권한이 없습니다.');
         }
-        payload.instituteId = myInstituteIds[0];
+        payload.instituteId = selectedId;
       } else if (isEdit) {
         payload.instituteId = null;
       }
@@ -185,7 +188,10 @@ export default function NotebookTemplatesPage() {
                 <Badge variant="secondary" className="gap-1"><Sparkles className="h-3 w-3" /> 시스템</Badge>
               )}
               {tpl.instituteId && (
-                <Badge variant="outline" className="gap-1"><Users className="h-3 w-3" /> 기관</Badge>
+                <Badge variant="outline" className="gap-1">
+                  <Users className="h-3 w-3" />
+                  {instituteNameById.get(tpl.instituteId) ?? '기관'}
+                </Badge>
               )}
               {tpl.category && <Badge variant="outline">{tpl.category}</Badge>}
             </div>
@@ -342,18 +348,32 @@ export default function NotebookTemplatesPage() {
                 data-testid="input-template-homework-note"
               />
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.shareWithInstitute}
-                disabled={myInstituteIds.length === 0}
-                onChange={(e) => setForm((p) => ({ ...p, shareWithInstitute: e.target.checked }))}
-                data-testid="checkbox-share-institute"
-              />
-              <span className={myInstituteIds.length === 0 ? 'text-gray-400' : ''}>
-                같은 기관 트레이너에게도 공유{myInstituteIds.length === 0 ? ' (소속 기관 없음)' : ''}
-              </span>
-            </label>
+            <div>
+              <Label htmlFor="tpl-share-institute">공유 대상 기관</Label>
+              {myInstituteIds.length === 0 ? (
+                <p className="text-sm text-gray-400 mt-1">소속 기관이 없어 공유할 수 없습니다.</p>
+              ) : (
+                <>
+                  <Select
+                    value={form.shareInstituteId}
+                    onValueChange={(v) => setForm((p) => ({ ...p, shareInstituteId: v }))}
+                  >
+                    <SelectTrigger id="tpl-share-institute" data-testid="select-share-institute">
+                      <SelectValue placeholder="공유 안 함" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">공유 안 함 (나만 사용)</SelectItem>
+                      {myInstitutes.map((inst) => (
+                        <SelectItem key={inst.id} value={String(inst.id)} data-testid={`option-share-institute-${inst.id}`}>
+                          {inst.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">선택한 기관의 트레이너들이 이 템플릿을 함께 사용할 수 있어요.</p>
+                </>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>취소</Button>
