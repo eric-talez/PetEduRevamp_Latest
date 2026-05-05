@@ -370,7 +370,11 @@ import {
   type LogoSettingsQuery,
   // 친구 초대 관련 스키마
   friendInvitations,
-  educationCredits
+  educationCredits,
+  // 매장 QR 주문
+  createStoreOrderRequestSchema,
+  insertStoreMenuItemSchema,
+  STORE_ORDER_STATUSES,
 } from "../shared/schema";
 import { 
   analyzePetBehavior, 
@@ -22758,6 +22762,147 @@ export function registerTrainerCertificationRoutes(app: Express) {
   registerNoseAuthRoutes(app);
 
   console.log('[방문 신뢰 QR] Pet Visit Trust QR 인증 시스템 API가 등록되었습니다.');
+
+  // ============ 오프라인 매장 QR 주문 (Store Orders) ============
+  // [공개] 메뉴 조회 — 활성 메뉴만, 카테고리 그룹핑
+  app.get('/api/store/menu', async (req, res) => {
+    try {
+      const items = await storage.listStoreMenuItems({ activeOnly: true });
+      const grouped: Record<string, any[]> = {};
+      for (const it of items) {
+        if (!grouped[it.category]) grouped[it.category] = [];
+        grouped[it.category].push(it);
+      }
+      res.json({ success: true, data: { items, grouped } });
+    } catch (error) {
+      logServerError('매장 메뉴 조회 오류:', error, req);
+      res.status(500).json({ error: '메뉴 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // [공개] 주문 생성 — 결제 없음, 단순 접수
+  app.post('/api/store/orders', async (req, res) => {
+    try {
+      const parsed = createStoreOrderRequestSchema.parse(req.body || {});
+      const result = await storage.createStoreOrder({
+        tableNo: parsed.tableNo,
+        requestNote: parsed.requestNote ?? null,
+        items: parsed.items,
+      });
+      res.status(201).json({ success: true, data: { ...result.order, items: result.items } });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ error: '입력값이 올바르지 않습니다.', code: 'VALIDATION_ERROR', details: error.errors });
+      }
+      const msg = String(error?.message || '');
+      if (msg.startsWith('품절') || msg.startsWith('판매하지') || msg.startsWith('메뉴를')) {
+        return res.status(400).json({ error: msg, code: 'INVALID_MENU' });
+      }
+      logServerError('매장 주문 생성 오류:', error, req);
+      res.status(500).json({ error: '주문 생성 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // [공개] 주문번호로 단건 조회 — 고객용 상태 확인
+  app.get('/api/store/orders/by-number/:orderNumber', async (req, res) => {
+    try {
+      const order = await storage.getStoreOrderByNumber(req.params.orderNumber);
+      if (!order) return res.status(404).json({ error: '주문을 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      res.json({ success: true, data: order });
+    } catch (error) {
+      logServerError('매장 주문 조회 오류:', error, req);
+      res.status(500).json({ error: '주문 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // [관리자] 메뉴 전체 조회 (비활성 포함)
+  app.get('/api/admin/store/menu', requireAuth('admin'), async (req, res) => {
+    try {
+      const items = await storage.listStoreMenuItems({ activeOnly: false });
+      res.json({ success: true, data: items });
+    } catch (error) {
+      logServerError('관리자 매장 메뉴 조회 오류:', error, req);
+      res.status(500).json({ error: '메뉴 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.post('/api/admin/store/menu', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const parsed = insertStoreMenuItemSchema.parse(req.body || {});
+      const created = await storage.createStoreMenuItem(parsed as any);
+      res.status(201).json({ success: true, data: created });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') return res.status(400).json({ error: '입력값이 올바르지 않습니다.', code: 'VALIDATION_ERROR', details: error.errors });
+      logServerError('매장 메뉴 생성 오류:', error, req);
+      res.status(500).json({ error: '메뉴 생성 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.patch('/api/admin/store/menu/:id', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const parsed = insertStoreMenuItemSchema.partial().parse(req.body || {});
+      const updated = await storage.updateStoreMenuItem(id, parsed as any);
+      if (!updated) return res.status(404).json({ error: '메뉴를 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') return res.status(400).json({ error: '입력값이 올바르지 않습니다.', code: 'VALIDATION_ERROR', details: error.errors });
+      logServerError('매장 메뉴 수정 오류:', error, req);
+      res.status(500).json({ error: '메뉴 수정 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.delete('/api/admin/store/menu/:id', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const ok = await storage.deleteStoreMenuItem(id);
+      if (!ok) return res.status(404).json({ error: '메뉴를 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      res.json({ success: true });
+    } catch (error) {
+      logServerError('매장 메뉴 삭제 오류:', error, req);
+      res.status(500).json({ error: '메뉴 삭제 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // [관리자] 주문 목록 — status, date(YYYY-MM-DD) 필터 지원
+  app.get('/api/admin/store/orders', requireAuth('admin'), async (req, res) => {
+    try {
+      const status = (req.query.status as string | undefined)?.trim();
+      const dateStr = (req.query.date as string | undefined)?.trim();
+      const opts: any = {};
+      if (status && (STORE_ORDER_STATUSES as readonly string[]).includes(status)) opts.status = status;
+      if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        opts.from = new Date(`${dateStr}T00:00:00`);
+        opts.to = new Date(`${dateStr}T23:59:59.999`);
+      }
+      const orders = await storage.listStoreOrders(opts);
+      res.json({ success: true, data: orders });
+    } catch (error) {
+      logServerError('관리자 매장 주문 목록 오류:', error, req);
+      res.status(500).json({ error: '주문 목록 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.patch('/api/admin/store/orders/:id/status', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const status = String(req.body?.status || '');
+      if (!(STORE_ORDER_STATUSES as readonly string[]).includes(status)) {
+        return res.status(400).json({ error: '잘못된 상태값', code: 'INVALID_STATUS' });
+      }
+      const updated = await storage.updateStoreOrderStatus(id, status as any);
+      if (!updated) return res.status(404).json({ error: '주문을 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      logServerError('매장 주문 상태 변경 오류:', error, req);
+      res.status(500).json({ error: '상태 변경 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  console.log('[Store Orders] 매장 QR 주문 시스템 API가 등록되었습니다.');
 
   const httpServer = createServer(app);
   return httpServer;

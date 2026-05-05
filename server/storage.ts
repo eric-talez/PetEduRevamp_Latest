@@ -26,6 +26,13 @@ import {
   type InsertContentReport,
   notebookTemplates,
   type NotebookTemplate,
+  storeMenuItems,
+  storeOrders,
+  storeOrderItems,
+  type StoreMenuItem,
+  type StoreOrder,
+  type StoreOrderItem,
+  type StoreOrderStatus,
 } from "../shared/schema";
 import { logServerError } from './middleware/audit-logger';
 
@@ -2844,6 +2851,154 @@ class Storage {
       .update(notebookTemplates)
       .set({ usageCount: sql`${notebookTemplates.usageCount} + 1`, updatedAt: new Date() })
       .where(eq(notebookTemplates.id, id));
+  }
+
+  // ====== 오프라인 매장 QR 주문 (Store Orders) ======
+  async listStoreMenuItems(opts: { activeOnly?: boolean } = {}): Promise<StoreMenuItem[]> {
+    const rows = opts.activeOnly
+      ? await db.select().from(storeMenuItems).where(eq(storeMenuItems.isActive, true))
+      : await db.select().from(storeMenuItems);
+    return rows.sort((a, b) => {
+      if (a.category !== b.category) return a.category.localeCompare(b.category);
+      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id;
+    });
+  }
+
+  async getStoreMenuItem(id: number): Promise<StoreMenuItem | null> {
+    const rows = await db.select().from(storeMenuItems).where(eq(storeMenuItems.id, id)).limit(1);
+    return rows[0] ?? null;
+  }
+
+  async createStoreMenuItem(data: Partial<StoreMenuItem> & { category: string; name: string; price: number }): Promise<StoreMenuItem> {
+    const [row] = await db.insert(storeMenuItems).values({
+      category: data.category,
+      name: data.name,
+      price: data.price,
+      description: data.description ?? null,
+      soldOut: data.soldOut ?? false,
+      isActive: data.isActive ?? true,
+      sortOrder: data.sortOrder ?? 0,
+    }).returning();
+    return row;
+  }
+
+  async updateStoreMenuItem(id: number, patch: Partial<StoreMenuItem>): Promise<StoreMenuItem | null> {
+    const setObj: Record<string, unknown> = { updatedAt: new Date() };
+    if (patch.category !== undefined) setObj.category = patch.category;
+    if (patch.name !== undefined) setObj.name = patch.name;
+    if (patch.price !== undefined) setObj.price = patch.price;
+    if (patch.description !== undefined) setObj.description = patch.description;
+    if (patch.soldOut !== undefined) setObj.soldOut = patch.soldOut;
+    if (patch.isActive !== undefined) setObj.isActive = patch.isActive;
+    if (patch.sortOrder !== undefined) setObj.sortOrder = patch.sortOrder;
+    const [row] = await db.update(storeMenuItems).set(setObj).where(eq(storeMenuItems.id, id)).returning();
+    return row ?? null;
+  }
+
+  async deleteStoreMenuItem(id: number): Promise<boolean> {
+    const result = await db.delete(storeMenuItems).where(eq(storeMenuItems.id, id)).returning({ id: storeMenuItems.id });
+    return result.length > 0;
+  }
+
+  async createStoreOrder(input: {
+    tableNo: string;
+    requestNote?: string | null;
+    items: Array<{ menuItemId: number; quantity: number }>;
+  }): Promise<{ order: StoreOrder; items: StoreOrderItem[] }> {
+    // 메뉴 스냅샷 조회 + 품절/비활성 검증
+    const ids = input.items.map(i => i.menuItemId);
+    const menuRows = ids.length
+      ? await db.select().from(storeMenuItems).where(inArray(storeMenuItems.id, ids))
+      : [];
+    const menuMap = new Map(menuRows.map(m => [m.id, m]));
+    let total = 0;
+    const itemValues: Array<{ menuItemId: number; name: string; price: number; quantity: number }> = [];
+    for (const it of input.items) {
+      const m = menuMap.get(it.menuItemId);
+      if (!m) throw new Error(`메뉴를 찾을 수 없습니다: ${it.menuItemId}`);
+      if (!m.isActive) throw new Error(`판매하지 않는 메뉴입니다: ${m.name}`);
+      if (m.soldOut) throw new Error(`품절된 메뉴입니다: ${m.name}`);
+      total += m.price * it.quantity;
+      itemValues.push({ menuItemId: m.id, name: m.name, price: m.price, quantity: it.quantity });
+    }
+
+    let order: StoreOrder | undefined;
+    let lastErr: any = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const orderNumber = this.generateStoreOrderNumber();
+      try {
+        const inserted = await db.insert(storeOrders).values({
+          orderNumber,
+          tableNo: input.tableNo,
+          requestNote: input.requestNote ?? null,
+          totalAmount: total,
+          status: 'pending',
+        }).returning();
+        order = inserted[0];
+        break;
+      } catch (e: any) {
+        lastErr = e;
+        if (!String(e?.code || e?.message || '').match(/duplicate|unique/i)) throw e;
+      }
+    }
+    if (!order) throw lastErr ?? new Error('주문번호 생성 실패');
+    const createdOrder = order;
+
+    const items = await db.insert(storeOrderItems).values(
+      itemValues.map(v => ({ orderId: createdOrder.id, ...v }))
+    ).returning();
+
+    return { order: createdOrder, items };
+  }
+
+  private generateStoreOrderNumber(): string {
+    const d = new Date();
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const rand = Math.floor(Math.random() * 9000 + 1000);
+    return `${yy}${mm}${dd}-${rand}`;
+  }
+
+  async listStoreOrders(opts: { status?: StoreOrderStatus; from?: Date; to?: Date } = {}): Promise<Array<StoreOrder & { items: StoreOrderItem[] }>> {
+    const conds = [] as any[];
+    if (opts.status) conds.push(eq(storeOrders.status, opts.status));
+    if (opts.from) conds.push(gte(storeOrders.createdAt, opts.from));
+    if (opts.to) conds.push(lte(storeOrders.createdAt, opts.to));
+    const orderRows = conds.length
+      ? await db.select().from(storeOrders).where(and(...conds)).orderBy(desc(storeOrders.createdAt))
+      : await db.select().from(storeOrders).orderBy(desc(storeOrders.createdAt));
+    if (orderRows.length === 0) return [];
+    const orderIds = orderRows.map(o => o.id);
+    const itemRows = await db.select().from(storeOrderItems).where(inArray(storeOrderItems.orderId, orderIds));
+    const byOrder = new Map<number, StoreOrderItem[]>();
+    for (const it of itemRows) {
+      if (!byOrder.has(it.orderId)) byOrder.set(it.orderId, []);
+      byOrder.get(it.orderId)!.push(it);
+    }
+    return orderRows.map(o => ({ ...o, items: byOrder.get(o.id) ?? [] }));
+  }
+
+  async getStoreOrderById(id: number): Promise<(StoreOrder & { items: StoreOrderItem[] }) | null> {
+    const rows = await db.select().from(storeOrders).where(eq(storeOrders.id, id)).limit(1);
+    if (!rows[0]) return null;
+    const items = await db.select().from(storeOrderItems).where(eq(storeOrderItems.orderId, id));
+    return { ...rows[0], items };
+  }
+
+  async getStoreOrderByNumber(orderNumber: string): Promise<(StoreOrder & { items: StoreOrderItem[] }) | null> {
+    const rows = await db.select().from(storeOrders).where(eq(storeOrders.orderNumber, orderNumber)).limit(1);
+    if (!rows[0]) return null;
+    const items = await db.select().from(storeOrderItems).where(eq(storeOrderItems.orderId, rows[0].id));
+    return { ...rows[0], items };
+  }
+
+  async updateStoreOrderStatus(id: number, status: StoreOrderStatus): Promise<StoreOrder | null> {
+    const [row] = await db.update(storeOrders)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(storeOrders.id, id))
+      .returning();
+    return row ?? null;
   }
 
   // ====== 알림장 댓글 ======

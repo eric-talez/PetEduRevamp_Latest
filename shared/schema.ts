@@ -3704,3 +3704,76 @@ export const auditLogs = pgTable("audit_logs", {
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+// =============================================================================
+// 오프라인 매장 QR 주문 (Store Orders)
+// =============================================================================
+
+export const STORE_MENU_CATEGORIES = ['COFFEE', 'NON-COFFEE', 'SIGNATURE FOOD', 'BAR', 'SET MENU'] as const;
+export const STORE_ORDER_STATUSES = ['pending', 'confirmed', 'preparing', 'served', 'cancelled'] as const;
+export type StoreOrderStatus = typeof STORE_ORDER_STATUSES[number];
+
+export const storeMenuItems = pgTable("store_menu_items", {
+  id: serial("id").primaryKey(),
+  category: varchar("category", { length: 30 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  price: integer("price").notNull(),
+  description: text("description"),
+  soldOut: boolean("sold_out").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => ({
+  byCategory: index("idx_store_menu_items_category").on(t.category),
+  byActive: index("idx_store_menu_items_active").on(t.isActive),
+}));
+
+export const storeOrders = pgTable("store_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: varchar("order_number", { length: 20 }).notNull().unique(),
+  tableNo: varchar("table_no", { length: 20 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  totalAmount: integer("total_amount").notNull().default(0),
+  requestNote: text("request_note"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => ({
+  byStatus: index("idx_store_orders_status").on(t.status),
+  byCreatedAt: index("idx_store_orders_created_at").on(t.createdAt),
+  byTable: index("idx_store_orders_table").on(t.tableNo),
+}));
+
+export const storeOrderItems = pgTable("store_order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => storeOrders.id, { onDelete: 'cascade' }),
+  menuItemId: integer("menu_item_id").references(() => storeMenuItems.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  price: integer("price").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+}, (t) => ({
+  byOrder: index("idx_store_order_items_order").on(t.orderId),
+}));
+
+export const insertStoreMenuItemSchema = createInsertSchema(storeMenuItems).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export const insertStoreOrderSchema = createInsertSchema(storeOrders).omit({
+  id: true, createdAt: true, updatedAt: true, orderNumber: true, totalAmount: true, status: true,
+});
+export const insertStoreOrderItemSchema = createInsertSchema(storeOrderItems).omit({ id: true });
+
+export const createStoreOrderRequestSchema = z.object({
+  tableNo: z.string().trim().min(1, '테이블 번호를 입력해주세요').max(20),
+  requestNote: z.string().max(500).optional().nullable(),
+  items: z.array(z.object({
+    menuItemId: z.number().int().positive(),
+    quantity: z.number().int().positive().max(99),
+  })).min(1, '메뉴를 1개 이상 선택해주세요').max(50),
+});
+
+export type StoreMenuItem = typeof storeMenuItems.$inferSelect;
+export type InsertStoreMenuItem = z.infer<typeof insertStoreMenuItemSchema>;
+export type StoreOrder = typeof storeOrders.$inferSelect;
+export type StoreOrderItem = typeof storeOrderItems.$inferSelect;
+export type CreateStoreOrderRequest = z.infer<typeof createStoreOrderRequestSchema>;

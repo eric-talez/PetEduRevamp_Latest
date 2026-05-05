@@ -38,6 +38,9 @@ import Privacy from "./pages/Privacy";
 import Refund from "./pages/Refund";
 import CertifiedPartner from "./pages/CertifiedPartner";
 import AdminMenuConfigPage from "./pages/admin/menu-config";
+import CustomerOrderPage from "./pages/customer/order";
+import AdminStoreOrdersPage from "./pages/admin/store-orders";
+import AdminStoreMenuPage from "./pages/admin/store-menu";
 import EventsPage from "./pages/events";
 import EventDetailPage from "./pages/events/event-detail";
 import EventCalendarPage from "./pages/events/calendar";
@@ -1979,6 +1982,15 @@ function AuthenticatedRoutes() {
 
         {/* 상담 관련 라우트 추가 */}
 
+
+        {/* 매장 QR 주문 시스템 */}
+        <Route path="/customer/order" component={CustomerOrderPage} />
+        <Route path="/admin/store-orders">
+          {() => <ProtectedAdminRoute component={AdminStoreOrdersPage} />}
+        </Route>
+        <Route path="/admin/store-menu">
+          {() => <ProtectedAdminRoute component={AdminStoreMenuPage} />}
+        </Route>
 
         {/* 404 페이지 */}
         <Route component={NotFound} />
