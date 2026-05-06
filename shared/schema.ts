@@ -1158,39 +1158,13 @@ export const insertJournalReactionSchema = createInsertSchema(journalReactions).
 export type JournalReaction = typeof journalReactions.$inferSelect;
 export type InsertJournalReaction = z.infer<typeof insertJournalReactionSchema>;
 
-// 알림장 숙제 체크리스트 (Task #90)
-// 트레이너가 알림장에 숙제 항목을 추가하고 보호자가 체크. 모두 완료 시 트레이너에게 알림.
-export const notebookHomeworkItems = pgTable("notebook_homework_items", {
-  id: serial("id").primaryKey(),
-  journalId: integer("journal_id").references(() => trainingJournals.id).notNull(),
-  label: varchar("label", { length: 200 }).notNull(),
-  dueDate: timestamp("due_date"),
-  completedAt: timestamp("completed_at"),
-  completedByUserId: integer("completed_by_user_id").references(() => users.id),
-  sortOrder: integer("sort_order").default(0).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertNotebookHomeworkItemSchema = createInsertSchema(notebookHomeworkItems).omit({
-  id: true,
-  completedAt: true,
-  completedByUserId: true,
-  createdAt: true,
-}).extend({
-  label: z.string().trim().min(1, '숙제 내용을 입력하세요').max(200),
-  dueDate: z.union([z.string(), z.date()]).optional().nullable(),
-  sortOrder: z.number().int().min(0).optional(),
-});
-
+// 알림장 숙제 일괄 입력 스키마 (Task #90)
 export const notebookHomeworkBulkSchema = z.object({
   items: z.array(z.object({
     label: z.string().trim().min(1).max(200),
     dueDate: z.union([z.string(), z.date()]).optional().nullable(),
   })).min(1).max(50),
 });
-
-export type NotebookHomeworkItem = typeof notebookHomeworkItems.$inferSelect;
-export type InsertNotebookHomeworkItem = z.infer<typeof insertNotebookHomeworkItemSchema>;
 
 // 알림장 템플릿 (Task #94)
 // 트레이너가 자주 쓰는 양식을 저장/복제해서 작성 시간을 단축. 본인용 + 기관 공유 + 시스템 시드(5종) 지원.
