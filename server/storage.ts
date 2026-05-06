@@ -35,6 +35,7 @@ import {
   type StoreOrder,
   type StoreOrderItem,
   type StoreOrderStatus,
+  aiAnalysisShareTokens,
 } from "../shared/schema";
 import { logServerError } from './middleware/audit-logger';
 
@@ -6835,7 +6836,7 @@ class HybridStorage extends Storage {
   // =============================================================================
   async createAiAnalysisShareToken(data: { token: string; analysisId: number; createdBy: number | null; expiresAt: Date; }) {
     try {
-      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      
       const [row] = await db.insert(aiAnalysisShareTokens).values({
         token: data.token,
         analysisId: data.analysisId,
@@ -6851,7 +6852,7 @@ class HybridStorage extends Storage {
 
   async getAiAnalysisShareToken(token: string) {
     try {
-      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      
       const rows = await db.select().from(aiAnalysisShareTokens).where(eq(aiAnalysisShareTokens.token, token)).limit(1);
       const record = rows[0];
       if (!record) return null;
@@ -6866,7 +6867,7 @@ class HybridStorage extends Storage {
 
   async revokeAiAnalysisShareToken(token: string) {
     try {
-      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      
       await db.update(aiAnalysisShareTokens).set({ revokedAt: new Date() }).where(eq(aiAnalysisShareTokens.token, token));
       return true;
     } catch (err) {
@@ -6877,7 +6878,7 @@ class HybridStorage extends Storage {
 
   async recordAiAnalysisShareTokenAccess(token: string, ip?: string | null) {
     try {
-      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      
       const safeIp = (ip || '').toString().slice(0, 64) || null;
       await db.update(aiAnalysisShareTokens).set({
         accessCount: sql`${aiAnalysisShareTokens.accessCount} + 1`,
@@ -6891,7 +6892,7 @@ class HybridStorage extends Storage {
 
   async cleanupExpiredAiAnalysisShareTokens(olderThanDays = 7) {
     try {
-      const { aiAnalysisShareTokens } = await import('@shared/schema');
+      
       const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
       const result = await db.delete(aiAnalysisShareTokens)
         .where(sql`${aiAnalysisShareTokens.expiresAt} < ${cutoff} OR (${aiAnalysisShareTokens.revokedAt} IS NOT NULL AND ${aiAnalysisShareTokens.revokedAt} < ${cutoff})`);
