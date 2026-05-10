@@ -2059,6 +2059,9 @@ function UnauthenticatedRoutes() {
           }}
         </Route>
 
+        {/* 매장 QR 주문 (비로그인 공개) */}
+        <Route path="/customer/order" component={CustomerOrderPage} />
+
         {/* TALEZ 체험 서비스 */}
         <Route path="/experience">
           {() => {
