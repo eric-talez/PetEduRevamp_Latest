@@ -215,6 +215,7 @@ export const pets = pgTable("pets", {
   imageUrl: text("image_url"), // 추가 이미지 필드
   notes: text("notes"),
   // 훈련 관련 필드
+  registrationNumber: varchar("registration_number", { length: 30 }), // 동물보호관리시스템 등록번호 (15자리 등)
   trainingStatus: varchar("training_status", { length: 50 }).default("not_assigned"), // not_assigned, assigned, in_progress, completed
   assignedTrainerId: integer("assigned_trainer_id").references(() => users.id),
   assignedTrainerName: varchar("assigned_trainer_name", { length: 100 }),
@@ -330,6 +331,29 @@ export const vaccinations = pgTable("vaccinations", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// 반려동물 예방접종 QR 여권 토큰 테이블
+export const petVaccinationPassports = pgTable("pet_vaccination_passports", {
+  id: serial("id").primaryKey(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  ownerId: integer("owner_id").references(() => users.id).notNull(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  isActive: boolean("is_active").default(true).notNull(),
+  issuedAt: timestamp("issued_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+  revokedAt: timestamp("revoked_at"),
+  lastVerifiedAt: timestamp("last_verified_at"),
+  verifyCount: integer("verify_count").default(0).notNull(),
+});
+export const insertPetVaccinationPassportSchema = createInsertSchema(petVaccinationPassports).omit({
+  id: true,
+  issuedAt: true,
+  revokedAt: true,
+  lastVerifiedAt: true,
+  verifyCount: true,
+});
+export type InsertPetVaccinationPassport = z.infer<typeof insertPetVaccinationPassportSchema>;
+export type PetVaccinationPassport = typeof petVaccinationPassports.$inferSelect;
 
 // 커뮤니티 게시글 테이블 - 실제 데이터베이스 스키마에 맞춤
 export const posts = pgTable("posts", {
@@ -669,6 +693,7 @@ export const createPetSchema = z.object({
   profileImage: z.string().url("올바른 URL 형식이 아닙니다").optional().nullable(),
   imageUrl: z.string().url("올바른 URL 형식이 아닙니다").optional().nullable(),
   notes: z.string().max(1000, "메모는 1000자를 초과할 수 없습니다").optional().nullable(),
+  registrationNumber: z.string().max(30, "등록번호는 30자를 초과할 수 없습니다").regex(/^[A-Za-z0-9-]*$/, "등록번호는 영문/숫자/하이픈만 허용됩니다").optional().nullable(),
   trainingStatus: z.enum(["not_assigned", "assigned", "in_progress", "completed"]).default("not_assigned"),
   trainingType: z.enum(["basic", "advanced", "behavioral_correction"]).optional().nullable(),
   notebookEnabled: z.boolean().default(false),

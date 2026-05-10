@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, desc, or, ilike, inArray } from "drizzle-orm";
-import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences } from "../shared/schema";
+import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
 import { registerDashboardRoutes } from "./routes/dashboard";
@@ -23415,6 +23415,281 @@ export function registerTrainerCertificationRoutes(app: Express) {
   });
 
   console.log('[Store Orders] 매장 QR 주문 시스템 API가 등록되었습니다.');
+
+  // =============================================
+  // 반려동물 예방접종 QR 여권 (Pet Vaccination Passport)
+  // =============================================
+
+  const passportRateBucket = new Map<string, { count: number; resetAt: number }>();
+  const PASSPORT_RATE_LIMIT = 30; // per minute per IP
+  const PASSPORT_RATE_WINDOW_MS = 60_000;
+  const PASSPORT_TTL_MS = 365 * 24 * 60 * 60 * 1000; // 1 year
+
+  function checkPassportRateLimit(ip: string): boolean {
+    const now = Date.now();
+    const entry = passportRateBucket.get(ip);
+    if (!entry || entry.resetAt < now) {
+      passportRateBucket.set(ip, { count: 1, resetAt: now + PASSPORT_RATE_WINDOW_MS });
+      return true;
+    }
+    if (entry.count >= PASSPORT_RATE_LIMIT) return false;
+    entry.count += 1;
+    return true;
+  }
+
+  async function loadPetForPassport(petId: number) {
+    const [row] = await db.select().from(pets).where(eq(pets.id, petId)).limit(1);
+    if (row) return row;
+    const memPet = (storage as any).getPet?.(petId);
+    return memPet || null;
+  }
+
+  async function buildVaccineSummary(petId: number) {
+    let rows: any[] = [];
+    try {
+      rows = await db.select().from(vaccinations).where(eq(vaccinations.petId, petId));
+    } catch {
+      rows = [];
+    }
+    if ((!rows || rows.length === 0) && Array.isArray((storage as any).vaccinations)) {
+      rows = (storage as any).vaccinations.filter((v: any) => v.petId === petId);
+    }
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const inThirtyDays = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString().split('T')[0];
+
+    let hasMissing = false;
+    let hasExpired = false;
+    let hasSoon = false;
+
+    const items = rows.map((v: any) => {
+      const completed = v.status === 'completed';
+      const next = v.nextDueDate as string | null;
+      let status: 'ok' | 'expiring' | 'expired' | 'missing' = 'missing';
+      if (completed) {
+        if (!next) status = 'ok';
+        else if (next < todayStr) { status = 'expired'; hasExpired = true; }
+        else if (next <= inThirtyDays) { status = 'expiring'; hasSoon = true; }
+        else status = 'ok';
+      } else if (v.status === 'overdue' || (next && next < todayStr)) {
+        status = 'expired';
+        hasExpired = true;
+      } else {
+        status = 'missing';
+        hasMissing = true;
+      }
+      return {
+        vaccineName: v.vaccineName,
+        status,
+        vaccineDate: v.vaccineDate,
+        nextDueDate: next,
+      };
+    });
+
+    let overallStatus: 'all_ok' | 'has_expiring' | 'has_expired' | 'no_records' = 'all_ok';
+    if (items.length === 0) overallStatus = 'no_records';
+    else if (hasExpired || hasMissing) overallStatus = 'has_expired';
+    else if (hasSoon) overallStatus = 'has_expiring';
+
+    return { items, overallStatus, totalCount: items.length };
+  }
+
+  function maskRegistrationNumber(n: string | null | undefined): string | null {
+    if (!n) return null;
+    if (n.length <= 4) return n[0] + '*'.repeat(Math.max(0, n.length - 1));
+    return n.slice(0, 4) + '*'.repeat(n.length - 4);
+  }
+
+  // 발급 조건 체크 + 발급 (기존 활성 토큰은 회수)
+  app.post('/api/pets/:petId/passport/issue', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const petId = parseInt(req.params.petId, 10);
+      if (isNaN(petId)) return res.status(400).json({ error: '잘못된 반려동물 ID' });
+      const sessionUser = (req as any).user || req.session?.user;
+      const userId = sessionUser?.id;
+      if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
+
+      const pet = await loadPetForPassport(petId);
+      if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
+      const isAdmin = sessionUser?.role === 'admin';
+      if (pet.ownerId !== userId && !isAdmin) {
+        return res.status(403).json({ error: '본인의 반려동물만 발급할 수 있습니다.' });
+      }
+
+      const missing: string[] = [];
+      if (!pet.registrationNumber || String(pet.registrationNumber).trim().length < 4) {
+        missing.push('registrationNumber');
+      }
+      const summary = await buildVaccineSummary(petId);
+      if (summary.totalCount === 0) missing.push('vaccinations');
+      if (missing.length > 0) {
+        return res.status(400).json({
+          error: '발급 조건을 충족하지 않았습니다.',
+          missing,
+        });
+      }
+
+      const token = randomBytes(32).toString('base64url');
+      const expiresAt = new Date(Date.now() + PASSPORT_TTL_MS);
+
+      // 기존 활성 토큰 회수 + 신규 발급 (원자성 보장)
+      const created = await db.transaction(async (tx) => {
+        await tx.update(petVaccinationPassports)
+          .set({ isActive: false, revokedAt: new Date() })
+          .where(and(
+            eq(petVaccinationPassports.petId, petId),
+            eq(petVaccinationPassports.isActive, true),
+          ));
+        const [row] = await tx.insert(petVaccinationPassports).values({
+          petId,
+          ownerId: pet.ownerId,
+          token,
+          isActive: true,
+          expiresAt,
+        }).returning();
+        return row;
+      });
+
+      res.json({ success: true, passport: created });
+    } catch (error) {
+      logServerError('예방접종 여권 발급 오류:', error, req);
+      res.status(500).json({ error: '여권 발급 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 보호자 — 현재 펫의 활성 여권 조회
+  app.get('/api/pets/:petId/passport', requireAuth(), async (req, res) => {
+    try {
+      const petId = parseInt(req.params.petId, 10);
+      if (isNaN(petId)) return res.status(400).json({ error: '잘못된 반려동물 ID' });
+      const sessionUser = (req as any).user || req.session?.user;
+      const userId = sessionUser?.id;
+      if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
+
+      const pet = await loadPetForPassport(petId);
+      if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
+      const isAdmin = sessionUser?.role === 'admin';
+      if (pet.ownerId !== userId && !isAdmin) {
+        return res.status(403).json({ error: '권한이 없습니다.' });
+      }
+
+      const [active] = await db.select().from(petVaccinationPassports)
+        .where(and(
+          eq(petVaccinationPassports.petId, petId),
+          eq(petVaccinationPassports.isActive, true),
+        ))
+        .orderBy(desc(petVaccinationPassports.issuedAt))
+        .limit(1);
+
+      const summary = await buildVaccineSummary(petId);
+      const eligible = !!pet.registrationNumber && summary.totalCount > 0;
+      const missing: string[] = [];
+      if (!pet.registrationNumber) missing.push('registrationNumber');
+      if (summary.totalCount === 0) missing.push('vaccinations');
+
+      res.json({
+        success: true,
+        passport: active || null,
+        eligible,
+        missing,
+        summary,
+      });
+    } catch (error) {
+      logServerError('예방접종 여권 조회 오류:', error, req);
+      res.status(500).json({ error: '여권 조회 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 여권 회수
+  app.post('/api/pets/:petId/passport/revoke', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const petId = parseInt(req.params.petId, 10);
+      if (isNaN(petId)) return res.status(400).json({ error: '잘못된 반려동물 ID' });
+      const sessionUser = (req as any).user || req.session?.user;
+      const userId = sessionUser?.id;
+      if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
+
+      const pet = await loadPetForPassport(petId);
+      if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
+      const isAdmin = sessionUser?.role === 'admin';
+      if (pet.ownerId !== userId && !isAdmin) {
+        return res.status(403).json({ error: '권한이 없습니다.' });
+      }
+
+      await db.update(petVaccinationPassports)
+        .set({ isActive: false, revokedAt: new Date() })
+        .where(and(
+          eq(petVaccinationPassports.petId, petId),
+          eq(petVaccinationPassports.isActive, true),
+        ));
+      res.json({ success: true });
+    } catch (error) {
+      logServerError('예방접종 여권 회수 오류:', error, req);
+      res.status(500).json({ error: '여권 회수 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 공개 검증 (rate-limited)
+  app.get('/api/pet-passport/verify/:token', async (req, res) => {
+    try {
+      const ip = (req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown').toString();
+      if (!checkPassportRateLimit(ip)) {
+        return res.status(429).json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' });
+      }
+      const token = String(req.params.token || '').trim();
+      if (token.length < 32 || token.length > 128) {
+        return res.status(400).json({ error: '잘못된 토큰 형식입니다.' });
+      }
+
+      const [passport] = await db.select().from(petVaccinationPassports)
+        .where(eq(petVaccinationPassports.token, token)).limit(1);
+      if (!passport) return res.status(404).json({ error: '여권을 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      if (!passport.isActive || passport.revokedAt) {
+        return res.status(410).json({ error: '회수된 여권입니다.', code: 'REVOKED' });
+      }
+      if (passport.expiresAt && new Date(passport.expiresAt).getTime() < Date.now()) {
+        return res.status(410).json({ error: '만료된 여권입니다.', code: 'EXPIRED' });
+      }
+
+      const pet = await loadPetForPassport(passport.petId);
+      if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
+      const summary = await buildVaccineSummary(passport.petId);
+
+      // 검증 카운트 누적
+      try {
+        await db.update(petVaccinationPassports)
+          .set({
+            verifyCount: (passport.verifyCount || 0) + 1,
+            lastVerifiedAt: new Date(),
+          })
+          .where(eq(petVaccinationPassports.id, passport.id));
+      } catch { /* noop */ }
+
+      res.json({
+        success: true,
+        pet: {
+          name: pet.name,
+          species: pet.species,
+          breed: pet.breed,
+          age: pet.age,
+          gender: pet.gender,
+          color: pet.color,
+          imageUrl: pet.imageUrl || pet.profileImage || null,
+          registrationNumberMasked: maskRegistrationNumber(pet.registrationNumber),
+        },
+        vaccinations: summary.items,
+        overallStatus: summary.overallStatus,
+        verifiedAt: new Date().toISOString(),
+        verifyCount: (passport.verifyCount || 0) + 1,
+      });
+    } catch (error) {
+      logServerError('예방접종 여권 검증 오류:', error, req);
+      res.status(500).json({ error: '여권 검증 중 오류가 발생했습니다.' });
+    }
+  });
+
+  console.log('[Pet Passport] 반려견 예방접종 QR 여권 시스템 API가 등록되었습니다.');
 
   const httpServer = createServer(app);
   return httpServer;

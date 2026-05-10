@@ -602,6 +602,18 @@ function AuthenticatedRoutes() {
             );
           }}
         </Route>
+        <Route path="/verify/pet/scan">
+          {() => {
+            const Page = lazy(() => import('./pages/verify/pet-scan'));
+            return (<Suspense fallback={<SimpleLoading />}><Page /></Suspense>);
+          }}
+        </Route>
+        <Route path="/verify/pet/:token">
+          {() => {
+            const Page = lazy(() => import('./pages/verify/pet-result'));
+            return (<Suspense fallback={<SimpleLoading />}><Page /></Suspense>);
+          }}
+        </Route>
         <Route path="/trainer/attendance">
           {() => {
             const TrainerAttendance = lazy(() => import('./pages/trainer/Attendance'));
@@ -2032,6 +2044,18 @@ function UnauthenticatedRoutes() {
                 <VerifyPage />
               </Suspense>
             );
+          }}
+        </Route>
+        <Route path="/verify/pet/scan">
+          {() => {
+            const Page = lazy(() => import('./pages/verify/pet-scan'));
+            return (<Suspense fallback={<SimpleLoading />}><Page /></Suspense>);
+          }}
+        </Route>
+        <Route path="/verify/pet/:token">
+          {() => {
+            const Page = lazy(() => import('./pages/verify/pet-result'));
+            return (<Suspense fallback={<SimpleLoading />}><Page /></Suspense>);
           }}
         </Route>
 

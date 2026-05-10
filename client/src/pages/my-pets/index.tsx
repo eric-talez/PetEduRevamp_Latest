@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2, Heart, Calendar, Weight, Upload, X, User, BookOpen, AlertCircle, Phone, Hospital } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/ImageUpload';
+import { PetPassportCard } from '@/components/PetPassportCard';
 
 const TEMPERAMENT_BADGE: Record<string, { label: string; color: string }> = {
   A: { label: 'A - 사회성 양호', color: 'bg-success/10 text-success' },
@@ -46,6 +47,7 @@ interface Pet {
   lastNotebookEntry?: string | null;
   trainingType?: string | null;
   trainingStartDate?: string | null;
+  registrationNumber?: string | null;
 }
 
 interface PetFormData {
@@ -60,6 +62,7 @@ interface PetFormData {
   medicalHistory: string;
   specialNotes: string;
   imageUrl?: string;
+  registrationNumber?: string;
 }
 
 interface EmergencyFormData {
@@ -98,7 +101,8 @@ export default function MyPetsPage() {
     personality: '',
     medicalHistory: '',
     specialNotes: '',
-    imageUrl: ''
+    imageUrl: '',
+    registrationNumber: ''
   });
   const { toast } = useToast();
 
@@ -223,7 +227,8 @@ export default function MyPetsPage() {
       personality: pet.personality,
       medicalHistory: pet.medicalHistory,
       specialNotes: pet.specialNotes,
-      imageUrl: pet.imageUrl || ''
+      imageUrl: pet.imageUrl || '',
+      registrationNumber: pet.registrationNumber || ''
     });
     try {
       const res = await fetch(`/api/emergency-contacts/${pet.id}`, { credentials: 'include' });
@@ -292,7 +297,8 @@ export default function MyPetsPage() {
       personality: '',
       medicalHistory: '',
       specialNotes: '',
-      imageUrl: ''
+      imageUrl: '',
+      registrationNumber: ''
     });
   };
 
@@ -553,6 +559,19 @@ export default function MyPetsPage() {
                   />
                 </div>
                 
+                <div className="col-span-2">
+                  <Label htmlFor="registrationNumber">강아지 등록번호 <span className="text-xs text-gray-500">(예방접종 QR 여권 발급 시 필요)</span></Label>
+                  <Input
+                    id="registrationNumber"
+                    value={formData.registrationNumber || ''}
+                    onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value.toUpperCase() })}
+                    placeholder="예: 410123456789012"
+                    maxLength={30}
+                    data-testid="input-registration-number"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">영문/숫자/하이픈만 입력 가능 (최대 30자)</p>
+                </div>
+
                 <div className="col-span-2">
                   <Label htmlFor="personality">성격</Label>
                   <Textarea
@@ -816,6 +835,16 @@ export default function MyPetsPage() {
                   )}
                 </div>
                 
+                {pet.registrationNumber && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <strong>등록번호:</strong> <span className="font-mono">{pet.registrationNumber}</span>
+                  </p>
+                )}
+
+                <div className="pt-2">
+                  <PetPassportCard petId={pet.id} petName={pet.name} />
+                </div>
+
                 <div className="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t">
                   등록일: {new Date(pet.createdAt).toLocaleDateString()}
                 </div>
