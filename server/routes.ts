@@ -23613,7 +23613,8 @@ export function registerTrainerCertificationRoutes(app: Express) {
         .limit(1);
 
       const summary = await buildVaccineSummary(petId);
-      const eligible = !!pet.registrationNumber && summary.totalCount > 0;
+      const regOk = !!pet.registrationNumber && String(pet.registrationNumber).trim().length >= 4;
+      const eligible = regOk && summary.totalCount > 0;
       const missing: string[] = [];
       if (!pet.registrationNumber) missing.push('registrationNumber');
       if (summary.totalCount === 0) missing.push('vaccinations');
