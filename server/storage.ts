@@ -2711,6 +2711,90 @@ class Storage {
     return this.trainingJournals || [];
   }
 
+  // AI 초안에서 시작한 알림장 비율 집계 (기간 + 주/월 버킷)
+  getNotebookAiDraftStats(options: {
+    startDate?: string;
+    endDate?: string;
+    granularity?: 'week' | 'month';
+  } = {}): {
+    granularity: 'week' | 'month';
+    startDate: string | null;
+    endDate: string | null;
+    totals: { total: number; aiDraft: number; ratio: number };
+    buckets: Array<{ bucket: string; total: number; aiDraft: number; ratio: number }>;
+  } {
+    const granularity = options.granularity === 'month' ? 'month' : 'week';
+    const all = this.trainingJournals || [];
+
+    const start = options.startDate ? new Date(options.startDate) : null;
+    const end = options.endDate ? new Date(options.endDate) : null;
+    if (end) end.setHours(23, 59, 59, 999);
+
+    const pickDate = (j: any): Date | null => {
+      const raw = j.trainingDate || j.createdAt;
+      if (!raw) return null;
+      const d = new Date(raw);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    const filtered = all.filter(j => {
+      const d = pickDate(j);
+      if (!d) return false;
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+
+    const totalAll = filtered.length;
+    const aiAll = filtered.filter(j => Boolean(j.isAiDraft)).length;
+
+    const bucketMap = new Map<string, { total: number; aiDraft: number }>();
+    const bucketKey = (d: Date): string => {
+      if (granularity === 'month') {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      }
+      // ISO week — compute Monday of the week
+      const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const day = tmp.getUTCDay() || 7;
+      tmp.setUTCDate(tmp.getUTCDate() - day + 1);
+      const y = tmp.getUTCFullYear();
+      const m = String(tmp.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(tmp.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    };
+
+    for (const j of filtered) {
+      const d = pickDate(j);
+      if (!d) continue;
+      const key = bucketKey(d);
+      const cur = bucketMap.get(key) || { total: 0, aiDraft: 0 };
+      cur.total += 1;
+      if (j.isAiDraft) cur.aiDraft += 1;
+      bucketMap.set(key, cur);
+    }
+
+    const buckets = Array.from(bucketMap.entries())
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([bucket, v]) => ({
+        bucket,
+        total: v.total,
+        aiDraft: v.aiDraft,
+        ratio: v.total > 0 ? v.aiDraft / v.total : 0,
+      }));
+
+    return {
+      granularity,
+      startDate: options.startDate || null,
+      endDate: options.endDate || null,
+      totals: {
+        total: totalAll,
+        aiDraft: aiAll,
+        ratio: totalAll > 0 ? aiAll / totalAll : 0,
+      },
+      buckets,
+    };
+  }
+
   getTrainingJournalsByTrainer(trainerId: number): any[] {
     return (this.trainingJournals || []).filter(journal => journal.trainerId === trainerId);
   }

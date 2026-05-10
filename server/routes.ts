@@ -9681,6 +9681,25 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
+  // 관리자 - AI 초안에서 시작한 알림장 비율 통계
+  app.get("/api/admin/notebook/ai-draft-stats", requireAuth('admin'), async (req, res) => {
+    try {
+      const { startDate, endDate, granularity } = req.query as Record<string, string | undefined>;
+      const stats = storage.getNotebookAiDraftStats({
+        startDate,
+        endDate,
+        granularity: granularity === 'month' ? 'month' : 'week',
+      });
+      return res.json({ success: true, ...stats });
+    } catch (error) {
+      logServerError('AI 초안 비율 통계 조회 오류:', error, req);
+      return res.status(500).json({
+        success: false,
+        message: 'AI 초안 비율 통계를 불러오지 못했습니다.',
+      });
+    }
+  });
+
   // 기관 관리자 전용 - 소속 훈련사 알림장 현황 조회 API
   app.get("/api/institute/notebook/status", async (req, res) => {
     try {

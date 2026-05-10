@@ -21,8 +21,20 @@ import {
   TrendingUp,
   Users,
   BookOpen,
-  MessageCircle
+  MessageCircle,
+  Sparkles
 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  CartesianGrid,
+  Legend,
+} from 'recharts';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -58,6 +70,43 @@ export default function NotebookMonitorPage() {
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTrainerDetailOpen, setIsTrainerDetailOpen] = useState(false);
+  const [aiDraftGranularity, setAiDraftGranularity] = useState<'week' | 'month'>('week');
+
+  // AI 초안에서 시작한 알림장 비율
+  const { data: aiDraftStats, isLoading: aiDraftLoading } = useQuery<{
+    success?: boolean;
+    granularity: 'week' | 'month';
+    startDate: string | null;
+    endDate: string | null;
+    totals: { total: number; aiDraft: number; ratio: number };
+    buckets: Array<{ bucket: string; total: number; aiDraft: number; ratio: number }>;
+  }>({
+    queryKey: ['/api/admin/notebook/ai-draft-stats', dateRange.start, dateRange.end, aiDraftGranularity],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/admin/notebook/ai-draft-stats?startDate=${dateRange.start}&endDate=${dateRange.end}&granularity=${aiDraftGranularity}`,
+        { credentials: 'include' }
+      );
+      if (!res.ok) throw new Error('AI 초안 통계 로드 실패');
+      return res.json();
+    }
+  });
+
+  const formatPct = (ratio: number) => `${(ratio * 100).toFixed(1)}%`;
+  const formatBucketLabel = (bucket: string) => {
+    if (aiDraftGranularity === 'month') {
+      const [y, m] = bucket.split('-');
+      return `${y}.${m}`;
+    }
+    const d = new Date(bucket);
+    return isNaN(d.getTime()) ? bucket : format(d, 'MM/dd', { locale: ko }) + ' 주';
+  };
+  const chartData = (aiDraftStats?.buckets || []).map(b => ({
+    label: formatBucketLabel(b.bucket),
+    AI초안: b.aiDraft,
+    일반: Math.max(0, b.total - b.aiDraft),
+    ratio: Math.round(b.ratio * 1000) / 10,
+  }));
 
   // API 호출로 알림장 현황 가져오기
   const { data: notebookStatus, isLoading, refetch } = useQuery<NotebookStatus>({
@@ -316,6 +365,108 @@ export default function NotebookMonitorPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI 초안 비율 */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center">
+                <Sparkles className="h-5 w-5 mr-2 text-primary" />
+                AI 초안에서 시작한 알림장 비율
+              </CardTitle>
+              <CardDescription>
+                선택한 기간 동안 작성된 알림장 중 AI 도우미 초안에서 시작한 비율을 추적합니다.
+              </CardDescription>
+            </div>
+            <Tabs value={aiDraftGranularity} onValueChange={(v) => setAiDraftGranularity(v as 'week' | 'month')}>
+              <TabsList>
+                <TabsTrigger value="week" data-testid="tab-ai-draft-week">주간</TabsTrigger>
+                <TabsTrigger value="month" data-testid="tab-ai-draft-month">월간</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {aiDraftLoading ? (
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4 animate-spin" />
+              <span>불러오는 중...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">전체 알림장</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold" data-testid="text-ai-draft-total">
+                      {aiDraftStats?.totals.total ?? 0}건
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">AI 초안 사용</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-primary" data-testid="text-ai-draft-count">
+                      {aiDraftStats?.totals.aiDraft ?? 0}건
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">채택률</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-success" data-testid="text-ai-draft-ratio">
+                      {aiDraftStats ? formatPct(aiDraftStats.totals.ratio) : '0.0%'}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {chartData.length > 0 ? (
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 16, right: 24, bottom: 8, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="left" allowDecimals={false} tick={{ fontSize: 12 }} />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        domain={[0, 100]}
+                        unit="%"
+                        tick={{ fontSize: 12 }}
+                      />
+                      <RTooltip
+                        formatter={(value, name) => {
+                          const key = String(name);
+                          if (key === 'ratio' || key === 'AI 초안 비율(%)') {
+                            return [`${value}%`, 'AI 초안 비율'];
+                          }
+                          return [`${value}건`, key];
+                        }}
+                      />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="AI초안" stackId="a" fill="hsl(var(--primary))" />
+                      <Bar yAxisId="left" dataKey="일반" stackId="a" fill="hsl(var(--muted-foreground) / 0.4)" />
+                      <Bar yAxisId="right" dataKey="ratio" name="AI 초안 비율(%)" fill="hsl(var(--success))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground py-8 text-center">
+                  선택한 기간에 표시할 데이터가 없습니다.
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* 훈련사별 현황 */}
       <Card>
