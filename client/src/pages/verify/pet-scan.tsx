@@ -6,9 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+type DetectedBarcode = { rawValue: string };
+type BarcodeDetectorCtor = new (opts: { formats: string[] }) => {
+  detect: (source: HTMLVideoElement) => Promise<DetectedBarcode[]>;
+};
 declare global {
   interface Window {
-    BarcodeDetector?: any;
+    BarcodeDetector?: BarcodeDetectorCtor;
   }
 }
 
@@ -89,8 +93,9 @@ export default function PetVerifyScan() {
         requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
-    } catch (e: any) {
-      setError(e?.message || "카메라를 시작할 수 없습니다.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "카메라를 시작할 수 없습니다.";
+      setError(msg);
       setScanning(false);
     }
   };

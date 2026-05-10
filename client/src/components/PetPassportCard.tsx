@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient as qc } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Props {
   petId: number;
@@ -56,8 +56,8 @@ export function PetPassportCard({ petId, petName }: Props) {
       toast({ title: "QR 여권이 발급되었습니다" });
       queryClient.invalidateQueries({ queryKey: ["/api/pets", petId, "passport"] });
     },
-    onError: (e: any) => {
-      toast({ title: "발급 실패", description: e?.message || "다시 시도해주세요", variant: "destructive" });
+    onError: (e: Error) => {
+      toast({ title: "발급 실패", description: e.message || "다시 시도해주세요", variant: "destructive" });
     },
   });
 

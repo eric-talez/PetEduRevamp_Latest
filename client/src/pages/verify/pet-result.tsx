@@ -45,7 +45,7 @@ export default function PetVerifyResult() {
       const res = await fetch(`/api/pet-passport/verify/${token}`);
       const json = await res.json();
       if (!res.ok) {
-        const err = new Error(json?.error || "검증 실패") as any;
+        const err = new Error(json?.error || "검증 실패") as Error & { code?: string; status?: number };
         err.code = json?.code;
         err.status = res.status;
         throw err;
@@ -64,9 +64,9 @@ export default function PetVerifyResult() {
   }
 
   if (error) {
-    const err: any = error;
-    const isRevoked = err?.code === "REVOKED";
-    const isExpired = err?.code === "EXPIRED";
+    const err = error as Error & { code?: string };
+    const isRevoked = err.code === "REVOKED";
+    const isExpired = err.code === "EXPIRED";
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4">
         <Card className="max-w-lg mx-auto" data-testid="card-verify-error">

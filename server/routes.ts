@@ -23437,22 +23437,46 @@ export function registerTrainerCertificationRoutes(app: Express) {
     return true;
   }
 
-  async function loadPetForPassport(petId: number) {
+  type PetLike = {
+    id: number;
+    ownerId: number;
+    name: string;
+    species: string;
+    breed: string;
+    age: number;
+    gender: string;
+    color: string | null;
+    imageUrl?: string | null;
+    profileImage?: string | null;
+    registrationNumber?: string | null;
+  };
+  type VaccineRow = {
+    petId: number;
+    vaccineName: string;
+    status: string | null;
+    vaccineDate: string | null;
+    nextDueDate: string | null;
+  };
+
+  async function loadPetForPassport(petId: number): Promise<PetLike | null> {
     const [row] = await db.select().from(pets).where(eq(pets.id, petId)).limit(1);
-    if (row) return row;
-    const memPet = (storage as any).getPet?.(petId);
-    return memPet || null;
+    if (row) return row as unknown as PetLike;
+    const memStorage = storage as unknown as { getPet?: (id: number) => PetLike | undefined };
+    return memStorage.getPet?.(petId) ?? null;
   }
 
   async function buildVaccineSummary(petId: number) {
-    let rows: any[] = [];
+    let rows: VaccineRow[] = [];
     try {
-      rows = await db.select().from(vaccinations).where(eq(vaccinations.petId, petId));
-    } catch {
+      const dbRows = await db.select().from(vaccinations).where(eq(vaccinations.petId, petId));
+      rows = dbRows as unknown as VaccineRow[];
+    } catch (e) {
+      logServerError('[Pet Passport] 백신 DB 조회 실패, 메모리 폴백:', e);
       rows = [];
     }
-    if ((!rows || rows.length === 0) && Array.isArray((storage as any).vaccinations)) {
-      rows = (storage as any).vaccinations.filter((v: any) => v.petId === petId);
+    const memStorage = storage as unknown as { vaccinations?: VaccineRow[] };
+    if ((!rows || rows.length === 0) && Array.isArray(memStorage.vaccinations)) {
+      rows = memStorage.vaccinations.filter((v) => v.petId === petId);
     }
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
@@ -23463,9 +23487,9 @@ export function registerTrainerCertificationRoutes(app: Express) {
     let hasExpired = false;
     let hasSoon = false;
 
-    const items = rows.map((v: any) => {
+    const items = rows.map((v) => {
       const completed = v.status === 'completed';
-      const next = v.nextDueDate as string | null;
+      const next = v.nextDueDate;
       let status: 'ok' | 'expiring' | 'expired' | 'missing' = 'missing';
       if (completed) {
         if (!next) status = 'ok';
@@ -23506,7 +23530,10 @@ export function registerTrainerCertificationRoutes(app: Express) {
     try {
       const petId = parseInt(req.params.petId, 10);
       if (isNaN(petId)) return res.status(400).json({ error: '잘못된 반려동물 ID' });
-      const sessionUser = (req as any).user || req.session?.user;
+      const sessionUser = ((req as Request & { user?: { id?: number; role?: string } }).user
+        || (req.session as { user?: { id?: number; role?: string } } | undefined)?.user) as
+        | { id?: number; role?: string }
+        | undefined;
       const userId = sessionUser?.id;
       if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
 
@@ -23563,7 +23590,10 @@ export function registerTrainerCertificationRoutes(app: Express) {
     try {
       const petId = parseInt(req.params.petId, 10);
       if (isNaN(petId)) return res.status(400).json({ error: '잘못된 반려동물 ID' });
-      const sessionUser = (req as any).user || req.session?.user;
+      const sessionUser = ((req as Request & { user?: { id?: number; role?: string } }).user
+        || (req.session as { user?: { id?: number; role?: string } } | undefined)?.user) as
+        | { id?: number; role?: string }
+        | undefined;
       const userId = sessionUser?.id;
       if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
 
@@ -23606,7 +23636,10 @@ export function registerTrainerCertificationRoutes(app: Express) {
     try {
       const petId = parseInt(req.params.petId, 10);
       if (isNaN(petId)) return res.status(400).json({ error: '잘못된 반려동물 ID' });
-      const sessionUser = (req as any).user || req.session?.user;
+      const sessionUser = ((req as Request & { user?: { id?: number; role?: string } }).user
+        || (req.session as { user?: { id?: number; role?: string } } | undefined)?.user) as
+        | { id?: number; role?: string }
+        | undefined;
       const userId = sessionUser?.id;
       if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
 
@@ -23656,15 +23689,20 @@ export function registerTrainerCertificationRoutes(app: Express) {
       if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
       const summary = await buildVaccineSummary(passport.petId);
 
-      // 검증 카운트 누적
+      // 검증 카운트 원자적 누적 (SQL increment)
+      let nextCount = (passport.verifyCount || 0) + 1;
       try {
-        await db.update(petVaccinationPassports)
+        const [updated] = await db.update(petVaccinationPassports)
           .set({
-            verifyCount: (passport.verifyCount || 0) + 1,
+            verifyCount: sql`${petVaccinationPassports.verifyCount} + 1`,
             lastVerifiedAt: new Date(),
           })
-          .where(eq(petVaccinationPassports.id, passport.id));
-      } catch { /* noop */ }
+          .where(eq(petVaccinationPassports.id, passport.id))
+          .returning({ verifyCount: petVaccinationPassports.verifyCount });
+        if (updated) nextCount = updated.verifyCount;
+      } catch (e) {
+        logServerError('[Pet Passport] verifyCount 갱신 실패:', e, req);
+      }
 
       res.json({
         success: true,
@@ -23681,7 +23719,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         vaccinations: summary.items,
         overallStatus: summary.overallStatus,
         verifiedAt: new Date().toISOString(),
-        verifyCount: (passport.verifyCount || 0) + 1,
+        verifyCount: nextCount,
       });
     } catch (error) {
       logServerError('예방접종 여권 검증 오류:', error, req);
