@@ -468,7 +468,7 @@ function setupAuthRoutes(app: Express) {
             );
           }
           
-          await registerLoginSession(req, user.id);
+          await registerLoginSession(req, user.id, { revokeConcurrent: false });
           console.log(`[QuickLogin] 퀵로그인 성공: ${user.username} (${user.role})`);
           console.log('[QuickLogin] 세션 저장 완료 - SessionID:', req.sessionID);
           

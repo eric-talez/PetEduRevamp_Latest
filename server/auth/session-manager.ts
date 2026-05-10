@@ -98,8 +98,13 @@ export async function ensureUserSessionsSchema(): Promise<void> {
  * 로그인 직후 호출. 새로운 세션 행을 만들거나 기존 행을 갱신합니다.
  * 동시 로그인 정책: 신규 로그인 시 같은 사용자의 다른 활성 세션을 모두 revoke 처리.
  */
-export async function registerLoginSession(req: Request, userId: number): Promise<void> {
+export async function registerLoginSession(
+  req: Request,
+  userId: number,
+  options: { revokeConcurrent?: boolean } = {},
+): Promise<void> {
   if (!req.sessionID) return;
+  const { revokeConcurrent = true } = options;
   const now = new Date();
   const expiresAt = new Date(now.getTime() + IDLE_TIMEOUT_MS);
   const userAgent = (req.headers["user-agent"] as string | undefined) || "";
@@ -107,17 +112,19 @@ export async function registerLoginSession(req: Request, userId: number): Promis
   const ip = clientIp(req).slice(0, 64);
 
   try {
-    // 동시 로그인 정책: 같은 사용자의 다른 활성 세션을 모두 revoke
-    await db
-      .update(userSessions)
-      .set({ revokedAt: now, revokedReason: "concurrent_login" })
-      .where(
-        and(
-          eq(userSessions.userId, userId),
-          ne(userSessions.sessionId, req.sessionID),
-          isNull(userSessions.revokedAt),
-        ),
-      );
+    if (revokeConcurrent) {
+      // 동시 로그인 정책: 같은 사용자의 다른 활성 세션을 모두 revoke
+      await db
+        .update(userSessions)
+        .set({ revokedAt: now, revokedReason: "concurrent_login" })
+        .where(
+          and(
+            eq(userSessions.userId, userId),
+            ne(userSessions.sessionId, req.sessionID),
+            isNull(userSessions.revokedAt),
+          ),
+        );
+    }
 
     const existing = await db
       .select()

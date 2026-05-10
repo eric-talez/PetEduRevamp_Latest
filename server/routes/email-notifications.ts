@@ -207,19 +207,28 @@ export function registerEmailNotificationRoutes(app: Express) {
   app.get("/api/trainer/email-logs/certificates", async (req, res) => {
     const u = requireTrainer(req, res);
     if (!u) return;
-    const status = req.query.status as string | undefined;
-    const search = req.query.search as string | undefined;
-    const limit = parseInt((req.query.limit as string) || "50", 10);
-    const offset = parseInt((req.query.offset as string) || "0", 10);
-    const result = await listEmailLogs({
-      status,
-      search,
-      templateKey: "course_completion_certificate",
-      trainerId: u.id,
-      limit,
-      offset,
-    });
-    res.json(result);
+    try {
+      await ensureEmailSystemInitialized();
+      const status = req.query.status as string | undefined;
+      const search = req.query.search as string | undefined;
+      const limit = parseInt((req.query.limit as string) || "50", 10);
+      const offset = parseInt((req.query.offset as string) || "0", 10);
+      const result = await listEmailLogs({
+        status,
+        search,
+        templateKey: "course_completion_certificate",
+        trainerId: u.id,
+        limit,
+        offset,
+      });
+      res.json(result);
+    } catch (err: any) {
+      console.warn(
+        "[email-logs/certificates] 조회 실패 — 빈 목록 반환:",
+        err?.message,
+      );
+      res.json({ logs: [], total: 0 });
+    }
   });
 
   // 트레이너가 실패 건에 대해 관리자에게 재발송을 요청

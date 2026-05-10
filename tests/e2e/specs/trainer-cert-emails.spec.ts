@@ -198,9 +198,10 @@ test.describe("트레이너 수료증 발송 내역 화면", () => {
     await expect(button).toBeDisabled();
     await expect(button).toContainText("요청 중...");
 
-    // 성공 토스트
+    // 성공 토스트 (스크린리더 aria-live span 과 토스트 타이틀이 동일 텍스트를
+    // 가질 수 있어 exact 매칭으로 토스트 타이틀만 선택)
     await expect(
-      page.getByText("관리자에게 재발송을 요청했습니다"),
+      page.getByText("관리자에게 재발송을 요청했습니다", { exact: true }),
     ).toBeVisible({ timeout: 10_000 });
 
     // 요청 종료 후 다시 활성화

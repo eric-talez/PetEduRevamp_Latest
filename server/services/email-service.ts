@@ -387,6 +387,56 @@ export async function ensureEmailSystemInitialized(): Promise<void> {
       (err as Error).message,
     );
   }
+  // 누락 시 라우트가 unhandledRejection 으로 서버를 죽이는 것을 방지하기 위해
+  // 핵심 이메일 테이블이 없으면 즉석에서 생성한다 (Drizzle 마이그레이션 미적용 환경 대비)
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS email_templates (
+        id serial PRIMARY KEY,
+        key varchar(80) NOT NULL UNIQUE,
+        name varchar(200) NOT NULL,
+        category varchar(50) NOT NULL,
+        subject varchar(300) NOT NULL,
+        body_html text,
+        sendgrid_template_id varchar(100),
+        enabled boolean DEFAULT true,
+        variables jsonb,
+        description text,
+        created_at timestamp DEFAULT now(),
+        updated_at timestamp DEFAULT now()
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS email_notification_preferences (
+        id serial PRIMARY KEY,
+        user_id integer NOT NULL,
+        category varchar(50) NOT NULL,
+        enabled boolean DEFAULT true,
+        created_at timestamp DEFAULT now(),
+        updated_at timestamp DEFAULT now()
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS email_logs (
+        id serial PRIMARY KEY,
+        user_id integer,
+        recipient varchar(255) NOT NULL,
+        template_key varchar(80) NOT NULL,
+        subject varchar(300),
+        payload jsonb,
+        status varchar(30) DEFAULT 'queued',
+        attempts integer DEFAULT 0,
+        last_error text,
+        provider_message_id varchar(200),
+        scheduled_for timestamp,
+        sent_at timestamp,
+        created_at timestamp DEFAULT now(),
+        updated_at timestamp DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.warn("[email] table ensure 실패:", (err as Error).message);
+  }
   try {
     for (const t of DEFAULT_TEMPLATES) {
       const existing = await db
