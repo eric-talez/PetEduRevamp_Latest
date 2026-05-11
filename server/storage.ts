@@ -1855,8 +1855,12 @@ class Storage {
   }
 
   async getAllTrainers() {
+    // 트레이너 목록은 두 출처(`users.role='trainer'` + `trainers` 테이블)를 합쳐
+    // userId 기준 dedupe 한다. 직접 DB 등록(`trainers` 테이블에만 존재)된 트레이너가
+    // 누락되지 않도록 보장한다. id 의미는 항상 users.id (없을 경우 trainers.userId
+    // 또는 음수로 fallback)로 유지하여 reservations/reviews 매핑이 깨지지 않도록 한다.
     try {
-      const trainers = await db
+      const userRows = await db
         .select({
           id: usersTable.id,
           username: usersTable.username,
@@ -1873,15 +1877,72 @@ class Storage {
           longitude: usersTable.longitude,
           verified: usersTable.verified,
           is_verified: usersTable.isVerified,
-          created_at: usersTable.createdAt
+          created_at: usersTable.createdAt,
         })
         .from(usersTable)
         .where(eq(usersTable.role, 'trainer'));
-      
-      return trainers;
+
+      let trainerRows: any[] = [];
+      try {
+        trainerRows = await db.select().from(trainers);
+      } catch (innerErr) {
+        logServerError('[Storage] getAllTrainers - trainers 테이블 조회 실패:', innerErr);
+        trainerRows = [];
+      }
+
+      const byUserId = new Map<number, any>();
+      for (const u of userRows) {
+        byUserId.set(Number(u.id), { ...u, source: 'users' });
+      }
+      for (const t of trainerRows) {
+        const uid = t.userId != null ? Number(t.userId) : null;
+        if (uid != null && byUserId.has(uid)) {
+          // 같은 트레이너: 누락된 필드만 trainers 테이블 값으로 보강
+          const merged = byUserId.get(uid);
+          byUserId.set(uid, {
+            ...merged,
+            name: merged.name || t.name,
+            email: merged.email || t.email,
+            avatar: merged.avatar || t.avatar || t.profileImage,
+            bio: merged.bio || t.bio,
+            location: merged.location || t.location,
+            specialty: merged.specialty || t.specialty,
+            address: merged.address || t.address,
+            institute_id: merged.institute_id ?? t.instituteId,
+            verified: merged.verified ?? t.verified,
+            trainer_id: t.id,
+            source: 'merged',
+          });
+        } else {
+          // users 에 없는 trainers 단독 행: 매핑 가능하도록 추가
+          const fallbackId = uid ?? -Number(t.id);
+          if (!byUserId.has(fallbackId)) {
+            byUserId.set(fallbackId, {
+              id: fallbackId,
+              username: t.email || `trainer_${t.id}`,
+              email: t.email,
+              name: t.name,
+              role: 'trainer',
+              avatar: t.avatar || t.profileImage,
+              bio: t.bio,
+              location: t.location,
+              specialty: t.specialty,
+              institute_id: t.instituteId,
+              address: t.address,
+              latitude: null,
+              longitude: null,
+              verified: t.verified,
+              is_verified: t.verified,
+              created_at: t.createdAt,
+              trainer_id: t.id,
+              source: 'trainers',
+            });
+          }
+        }
+      }
+      return Array.from(byUserId.values());
     } catch (error) {
       logServerError('[Storage] getAllTrainers error:', error);
-      // fallback to memory storage
       return this.users?.filter(user => user.role === 'trainer') || [];
     }
   }
