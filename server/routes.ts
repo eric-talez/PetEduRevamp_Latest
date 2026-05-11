@@ -7196,6 +7196,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         grossAmount = Math.round(basePrice * (durationNum / 60));
       }
 
+      // 예약은 '결제 대기' 상태로 생성한다. 정산 항목은 결제 승인 콜백
+      // (Toss/Stripe 웹훅) 또는 관리자 confirm(`/api/consultations/:id/complete`)
+      // 시점에서만 createTrainerSettlementItem 으로 생성된다. 여기서 정산을
+      // 만들면 실제 결제 없이 트레이너 정산 후보에 포함되는 P0 금전 리스크가 있어
+      // 의도적으로 분리한다.
       const reservation = await storage.createReservation({
         userId: sessionUser.id,
         trainerId: trainerUserId,
@@ -7203,43 +7208,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         serviceType: String(serviceType || service || '화상수업'),
         scheduledAt,
         duration: durationNum,
-        status: 'confirmed',
+        status: grossAmount > 0 ? 'pending_payment' : 'confirmed',
         notes: notes ? String(notes) : null,
         price: grossAmount > 0 ? grossAmount : null,
       });
 
-      // 트레이너 정산 항목 생성 (결제 성공 처리)
-      if (grossAmount > 0) {
-        try {
-          const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
-          await createTrainerSettlementItem({
-            trainerId: trainerUserId,
-            sourceType: 'lesson',
-            sourceId: reservation.id,
-            sourceName: `화상수업 예약 #${reservation.id}`,
-            category: 'lesson',
-            grossAmount,
-            occurredAt: reservation.createdAt || new Date(),
-            metadata: {
-              userId: sessionUser.id,
-              scheduledAt: scheduledAt.toISOString(),
-              duration: durationNum,
-            },
-          });
-        } catch (settlementErr) {
-          logServerError('[예약] 트레이너 정산 자동 생성 실패:', settlementErr, req);
-        }
-      }
-
-      // 보호자/훈련사 양쪽에 예약 확정 알림 발송
+      // 알림: 결제 대기 / 무료 확정 두 케이스 안내
       const scheduleLabel = `${date} ${timeStr}`;
+      const ownerTitle = grossAmount > 0 ? '예약 신청이 접수되었습니다' : '예약이 확정되었습니다';
+      const ownerMsg = grossAmount > 0
+        ? `${trainerName ? trainerName + ' 훈련사와의 ' : ''}수업 예약 신청이 접수되었습니다. 결제 완료 후 확정됩니다. (${scheduleLabel})`
+        : `${trainerName ? trainerName + ' 훈련사와의 ' : ''}수업 예약이 확정되었습니다. (${scheduleLabel})`;
       try {
         await notificationService.sendNotification({
           userId: sessionUser.id,
           type: 'reservation',
-          title: '예약이 확정되었습니다',
-          message: `${trainerName ? trainerName + ' 훈련사와의 ' : ''}화상수업 예약이 확정되었습니다. (${scheduleLabel})`,
-          data: { reservationId: reservation.id, trainerId: trainerUserId, scheduledAt: scheduledAt.toISOString(), action: 'reservation_confirmed' },
+          title: ownerTitle,
+          message: ownerMsg,
+          data: { reservationId: reservation.id, trainerId: trainerUserId, scheduledAt: scheduledAt.toISOString(), action: 'reservation_created', requiresPayment: grossAmount > 0 },
           actionUrl: `/reservations/${reservation.id}`,
         });
       } catch (notifyErr) {
@@ -7249,9 +7235,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await notificationService.sendNotification({
           userId: trainerUserId,
           type: 'reservation',
-          title: '새로운 예약이 확정되었습니다',
-          message: `${sessionUser.name || '보호자'}님의 화상수업 예약이 확정되었습니다. (${scheduleLabel})`,
-          data: { reservationId: reservation.id, userId: sessionUser.id, scheduledAt: scheduledAt.toISOString(), action: 'reservation_confirmed' },
+          title: grossAmount > 0 ? '새 예약 신청이 접수되었습니다' : '새 예약이 확정되었습니다',
+          message: grossAmount > 0
+            ? `${sessionUser.name || '보호자'}님의 수업 예약 신청이 접수되었습니다. 결제 완료 시 확정됩니다. (${scheduleLabel})`
+            : `${sessionUser.name || '보호자'}님의 수업 예약이 확정되었습니다. (${scheduleLabel})`,
+          data: { reservationId: reservation.id, userId: sessionUser.id, scheduledAt: scheduledAt.toISOString(), action: 'reservation_created', requiresPayment: grossAmount > 0 },
           actionUrl: `/trainer/reservations/${reservation.id}`,
         });
       } catch (notifyErr) {
@@ -7260,8 +7248,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: "예약이 성공적으로 등록되었습니다.",
+        message: grossAmount > 0
+          ? "예약 신청이 접수되었습니다. 결제 완료 시 확정됩니다."
+          : "예약이 확정되었습니다.",
         data: reservation,
+        requiresPayment: grossAmount > 0,
       });
     } catch (error) {
       logServerError('예약 생성 오류:', error, req);
@@ -12708,35 +12699,39 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
-  // 훈련사 리뷰 조회 API
+  // 훈련사 리뷰 조회 API (실제 trainerReviews 데이터)
   app.get("/api/trainers/:id/reviews", async (req, res) => {
     try {
       const trainerId = parseInt(req.params.id);
-      const { page = 1, limit = 10 } = req.query;
+      if (!trainerId || isNaN(trainerId)) {
+        return res.status(400).json({ message: "유효하지 않은 훈련사 ID입니다." });
+      }
+      const page = Math.max(1, parseInt(String(req.query.page ?? '1')) || 1);
+      const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit ?? '10')) || 10));
 
-      // 임시 리뷰 데이터
-      const reviews = [
-        {
-          id: 1,
-          userId: 1,
-          userName: "김반려",
-          rating: 5,
-          comment: "정말 친절하고 전문적인 훈련사님입니다. 우리 강아지가 많이 달라졌어요!",
-          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-        },
-        {
-          id: 2,
-          userId: 2,
-          userName: "이고양",
-          rating: 4,
-          comment: "체계적인 교육 프로그램으로 만족스러운 결과를 얻었습니다.",
-          createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
-        }
-      ];
+      const all = storage.listTrainerReviews({ trainerId });
+      const summary = storage.getTrainerReviewSummary(trainerId);
+      const startIdx = (page - 1) * limit;
+      const paged = all.slice(startIdx, startIdx + limit);
+      const reviews = paged.map((r: any) => ({
+        id: r.id,
+        userId: r.authorId,
+        userName: r.authorName || '보호자',
+        rating: r.rating,
+        title: r.title,
+        comment: r.content,
+        photos: r.photos || [],
+        reply: r.reply ? { content: r.reply.content, createdAt: r.reply.createdAt } : null,
+        createdAt: r.createdAt,
+      }));
 
       return res.status(200).json({
         reviews,
-        totalCount: reviews.length
+        totalCount: all.length,
+        averageRating: summary.average,
+        distribution: summary.distribution,
+        page,
+        limit,
       });
     } catch (error: any) {
       logServerError("Get trainer reviews error:", error, req);
@@ -12744,27 +12739,73 @@ app.get('/api/search', async (req, res) => {
     }
   });
 
-  // 훈련사 스케줄 조회 API
+  // 훈련사 스케줄 조회 API (실제 예약 기반 가용 슬롯)
   app.get("/api/trainers/:id/schedule", async (req, res) => {
     try {
-      const trainerId = parseInt(req.params.id);
-      const { date } = req.query;
+      const trainerIdParam = parseInt(req.params.id);
+      if (!trainerIdParam || isNaN(trainerIdParam)) {
+        return res.status(400).json({ message: "유효하지 않은 훈련사 ID입니다." });
+      }
+      const dateQ = typeof req.query.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.date)
+        ? req.query.date
+        : new Date().toISOString().split('T')[0];
 
-      // 임시 스케줄 데이터
-      const schedule = {
-        trainerId,
-        date: date || new Date().toISOString().split('T')[0],
-        availableSlots: [
-          { time: "09:00", available: true },
-          { time: "10:00", available: false },
-          { time: "11:00", available: true },
-          { time: "14:00", available: true },
-          { time: "15:00", available: false },
-          { time: "16:00", available: true }
-        ]
-      };
+      // trainers.id 또는 users.id 어느 쪽이든 허용 → reservations.trainerId 는 users.id
+      let trainerUserId = trainerIdParam;
+      try {
+        const [byTrainersId] = await db
+          .select({ userId: trainers.userId })
+          .from(trainers)
+          .where(eq(trainers.id, trainerIdParam))
+          .limit(1);
+        if (byTrainersId?.userId) trainerUserId = byTrainersId.userId;
+      } catch (lookupErr) {
+        logServerError('[훈련사 스케줄] users.id 매핑 실패:', lookupErr, req);
+      }
 
-      return res.status(200).json(schedule);
+      // 해당 날짜 (00:00 ~ 24:00) 의 활성 예약 조회
+      // 주의: 실제 reservations 테이블 컬럼은 date / duration_minutes (Drizzle 스키마와 차이)
+      const dayStart = `${dateQ} 00:00:00`;
+      const dayEnd = `${dateQ} 23:59:59.999`;
+      const dayResRaw: any = await db.execute(sql`
+        SELECT id, date AS scheduled_at, duration_minutes AS duration, status
+        FROM reservations
+        WHERE trainer_id = ${trainerUserId}
+          AND date >= ${dayStart}::timestamp
+          AND date <= ${dayEnd}::timestamp
+          AND COALESCE(status, '') <> 'cancelled'
+      `);
+      const dayReservations: Array<{ scheduled_at: Date; duration: number | null; status: string }> =
+        Array.isArray(dayResRaw) ? dayResRaw : (dayResRaw?.rows || []);
+
+      // 평일 09:00~18:00, 1시간 단위 기본 영업시간
+      const businessHours = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+      const bookedTimes = new Set(
+        dayReservations.map((r) => {
+          const d = new Date(r.scheduled_at as Date);
+          return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }),
+      );
+
+      // 과거 시각은 자동 비활성화
+      const now = new Date();
+      const isToday = dateQ === now.toISOString().split('T')[0];
+      const slots = businessHours.map((time) => {
+        const [h, m] = time.split(':').map(Number);
+        const slotDate = new Date(`${dateQ}T${time}:00`);
+        const isPast = isToday && slotDate.getTime() <= now.getTime();
+        return {
+          time,
+          available: !bookedTimes.has(time) && !isPast,
+        };
+      });
+
+      return res.status(200).json({
+        trainerId: trainerIdParam,
+        date: dateQ,
+        availableSlots: slots,
+        totalBooked: dayReservations.length,
+      });
     } catch (error: any) {
       logServerError("Get trainer schedule error:", error, req);
       return res.status(500).json({ message: "스케줄 조회 중 오류가 발생했습니다." });
@@ -17926,6 +17967,14 @@ app.get('/api/search', async (req, res) => {
   // 훈련사-기관 매칭 라우트 등록 - require를 import로 변경 불가능하므로 직접 구현
   // const { registerTrainerInstituteMatchingRoutes } = require('./routes/trainer-institute-matching');
   // registerTrainerInstituteMatchingRoutes(app, storage);
+
+  // 매칭 시스템 라우트 등록 (보호자 ↔ 훈련사 직접 매칭 + DB 영속화)
+  try {
+    const { registerMatchingSystemRoutes } = await import('./routes/matching-system');
+    registerMatchingSystemRoutes(app, storage);
+  } catch (matchingErr) {
+    logServerError('[routes] matching-system 라우트 등록 실패:', matchingErr);
+  }
 
   // TALEZ 인증 훈련사 API - 주석 처리됨 (중복 엔드포인트 방지)
   /*
