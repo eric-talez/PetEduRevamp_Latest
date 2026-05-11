@@ -21084,65 +21084,85 @@ export function registerTrainerCertificationRoutes(app: Express) {
       console.log('[Toss] 결제 승인 성공:', paymentResult.orderId);
 
       // 예약 결제 확정: orderId 가 RESV-{reservationId}-... 패턴이면
-      // 예약 상태를 confirmed 로 전이하고 트레이너 정산 항목을 생성한다.
-      // 멱등성은 createTrainerSettlementItem (sourceType, sourceId) 유니크로 보장.
+      // 1) 본인 예약 소유권 검증, 2) 금액 일치 검증, 3) 트랜잭션 내에서
+      // 예약 상태 confirmed 전이 + 트레이너 정산 항목 생성. 실패 시 fail-closed
+      // (success:false 반환). 멱등성은 createTrainerSettlementItem (sourceType,
+      // sourceId) 유니크 인덱스로 보장.
       const resvMatch = /^RESV-(\d+)-/.exec(String(paymentResult.orderId || orderId));
       let lessonSettlement: { reservationId: number; created: boolean } | null = null;
       if (resvMatch) {
         const reservationId = parseInt(resvMatch[1], 10);
-        try {
-          const resRowsRaw: any = await db.execute(sql`
-            SELECT id, trainer_id, status, price
-            FROM reservations WHERE id = ${reservationId} LIMIT 1
-          `);
-          const resRows: Array<{ id: number; trainer_id: number; status: string; price: any }>
-            = Array.isArray(resRowsRaw) ? resRowsRaw : (resRowsRaw?.rows || []);
-          if (resRows.length > 0) {
-            const resRow = resRows[0];
-            // 금액 검증 (예약가와 토스 승인 금액 일치 여부)
-            // 불일치 시 예약 확정/정산 생성을 차단하고 400 응답.
-            // (할인/쿠폰을 추후 도입할 경우 reservations.price 자체를 갱신하거나
-            // payments.metadata.couponId 등을 함께 검증하도록 정책 확장 필요.)
-            const expected = Number(resRow.price ?? 0);
-            const actual = Number(paymentResult.totalAmount ?? amount);
-            if (expected > 0 && expected !== actual) {
-              logServerError('[Toss] 예약 금액 불일치 - 정산 차단', { expected, actual, reservationId }, req);
-              return res.status(400).json({
-                success: false,
-                code: 'AMOUNT_MISMATCH',
-                message: '결제 금액이 예약 가격과 일치하지 않습니다. 고객센터에 문의해주세요.',
-              });
-            }
-            const [tr] = await db.select({ id: trainers.id })
-              .from(trainers).where(eq(trainers.userId, resRow.trainer_id)).limit(1);
-            const settlementTrainerId = tr?.id ?? 0;
+        const sessionUserId = (req as any).user?.id ?? (req.session as any)?.user?.id;
+        const sessionRole = (req as any).user?.role ?? (req.session as any)?.user?.role;
 
-            await db.transaction(async (tx) => {
-              await tx.execute(sql`
-                UPDATE reservations SET status='confirmed'
-                WHERE id=${reservationId} AND COALESCE(status,'') <> 'confirmed'
-              `);
-              if (settlementTrainerId > 0) {
-                const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
-                await createTrainerSettlementItem(
-                  {
-                    trainerId: settlementTrainerId,
-                    sourceType: 'lesson',
-                    sourceId: reservationId,
-                    sourceName: '1:1 수업 예약',
-                    category: 'lesson',
-                    grossAmount: actual,
-                    occurredAt: new Date(),
-                    metadata: { reservationId, paymentKey, orderId: paymentResult.orderId },
-                  },
-                  tx
-                );
-              }
-            });
-            lessonSettlement = { reservationId, created: true };
-          }
+        const resRowsRaw: any = await db.execute(sql`
+          SELECT id, user_id, trainer_id, status, price
+          FROM reservations WHERE id = ${reservationId} LIMIT 1
+        `);
+        const resRows: Array<{ id: number; user_id: number; trainer_id: number; status: string; price: any }>
+          = Array.isArray(resRowsRaw) ? resRowsRaw : (resRowsRaw?.rows || []);
+        if (resRows.length === 0) {
+          return res.status(404).json({ success: false, code: 'RESERVATION_NOT_FOUND', message: '예약을 찾을 수 없습니다.' });
+        }
+        const resRow = resRows[0];
+
+        // 소유권 검증 (admin 제외): 본인 예약만 확정 가능
+        if (sessionRole !== 'admin' && Number(resRow.user_id) !== Number(sessionUserId)) {
+          logServerError('[Toss] 예약 확정 권한 없음', { reservationId, sessionUserId, ownerId: resRow.user_id }, req);
+          return res.status(403).json({ success: false, code: 'FORBIDDEN', message: '본인 예약만 확정할 수 있습니다.' });
+        }
+
+        // 금액 일치 검증
+        const expected = Number(resRow.price ?? 0);
+        const actual = Number(paymentResult.totalAmount ?? amount);
+        if (expected > 0 && expected !== actual) {
+          logServerError('[Toss] 예약 금액 불일치 - 정산 차단', { expected, actual, reservationId }, req);
+          return res.status(400).json({
+            success: false,
+            code: 'AMOUNT_MISMATCH',
+            message: '결제 금액이 예약 가격과 일치하지 않습니다. 고객센터에 문의해주세요.',
+          });
+        }
+
+        const [tr] = await db.select({ id: trainers.id })
+          .from(trainers).where(eq(trainers.userId, resRow.trainer_id)).limit(1);
+        const settlementTrainerId = tr?.id ?? 0;
+
+        try {
+          await db.transaction(async (tx) => {
+            await tx.execute(sql`
+              UPDATE reservations SET status='confirmed'
+              WHERE id=${reservationId} AND COALESCE(status,'') <> 'confirmed'
+            `);
+            if (settlementTrainerId > 0) {
+              const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
+              await createTrainerSettlementItem(
+                {
+                  trainerId: settlementTrainerId,
+                  sourceType: 'lesson',
+                  sourceId: reservationId,
+                  sourceName: '1:1 수업 예약',
+                  category: 'lesson',
+                  grossAmount: actual,
+                  occurredAt: new Date(),
+                  metadata: { reservationId, paymentKey, orderId: paymentResult.orderId, userId: sessionUserId },
+                },
+                tx
+              );
+            }
+          });
+          lessonSettlement = { reservationId, created: true };
         } catch (settleErr) {
+          // fail-closed: 예약 확정/정산 생성 실패 시 success:false 로 응답하여
+          // 클라이언트가 재시도하거나 고객센터로 안내되도록 한다. 토스 결제 자체는
+          // 이미 승인되어 있으므로 운영자가 admin 정산 경로로 보정 가능.
           logServerError('[Toss] 예약 정산 생성 실패:', settleErr, req);
+          return res.status(500).json({
+            success: false,
+            code: 'SETTLEMENT_PERSIST_FAILED',
+            message: '결제는 승인되었으나 예약 확정 처리에 실패했습니다. 고객센터에 문의해주세요.',
+            payment: paymentResult,
+          });
         }
       }
 
