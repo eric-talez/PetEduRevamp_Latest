@@ -12702,15 +12702,28 @@ app.get('/api/search', async (req, res) => {
   // 훈련사 리뷰 조회 API (실제 trainerReviews 데이터)
   app.get("/api/trainers/:id/reviews", async (req, res) => {
     try {
-      const trainerId = parseInt(req.params.id);
-      if (!trainerId || isNaN(trainerId)) {
+      const trainerIdParam = parseInt(req.params.id);
+      if (!trainerIdParam || isNaN(trainerIdParam)) {
         return res.status(400).json({ message: "유효하지 않은 훈련사 ID입니다." });
       }
       const page = Math.max(1, parseInt(String(req.query.page ?? '1')) || 1);
       const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit ?? '10')) || 10));
 
-      const all = storage.listTrainerReviews({ trainerId });
-      const summary = storage.getTrainerReviewSummary(trainerId);
+      // trainerReviews.trainerId 는 users.id 기준이므로 trainers.id 입력 시 변환.
+      let trainerUserId = trainerIdParam;
+      try {
+        const [byTrainersId] = await db
+          .select({ userId: trainers.userId })
+          .from(trainers)
+          .where(eq(trainers.id, trainerIdParam))
+          .limit(1);
+        if (byTrainersId?.userId) trainerUserId = byTrainersId.userId;
+      } catch (lookupErr) {
+        logServerError('[훈련사 리뷰] users.id 매핑 실패:', lookupErr, req);
+      }
+
+      const all = storage.listTrainerReviews({ trainerId: trainerUserId });
+      const summary = storage.getTrainerReviewSummary(trainerUserId);
       const startIdx = (page - 1) * limit;
       const paged = all.slice(startIdx, startIdx + limit);
       const reviews = paged.map((r: any) => ({
@@ -14335,9 +14348,11 @@ app.get('/api/search', async (req, res) => {
   // 결제 성공 시 DB에 구매 기록을 트랜잭션으로 저장 (멱등성 보장)
   type CoursePurchaseRow = typeof coursePurchases.$inferSelect;
   type OrderRow = typeof orders.$inferSelect;
+  type ReservationLessonRow = { id: number; trainer_id: number; status: string; scheduled_at: Date };
   type PersistResult =
     | { type: 'course'; record: CoursePurchaseRow; duplicated: boolean; itemName?: string }
     | { type: 'product'; record: OrderRow; duplicated: boolean; itemName?: string }
+    | { type: 'lesson'; record: ReservationLessonRow; duplicated: boolean; itemName?: string }
     | { type: string; record: null; duplicated: false; itemName?: string };
   async function persistSuccessfulPayment(
     paymentIntent: Stripe.PaymentIntent,
@@ -14403,7 +14418,10 @@ app.get('/api/search', async (req, res) => {
     }
 
     if (itemType === 'lesson') {
-      // 예약(1:1 수업) 결제 확정
+      // 예약(1:1 수업) 결제 확정.
+      // 주의: 실제 reservations DB 컬럼은 date / duration_minutes 이며,
+      // shared/schema.ts 의 scheduled_at / duration 선언은 stale 이다 (Task #157 정리 예정).
+      // 따라서 여기서는 의도적으로 raw SQL + 실제 컬럼명을 사용한다.
       const reservationId = itemId;
       const md = paymentIntent.metadata || {};
       const lessonCategory = (md as Record<string, string | undefined>).category || 'lesson';
@@ -14463,7 +14481,7 @@ app.get('/api/search', async (req, res) => {
         }
       }
 
-      return { type: 'lesson' as any, record: resRow as any, duplicated: false, itemName };
+      return { type: 'lesson', record: resRow, duplicated: false, itemName };
     }
 
     if (itemType === 'product') {
