@@ -14279,7 +14279,7 @@ app.get('/api/search', async (req, res) => {
   // 강의 구매 및 상품 구매 결제 인텐트 생성 - 인증, CSRF 보호, 입력 검증 적용
   app.post('/api/create-payment-intent', requireAuth(), csrfProtection, validateRequest(createPaymentIntentSchema), async (req, res) => {
     try {
-      const { amount, courseId, courseTitle, itemId, itemName, itemType, trainerId: bodyTrainerId, category: bodyCategory } = req.body;
+      const { amount, courseId, courseTitle, itemId, itemName, itemType, trainerId: bodyTrainerId, category: bodyCategory, reservationId: bodyReservationId, reservationName: bodyReservationName } = req.body;
       
       // Stripe 사용 가능 여부 확인
       const currentStripeKey = process.env.STRIPE_SECRET_KEY;
@@ -14292,7 +14292,8 @@ app.get('/api/search', async (req, res) => {
         });
       }
       
-      if (!amount || (!courseId && !itemId)) {
+      const isLesson = itemType === 'lesson' || itemType === 'reservation';
+      if (!amount || (!courseId && !itemId && !(isLesson && bodyReservationId))) {
         return res.status(400).json({ error: '결제 금액과 구매 항목 ID가 필요합니다.' });
       }
 
@@ -14311,6 +14312,48 @@ app.get('/api/search', async (req, res) => {
           metadata.trainerId = String(bodyTrainerId);
         }
         if (bodyCategory) metadata.category = String(bodyCategory);
+      } else if (isLesson) {
+        // 예약(1:1 수업) 결제: 예약 소유권/금액 검증 후 메타데이터 주입
+        const resvId = parseInt(String(bodyReservationId ?? itemId), 10);
+        if (!resvId || Number.isNaN(resvId)) {
+          return res.status(400).json({ error: '예약 ID가 유효하지 않습니다.' });
+        }
+        let resvRow: { id: number; user_id: number; trainer_id: number; price: any; status: string } | null = null;
+        try {
+          const raw: any = await db.execute(sql`
+            SELECT id, user_id, trainer_id, price, status FROM reservations WHERE id = ${resvId} LIMIT 1
+          `);
+          const rows = Array.isArray(raw) ? raw : (raw?.rows || []);
+          resvRow = rows[0] || null;
+        } catch (lookupErr) {
+          logServerError('[create-payment-intent] 예약 조회 실패:', lookupErr, req);
+        }
+        if (!resvRow) {
+          return res.status(404).json({ error: '예약을 찾을 수 없습니다.' });
+        }
+        if (requestUserId && Number(resvRow.user_id) !== Number(requestUserId)) {
+          return res.status(403).json({ error: '본인 예약만 결제할 수 있습니다.' });
+        }
+        const expectedPrice = Number(resvRow.price ?? 0);
+        if (expectedPrice > 0 && Number(amount) !== expectedPrice) {
+          return res.status(400).json({ error: '결제 금액이 예약 가격과 일치하지 않습니다.', code: 'AMOUNT_MISMATCH' });
+        }
+        metadata.type = 'lesson';
+        metadata.reservationId = String(resvRow.id);
+        metadata.reservationName = String(bodyReservationName || itemName || '1:1 수업 예약');
+        // trainers.id 매핑 (정산용)
+        try {
+          const [tr] = await db
+            .select({ id: trainers.id })
+            .from(trainers)
+            .where(eq(trainers.userId, Number(resvRow.trainer_id)))
+            .limit(1);
+          if (tr?.id) metadata.trainerId = String(tr.id);
+        } catch (mapErr) {
+          logServerError('[create-payment-intent] trainers.id 매핑 실패:', mapErr, req);
+        }
+        if (bodyCategory) metadata.category = String(bodyCategory);
+        else metadata.category = 'lesson';
       } else {
         metadata.courseId = courseId || itemId;
         metadata.courseTitle = courseTitle || itemName || '강의 구매';
@@ -21057,10 +21100,18 @@ export function registerTrainerCertificationRoutes(app: Express) {
           if (resRows.length > 0) {
             const resRow = resRows[0];
             // 금액 검증 (예약가와 토스 승인 금액 일치 여부)
+            // 불일치 시 예약 확정/정산 생성을 차단하고 400 응답.
+            // (할인/쿠폰을 추후 도입할 경우 reservations.price 자체를 갱신하거나
+            // payments.metadata.couponId 등을 함께 검증하도록 정책 확장 필요.)
             const expected = Number(resRow.price ?? 0);
             const actual = Number(paymentResult.totalAmount ?? amount);
             if (expected > 0 && expected !== actual) {
-              logServerError('[Toss] 예약 금액 불일치', { expected, actual, reservationId }, req);
+              logServerError('[Toss] 예약 금액 불일치 - 정산 차단', { expected, actual, reservationId }, req);
+              return res.status(400).json({
+                success: false,
+                code: 'AMOUNT_MISMATCH',
+                message: '결제 금액이 예약 가격과 일치하지 않습니다. 고객센터에 문의해주세요.',
+              });
             }
             const [tr] = await db.select({ id: trainers.id })
               .from(trainers).where(eq(trainers.userId, resRow.trainer_id)).limit(1);
