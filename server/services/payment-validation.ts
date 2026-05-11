@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 export type ParsedPaymentMetadata =
   | { ok: true; type: 'course'; userId: number; itemId: number; itemName: string; amount: number }
   | { ok: true; type: 'product'; userId: number; itemId: number; itemName: string; amount: number }
+  | { ok: true; type: 'lesson'; userId: number; itemId: number; itemName: string; amount: number }
   | { ok: false; error: string; code: 'NO_USER' | 'NO_ITEM_ID' | 'INVALID_ITEM_ID' };
 
 export function parsePaymentIntentForPersistence(
@@ -10,9 +11,13 @@ export function parsePaymentIntentForPersistence(
   sessionUserId?: number | string
 ): ParsedPaymentMetadata {
   const metadata = paymentIntent.metadata || {};
-  const itemType = metadata.type === 'product' ? 'product' : 'course';
-  const rawItemId = metadata.courseId || metadata.productId || metadata.itemId;
-  const itemName = metadata.courseTitle || metadata.productName || '결제 항목';
+  const rawType = metadata.type;
+  const itemType: 'course' | 'product' | 'lesson' =
+    rawType === 'product' ? 'product'
+    : (rawType === 'lesson' || rawType === 'reservation') ? 'lesson'
+    : 'course';
+  const rawItemId = metadata.courseId || metadata.productId || metadata.reservationId || metadata.itemId;
+  const itemName = metadata.courseTitle || metadata.productName || metadata.reservationName || '결제 항목';
   const amount = (paymentIntent.amount || 0) / 100;
 
   const userIdNum = typeof sessionUserId === 'string' ? parseInt(sessionUserId, 10) : sessionUserId;

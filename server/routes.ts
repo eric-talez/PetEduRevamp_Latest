@@ -12763,40 +12763,102 @@ app.get('/api/search', async (req, res) => {
         logServerError('[훈련사 스케줄] users.id 매핑 실패:', lookupErr, req);
       }
 
-      // 해당 날짜 (00:00 ~ 24:00) 의 활성 예약 조회
-      // 주의: 실제 reservations 테이블 컬럼은 date / duration_minutes (Drizzle 스키마와 차이)
+      // 해당 날짜 (00:00 ~ 24:00) 의 활성 예약 + 휴무 + 훈련소 휴무 동시 조회
       const dayStart = `${dateQ} 00:00:00`;
       const dayEnd = `${dateQ} 23:59:59.999`;
-      const dayResRaw: any = await db.execute(sql`
-        SELECT id, date AS scheduled_at, duration_minutes AS duration, status
-        FROM reservations
-        WHERE trainer_id = ${trainerUserId}
-          AND date >= ${dayStart}::timestamp
-          AND date <= ${dayEnd}::timestamp
-          AND COALESCE(status, '') <> 'cancelled'
-      `);
-      const dayReservations: Array<{ scheduled_at: Date; duration: number | null; status: string }> =
-        Array.isArray(dayResRaw) ? dayResRaw : (dayResRaw?.rows || []);
+
+      // 트레이너의 institute_id 조회 (있다면 institute 휴무도 반영)
+      const [trInst] = await db
+        .select({ instituteId: trainers.instituteId })
+        .from(trainers)
+        .where(eq(trainers.userId, trainerUserId))
+        .limit(1);
+      const trainerInstId = trInst?.instituteId ?? null;
+
+      // 옵션 테이블(rest_applications, institute_closure)은 환경에 따라 미배포일 수 있어
+      // 실패 시 빈 결과로 fallback (스케줄 응답 자체는 항상 200 보장).
+      const safeExec = async (q: Promise<any>) => {
+        try { return await q; } catch (e: any) {
+          if (e?.code === '42P01') return { rows: [] }; // undefined_table
+          throw e;
+        }
+      };
+      const [dayResRaw, restResRaw, instCloseRaw]: any[] = await Promise.all([
+        db.execute(sql`
+          SELECT id, date AS scheduled_at, duration_minutes AS duration, status
+          FROM reservations
+          WHERE trainer_id = ${trainerUserId}
+            AND date >= ${dayStart}::timestamp
+            AND date <= ${dayEnd}::timestamp
+            AND COALESCE(status, '') NOT IN ('cancelled','rejected')
+        `),
+        safeExec(db.execute(sql`
+          SELECT id, start_date, end_date, reason
+          FROM rest_applications
+          WHERE trainer_id = ${trainerUserId}
+            AND status = 'approved'
+            AND start_date <= ${dayEnd}::timestamp
+            AND end_date >= ${dayStart}::timestamp
+        `)),
+        trainerInstId
+          ? safeExec(db.execute(sql`
+              SELECT id, start_date, end_date, status
+              FROM institute_closure
+              WHERE institute_id = ${trainerInstId}
+                AND status IN ('planned','active')
+                AND start_date <= ${dayEnd}::timestamp
+                AND end_date >= ${dayStart}::timestamp
+            `))
+          : Promise.resolve({ rows: [] }),
+      ]);
+
+      const toRows = <T = any>(r: any): T[] => Array.isArray(r) ? r : (r?.rows || []);
+      const dayReservations = toRows<{ scheduled_at: Date; duration: number | null; status: string }>(dayResRaw);
+      const restRanges = toRows<{ start_date: Date; end_date: Date; reason: string }>(restResRaw);
+      const instCloseRanges = toRows<{ start_date: Date; end_date: Date; status: string }>(instCloseRaw);
 
       // 평일 09:00~18:00, 1시간 단위 기본 영업시간
       const businessHours = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
-      const bookedTimes = new Set(
-        dayReservations.map((r) => {
-          const d = new Date(r.scheduled_at as Date);
-          return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        }),
-      );
 
       // 과거 시각은 자동 비활성화
       const now = new Date();
       const isToday = dateQ === now.toISOString().split('T')[0];
+
+      // 슬롯이 휴무/훈련소 휴무 구간과 겹치는지
+      const overlapsRange = (slotStart: number, slotEnd: number, ranges: Array<{ start_date: Date; end_date: Date }>) =>
+        ranges.some(r => {
+          const s = new Date(r.start_date as any).getTime();
+          const e = new Date(r.end_date as any).getTime();
+          return slotStart < e && slotEnd > s;
+        });
+
+      // 슬롯이 기존 예약(시작+duration)과 시간대 겹치는지 (정확한 overlap 검사)
+      const overlapsReservation = (slotStart: number, slotEnd: number) =>
+        dayReservations.some(r => {
+          const rs = new Date(r.scheduled_at as any).getTime();
+          const dur = (r.duration ?? 60) * 60_000;
+          const re = rs + dur;
+          return slotStart < re && slotEnd > rs;
+        });
+
+      const slotMinutes = 60;
       const slots = businessHours.map((time) => {
-        const [h, m] = time.split(':').map(Number);
         const slotDate = new Date(`${dateQ}T${time}:00`);
-        const isPast = isToday && slotDate.getTime() <= now.getTime();
+        const slotStart = slotDate.getTime();
+        const slotEnd = slotStart + slotMinutes * 60_000;
+        const isPast = isToday && slotEnd <= now.getTime();
+        const onRest = overlapsRange(slotStart, slotEnd, restRanges);
+        const onClosure = overlapsRange(slotStart, slotEnd, instCloseRanges);
+        const booked = overlapsReservation(slotStart, slotEnd);
+        let reason: string | null = null;
+        if (isPast) reason = 'past';
+        else if (onClosure) reason = 'institute_closed';
+        else if (onRest) reason = 'trainer_off';
+        else if (booked) reason = 'booked';
         return {
           time,
-          available: !bookedTimes.has(time) && !isPast,
+          available: !isPast && !onRest && !onClosure && !booked,
+          ...(reason ? { reason } : {}),
         };
       });
 
@@ -12805,6 +12867,8 @@ app.get('/api/search', async (req, res) => {
         date: dateQ,
         availableSlots: slots,
         totalBooked: dayReservations.length,
+        ...(restRanges.length ? { restApplications: restRanges.length } : {}),
+        ...(instCloseRanges.length ? { instituteClosures: instCloseRanges.length } : {}),
       });
     } catch (error: any) {
       logServerError("Get trainer schedule error:", error, req);
@@ -14336,6 +14400,70 @@ app.get('/api/search', async (req, res) => {
       }
 
       return { type: 'course', record: result, duplicated: false, itemName };
+    }
+
+    if (itemType === 'lesson') {
+      // 예약(1:1 수업) 결제 확정
+      const reservationId = itemId;
+      const md = paymentIntent.metadata || {};
+      const lessonCategory = (md as Record<string, string | undefined>).category || 'lesson';
+      const rawTrainerId = (md as Record<string, string | undefined>).trainerId;
+      const trainerIdNumLesson = rawTrainerId ? parseInt(String(rawTrainerId), 10) : NaN;
+
+      // reservations.id 로 조회 — paymentIntent 메타데이터의 reservationId 사용
+      const resRowsRaw: any = await db.execute(sql`
+        SELECT id, trainer_id, status, date AS scheduled_at, duration_minutes
+        FROM reservations WHERE id = ${reservationId} LIMIT 1
+      `);
+      const resRows: Array<{ id: number; trainer_id: number; status: string; scheduled_at: Date }>
+        = Array.isArray(resRowsRaw) ? resRowsRaw : (resRowsRaw?.rows || []);
+      if (resRows.length === 0) {
+        throw new Error(`예약을 찾을 수 없습니다 (id=${reservationId}).`);
+      }
+      const resRow = resRows[0];
+
+      // 트레이너 정산용 trainers.id 식별 (reservations.trainer_id 는 users.id)
+      let settlementTrainerId = !Number.isNaN(trainerIdNumLesson) ? trainerIdNumLesson : 0;
+      if (!settlementTrainerId) {
+        const [tr] = await db.select({ id: trainers.id })
+          .from(trainers).where(eq(trainers.userId, resRow.trainer_id)).limit(1);
+        settlementTrainerId = tr?.id ?? 0;
+      }
+
+      try {
+        await db.transaction(async (tx) => {
+          // 예약 상태 confirmed 로 전이 (멱등: 이미 confirmed 면 noop)
+          await tx.execute(sql`
+            UPDATE reservations
+            SET status = 'confirmed'
+            WHERE id = ${reservationId} AND COALESCE(status,'') <> 'confirmed'
+          `);
+
+          if (settlementTrainerId > 0) {
+            const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
+            await createTrainerSettlementItem(
+              {
+                trainerId: settlementTrainerId,
+                sourceType: 'lesson',
+                sourceId: resRow.id,
+                sourceName: itemName,
+                category: lessonCategory,
+                grossAmount: amount,
+                occurredAt: new Date(),
+                metadata: { userId: userIdNum, reservationId: resRow.id, paymentIntentId: paymentIntent.id },
+              },
+              tx
+            );
+          }
+        });
+      } catch (txError) {
+        if (!isUniqueViolation(txError)) {
+          console.error('[정산 자동 생성 - lesson] 실패:', txError);
+          throw txError;
+        }
+      }
+
+      return { type: 'lesson' as any, record: resRow as any, duplicated: false, itemName };
     }
 
     if (itemType === 'product') {
@@ -20894,20 +21022,66 @@ export function registerTrainerCertificationRoutes(app: Express) {
 
       console.log('[Toss] 결제 승인 성공:', paymentResult.orderId);
 
-      // 결제 정보를 스토리지에 저장 (필요한 경우)
-      // await storage.createOrder({
-      //   userId: req.user?.id,
-      //   orderId: paymentResult.orderId,
-      //   amount: paymentResult.totalAmount,
-      //   status: 'completed',
-      //   paymentKey: paymentResult.paymentKey,
-      //   method: paymentResult.method
-      // });
+      // 예약 결제 확정: orderId 가 RESV-{reservationId}-... 패턴이면
+      // 예약 상태를 confirmed 로 전이하고 트레이너 정산 항목을 생성한다.
+      // 멱등성은 createTrainerSettlementItem (sourceType, sourceId) 유니크로 보장.
+      const resvMatch = /^RESV-(\d+)-/.exec(String(paymentResult.orderId || orderId));
+      let lessonSettlement: { reservationId: number; created: boolean } | null = null;
+      if (resvMatch) {
+        const reservationId = parseInt(resvMatch[1], 10);
+        try {
+          const resRowsRaw: any = await db.execute(sql`
+            SELECT id, trainer_id, status, price
+            FROM reservations WHERE id = ${reservationId} LIMIT 1
+          `);
+          const resRows: Array<{ id: number; trainer_id: number; status: string; price: any }>
+            = Array.isArray(resRowsRaw) ? resRowsRaw : (resRowsRaw?.rows || []);
+          if (resRows.length > 0) {
+            const resRow = resRows[0];
+            // 금액 검증 (예약가와 토스 승인 금액 일치 여부)
+            const expected = Number(resRow.price ?? 0);
+            const actual = Number(paymentResult.totalAmount ?? amount);
+            if (expected > 0 && expected !== actual) {
+              logServerError('[Toss] 예약 금액 불일치', { expected, actual, reservationId }, req);
+            }
+            const [tr] = await db.select({ id: trainers.id })
+              .from(trainers).where(eq(trainers.userId, resRow.trainer_id)).limit(1);
+            const settlementTrainerId = tr?.id ?? 0;
+
+            await db.transaction(async (tx) => {
+              await tx.execute(sql`
+                UPDATE reservations SET status='confirmed'
+                WHERE id=${reservationId} AND COALESCE(status,'') <> 'confirmed'
+              `);
+              if (settlementTrainerId > 0) {
+                const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
+                await createTrainerSettlementItem(
+                  {
+                    trainerId: settlementTrainerId,
+                    sourceType: 'lesson',
+                    sourceId: reservationId,
+                    sourceName: '1:1 수업 예약',
+                    category: 'lesson',
+                    grossAmount: actual,
+                    occurredAt: new Date(),
+                    metadata: { reservationId, paymentKey, orderId: paymentResult.orderId },
+                  },
+                  tx
+                );
+              }
+            });
+            lessonSettlement = { reservationId, created: true };
+          }
+        } catch (settleErr) {
+          logServerError('[Toss] 예약 정산 생성 실패:', settleErr, req);
+        }
+      }
 
       res.json({
         success: true,
         message: '결제가 성공적으로 완료되었습니다.',
-        payment: paymentResult
+        payment: paymentResult,
+        ...(lessonSettlement ? { reservation: lessonSettlement } : {}),
       });
     } catch (error: any) {
       logServerError('[Toss] 결제 승인 오류:', error.response?.data || error.message, req);
