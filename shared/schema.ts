@@ -392,14 +392,18 @@ export const comments = pgTable("comments", {
 });
 
 // 예약 테이블
+// NOTE: 컬럼명은 실제 DB 와 1:1 매칭한다 (Task #157).
+//   date(timestamp) / duration_minutes(int) / reservation_type(varchar) / institute_id(int)
+// price 컬럼은 결제 검증/정산 흐름에서 필요해 schema 에 포함하며, db:push 로 DB 에 추가한다.
 export const reservations = pgTable("reservations", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
   trainerId: integer("trainer_id").references(() => users.id),
+  instituteId: integer("institute_id").references(() => institutes.id),
   petId: integer("pet_id").references(() => pets.id),
-  serviceType: varchar("service_type", { length: 100 }).notNull(),
-  scheduledAt: timestamp("scheduled_at").notNull(),
-  duration: integer("duration").default(60),
+  reservationType: varchar("reservation_type", { length: 100 }).notNull(),
+  date: timestamp("date").notNull(),
+  durationMinutes: integer("duration_minutes").default(60),
   status: varchar("status", { length: 50 }).default("pending"),
   notes: text("notes"),
   price: decimal("price", { precision: 10, scale: 2 }),

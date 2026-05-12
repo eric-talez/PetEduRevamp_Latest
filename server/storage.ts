@@ -8016,9 +8016,10 @@ class HybridStorage extends Storage {
     userId: number;
     trainerId: number;
     petId?: number | null;
-    serviceType: string;
-    scheduledAt: Date;
-    duration?: number | null;
+    instituteId?: number | null;
+    reservationType: string;
+    date: Date;
+    durationMinutes?: number | null;
     status?: string | null;
     notes?: string | null;
     price?: number | string | null;
@@ -8030,9 +8031,10 @@ class HybridStorage extends Storage {
           userId: data.userId,
           trainerId: data.trainerId,
           petId: data.petId ?? null,
-          serviceType: data.serviceType,
-          scheduledAt: data.scheduledAt,
-          duration: data.duration ?? 60,
+          instituteId: data.instituteId ?? null,
+          reservationType: data.reservationType,
+          date: data.date,
+          durationMinutes: data.durationMinutes ?? 60,
           status: data.status ?? 'pending',
           notes: data.notes ?? null,
           price: data.price != null ? String(data.price) : null,

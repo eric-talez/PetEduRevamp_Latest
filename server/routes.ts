@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, desc, or, ilike, inArray } from "drizzle-orm";
-import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports } from "../shared/schema";
+import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports, reservations as reservationsTable } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
 import { registerDashboardRoutes } from "./routes/dashboard";
@@ -7206,6 +7206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 내에서 잡고 duration overlap 검사 후 INSERT. 동시 요청도 직렬화되어
       // race condition 없이 409가 반환된다. 실제 reservations 테이블 컬럼은
       // date / duration_minutes / reservation_type 이므로 raw SQL 사용.
+      // (Task #157 에서 schema 도 동일 컬럼명으로 정렬됨)
       type ReservationRow = {
         id: number;
         user_id: number;
@@ -12872,15 +12873,23 @@ app.get('/api/search', async (req, res) => {
           throw e;
         }
       };
+      const dayStartDate = new Date(`${dateQ}T00:00:00`);
+      const dayEndDate = new Date(`${dateQ}T23:59:59.999`);
       const [dayResRaw, restResRaw, instCloseRaw]: any[] = await Promise.all([
-        db.execute(sql`
-          SELECT id, date AS scheduled_at, duration_minutes AS duration, status
-          FROM reservations
-          WHERE trainer_id = ${trainerUserId}
-            AND date >= ${dayStart}::timestamp
-            AND date <= ${dayEnd}::timestamp
-            AND COALESCE(status, '') NOT IN ('cancelled','rejected')
-        `),
+        db
+          .select({
+            id: reservationsTable.id,
+            scheduled_at: reservationsTable.date,
+            duration: reservationsTable.durationMinutes,
+            status: reservationsTable.status,
+          })
+          .from(reservationsTable)
+          .where(and(
+            eq(reservationsTable.trainerId, trainerUserId),
+            sql`${reservationsTable.date} >= ${dayStartDate}`,
+            sql`${reservationsTable.date} <= ${dayEndDate}`,
+            sql`COALESCE(${reservationsTable.status}, '') NOT IN ('cancelled','rejected')`,
+          )),
         safeExec(db.execute(sql`
           SELECT id, start_date, end_date, reason
           FROM rest_applications
@@ -14394,20 +14403,27 @@ app.get('/api/search', async (req, res) => {
         if (!resvId || Number.isNaN(resvId)) {
           return res.status(400).json({ error: '예약 ID가 유효하지 않습니다.' });
         }
-        let resvRow: { id: number; user_id: number; trainer_id: number; price: any; status: string } | null = null;
+        let resvRow: { id: number; userId: number | null; trainerId: number | null; price: any; status: string | null } | null = null;
         try {
-          const raw: any = await db.execute(sql`
-            SELECT id, user_id, trainer_id, price, status FROM reservations WHERE id = ${resvId} LIMIT 1
-          `);
-          const rows = Array.isArray(raw) ? raw : (raw?.rows || []);
-          resvRow = rows[0] || null;
+          const [row] = await db
+            .select({
+              id: reservationsTable.id,
+              userId: reservationsTable.userId,
+              trainerId: reservationsTable.trainerId,
+              price: reservationsTable.price,
+              status: reservationsTable.status,
+            })
+            .from(reservationsTable)
+            .where(eq(reservationsTable.id, resvId))
+            .limit(1);
+          resvRow = row || null;
         } catch (lookupErr) {
           logServerError('[create-payment-intent] 예약 조회 실패:', lookupErr, req);
         }
         if (!resvRow) {
           return res.status(404).json({ error: '예약을 찾을 수 없습니다.' });
         }
-        if (requestUserId && Number(resvRow.user_id) !== Number(requestUserId)) {
+        if (requestUserId && Number(resvRow.userId) !== Number(requestUserId)) {
           return res.status(403).json({ error: '본인 예약만 결제할 수 있습니다.' });
         }
         const expectedPrice = Number(resvRow.price ?? 0);
@@ -14422,7 +14438,7 @@ app.get('/api/search', async (req, res) => {
           const [tr] = await db
             .select({ id: trainers.id })
             .from(trainers)
-            .where(eq(trainers.userId, Number(resvRow.trainer_id)))
+            .where(eq(trainers.userId, Number(resvRow.trainerId)))
             .limit(1);
           if (tr?.id) metadata.trainerId = String(tr.id);
         } catch (mapErr) {
@@ -14537,10 +14553,7 @@ app.get('/api/search', async (req, res) => {
     }
 
     if (itemType === 'lesson') {
-      // 예약(1:1 수업) 결제 확정.
-      // 주의: 실제 reservations DB 컬럼은 date / duration_minutes 이며,
-      // shared/schema.ts 의 scheduled_at / duration 선언은 stale 이다 (Task #157 정리 예정).
-      // 따라서 여기서는 의도적으로 raw SQL + 실제 컬럼명을 사용한다.
+      // 예약(1:1 수업) 결제 확정. (Task #157: 스키마/DB 정렬 후 ORM 사용)
       const reservationId = itemId;
       const md = paymentIntent.metadata || {};
       const lessonCategory = (md as Record<string, string | undefined>).category || 'lesson';
@@ -14548,20 +14561,23 @@ app.get('/api/search', async (req, res) => {
       const trainerIdNumLesson = rawTrainerId ? parseInt(String(rawTrainerId), 10) : NaN;
 
       // reservations.id 로 조회 — paymentIntent 메타데이터의 reservationId 사용
-      const resRowsRaw: any = await db.execute(sql`
-        SELECT id, trainer_id, status, date AS scheduled_at, duration_minutes
-        FROM reservations WHERE id = ${reservationId} LIMIT 1
-      `);
-      const resRows: Array<{ id: number; trainer_id: number; status: string; scheduled_at: Date }>
-        = Array.isArray(resRowsRaw) ? resRowsRaw : (resRowsRaw?.rows || []);
-      if (resRows.length === 0) {
+      const [resRow] = await db
+        .select({
+          id: reservationsTable.id,
+          trainer_id: reservationsTable.trainerId,
+          status: reservationsTable.status,
+          scheduled_at: reservationsTable.date,
+        })
+        .from(reservationsTable)
+        .where(eq(reservationsTable.id, reservationId))
+        .limit(1);
+      if (!resRow) {
         throw new Error(`예약을 찾을 수 없습니다 (id=${reservationId}).`);
       }
-      const resRow = resRows[0];
 
       // 트레이너 정산용 trainers.id 식별 (reservations.trainer_id 는 users.id)
       let settlementTrainerId = !Number.isNaN(trainerIdNumLesson) ? trainerIdNumLesson : 0;
-      if (!settlementTrainerId) {
+      if (!settlementTrainerId && resRow.trainer_id != null) {
         const [tr] = await db.select({ id: trainers.id })
           .from(trainers).where(eq(trainers.userId, resRow.trainer_id)).limit(1);
         settlementTrainerId = tr?.id ?? 0;
@@ -14570,11 +14586,13 @@ app.get('/api/search', async (req, res) => {
       try {
         await db.transaction(async (tx) => {
           // 예약 상태 confirmed 로 전이 (멱등: 이미 confirmed 면 noop)
-          await tx.execute(sql`
-            UPDATE reservations
-            SET status = 'confirmed'
-            WHERE id = ${reservationId} AND COALESCE(status,'') <> 'confirmed'
-          `);
+          await tx
+            .update(reservationsTable)
+            .set({ status: 'confirmed' })
+            .where(and(
+              eq(reservationsTable.id, reservationId),
+              sql`COALESCE(${reservationsTable.status}, '') <> 'confirmed'`,
+            ));
 
           if (settlementTrainerId > 0) {
             const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
@@ -21171,20 +21189,24 @@ export function registerTrainerCertificationRoutes(app: Express) {
         const sessionUserId = (req as any).user?.id ?? (req.session as any)?.user?.id;
         const sessionRole = (req as any).user?.role ?? (req.session as any)?.user?.role;
 
-        const resRowsRaw: any = await db.execute(sql`
-          SELECT id, user_id, trainer_id, status, price
-          FROM reservations WHERE id = ${reservationId} LIMIT 1
-        `);
-        const resRows: Array<{ id: number; user_id: number; trainer_id: number; status: string; price: any }>
-          = Array.isArray(resRowsRaw) ? resRowsRaw : (resRowsRaw?.rows || []);
-        if (resRows.length === 0) {
+        const [resRow] = await db
+          .select({
+            id: reservationsTable.id,
+            userId: reservationsTable.userId,
+            trainerId: reservationsTable.trainerId,
+            status: reservationsTable.status,
+            price: reservationsTable.price,
+          })
+          .from(reservationsTable)
+          .where(eq(reservationsTable.id, reservationId))
+          .limit(1);
+        if (!resRow) {
           return res.status(404).json({ success: false, code: 'RESERVATION_NOT_FOUND', message: '예약을 찾을 수 없습니다.' });
         }
-        const resRow = resRows[0];
 
         // 소유권 검증 (admin 제외): 본인 예약만 확정 가능
-        if (sessionRole !== 'admin' && Number(resRow.user_id) !== Number(sessionUserId)) {
-          logServerError('[Toss] 예약 확정 권한 없음', { reservationId, sessionUserId, ownerId: resRow.user_id }, req);
+        if (sessionRole !== 'admin' && Number(resRow.userId) !== Number(sessionUserId)) {
+          logServerError('[Toss] 예약 확정 권한 없음', { reservationId, sessionUserId, ownerId: resRow.userId }, req);
           return res.status(403).json({ success: false, code: 'FORBIDDEN', message: '본인 예약만 확정할 수 있습니다.' });
         }
 
@@ -21200,16 +21222,21 @@ export function registerTrainerCertificationRoutes(app: Express) {
           });
         }
 
-        const [tr] = await db.select({ id: trainers.id })
-          .from(trainers).where(eq(trainers.userId, resRow.trainer_id)).limit(1);
+        const [tr] = resRow.trainerId != null
+          ? await db.select({ id: trainers.id })
+              .from(trainers).where(eq(trainers.userId, resRow.trainerId)).limit(1)
+          : [undefined as { id: number } | undefined];
         const settlementTrainerId = tr?.id ?? 0;
 
         try {
           await db.transaction(async (tx) => {
-            await tx.execute(sql`
-              UPDATE reservations SET status='confirmed'
-              WHERE id=${reservationId} AND COALESCE(status,'') <> 'confirmed'
-            `);
+            await tx
+              .update(reservationsTable)
+              .set({ status: 'confirmed' })
+              .where(and(
+                eq(reservationsTable.id, reservationId),
+                sql`COALESCE(${reservationsTable.status}, '') <> 'confirmed'`,
+              ));
             if (settlementTrainerId > 0) {
               const { createTrainerSettlementItem } = await import('./routes/trainer-settlements');
               await createTrainerSettlementItem(
