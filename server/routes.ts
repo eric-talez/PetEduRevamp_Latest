@@ -7201,17 +7201,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 시점에서만 createTrainerSettlementItem 으로 생성된다. 여기서 정산을
       // 만들면 실제 결제 없이 트레이너 정산 후보에 포함되는 P0 금전 리스크가 있어
       // 의도적으로 분리한다.
-      const reservation = await storage.createReservation({
-        userId: sessionUser.id,
-        trainerId: trainerUserId,
-        petId: petId != null ? Number(petId) : null,
-        serviceType: String(serviceType || service || '화상수업'),
-        scheduledAt,
-        duration: durationNum,
-        status: grossAmount > 0 ? 'pending_payment' : 'confirmed',
-        notes: notes ? String(notes) : null,
-        price: grossAmount > 0 ? grossAmount : null,
-      });
+      //
+      // 동일 시간대 중복 예약 차단 (Task #156): 트레이너별 advisory lock을 트랜잭션
+      // 내에서 잡고 duration overlap 검사 후 INSERT. 동시 요청도 직렬화되어
+      // race condition 없이 409가 반환된다. 실제 reservations 테이블 컬럼은
+      // date / duration_minutes / reservation_type 이므로 raw SQL 사용.
+      type ReservationRow = {
+        id: number;
+        user_id: number;
+        trainer_id: number;
+        pet_id: number | null;
+        reservation_type: string;
+        date: Date;
+        duration_minutes: number | null;
+        status: string;
+        notes: string | null;
+        price: string | null;
+        created_at: Date;
+      };
+
+      const newStart = scheduledAt;
+      const newEnd = new Date(scheduledAt.getTime() + durationNum * 60_000);
+      const reservationStatus = grossAmount > 0 ? 'pending_payment' : 'confirmed';
+      const reservationNotes = notes ? String(notes) : null;
+      const reservationServiceType = String(serviceType || service || '화상수업');
+      const reservationPetId = petId != null ? Number(petId) : null;
+      // 결제 금액 검증(`/create-payment-intent` 의 expectedPrice) 무결성을 위해
+      // 유료 예약에는 항상 grossAmount 를 저장한다. 무료 예약은 null.
+      const reservationPrice: string | null = grossAmount > 0 ? String(grossAmount) : null;
+
+      let reservation: ReservationRow;
+      try {
+        reservation = await db.transaction(async (tx) => {
+          await tx.execute(sql`SELECT pg_advisory_xact_lock(${trainerUserId}::bigint)`);
+          const conflictRes = await tx.execute<{ id: number }>(sql`
+            SELECT id
+            FROM reservations
+            WHERE trainer_id = ${trainerUserId}
+              AND COALESCE(status, '') NOT IN ('cancelled','rejected','no_show','expired')
+              AND date < ${newEnd}
+              AND (date + (COALESCE(duration_minutes, 60) || ' minutes')::interval) > ${newStart}
+            LIMIT 1
+          `);
+          const conflictRows = ((conflictRes as unknown as { rows?: { id: number }[] }).rows
+            ?? (conflictRes as unknown as { id: number }[]) ?? []);
+          if (conflictRows.length > 0) {
+            const err = new Error('RESERVATION_CONFLICT') as Error & { code: string };
+            err.code = 'RESERVATION_CONFLICT';
+            throw err;
+          }
+          const insertRes = await tx.execute<ReservationRow>(sql`
+            INSERT INTO reservations
+              (user_id, trainer_id, pet_id, reservation_type, date, duration_minutes, status, notes, price)
+            VALUES
+              (${sessionUser.id}, ${trainerUserId}, ${reservationPetId}, ${reservationServiceType},
+               ${newStart}, ${durationNum}, ${reservationStatus}, ${reservationNotes}, ${reservationPrice})
+            RETURNING id, user_id, trainer_id, pet_id, reservation_type, date, duration_minutes,
+                      status, notes, price, created_at
+          `);
+          const insertRows = ((insertRes as unknown as { rows?: ReservationRow[] }).rows
+            ?? (insertRes as unknown as ReservationRow[]) ?? []);
+          return insertRows[0];
+        });
+      } catch (txErr) {
+        const code = (txErr as { code?: string } | null)?.code;
+        if (code === 'RESERVATION_CONFLICT') {
+          return res.status(409).json({
+            error: '해당 시간대에 이미 예약이 있습니다. 다른 시간을 선택해주세요.',
+            code: 'RESERVATION_CONFLICT',
+          });
+        }
+        throw txErr;
+      }
 
       // 알림: 결제 대기 / 무료 확정 두 케이스 안내
       const scheduleLabel = `${date} ${timeStr}`;
@@ -7246,12 +7307,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logServerError('[예약] 훈련사 알림 전송 실패:', notifyErr, req);
       }
 
+      // 기존 응답 계약(camelCase) 유지: snake_case raw row → camelCase 매핑
+      const reservationPayload = {
+        id: reservation.id,
+        userId: reservation.user_id,
+        trainerId: reservation.trainer_id,
+        petId: reservation.pet_id,
+        serviceType: reservation.reservation_type,
+        scheduledAt: reservation.date,
+        duration: reservation.duration_minutes,
+        status: reservation.status,
+        notes: reservation.notes,
+        price: reservation.price,
+        createdAt: reservation.created_at,
+      };
+
       res.json({
         success: true,
         message: grossAmount > 0
           ? "예약 신청이 접수되었습니다. 결제 완료 시 확정됩니다."
           : "예약이 확정되었습니다.",
-        data: reservation,
+        data: reservationPayload,
         requiresPayment: grossAmount > 0,
       });
     } catch (error) {
