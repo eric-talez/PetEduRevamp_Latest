@@ -10,7 +10,7 @@ import { RealTimePopularChart } from '@/components/RealTimePopularChart';
 import { ProgressWidget } from '@/components/ProgressWidget';
 import { RecommendationCard } from '@/components/RecommendationCard';
 import { useState, lazy, Suspense, useEffect, useMemo } from 'react';
-import { Loader2, ChevronDown, ChevronRight, ChevronLeft, Upload, Play, CheckCircle, MapPin, Video, ArrowRight, BookOpen, Users as LucideUsers, Heart, Syringe, BarChart3, Calendar, Settings, UserPlus, Zap, Info, TrendingUp } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronRight, ChevronLeft, Upload, Play, CheckCircle, MapPin, Video, ArrowRight, BookOpen, Users as LucideUsers, Heart, Syringe, BarChart3, Calendar, Settings, UserPlus, Zap, Info, TrendingUp, CalendarDays } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PasswordResetForm } from '@/components/PasswordResetForm';
 import { useQuery } from '@tanstack/react-query';
@@ -632,6 +632,25 @@ export default function Home() {
                     </div>
                   </div>
                 </TalezCard>
+
+                <TalezCard 
+                  className="p-4 cursor-pointer group hover:shadow-lg hover:scale-105 transition-all duration-300"
+                  onClick={() => setLocation('/pet-events-map')}
+                >
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className="p-3 rounded-full bg-warning/10 dark:bg-warning/30 group-hover:bg-warning/20 dark:group-hover:bg-warning/40 transition-colors">
+                      <CalendarDays className="h-5 w-5 text-warning dark:text-warning" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
+                        행사 지도
+                      </h3>
+                      <p className="text-xs mt-1" style={{ color: 'var(--txt-secondary)' }}>
+                        반려견 행사 한눈에
+                      </p>
+                    </div>
+                  </div>
+                </TalezCard>
               </>
             ) : isAuthenticated && userRole === 'trainer' ? (
               <>
@@ -843,6 +862,25 @@ export default function Home() {
                       </h3>
                       <p className="text-xs mt-1" style={{ color: 'var(--txt-secondary)' }}>
                         AI 분석 미리보기
+                      </p>
+                    </div>
+                  </div>
+                </TalezCard>
+
+                <TalezCard 
+                  className="p-4 cursor-pointer group hover:shadow-lg hover:scale-105 transition-all duration-300"
+                  onClick={() => setLocation('/pet-events-map')}
+                >
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/30 group-hover:bg-primary/20 dark:group-hover:bg-primary/40 transition-colors">
+                      <CalendarDays className="h-5 w-5 text-primary dark:text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm" style={{ color: 'var(--txt-strong)' }}>
+                        행사 지도
+                      </h3>
+                      <p className="text-xs mt-1" style={{ color: 'var(--txt-secondary)' }}>
+                        반려견 행사 한눈에
                       </p>
                     </div>
                   </div>

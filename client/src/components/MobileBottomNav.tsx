@@ -13,7 +13,8 @@ import {
   Users,
   DollarSign,
   Settings,
-  UserCog
+  UserCog,
+  CalendarDays
 } from "lucide-react";
 
 interface NavItem {
@@ -33,6 +34,7 @@ export function MobileBottomNav() {
         { href: "/courses", icon: <BookOpen className="w-5 h-5" />, label: "강의" },
         { href: "/shop", icon: <ShoppingBag className="w-5 h-5" />, label: "쇼핑" },
         { href: "/locations", icon: <MapPin className="w-5 h-5" />, label: "시설 찾기" },
+        { href: "/pet-events-map", icon: <CalendarDays className="w-5 h-5" />, label: "행사 지도" },
         { href: "/auth", icon: <LogIn className="w-5 h-5" />, label: "로그인" },
       ];
     }
@@ -76,6 +78,7 @@ export function MobileBottomNav() {
           { href: "/courses", icon: <BookOpen className="w-5 h-5" />, label: "강의" },
           { href: "/shop", icon: <ShoppingBag className="w-5 h-5" />, label: "쇼핑" },
           { href: "/locations", icon: <MapPin className="w-5 h-5" />, label: "시설 찾기" },
+          { href: "/pet-events-map", icon: <CalendarDays className="w-5 h-5" />, label: "행사 지도" },
           { href: "/profile", icon: <MoreHorizontal className="w-5 h-5" />, label: "더보기" },
         ];
     }

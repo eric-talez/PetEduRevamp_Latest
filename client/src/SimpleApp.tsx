@@ -31,6 +31,7 @@ import NotFound from "@/pages/not-found";
 import VideoTrainingPage from "@/pages/VideoTraining";
 import Certificates from "@/pages/Certificates";
 import LocationsPage from "./pages/locations";
+import PetEventsMapPage from "./pages/pet-events-map";
 const VideoCallPage = lazy(() => import("./pages/video-call"));
 import MessagesPage from "./pages/messages";
 import ChatbotPage from "./pages/chatbot";
@@ -636,6 +637,7 @@ function AuthenticatedRoutes() {
         </Route>
 
         <Route path="/my-pets" component={MyPets} />
+        <Route path="/pet-events-map" component={PetEventsMapPage} />
 
         <Route path="/certificates" component={() => <ProtectedRoute component={Certificates} />} />
         <Route path="/payment-success" component={PaymentSuccess} />
@@ -2092,6 +2094,9 @@ function UnauthenticatedRoutes() {
             );
           }}
         </Route>
+
+        {/* 전국 반려견 행사 지도 (공개) */}
+        <Route path="/pet-events-map" component={PetEventsMapPage} />
 
         {/* AI 챗봇 */}
         <Route path="/ai-chatbot">
