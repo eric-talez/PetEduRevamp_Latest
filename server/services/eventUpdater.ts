@@ -436,14 +436,108 @@ const KR_REGIONS = [
 ];
 
 /**
+ * Approximate city-center coordinates for the 17 Korean 시/도 regions.
+ * Used as a fallback when geocoding fails or no Maps API key is set,
+ * so that a candidate with a clearly identified region keyword is not discarded.
+ */
+const KR_REGION_COORDS: Record<string, { lat: string; lng: string; address: string }> = {
+  '서울': { lat: '37.5665', lng: '126.9780', address: '서울특별시' },
+  '부산': { lat: '35.1796', lng: '129.0756', address: '부산광역시' },
+  '대구': { lat: '35.8714', lng: '128.6014', address: '대구광역시' },
+  '인천': { lat: '37.4563', lng: '126.7052', address: '인천광역시' },
+  '광주': { lat: '35.1595', lng: '126.8526', address: '광주광역시' },
+  '대전': { lat: '36.3504', lng: '127.3845', address: '대전광역시' },
+  '울산': { lat: '35.5384', lng: '129.3114', address: '울산광역시' },
+  '세종': { lat: '36.4801', lng: '127.2890', address: '세종특별자치시' },
+  '경기': { lat: '37.4138', lng: '127.5183', address: '경기도' },
+  '강원': { lat: '37.8228', lng: '128.1555', address: '강원도' },
+  '충북': { lat: '36.6357', lng: '127.4914', address: '충청북도' },
+  '충남': { lat: '36.5184', lng: '126.8000', address: '충청남도' },
+  '전북': { lat: '35.7175', lng: '127.1530', address: '전라북도' },
+  '전남': { lat: '34.8161', lng: '126.4630', address: '전라남도' },
+  '경북': { lat: '36.4919', lng: '128.8889', address: '경상북도' },
+  '경남': { lat: '35.4606', lng: '128.2132', address: '경상남도' },
+  '제주': { lat: '33.4996', lng: '126.5312', address: '제주특별자치도' },
+};
+
+/**
+ * Helper: build a KST-anchored Date for the given Y/M/D.
+ * Returns null on invalid components (e.g. M=13, D=32).
+ */
+function makeDateKST(year: number, month: number, day: number, endOfDay = false): Date | null {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const mo = String(month).padStart(2, '0');
+  const d = String(day).padStart(2, '0');
+  const time = endOfDay ? 'T23:59:59+09:00' : 'T00:00:00+09:00';
+  const dt = new Date(`${year}-${mo}-${d}${time}`);
+  if (Number.isNaN(dt.getTime())) return null;
+  // Reject impossible calendar dates (e.g. 2/30 → JS rolls forward).
+  // Compare back the reconstructed parts in KST.
+  const kstParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(dt);
+  const reY = Number(kstParts.find((p) => p.type === 'year')?.value);
+  const reM = Number(kstParts.find((p) => p.type === 'month')?.value);
+  const reD = Number(kstParts.find((p) => p.type === 'day')?.value);
+  if (reY !== year || reM !== month || reD !== day) return null;
+  return dt;
+}
+
+/**
+ * Pick the most likely year for a (month, day) without an explicit year:
+ * use the current year, but if the resulting date is more than ~30 days in
+ * the past, assume next year (typical for forward-looking event listings).
+ */
+function inferYearForMonthDay(month: number, day: number, today: Date): number {
+  const cy = today.getFullYear();
+  const candidate = makeDateKST(cy, month, day);
+  if (!candidate) return cy;
+  const diffDays = (today.getTime() - candidate.getTime()) / 86_400_000;
+  return diffDays > 30 ? cy + 1 : cy;
+}
+
+function addDays(d: Date, n: number): Date {
+  return new Date(d.getTime() + n * 86_400_000);
+}
+
+/** KST-aware day-of-week (0=Sun..6=Sat). */
+function kstDayOfWeek(d: Date): number {
+  const s = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(d);
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(s);
+}
+
+function kstYMD(d: Date): { y: number; m: number; d: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(d);
+  return {
+    y: Number(parts.find((p) => p.type === 'year')?.value),
+    m: Number(parts.find((p) => p.type === 'month')?.value),
+    d: Number(parts.find((p) => p.type === 'day')?.value),
+  };
+}
+
+function kstMidnight(d: Date, endOfDay = false): Date | null {
+  const { y, m, d: day } = kstYMD(d);
+  return makeDateKST(y, m, day, endOfDay);
+}
+
+/**
  * Extract a date range from Korean free text.
  * Handles patterns like:
- *   "2026년 5월 14일~16일", "2026.05.14~2026.05.16", "2026-05-14 ~ 2026-05-16"
+ *   "2026년 5월 14일~16일", "2026.05.14~2026.05.16", "2026-05-14 ~ 2026-05-16",
+ *   "5/14~5/16", "5/14~16", "5월 14일~16일",
+ *   "오늘", "내일", "모레", "이번 주말", "다음 주말", "이번 주", "다음 주".
  */
-function extractDateRange(text: string): { startDate: Date; endDate: Date } | null {
+function extractDateRange(
+  text: string,
+  today: Date = new Date(),
+): { startDate: Date; endDate: Date } | null {
   // Priority 1: Partial end-day range — "2026년 5월 14일~16일" or "2026.5.14~16"
   // Must be checked FIRST before the full-date scanner picks up only the start date.
-  const partialRe = /(\d{4})[년.\/\-]\s*(\d{1,2})[월.\/\-]\s*(\d{1,2})일?\s*[~\-]\s*(\d{1,2})일?/;
+  const partialRe = /(\d{4})[년.\/\-]\s*(\d{1,2})[월.\/\-]\s*(\d{1,2})일?\s*[~\-―]\s*(\d{1,2})일?/;
   const pm = text.match(partialRe);
   if (pm) {
     const sd = parseFlexibleDate(`${pm[1]}-${pm[2]}-${pm[3]}`);
@@ -465,18 +559,178 @@ function extractDateRange(text: string): { startDate: Date; endDate: Date } | nu
     if (sd && ed) return { startDate: sd, endDate: ed };
   }
 
-  // Priority 3: Single date — treat as single-day event.
+  // Priority 3: Single fully-specified date — treat as single-day event.
   if (found.length === 1) {
     const sd = parseFlexibleDate(`${found[0].y}-${found[0].m}-${found[0].d}`);
-    if (sd) return { startDate: sd, endDate: sd };
+    const ed = parseFlexibleDate(`${found[0].y}-${found[0].m}-${found[0].d}`, true);
+    if (sd) return { startDate: sd, endDate: ed ?? sd };
+  }
+
+  // Priority 4: "M월 D일 ~ M월 D일" (no year)
+  const koMdMd = text.match(
+    /(?<!\d)(\d{1,2})\s*월\s*(\d{1,2})\s*일?\s*[~\-―]\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일?(?!\d)/,
+  );
+  if (koMdMd) {
+    const m1 = parseInt(koMdMd[1], 10), d1 = parseInt(koMdMd[2], 10);
+    const m2 = parseInt(koMdMd[3], 10), d2 = parseInt(koMdMd[4], 10);
+    const y = inferYearForMonthDay(m1, d1, today);
+    // If end month is earlier than start, it likely crosses the year boundary.
+    const ey = m2 < m1 ? y + 1 : y;
+    const sd = makeDateKST(y, m1, d1);
+    const ed = makeDateKST(ey, m2, d2, true);
+    if (sd && ed && ed >= sd) return { startDate: sd, endDate: ed };
+  }
+
+  // Priority 5: "M월 D일 ~ D일" (no year, same month)
+  const koMdd = text.match(/(?<!\d)(\d{1,2})\s*월\s*(\d{1,2})\s*일?\s*[~\-―]\s*(\d{1,2})\s*일(?!\d)/);
+  if (koMdd) {
+    const mm = parseInt(koMdd[1], 10);
+    const d1 = parseInt(koMdd[2], 10);
+    const d2 = parseInt(koMdd[3], 10);
+    const y = inferYearForMonthDay(mm, d1, today);
+    const sd = makeDateKST(y, mm, d1);
+    const ed = makeDateKST(y, mm, d2, true);
+    if (sd && ed && ed >= sd) return { startDate: sd, endDate: ed };
+  }
+
+  // Priority 6: "M/D ~ M/D" (no year)
+  const mdmdRe =
+    /(?<![\d.\-/])(\d{1,2})[\/\.](\d{1,2})\s*[~\-―]\s*(\d{1,2})[\/\.](\d{1,2})(?!\d)/;
+  const mdmd = text.match(mdmdRe);
+  if (mdmd) {
+    const m1 = parseInt(mdmd[1], 10), d1 = parseInt(mdmd[2], 10);
+    const m2 = parseInt(mdmd[3], 10), d2 = parseInt(mdmd[4], 10);
+    const y = inferYearForMonthDay(m1, d1, today);
+    const ey = m2 < m1 ? y + 1 : y;
+    const sd = makeDateKST(y, m1, d1);
+    const ed = makeDateKST(ey, m2, d2, true);
+    if (sd && ed && ed >= sd) return { startDate: sd, endDate: ed };
+  }
+
+  // Priority 7: "M/D ~ D" (no year, same month)
+  const mddRe = /(?<![\d.\-/])(\d{1,2})[\/\.](\d{1,2})\s*[~\-―]\s*(\d{1,2})(?!\d)/;
+  const mdd = text.match(mddRe);
+  if (mdd) {
+    const mm = parseInt(mdd[1], 10);
+    const d1 = parseInt(mdd[2], 10);
+    const d2 = parseInt(mdd[3], 10);
+    const y = inferYearForMonthDay(mm, d1, today);
+    const sd = makeDateKST(y, mm, d1);
+    const ed = makeDateKST(y, mm, d2, true);
+    if (sd && ed && ed >= sd) return { startDate: sd, endDate: ed };
+  }
+
+  // Priority 8: Single "M월 D일" (no year)
+  const koSingle = text.match(/(?<!\d)(\d{1,2})\s*월\s*(\d{1,2})\s*일(?!\d)/);
+  if (koSingle) {
+    const mm = parseInt(koSingle[1], 10);
+    const d1 = parseInt(koSingle[2], 10);
+    const y = inferYearForMonthDay(mm, d1, today);
+    const sd = makeDateKST(y, mm, d1);
+    if (sd) return { startDate: sd, endDate: makeDateKST(y, mm, d1, true) ?? sd };
+  }
+
+  // Priority 9: Single "M/D" (no year). Guard against false positives: must be standalone.
+  const mdSingle = text.match(/(?<![\d.\-/])(\d{1,2})\/(\d{1,2})(?!\d)/);
+  if (mdSingle) {
+    const mm = parseInt(mdSingle[1], 10);
+    const d1 = parseInt(mdSingle[2], 10);
+    const y = inferYearForMonthDay(mm, d1, today);
+    const sd = makeDateKST(y, mm, d1);
+    if (sd) return { startDate: sd, endDate: makeDateKST(y, mm, d1, true) ?? sd };
+  }
+
+  // Priority 10: Relative day expressions.
+  const todayMid = kstMidnight(today);
+  if (todayMid) {
+    if (/오늘/.test(text)) {
+      const e = kstMidnight(today, true);
+      if (e) return { startDate: todayMid, endDate: e };
+    }
+    if (/내일/.test(text)) {
+      const s = kstMidnight(addDays(today, 1));
+      const e = kstMidnight(addDays(today, 1), true);
+      if (s && e) return { startDate: s, endDate: e };
+    }
+    if (/모레/.test(text)) {
+      const s = kstMidnight(addDays(today, 2));
+      const e = kstMidnight(addDays(today, 2), true);
+      if (s && e) return { startDate: s, endDate: e };
+    }
+    if (/글피/.test(text)) {
+      const s = kstMidnight(addDays(today, 3));
+      const e = kstMidnight(addDays(today, 3), true);
+      if (s && e) return { startDate: s, endDate: e };
+    }
+  }
+
+  // Priority 11: Weekend / week expressions.
+  const dow = kstDayOfWeek(today); // 0=Sun..6=Sat
+  if (/이번\s*주말/.test(text)) {
+    const daysToSat = (6 - dow + 7) % 7; // 0 if today is Sat
+    const sat = addDays(today, daysToSat);
+    const sun = addDays(sat, 1);
+    const s = kstMidnight(sat);
+    const e = kstMidnight(sun, true);
+    if (s && e) return { startDate: s, endDate: e };
+  }
+  if (/다음\s*주말/.test(text)) {
+    const daysToSat = (6 - dow + 7) % 7;
+    const sat = addDays(today, daysToSat + 7);
+    const sun = addDays(sat, 1);
+    const s = kstMidnight(sat);
+    const e = kstMidnight(sun, true);
+    if (s && e) return { startDate: s, endDate: e };
+  }
+  if (/이번\s*주(?!말)/.test(text)) {
+    const daysToSun = (7 - dow) % 7; // remaining days through Sunday (0 if today is Sunday)
+    const sunday = addDays(today, daysToSun);
+    const s = kstMidnight(today);
+    const e = kstMidnight(sunday, true);
+    if (s && e) return { startDate: s, endDate: e };
+  }
+  if (/다음\s*주(?!말)/.test(text)) {
+    // Next Mon..Sun (Korean convention: week starts Monday)
+    const daysToNextMon = ((1 - dow + 7) % 7) || 7;
+    const mon = addDays(today, daysToNextMon);
+    const sun = addDays(mon, 6);
+    const s = kstMidnight(mon);
+    const e = kstMidnight(sun, true);
+    if (s && e) return { startDate: s, endDate: e };
   }
 
   return null;
 }
 
 /**
+ * Find a Korean 시/도 region keyword in text and return fallback coords.
+ * Used when venue lookup and geocoding both fail.
+ */
+function findRegionFallback(
+  text: string,
+): { lat: string; lng: string; location: string } | null {
+  for (const region of KR_REGIONS) {
+    const idx = text.indexOf(region);
+    if (idx >= 0) {
+      const coords = KR_REGION_COORDS[region];
+      if (!coords) continue;
+      // Try to capture a 시/구 fragment near the region keyword for a richer label.
+      const slice = text.slice(idx, Math.min(text.length, idx + 30));
+      const enriched = slice.match(/([가-힣]+(?:특별시|광역시|특별자치시|특별자치도|도))?\s*([가-힣0-9]+(?:시|군|구))?/);
+      const subPart = enriched && enriched[2] ? ` ${enriched[2]}` : '';
+      return {
+        lat: coords.lat,
+        lng: coords.lng,
+        location: `${coords.address}${subPart}`.trim(),
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * Extract the first recognizable Korean location from free text.
- * Returns a venue address if found, otherwise the first Korean region name + context.
+ * Returns a venue address if found, otherwise a snippet near the first region keyword.
  */
 function extractLocationFromText(text: string): string | null {
   const venue = lookupVenue(text);
@@ -539,21 +793,20 @@ async function normalizeSearchResult(
   const snippet = rawSnippet.replace(/<[^>]+>/g, '').trim();
   const fullText = `${title} ${snippet}`;
 
+  const linkTail = link ? ` [${link}]` : '';
+
   if (!matchesPetKeyword(fullText)) {
-    return { ok: false, reason: `반려동물 키워드 미포함: "${title.slice(0, 60)}"` };
+    return { ok: false, reason: `반려동물 키워드 미포함: "${title.slice(0, 60)}"${linkTail}` };
   }
 
   const dates = extractDateRange(fullText);
   if (!dates) {
-    return { ok: false, reason: `날짜 추출 실패: "${title.slice(0, 60)}"` };
+    return { ok: false, reason: `날짜 추출 실패: "${title.slice(0, 60)}"${linkTail}` };
   }
 
-  const locationText = extractLocationFromText(fullText);
-  if (!locationText) {
-    return { ok: false, reason: `장소 추출 실패: "${title.slice(0, 60)}"` };
-  }
-
-  // Prefer venue lookup (has hard-coded coords), otherwise geocode.
+  // Prefer venue lookup (has hard-coded coords), then geocode the extracted
+  // address, then fall back to a 시/도 region keyword. We only fully discard
+  // the candidate when none of these resolve to coordinates.
   const venue = lookupVenue(fullText);
   let lat: string, lng: string, location: string;
   if (venue) {
@@ -561,13 +814,25 @@ async function normalizeSearchResult(
     lng = venue.lng;
     location = venue.address;
   } else {
-    const coords = await geocodeAddress(locationText);
-    if (!coords) {
-      return { ok: false, reason: `지오코딩 실패: "${locationText.slice(0, 60)}"` };
+    const locationText = extractLocationFromText(fullText);
+    let resolved: { lat: string; lng: string; location: string } | null = null;
+    if (locationText) {
+      const coords = await geocodeAddress(locationText);
+      if (coords) {
+        resolved = { lat: coords.lat, lng: coords.lng, location: locationText };
+      }
     }
-    lat = coords.lat;
-    lng = coords.lng;
-    location = locationText;
+    if (!resolved) {
+      // Region-keyword fallback (시/도 단위) — keeps the candidate alive even
+      // when geocoding is unavailable or returns no result.
+      resolved = findRegionFallback(fullText);
+    }
+    if (!resolved) {
+      return { ok: false, reason: `장소 추출 실패: "${title.slice(0, 60)}"${linkTail}` };
+    }
+    lat = resolved.lat;
+    lng = resolved.lng;
+    location = resolved.location;
   }
 
   // Infer category from keywords.
