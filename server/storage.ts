@@ -42,6 +42,9 @@ import {
   petEventImportRuns,
   type PetEventImportRun,
   type InsertPetEventImportRun,
+  petEventImportFailureResolutions,
+  type PetEventImportFailureResolution,
+  type InsertPetEventImportFailureResolution,
 } from "../shared/schema";
 import { logServerError } from './middleware/audit-logger';
 
@@ -8295,6 +8298,81 @@ class HybridStorage extends Storage {
       .where(lte(petEventImportRuns.startedAt, cutoff))
       .returning({ id: petEventImportRuns.id });
     return result.length;
+  }
+
+  // =============================================================================
+  // 수집 실패 후보 처리 상태 (Pet Event Import Failure Resolutions)
+  // =============================================================================
+  private failureResolutionsReady: Promise<void> | null = null;
+  private async ensureFailureResolutionsTable(): Promise<void> {
+    if (this.failureResolutionsReady) return this.failureResolutionsReady;
+    this.failureResolutionsReady = (async () => {
+      try {
+        await this.ensurePetEventImportRunsTable();
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS pet_event_import_failure_resolutions (
+            id SERIAL PRIMARY KEY,
+            run_id INTEGER NOT NULL REFERENCES pet_event_import_runs(id) ON DELETE CASCADE,
+            idx INTEGER NOT NULL,
+            status VARCHAR(20) NOT NULL,
+            resolved_event_id INTEGER,
+            note TEXT,
+            resolved_by INTEGER,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+          )
+        `);
+        await db.execute(sql`
+          CREATE UNIQUE INDEX IF NOT EXISTS uq_pet_event_import_failure_resolutions_run_idx
+          ON pet_event_import_failure_resolutions(run_id, idx)
+        `);
+      } catch (err) {
+        logServerError('[DB] pet_event_import_failure_resolutions 마이그레이션 실패:', err);
+        this.failureResolutionsReady = null;
+        throw err;
+      }
+    })();
+    return this.failureResolutionsReady;
+  }
+
+  async listPetEventImportFailureResolutions(runIds: number[]): Promise<PetEventImportFailureResolution[]> {
+    await this.ensureFailureResolutionsTable();
+    if (runIds.length === 0) return [];
+    return await db
+      .select()
+      .from(petEventImportFailureResolutions)
+      .where(inArray(petEventImportFailureResolutions.runId, runIds));
+  }
+
+  async upsertPetEventImportFailureResolution(
+    data: InsertPetEventImportFailureResolution,
+  ): Promise<PetEventImportFailureResolution> {
+    await this.ensureFailureResolutionsTable();
+    const [row] = await db
+      .insert(petEventImportFailureResolutions)
+      .values(data)
+      .onConflictDoUpdate({
+        target: [petEventImportFailureResolutions.runId, petEventImportFailureResolutions.idx],
+        set: {
+          status: data.status,
+          resolvedEventId: data.resolvedEventId ?? null,
+          note: data.note ?? null,
+          resolvedBy: data.resolvedBy ?? null,
+        },
+      })
+      .returning();
+    return row;
+  }
+
+  async deletePetEventImportFailureResolution(runId: number, idx: number): Promise<boolean> {
+    await this.ensureFailureResolutionsTable();
+    const result = await db
+      .delete(petEventImportFailureResolutions)
+      .where(and(
+        eq(petEventImportFailureResolutions.runId, runId),
+        eq(petEventImportFailureResolutions.idx, idx),
+      ))
+      .returning({ id: petEventImportFailureResolutions.id });
+    return result.length > 0;
   }
 }
 

@@ -24,7 +24,14 @@ import {
   type PetEvent,
   type PetEventCategory,
 } from "@shared/schema";
-import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2, XCircle, ExternalLink, Eye, EyeOff, Undo2, Inbox } from "lucide-react";
+
+interface ImportFailureItem {
+  source: string;
+  message: string;
+  link?: string | null;
+  title?: string | null;
+}
 
 interface SourceStat {
   source: string;
@@ -35,14 +42,29 @@ interface SourceStat {
 }
 
 interface ImportResult {
+  runId?: number;
   startedAt: string;
   finishedAt: string;
   durationMs: number;
   fetched: number;
   created: number;
   duplicates: number;
-  failures: Array<{ source: string; message: string }>;
+  failures: ImportFailureItem[];
   bySource: SourceStat[];
+}
+
+interface FailureCandidate {
+  runId: number;
+  idx: number;
+  runStartedAt: string;
+  source: string;
+  message: string;
+  link: string | null;
+  title: string | null;
+  status: "open" | "resolved" | "dismissed";
+  resolvedEventId: number | null;
+  note: string | null;
+  resolvedAt: string | null;
 }
 
 interface ImportHistoryResponse {
@@ -128,6 +150,9 @@ export default function AdminPetEventsPage() {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [expandedHistoryIdx, setExpandedHistoryIdx] = useState<number | null>(0);
+  const [failuresOpen, setFailuresOpen] = useState(false);
+  const [showResolved, setShowResolved] = useState(false);
+  const [pendingResolution, setPendingResolution] = useState<{ runId: number; idx: number } | null>(null);
 
   const runGeocode = async (opts?: { silentOnEmpty?: boolean; force?: boolean }) => {
     const address = form.location.trim();
@@ -263,6 +288,57 @@ export default function AdminPetEventsPage() {
   const lastRun = historyData?.data?.last ?? null;
   const history = historyData?.data?.history ?? [];
 
+  const { data: failuresData, isLoading: failuresLoading } = useQuery<{ success: boolean; data: FailureCandidate[] }>({
+    queryKey: ["/api/admin/pet-events/import/failures"],
+    refetchInterval: 60_000,
+  });
+  const failureCandidates = failuresData?.data ?? [];
+  const openCandidates = useMemo(() => failureCandidates.filter((c) => c.status === "open"), [failureCandidates]);
+  const visibleCandidates = useMemo(
+    () => (showResolved ? failureCandidates : openCandidates),
+    [failureCandidates, openCandidates, showResolved],
+  );
+
+  const resolveFailure = useMutation({
+    mutationFn: async (vars: { runId: number; idx: number; resolvedEventId?: number | null }) => {
+      const res = await apiRequest("POST", "/api/admin/pet-events/import/failures/resolve", vars);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "처리 실패");
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/failures"] });
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
+  const dismissFailure = useMutation({
+    mutationFn: async (vars: { runId: number; idx: number }) => {
+      const res = await apiRequest("POST", "/api/admin/pet-events/import/failures/dismiss", vars);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "처리 실패");
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/failures"] });
+      toast({ title: "후보를 숨겼습니다" });
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
+  const reopenFailure = useMutation({
+    mutationFn: async (vars: { runId: number; idx: number }) => {
+      const res = await apiRequest("POST", "/api/admin/pet-events/import/failures/reopen", vars);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "처리 실패");
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/failures"] });
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: {
@@ -305,12 +381,19 @@ export default function AdminPetEventsPage() {
         : await apiRequest("POST", "/api/admin/pet-events", payload);
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "저장 실패");
-      return json.data;
+      return json.data as PetEvent;
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
-      toast({ title: form.id ? "행사가 수정되었습니다" : "행사가 추가되었습니다" });
+      const wasResolution = pendingResolution;
+      if (wasResolution && saved?.id) {
+        resolveFailure.mutate({ runId: wasResolution.runId, idx: wasResolution.idx, resolvedEventId: saved.id });
+        toast({ title: "수동 등록 완료", description: "수집 실패 후보가 처리됨으로 표시되었습니다." });
+      } else {
+        toast({ title: form.id ? "행사가 수정되었습니다" : "행사가 추가되었습니다" });
+      }
+      setPendingResolution(null);
       setOpen(false);
       setForm(emptyForm());
     },
@@ -346,6 +429,7 @@ export default function AdminPetEventsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/failures"] });
       const failMsg = r.failures.length > 0 ? ` · 실패 ${r.failures.length}건` : "";
       toast({
         title: "자동 수집 완료",
@@ -436,7 +520,27 @@ export default function AdminPetEventsPage() {
     bulkDelete.mutate(ids);
   };
 
-  const openCreate = () => { setForm(emptyForm()); setLastGeocodedAddress(""); setOpen(true); };
+  const openCreate = () => { setForm(emptyForm()); setLastGeocodedAddress(""); setPendingResolution(null); setOpen(true); };
+
+  const openCreateFromCandidate = (c: FailureCandidate) => {
+    const cleanedTitle = (c.title ?? "").replace(/<[^>]+>/g, "").trim();
+    setForm({
+      ...emptyForm(),
+      title: cleanedTitle,
+      websiteUrl: c.link ?? "",
+      source: `${c.source} (수동 보완)`,
+      isActive: false,
+    });
+    setLastGeocodedAddress("");
+    setPendingResolution({ runId: c.runId, idx: c.idx });
+    setFailuresOpen(false);
+    setOpen(true);
+  };
+
+  const handleFormDialogOpenChange = (next: boolean) => {
+    if (!next) setPendingResolution(null);
+    setOpen(next);
+  };
   const openEdit = (it: PetEvent) => {
     setLastGeocodedAddress(it.location);
     setForm({
@@ -485,6 +589,14 @@ export default function AdminPetEventsPage() {
                     data-testid="button-open-history"
                   >
                     <History className="w-3 h-3 mr-1" /> 이력 보기 ({history.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFailuresOpen(true)}
+                    className="text-xs text-amber-700 underline-offset-2 hover:underline inline-flex items-center"
+                    data-testid="button-open-failures"
+                  >
+                    <Inbox className="w-3 h-3 mr-1" /> 실패 후보 검토 ({openCandidates.length})
                   </button>
                 </>
               ) : (
@@ -733,11 +845,18 @@ export default function AdminPetEventsPage() {
         )}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleFormDialogOpenChange}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{form.id ? "행사 수정" : "행사 추가"}</DialogTitle>
+            <DialogTitle>
+              {form.id ? "행사 수정" : pendingResolution ? "수집 실패 후보 수동 등록" : "행사 추가"}
+            </DialogTitle>
           </DialogHeader>
+          {pendingResolution && (
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-2">
+              저장 시 해당 후보가 자동으로 "처리됨"으로 표시됩니다. 누락된 일자·장소를 채워 주세요.
+            </div>
+          )}
           <div className="space-y-3">
             <div>
               <label className="text-sm font-medium">행사명</label>
@@ -825,6 +944,139 @@ export default function AdminPetEventsPage() {
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-stone-900 hover:bg-stone-800" data-testid="button-save-event">
               {save.isPending ? "저장 중…" : "저장"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={failuresOpen} onOpenChange={setFailuresOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto" data-testid="dialog-import-failures">
+          <DialogHeader>
+            <DialogTitle>수집 실패 후보 검토</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-between text-xs text-stone-600 mb-2">
+            <span>
+              검색엔진(Google/Naver/Daum) 등에서 행사로 추정되었으나 날짜·장소 추출에 실패한 후보를 검토하고 수동으로 등록할 수 있습니다.
+            </span>
+            <label className="flex items-center gap-1 cursor-pointer shrink-0 ml-2">
+              <Checkbox
+                checked={showResolved}
+                onCheckedChange={(v) => setShowResolved(v === true)}
+                data-testid="checkbox-show-resolved-failures"
+              />
+              <span>처리·숨김 항목 포함</span>
+            </label>
+          </div>
+          {failuresLoading ? (
+            <div className="py-8 text-center text-sm text-stone-500">불러오는 중…</div>
+          ) : visibleCandidates.length === 0 ? (
+            <div className="py-8 text-center text-sm text-stone-500">
+              {failureCandidates.length === 0
+                ? "최근 수집 실패 후보가 없습니다."
+                : "처리·숨김 항목만 있습니다. 위 토글을 켜서 확인하세요."}
+            </div>
+          ) : (
+            <Table data-testid="table-import-failures">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>출처 / 시각</TableHead>
+                  <TableHead>실패 사유</TableHead>
+                  <TableHead className="w-32">상태</TableHead>
+                  <TableHead className="w-44 text-right">액션</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {visibleCandidates.map((c) => {
+                  const isOpen = c.status === "open";
+                  const cleanedTitle = (c.title ?? "").replace(/<[^>]+>/g, "").trim();
+                  return (
+                    <TableRow key={`${c.runId}-${c.idx}`} data-testid={`row-failure-${c.runId}-${c.idx}`}>
+                      <TableCell className="text-xs align-top">
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${sourceBadgeClass(c.source)}`}
+                        >
+                          {c.source}
+                        </Badge>
+                        <div className="text-stone-400 mt-1">{formatRelative(c.runStartedAt)}</div>
+                      </TableCell>
+                      <TableCell className="text-xs align-top">
+                        {cleanedTitle && (
+                          <div className="font-medium text-stone-800 line-clamp-2 mb-0.5">{cleanedTitle}</div>
+                        )}
+                        <div className="text-amber-700 line-clamp-2">{c.message}</div>
+                        {c.link && (
+                          <a
+                            href={c.link}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="mt-1 inline-flex items-center gap-1 text-sky-700 hover:underline break-all"
+                            data-testid={`link-failure-${c.runId}-${c.idx}`}
+                          >
+                            <ExternalLink className="w-3 h-3 shrink-0" />
+                            <span className="line-clamp-1">{c.link}</span>
+                          </a>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs align-top">
+                        {c.status === "open" ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+                            검토 대기
+                          </Badge>
+                        ) : c.status === "resolved" ? (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            등록 완료{c.resolvedEventId ? ` · #${c.resolvedEventId}` : ""}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-stone-100 text-stone-600 border-stone-200">
+                            <EyeOff className="w-3 h-3 mr-1" /> 숨김
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right align-top">
+                        {isOpen ? (
+                          <div className="flex flex-col gap-1 items-end">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="bg-stone-900 hover:bg-stone-800 h-7 text-xs"
+                              onClick={() => openCreateFromCandidate(c)}
+                              data-testid={`button-register-failure-${c.runId}-${c.idx}`}
+                            >
+                              <Plus className="w-3 h-3 mr-1" /> 수동 등록
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs text-stone-500"
+                              onClick={() => dismissFailure.mutate({ runId: c.runId, idx: c.idx })}
+                              disabled={dismissFailure.isPending}
+                              data-testid={`button-dismiss-failure-${c.runId}-${c.idx}`}
+                            >
+                              <EyeOff className="w-3 h-3 mr-1" /> 숨기기
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs"
+                            onClick={() => reopenFailure.mutate({ runId: c.runId, idx: c.idx })}
+                            disabled={reopenFailure.isPending}
+                            data-testid={`button-reopen-failure-${c.runId}-${c.idx}`}
+                          >
+                            <Undo2 className="w-3 h-3 mr-1" /> 되돌리기
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFailuresOpen(false)}>닫기</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

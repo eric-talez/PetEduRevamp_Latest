@@ -24070,6 +24070,82 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  app.get('/api/admin/pet-events/import/failures', requireAuth('admin'), async (req, res) => {
+    try {
+      const rawLimit = Number(req.query.limit);
+      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 10;
+      const candidates = await eventUpdater.getFailureCandidates(limit);
+      res.json({ success: true, data: candidates });
+    } catch (error) {
+      logServerError('반려견 행사 실패 후보 조회 오류:', error);
+      res.status(500).json({ error: '조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.post('/api/admin/pet-events/import/failures/resolve', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const runId = Number(req.body?.runId);
+      const idx = Number(req.body?.idx);
+      const resolvedEventId = req.body?.resolvedEventId != null ? Number(req.body.resolvedEventId) : null;
+      const note = typeof req.body?.note === 'string' ? req.body.note.slice(0, 500) : null;
+      if (!Number.isInteger(runId) || runId <= 0 || !Number.isInteger(idx) || idx < 0) {
+        return res.status(400).json({ error: 'runId/idx가 올바르지 않습니다.', code: 'INVALID_INPUT' });
+      }
+      const userId = (req as any).user?.id ?? null;
+      const row = await storage.upsertPetEventImportFailureResolution({
+        runId,
+        idx,
+        status: 'resolved',
+        resolvedEventId: resolvedEventId && Number.isInteger(resolvedEventId) ? resolvedEventId : null,
+        note,
+        resolvedBy: typeof userId === 'number' ? userId : null,
+      });
+      res.json({ success: true, data: row });
+    } catch (error) {
+      logServerError('실패 후보 해결 처리 오류:', error, req);
+      res.status(500).json({ error: '처리 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.post('/api/admin/pet-events/import/failures/dismiss', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const runId = Number(req.body?.runId);
+      const idx = Number(req.body?.idx);
+      const note = typeof req.body?.note === 'string' ? req.body.note.slice(0, 500) : null;
+      if (!Number.isInteger(runId) || runId <= 0 || !Number.isInteger(idx) || idx < 0) {
+        return res.status(400).json({ error: 'runId/idx가 올바르지 않습니다.', code: 'INVALID_INPUT' });
+      }
+      const userId = (req as any).user?.id ?? null;
+      const row = await storage.upsertPetEventImportFailureResolution({
+        runId,
+        idx,
+        status: 'dismissed',
+        resolvedEventId: null,
+        note,
+        resolvedBy: typeof userId === 'number' ? userId : null,
+      });
+      res.json({ success: true, data: row });
+    } catch (error) {
+      logServerError('실패 후보 숨기기 오류:', error, req);
+      res.status(500).json({ error: '처리 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.post('/api/admin/pet-events/import/failures/reopen', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const runId = Number(req.body?.runId);
+      const idx = Number(req.body?.idx);
+      if (!Number.isInteger(runId) || runId <= 0 || !Number.isInteger(idx) || idx < 0) {
+        return res.status(400).json({ error: 'runId/idx가 올바르지 않습니다.', code: 'INVALID_INPUT' });
+      }
+      await storage.deletePetEventImportFailureResolution(runId, idx);
+      res.json({ success: true });
+    } catch (error) {
+      logServerError('실패 후보 재오픈 오류:', error, req);
+      res.status(500).json({ error: '처리 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   app.get('/api/admin/pet-events/import/history', requireAuth('admin'), async (req, res) => {
     try {
       const rawLimit = Number(req.query.limit);

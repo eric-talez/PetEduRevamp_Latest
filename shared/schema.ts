@@ -3941,7 +3941,12 @@ export const petEventImportRuns = pgTable("pet_event_import_runs", {
   fetched: integer("fetched").notNull().default(0),
   created: integer("created").notNull().default(0),
   duplicates: integer("duplicates").notNull().default(0),
-  failuresJson: jsonb("failures_json").$type<Array<{ source: string; message: string }>>().notNull().default([]),
+  failuresJson: jsonb("failures_json").$type<Array<{
+    source: string;
+    message: string;
+    link?: string | null;
+    title?: string | null;
+  }>>().notNull().default([]),
   bySourceJson: jsonb("by_source_json").$type<Array<{ source: string; fetched: number; created: number; duplicates: number; failures: number }>>().notNull().default([]),
 }, (t) => ({
   byStartedAt: index("idx_pet_event_import_runs_started_at").on(t.startedAt),
@@ -3950,3 +3955,23 @@ export const petEventImportRuns = pgTable("pet_event_import_runs", {
 export type PetEventImportRun = typeof petEventImportRuns.$inferSelect;
 export const insertPetEventImportRunSchema = createInsertSchema(petEventImportRuns).omit({ id: true });
 export type InsertPetEventImportRun = z.infer<typeof insertPetEventImportRunSchema>;
+
+// =============================================================================
+// 수집 실패 후보 처리 상태 (수동 등록 완료 / 숨김)
+// =============================================================================
+export const petEventImportFailureResolutions = pgTable("pet_event_import_failure_resolutions", {
+  id: serial("id").primaryKey(),
+  runId: integer("run_id").notNull().references(() => petEventImportRuns.id, { onDelete: "cascade" }),
+  idx: integer("idx").notNull(),
+  status: varchar("status", { length: 20 }).notNull(),
+  resolvedEventId: integer("resolved_event_id"),
+  note: text("note"),
+  resolvedBy: integer("resolved_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  uq: uniqueIndex("uq_pet_event_import_failure_resolutions_run_idx").on(t.runId, t.idx),
+}));
+
+export type PetEventImportFailureResolution = typeof petEventImportFailureResolutions.$inferSelect;
+export const insertPetEventImportFailureResolutionSchema = createInsertSchema(petEventImportFailureResolutions).omit({ id: true, createdAt: true });
+export type InsertPetEventImportFailureResolution = z.infer<typeof insertPetEventImportFailureResolutionSchema>;

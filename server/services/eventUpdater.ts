@@ -25,15 +25,37 @@ export interface SourceStat {
   failures: number;
 }
 
+export interface ImportFailure {
+  source: string;
+  message: string;
+  link?: string | null;
+  title?: string | null;
+}
+
 export interface ImportResult {
+  runId?: number;
   startedAt: string;
   finishedAt: string;
   durationMs: number;
   fetched: number;
   created: number;
   duplicates: number;
-  failures: Array<{ source: string; message: string }>;
+  failures: ImportFailure[];
   bySource: SourceStat[];
+}
+
+export interface FailureCandidate {
+  runId: number;
+  idx: number;
+  runStartedAt: string;
+  source: string;
+  message: string;
+  link: string | null;
+  title: string | null;
+  status: 'open' | 'resolved' | 'dismissed';
+  resolvedEventId: number | null;
+  note: string | null;
+  resolvedAt: string | null;
 }
 
 interface AdminLike {
@@ -784,7 +806,7 @@ async function geocodeAddress(address: string): Promise<{ lat: string; lng: stri
 
 type NormalizeResult =
   | { ok: true; event: CrawledEvent }
-  | { ok: false; reason: string };
+  | { ok: false; reason: string; link: string | null; title: string | null };
 
 /**
  * Normalise a search result (title + snippet + link + image) into a CrawledEvent.
@@ -805,12 +827,12 @@ async function normalizeSearchResult(
   const linkTail = link ? ` [${link}]` : '';
 
   if (!matchesPetKeyword(fullText)) {
-    return { ok: false, reason: `반려동물 키워드 미포함: "${title.slice(0, 60)}"${linkTail}` };
+    return { ok: false, reason: `반려동물 키워드 미포함: "${title.slice(0, 60)}"${linkTail}`, link, title };
   }
 
   const dates = extractDateRange(fullText);
   if (!dates) {
-    return { ok: false, reason: `날짜 추출 실패: "${title.slice(0, 60)}"${linkTail}` };
+    return { ok: false, reason: `날짜 추출 실패: "${title.slice(0, 60)}"${linkTail}`, link, title };
   }
 
   // Prefer venue lookup (has hard-coded coords), then geocode the extracted
@@ -837,7 +859,7 @@ async function normalizeSearchResult(
       resolved = findRegionFallback(fullText);
     }
     if (!resolved) {
-      return { ok: false, reason: `장소 추출 실패: "${title.slice(0, 60)}"${linkTail}` };
+      return { ok: false, reason: `장소 추출 실패: "${title.slice(0, 60)}"${linkTail}`, link, title };
     }
     lat = resolved.lat;
     lng = resolved.lng;
@@ -998,7 +1020,7 @@ async function fetchNaverSearchEvents(): Promise<SearchFetchResult> {
           if (result.ok) {
             events.push(result.event);
           } else {
-            failures.push({ source: 'Naver 검색', message: result.reason });
+            failures.push({ source: 'Naver 검색', message: result.reason, link: result.link, title: result.title });
           }
         }
       } catch (e) {
@@ -1070,7 +1092,7 @@ async function fetchDaumSearchEvents(): Promise<SearchFetchResult> {
           if (result.ok) {
             events.push(result.event);
           } else {
-            failures.push({ source: 'Daum 검색', message: result.reason });
+            failures.push({ source: 'Daum 검색', message: result.reason, link: result.link, title: result.title });
           }
         }
       } catch (e) {
@@ -1159,7 +1181,7 @@ async function fetchGoogleSearchEvents(): Promise<SearchFetchResult> {
         if (result.ok) {
           events.push(result.event);
         } else {
-          failures.push({ source: 'Google 검색', message: result.reason });
+          failures.push({ source: 'Google 검색', message: result.reason, link: result.link, title: result.title });
         }
       }
     } catch (e) {
@@ -1283,6 +1305,7 @@ export class EventUpdaterService {
     try {
       const rows = await storage.listPetEventImportRuns(n);
       return rows.map((r) => ({
+        runId: r.id,
         startedAt: r.startedAt.toISOString(),
         finishedAt: r.finishedAt.toISOString(),
         durationMs: r.durationMs,
@@ -1298,12 +1321,53 @@ export class EventUpdaterService {
     }
   }
 
+  /**
+   * 최근 N개 실행에서 발생한 실패 후보를 처리 상태와 함께 반환.
+   * 'open' / 'resolved' / 'dismissed' 상태가 머지되어 클라이언트가 필터링할 수 있다.
+   */
+  public async getFailureCandidates(limit = 20): Promise<FailureCandidate[]> {
+    const n = Math.max(1, Math.min(HISTORY_MAX, limit));
+    try {
+      const rows = await storage.listPetEventImportRuns(n);
+      const runIds = rows.map((r) => r.id);
+      const resolutions = await storage.listPetEventImportFailureResolutions(runIds);
+      const resMap = new Map<string, typeof resolutions[number]>();
+      for (const r of resolutions) resMap.set(`${r.runId}:${r.idx}`, r);
+
+      const out: FailureCandidate[] = [];
+      for (const run of rows) {
+        const failures = Array.isArray(run.failuresJson) ? run.failuresJson : [];
+        failures.forEach((f, idx) => {
+          const res = resMap.get(`${run.id}:${idx}`);
+          out.push({
+            runId: run.id,
+            idx,
+            runStartedAt: run.startedAt.toISOString(),
+            source: f.source,
+            message: f.message,
+            link: f.link ?? null,
+            title: f.title ?? null,
+            status: (res?.status as 'resolved' | 'dismissed' | undefined) ?? 'open',
+            resolvedEventId: res?.resolvedEventId ?? null,
+            note: res?.note ?? null,
+            resolvedAt: res ? res.createdAt.toISOString() : null,
+          });
+        });
+      }
+      return out;
+    } catch (e) {
+      logServerError('[eventUpdater] 실패 후보 조회 실패:', e);
+      return [];
+    }
+  }
+
   private async restoreLastResult(): Promise<void> {
     try {
       const rows = await storage.listPetEventImportRuns(1);
       if (rows.length === 0) return;
       const r = rows[0];
       this.lastResult = {
+        runId: r.id,
         startedAt: r.startedAt.toISOString(),
         finishedAt: r.finishedAt.toISOString(),
         durationMs: r.durationMs,
@@ -1456,9 +1520,8 @@ export class EventUpdaterService {
       failures,
       bySource,
     };
-    this.lastResult = result;
     try {
-      await storage.createPetEventImportRun({
+      const saved = await storage.createPetEventImportRun({
         startedAt,
         finishedAt,
         durationMs: result.durationMs,
@@ -1468,9 +1531,11 @@ export class EventUpdaterService {
         failuresJson: result.failures,
         bySourceJson: result.bySource,
       });
+      result.runId = saved.id;
     } catch (e) {
       logServerError('[eventUpdater] 이력 저장 실패:', e);
     }
+    this.lastResult = result;
 
     console.log(
       `[eventUpdater] 완료: 수집 ${fetched} / 신규 ${created} / 중복 ${duplicates} / 실패 ${failures.length} (${result.durationMs}ms)`
