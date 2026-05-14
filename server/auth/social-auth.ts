@@ -160,6 +160,7 @@ export function setupSocialAuth(app: Express) {
         passport.authenticate('kakao', {
           failureRedirect: '/auth?error=social-login-failed',
           callbackURL,
+          session: false,
         } as any)(req, res, next);
       },
       (req, res) => {
@@ -167,7 +168,6 @@ export function setupSocialAuth(app: Express) {
         
         // 신규 사용자인 경우 회원가입 페이지로 리다이렉트
         if (user && user.isNewUser) {
-          // 소셜 로그인 정보를 세션에 저장
           req.session.socialSignup = {
             provider: user.provider,
             socialId: user.socialId,
@@ -175,14 +175,25 @@ export function setupSocialAuth(app: Express) {
             name: user.name
           };
           
-          console.log('세션에 카카오 가입 정보 저장:', req.session.socialSignup);
+          console.log('[SocialAuth] 세션에 카카오 가입 정보 저장:', req.session.socialSignup);
           
-          // 회원가입 페이지로 리다이렉트
-          return res.redirect('/auth/register?social=kakao');
+          return req.session.save((err) => {
+            if (err) {
+              logServerError('[SocialAuth] kakao 신규 사용자 세션 저장 실패:', err, req);
+              return res.redirect('/auth?error=session-error');
+            }
+            res.redirect('/auth/register?social=kakao');
+          });
         }
         
-        // 기존 사용자는 대시보드로 리다이렉트
-        res.redirect('/dashboard');
+        // 기존 사용자는 req.login()으로 명시적으로 세션에 등록 후 대시보드로 리다이렉트
+        req.login(user, (err) => {
+          if (err) {
+            logServerError('[SocialAuth] kakao 기존 사용자 로그인 세션 저장 실패:', err, req);
+            return res.redirect('/auth?error=social-login-failed');
+          }
+          res.redirect('/dashboard');
+        });
       }
     );
     
@@ -265,6 +276,7 @@ export function setupSocialAuth(app: Express) {
         passport.authenticate('naver', {
           failureRedirect: '/auth?error=social-login-failed',
           callbackURL,
+          session: false,
         } as any)(req, res, next);
       },
       (req, res) => {
@@ -272,7 +284,6 @@ export function setupSocialAuth(app: Express) {
         
         // 신규 사용자인 경우 회원가입 페이지로 리다이렉트
         if (user && user.isNewUser) {
-          // 소셜 로그인 정보를 세션에 저장
           req.session.socialSignup = {
             provider: user.provider,
             socialId: user.socialId,
@@ -284,14 +295,25 @@ export function setupSocialAuth(app: Express) {
             gender: user.gender
           };
           
-          console.log('세션에 소셜 가입 정보 저장:', req.session.socialSignup);
+          console.log('[SocialAuth] 세션에 네이버 가입 정보 저장:', req.session.socialSignup);
           
-          // 회원가입 페이지로 리다이렉트
-          return res.redirect('/auth/register?social=naver');
+          return req.session.save((err) => {
+            if (err) {
+              logServerError('[SocialAuth] naver 신규 사용자 세션 저장 실패:', err, req);
+              return res.redirect('/auth?error=session-error');
+            }
+            res.redirect('/auth/register?social=naver');
+          });
         }
         
-        // 기존 사용자는 대시보드로 리다이렉트
-        res.redirect('/dashboard');
+        // 기존 사용자는 req.login()으로 명시적으로 세션에 등록 후 대시보드로 리다이렉트
+        req.login(user, (err) => {
+          if (err) {
+            logServerError('[SocialAuth] naver 기존 사용자 로그인 세션 저장 실패:', err, req);
+            return res.redirect('/auth?error=social-login-failed');
+          }
+          res.redirect('/dashboard');
+        });
       }
     );
     
@@ -362,6 +384,7 @@ export function setupSocialAuth(app: Express) {
           failureRedirect: '/auth?error=social-login-failed',
           state: true,
           callbackURL,
+          session: false,
         } as any)(req, res, next);
       },
       (req, res) => {
@@ -369,7 +392,6 @@ export function setupSocialAuth(app: Express) {
         
         // 신규 사용자인 경우 회원가입 페이지로 리다이렉트
         if (user && user.isNewUser) {
-          // 소셜 로그인 정보를 세션에 저장
           req.session.socialSignup = {
             provider: user.provider,
             socialId: user.socialId,
@@ -377,14 +399,25 @@ export function setupSocialAuth(app: Express) {
             name: user.name
           };
           
-          console.log('세션에 구글 가입 정보 저장:', req.session.socialSignup);
+          console.log('[SocialAuth] 세션에 구글 가입 정보 저장:', req.session.socialSignup);
           
-          // 회원가입 페이지로 리다이렉트
-          return res.redirect('/auth/register?social=google');
+          return req.session.save((err) => {
+            if (err) {
+              logServerError('[SocialAuth] google 신규 사용자 세션 저장 실패:', err, req);
+              return res.redirect('/auth?error=session-error');
+            }
+            res.redirect('/auth/register?social=google');
+          });
         }
         
-        // 기존 사용자는 대시보드로 리다이렉트
-        res.redirect('/dashboard');
+        // 기존 사용자는 req.login()으로 명시적으로 세션에 등록 후 대시보드로 리다이렉트
+        req.login(user, (err) => {
+          if (err) {
+            logServerError('[SocialAuth] google 기존 사용자 로그인 세션 저장 실패:', err, req);
+            return res.redirect('/auth?error=social-login-failed');
+          }
+          res.redirect('/dashboard');
+        });
       }
     );
     

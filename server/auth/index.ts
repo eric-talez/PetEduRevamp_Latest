@@ -139,10 +139,18 @@ export function setupAuth(app: Express, sessionStore?: session.Store) {
   
   // Passport 직렬화/역직렬화 설정
   passport.serializeUser((user, done) => {
+    if (!user?.id) {
+      console.error('[Auth] serializeUser: user.id가 없습니다. 임시 소셜 객체가 직렬화 시도됨 — 세션 등록 건너뜀:', user);
+      return done(null, false as any);
+    }
     done(null, user.id);
   });
   
   passport.deserializeUser(async (id: number, done) => {
+    if (!id) {
+      console.error('[Auth] deserializeUser: 세션에 유효하지 않은 id가 저장되어 있습니다:', id);
+      return done(null, false);
+    }
     try {
       // DB 우선 조회: 로그인 경로(getUserByUsername)와 동일한 데이터 소스를 사용해
       // 메모리 시드와 DB가 같은 id를 다른 사용자로 보유한 경우의 역할 불일치를 방지한다.
