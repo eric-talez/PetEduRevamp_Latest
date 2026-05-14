@@ -26,6 +26,14 @@ import {
 } from "@shared/schema";
 import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 
+interface SourceStat {
+  source: string;
+  fetched: number;
+  created: number;
+  duplicates: number;
+  failures: number;
+}
+
 interface ImportResult {
   startedAt: string;
   finishedAt: string;
@@ -34,6 +42,7 @@ interface ImportResult {
   created: number;
   duplicates: number;
   failures: Array<{ source: string; message: string }>;
+  bySource: SourceStat[];
 }
 
 interface ImportHistoryResponse {
@@ -118,6 +127,7 @@ export default function AdminPetEventsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [expandedHistoryIdx, setExpandedHistoryIdx] = useState<number | null>(0);
 
   const runGeocode = async (opts?: { silentOnEmpty?: boolean; force?: boolean }) => {
     const address = form.location.trim();
@@ -820,63 +830,102 @@ export default function AdminPetEventsPage() {
       </Dialog>
 
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-import-history">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto" data-testid="dialog-import-history">
           <DialogHeader>
-            <DialogTitle>자동 수집 실행 이력</DialogTitle>
+            <DialogTitle>자동 수집 실행 이력 (최근 {history.length}회)</DialogTitle>
           </DialogHeader>
           {history.length === 0 ? (
             <div className="text-sm text-stone-500 py-8 text-center">표시할 이력이 없습니다.</div>
           ) : (
-            <Table data-testid="table-import-history">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10"></TableHead>
-                  <TableHead>시작 시각</TableHead>
-                  <TableHead className="text-right">소요</TableHead>
-                  <TableHead className="text-right">수집</TableHead>
-                  <TableHead className="text-right">신규</TableHead>
-                  <TableHead className="text-right">중복</TableHead>
-                  <TableHead>실패</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {history.map((h, idx) => {
-                  const ok = h.failures.length === 0;
-                  return (
-                    <TableRow key={`${h.startedAt}-${idx}`} data-testid={`row-import-history-${idx}`}>
-                      <TableCell>
-                        {ok ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="space-y-2">
+              {history.map((h, idx) => {
+                const ok = h.failures.length === 0;
+                const expanded = expandedHistoryIdx === idx;
+                const failuresBySource = h.failures.reduce<Record<string, string[]>>((acc, f) => {
+                  (acc[f.source] ||= []).push(f.message);
+                  return acc;
+                }, {});
+                return (
+                  <div key={`${h.startedAt}-${idx}`} className="border border-stone-200 rounded-md" data-testid={`row-import-history-${idx}`}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedHistoryIdx(expanded ? null : idx)}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-stone-50"
+                    >
+                      {ok ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium">{new Date(h.startedAt).toLocaleString("ko-KR")}</div>
+                        <div className="text-[11px] text-stone-400">{formatRelative(h.startedAt)} · {formatDuration(h.durationMs)}</div>
+                      </div>
+                      <div className="flex gap-3 text-xs shrink-0">
+                        <span>수집 <b>{h.fetched}</b></span>
+                        <span className="text-emerald-700">신규 <b>{h.created}</b></span>
+                        <span className="text-stone-500">중복 {h.duplicates}</span>
+                        {h.failures.length > 0 && <span className="text-amber-700">실패 {h.failures.length}</span>}
+                      </div>
+                    </button>
+                    {expanded && (
+                      <div className="border-t border-stone-200 bg-stone-50/50 p-3">
+                        {h.bySource.length === 0 ? (
+                          <div className="text-xs text-stone-400">소스별 통계가 기록되지 않은 이전 실행입니다.</div>
                         ) : (
-                          <AlertCircle className="w-4 h-4 text-amber-600" />
+                          <Table data-testid={`table-by-source-${idx}`}>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-xs">소스</TableHead>
+                                <TableHead className="text-right text-xs">수집</TableHead>
+                                <TableHead className="text-right text-xs">신규</TableHead>
+                                <TableHead className="text-right text-xs">중복</TableHead>
+                                <TableHead className="text-right text-xs">실패</TableHead>
+                                <TableHead className="text-xs">실패 사유</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {h.bySource.map((s) => {
+                                const reasons = failuresBySource[s.source] ?? [];
+                                const isEmpty = s.fetched === 0 && s.created === 0 && s.duplicates === 0 && s.failures === 0;
+                                return (
+                                  <TableRow key={s.source} data-testid={`row-source-${idx}-${s.source}`}>
+                                    <TableCell className="text-xs font-medium">
+                                      {s.source}
+                                      {isEmpty && (
+                                        <Badge variant="outline" className="ml-2 text-[10px] py-0">키 미설정/0건</Badge>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-right text-xs">{s.fetched}</TableCell>
+                                    <TableCell className="text-right text-xs font-medium text-emerald-700">{s.created}</TableCell>
+                                    <TableCell className="text-right text-xs text-stone-500">{s.duplicates}</TableCell>
+                                    <TableCell className="text-right text-xs text-amber-700">{s.failures}</TableCell>
+                                    <TableCell className="text-xs">
+                                      {reasons.length === 0 ? (
+                                        <span className="text-stone-400">—</span>
+                                      ) : (
+                                        <ul className="space-y-0.5 text-amber-700 max-h-32 overflow-y-auto">
+                                          {reasons.slice(0, 10).map((m, i) => (
+                                            <li key={i}><XCircle className="inline w-3 h-3 mr-1" />{m}</li>
+                                          ))}
+                                          {reasons.length > 10 && (
+                                            <li className="text-stone-400">외 {reasons.length - 10}건</li>
+                                          )}
+                                        </ul>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
                         )}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        <div>{new Date(h.startedAt).toLocaleString("ko-KR")}</div>
-                        <div className="text-stone-400">{formatRelative(h.startedAt)}</div>
-                      </TableCell>
-                      <TableCell className="text-right text-xs">{formatDuration(h.durationMs)}</TableCell>
-                      <TableCell className="text-right text-xs">{h.fetched}</TableCell>
-                      <TableCell className="text-right text-xs font-medium">{h.created}</TableCell>
-                      <TableCell className="text-right text-xs text-stone-500">{h.duplicates}</TableCell>
-                      <TableCell className="text-xs">
-                        {h.failures.length === 0 ? (
-                          <span className="text-stone-400">—</span>
-                        ) : (
-                          <ul className="space-y-0.5 text-amber-700">
-                            {h.failures.map((f, i) => (
-                              <li key={i}>
-                                <span className="font-medium">[{f.source}]</span> {f.message}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setHistoryOpen(false)}>닫기</Button>

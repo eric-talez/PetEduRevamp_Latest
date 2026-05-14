@@ -8257,9 +8257,11 @@ class HybridStorage extends Storage {
             fetched INTEGER NOT NULL DEFAULT 0,
             created INTEGER NOT NULL DEFAULT 0,
             duplicates INTEGER NOT NULL DEFAULT 0,
-            failures_json JSONB NOT NULL DEFAULT '[]'::jsonb
+            failures_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+            by_source_json JSONB NOT NULL DEFAULT '[]'::jsonb
           )
         `);
+        await db.execute(sql`ALTER TABLE pet_event_import_runs ADD COLUMN IF NOT EXISTS by_source_json JSONB NOT NULL DEFAULT '[]'::jsonb`);
         await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_event_import_runs_started_at ON pet_event_import_runs(started_at)`);
       } catch (err) {
         logServerError('[DB] pet_event_import_runs 테이블 마이그레이션 실패:', err);

@@ -17,6 +17,14 @@ interface CrawledEvent {
   source: string;
 }
 
+export interface SourceStat {
+  source: string;
+  fetched: number;
+  created: number;
+  duplicates: number;
+  failures: number;
+}
+
 export interface ImportResult {
   startedAt: string;
   finishedAt: string;
@@ -25,6 +33,7 @@ export interface ImportResult {
   created: number;
   duplicates: number;
   failures: Array<{ source: string; message: string }>;
+  bySource: SourceStat[];
 }
 
 interface AdminLike {
@@ -1281,6 +1290,7 @@ export class EventUpdaterService {
         created: r.created,
         duplicates: r.duplicates,
         failures: Array.isArray(r.failuresJson) ? r.failuresJson : [],
+        bySource: Array.isArray(r.bySourceJson) ? r.bySourceJson : [],
       }));
     } catch (e) {
       logServerError('[eventUpdater] 이력 조회 실패:', e);
@@ -1301,6 +1311,7 @@ export class EventUpdaterService {
         created: r.created,
         duplicates: r.duplicates,
         failures: Array.isArray(r.failuresJson) ? r.failuresJson : [],
+        bySource: Array.isArray(r.bySourceJson) ? r.bySourceJson : [],
       };
     } catch (e) {
       logServerError('[eventUpdater] 마지막 결과 복원 실패:', e);
@@ -1339,18 +1350,34 @@ export class EventUpdaterService {
     console.log('[eventUpdater] 수집 시작 — 공급자 상태:');
     logProviderStatuses();
 
+    const sourceStats = new Map<string, SourceStat>();
+    const ensureStat = (name: string): SourceStat => {
+      let s = sourceStats.get(name);
+      if (!s) {
+        s = { source: name, fetched: 0, created: 0, duplicates: 0, failures: 0 };
+        sourceStats.set(name, s);
+      }
+      return s;
+    };
+    const recordFailure = (source: string, message: string) => {
+      failures.push({ source, message });
+      ensureStat(source).failures++;
+    };
+
     try {
       const collected: CrawledEvent[] = [];
 
       // Simple sources: throw on failure → caught here and recorded.
       for (const source of SIMPLE_SOURCES) {
+        ensureStat(source.name);
         try {
           const items = await source.fn();
           fetched += items.length;
+          ensureStat(source.name).fetched += items.length;
           collected.push(...items);
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
-          failures.push({ source: source.name, message });
+          recordFailure(source.name, message);
           logServerError(`[eventUpdater] 소스 ${source.name} 수집 실패:`, e);
         }
       }
@@ -1358,14 +1385,18 @@ export class EventUpdaterService {
       // Search-engine sources: return structured { events, failures }.
       // Per-item normalization failures are included in the returned failures array.
       for (const source of SEARCH_SOURCES) {
+        ensureStat(source.name);
         try {
           const result = await source.fn();
           fetched += result.events.length;
+          ensureStat(source.name).fetched += result.events.length;
           collected.push(...result.events);
-          failures.push(...result.failures);
+          for (const f of result.failures) {
+            recordFailure(f.source || source.name, f.message);
+          }
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
-          failures.push({ source: source.name, message });
+          recordFailure(source.name, message);
           logServerError(`[eventUpdater] 소스 ${source.name} 수집 실패:`, e);
         }
       }
@@ -1380,6 +1411,7 @@ export class EventUpdaterService {
         const key = dedupeKey(ev.title, ev.startDate, ev.location);
         if (existingKeys.has(key) || batchKeys.has(key)) {
           duplicates++;
+          ensureStat(ev.source).duplicates++;
           continue;
         }
         batchKeys.add(key);
@@ -1401,9 +1433,10 @@ export class EventUpdaterService {
           };
           await storage.createPetEvent(payload);
           created++;
+          ensureStat(ev.source).created++;
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
-          failures.push({ source: ev.source, message: `저장 실패: ${message}` });
+          recordFailure(ev.source, `저장 실패: ${message}`);
           logServerError('[eventUpdater] 행사 저장 실패:', e);
         }
       }
@@ -1412,6 +1445,7 @@ export class EventUpdaterService {
     }
 
     const finishedAt = new Date();
+    const bySource = Array.from(sourceStats.values()).sort((a, b) => a.source.localeCompare(b.source, 'ko'));
     const result: ImportResult = {
       startedAt: startedAt.toISOString(),
       finishedAt: finishedAt.toISOString(),
@@ -1420,6 +1454,7 @@ export class EventUpdaterService {
       created,
       duplicates,
       failures,
+      bySource,
     };
     this.lastResult = result;
     try {
@@ -1431,6 +1466,7 @@ export class EventUpdaterService {
         created: result.created,
         duplicates: result.duplicates,
         failuresJson: result.failures,
+        bySourceJson: result.bySource,
       });
     } catch (e) {
       logServerError('[eventUpdater] 이력 저장 실패:', e);

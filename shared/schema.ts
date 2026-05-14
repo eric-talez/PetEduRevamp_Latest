@@ -3942,6 +3942,7 @@ export const petEventImportRuns = pgTable("pet_event_import_runs", {
   created: integer("created").notNull().default(0),
   duplicates: integer("duplicates").notNull().default(0),
   failuresJson: jsonb("failures_json").$type<Array<{ source: string; message: string }>>().notNull().default([]),
+  bySourceJson: jsonb("by_source_json").$type<Array<{ source: string; fetched: number; created: number; duplicates: number; failures: number }>>().notNull().default([]),
 }, (t) => ({
   byStartedAt: index("idx_pet_event_import_runs_started_at").on(t.startedAt),
 }));
