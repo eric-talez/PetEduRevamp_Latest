@@ -144,7 +144,9 @@ export function setupAuth(app: Express, sessionStore?: session.Store) {
   
   passport.deserializeUser(async (id: number, done) => {
     try {
-      const user = await storage.getUser(id);
+      // DB 우선 조회: 로그인 경로(getUserByUsername)와 동일한 데이터 소스를 사용해
+      // 메모리 시드와 DB가 같은 id를 다른 사용자로 보유한 경우의 역할 불일치를 방지한다.
+      const user = await storage.getUserByIdFromDb(id);
       if (!user) {
         return done(null, false);
       }
@@ -455,8 +457,18 @@ function setupAuthRoutes(app: Express) {
         );
       }
 
-      // 세션 생성
-      req.login(user, (loginErr) => {
+      // 역할 전환 시 이전 세션 잔존(예: admin → pet-owner)으로 인한
+      // 라우팅·권한 혼선과 세션 고정 공격을 모두 차단하기 위해 세션을 재생성한 뒤 로그인한다.
+      req.session.regenerate((regenErr) => {
+        if (regenErr) {
+          logServerError('[QuickLogin] 세션 재생성 오류:', regenErr, req);
+          return res.error(
+            ApiErrorCode.INTERNAL_SERVER_ERROR,
+            '세션 재생성 중 오류가 발생했습니다'
+          );
+        }
+
+        req.login(user, (loginErr) => {
         if (loginErr) {
           logServerError('[QuickLogin] 세션 생성 오류:', loginErr, req);
           return res.error(
@@ -502,6 +514,7 @@ function setupAuthRoutes(app: Express) {
             token,
             expiresIn: JWT_EXPIRES_IN
           }, `퀵로그인에 성공했습니다 (${user.role}).`);
+        });
         });
       });
     } catch (error) {

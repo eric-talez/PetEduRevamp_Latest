@@ -1288,6 +1288,50 @@ class Storage {
     return this.users?.find(user => user.id === id);
   }
 
+  /**
+   * 인증 세션 역직렬화 전용 사용자 조회 (DB 우선).
+   * getUserByUsername이 DB를 우선 사용하므로, 로그인 시 사용된 사용자와
+   * deserializeUser 결과를 일치시키기 위해 DB → 메모리 순서로 조회한다.
+   */
+  async getUserByIdFromDb(id: number) {
+    // 인증 경로는 DB 단일 진실 원천만 사용한다. 메모리 fallback을 두면
+    // 메모리 시드와 DB가 같은 id를 다른 사용자로 보유할 때 deserializeUser가
+    // 다른 사용자로 식별되어 권한이 뒤바뀌는 사고가 발생한다.
+    // 명시적 컬럼 선택은 일부 환경에 신규 컬럼(phone_verified_at 등)이 없어도
+    // 동작하도록 호환성을 유지한다.
+    try {
+      const selectFields = {
+        id: usersTable.id,
+        username: usersTable.username,
+        email: usersTable.email,
+        password: usersTable.password,
+        role: usersTable.role,
+        name: usersTable.name,
+        phone: usersTable.phone,
+        avatar: usersTable.avatar,
+        bio: usersTable.bio,
+        specialty: usersTable.specialty,
+        location: usersTable.location,
+        isActive: usersTable.isActive,
+        emailVerified: usersTable.emailVerified,
+        isVerified: usersTable.isVerified,
+        approvalStatus: usersTable.approvalStatus,
+        instituteId: usersTable.instituteId,
+        createdAt: usersTable.createdAt,
+        provider: usersTable.provider,
+        socialId: usersTable.socialId,
+      };
+      const [dbUser] = await db.select(selectFields)
+        .from(usersTable)
+        .where(eq(usersTable.id, id))
+        .limit(1);
+      return dbUser ?? null;
+    } catch (error) {
+      logServerError('[DB] getUserByIdFromDb 오류:', error);
+      return null;
+    }
+  }
+
   getUserByEmail(email: string) {
     return this.users?.find(user => user.email === email);
   }
