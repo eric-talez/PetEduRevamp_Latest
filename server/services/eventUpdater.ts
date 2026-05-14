@@ -443,13 +443,15 @@ async function notifyAdminsOnFailure(failures: ImportResult['failures']): Promis
   }
 }
 
-const HISTORY_MAX = 50;
+const HISTORY_MAX = 100;
+const HISTORY_RETENTION_DAYS = 90;
+const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export class EventUpdaterService {
   private updateTimer: NodeJS.Timeout | null = null;
+  private cleanupTimer: NodeJS.Timeout | null = null;
   private running = false;
   private lastResult: ImportResult | null = null;
-  private history: ImportResult[] = [];
   private started = false;
 
   /** 매일 03:00 KST 실행 스케줄 시작 (idempotent) */
@@ -477,6 +479,16 @@ export class EventUpdaterService {
     };
 
     scheduleNext();
+
+    // 90일 이상 이력 정리: 부팅 직후 1회 + 24시간 주기.
+    void this.cleanupOldHistory();
+    this.cleanupTimer = setInterval(() => {
+      void this.cleanupOldHistory();
+    }, CLEANUP_INTERVAL_MS);
+
+    // 마지막 실행 결과를 DB에서 복원.
+    void this.restoreLastResult();
+
     console.log('✅ [eventUpdater] 행사 자동 수집 스케줄러 시작 (매일 03:00 KST)');
   }
 
@@ -485,6 +497,10 @@ export class EventUpdaterService {
       clearTimeout(this.updateTimer);
       this.updateTimer = null;
     }
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
     this.started = false;
   }
 
@@ -492,9 +508,54 @@ export class EventUpdaterService {
     return this.lastResult;
   }
 
-  public getHistory(limit = HISTORY_MAX): ImportResult[] {
+  public async getHistory(limit = HISTORY_MAX): Promise<ImportResult[]> {
     const n = Math.max(1, Math.min(HISTORY_MAX, limit));
-    return this.history.slice(0, n);
+    try {
+      const rows = await storage.listPetEventImportRuns(n);
+      return rows.map((r) => ({
+        startedAt: r.startedAt.toISOString(),
+        finishedAt: r.finishedAt.toISOString(),
+        durationMs: r.durationMs,
+        fetched: r.fetched,
+        created: r.created,
+        duplicates: r.duplicates,
+        failures: Array.isArray(r.failuresJson) ? r.failuresJson : [],
+      }));
+    } catch (e) {
+      logServerError('[eventUpdater] 이력 조회 실패:', e);
+      return [];
+    }
+  }
+
+  private async restoreLastResult(): Promise<void> {
+    try {
+      const rows = await storage.listPetEventImportRuns(1);
+      if (rows.length === 0) return;
+      const r = rows[0];
+      this.lastResult = {
+        startedAt: r.startedAt.toISOString(),
+        finishedAt: r.finishedAt.toISOString(),
+        durationMs: r.durationMs,
+        fetched: r.fetched,
+        created: r.created,
+        duplicates: r.duplicates,
+        failures: Array.isArray(r.failuresJson) ? r.failuresJson : [],
+      };
+    } catch (e) {
+      logServerError('[eventUpdater] 마지막 결과 복원 실패:', e);
+    }
+  }
+
+  private async cleanupOldHistory(): Promise<void> {
+    try {
+      const cutoff = new Date(Date.now() - HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      const removed = await storage.deletePetEventImportRunsOlderThan(cutoff);
+      if (removed > 0) {
+        console.log(`[eventUpdater] 90일 초과 이력 ${removed}건 정리`);
+      }
+    } catch (e) {
+      logServerError('[eventUpdater] 이력 정리 실패:', e);
+    }
   }
 
   public isRunning(): boolean {
@@ -579,9 +640,18 @@ export class EventUpdaterService {
       failures,
     };
     this.lastResult = result;
-    this.history.unshift(result);
-    if (this.history.length > HISTORY_MAX) {
-      this.history.length = HISTORY_MAX;
+    try {
+      await storage.createPetEventImportRun({
+        startedAt,
+        finishedAt,
+        durationMs: result.durationMs,
+        fetched: result.fetched,
+        created: result.created,
+        duplicates: result.duplicates,
+        failuresJson: result.failures,
+      });
+    } catch (e) {
+      logServerError('[eventUpdater] 이력 저장 실패:', e);
     }
 
     console.log(

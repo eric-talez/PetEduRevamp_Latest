@@ -24074,12 +24074,13 @@ export function registerTrainerCertificationRoutes(app: Express) {
     try {
       const rawLimit = Number(req.query.limit);
       const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 20;
+      const history = await eventUpdater.getHistory(limit);
       res.json({
         success: true,
         data: {
           running: eventUpdater.isRunning(),
           last: eventUpdater.getLastResult(),
-          history: eventUpdater.getHistory(limit),
+          history,
         },
       });
     } catch (error) {

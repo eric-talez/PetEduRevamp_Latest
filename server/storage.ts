@@ -39,6 +39,9 @@ import {
   petEvents,
   type PetEvent,
   type InsertPetEvent,
+  petEventImportRuns,
+  type PetEventImportRun,
+  type InsertPetEventImportRun,
 } from "../shared/schema";
 import { logServerError } from './middleware/audit-logger';
 
@@ -8234,6 +8237,61 @@ class HybridStorage extends Storage {
       .set({ isActive: false, updatedAt: new Date() })
       .where(inArray(petEvents.id, ids))
       .returning({ id: petEvents.id });
+    return result.length;
+  }
+
+  // =============================================================================
+  // 반려견 행사 자동 수집 실행 이력 (Pet Event Import Runs)
+  // =============================================================================
+  private petEventImportRunsReady: Promise<void> | null = null;
+  private async ensurePetEventImportRunsTable(): Promise<void> {
+    if (this.petEventImportRunsReady) return this.petEventImportRunsReady;
+    this.petEventImportRunsReady = (async () => {
+      try {
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS pet_event_import_runs (
+            id SERIAL PRIMARY KEY,
+            started_at TIMESTAMP NOT NULL,
+            finished_at TIMESTAMP NOT NULL,
+            duration_ms INTEGER NOT NULL,
+            fetched INTEGER NOT NULL DEFAULT 0,
+            created INTEGER NOT NULL DEFAULT 0,
+            duplicates INTEGER NOT NULL DEFAULT 0,
+            failures_json JSONB NOT NULL DEFAULT '[]'::jsonb
+          )
+        `);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_event_import_runs_started_at ON pet_event_import_runs(started_at)`);
+      } catch (err) {
+        logServerError('[DB] pet_event_import_runs 테이블 마이그레이션 실패:', err);
+        this.petEventImportRunsReady = null;
+        throw err;
+      }
+    })();
+    return this.petEventImportRunsReady;
+  }
+
+  async createPetEventImportRun(data: InsertPetEventImportRun): Promise<PetEventImportRun> {
+    await this.ensurePetEventImportRunsTable();
+    const [row] = await db.insert(petEventImportRuns).values(data).returning();
+    return row;
+  }
+
+  async listPetEventImportRuns(limit = 100): Promise<PetEventImportRun[]> {
+    await this.ensurePetEventImportRunsTable();
+    const n = Math.max(1, Math.min(500, Math.floor(limit)));
+    return await db
+      .select()
+      .from(petEventImportRuns)
+      .orderBy(desc(petEventImportRuns.startedAt))
+      .limit(n);
+  }
+
+  async deletePetEventImportRunsOlderThan(cutoff: Date): Promise<number> {
+    await this.ensurePetEventImportRunsTable();
+    const result = await db
+      .delete(petEventImportRuns)
+      .where(lte(petEventImportRuns.startedAt, cutoff))
+      .returning({ id: petEventImportRuns.id });
     return result.length;
   }
 }

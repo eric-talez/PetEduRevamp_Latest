@@ -3929,3 +3929,23 @@ export const insertPetEventSchema = createInsertSchema(petEvents, {
 
 export type PetEvent = typeof petEvents.$inferSelect;
 export type InsertPetEvent = z.infer<typeof insertPetEventSchema>;
+
+// =============================================================================
+// 반려견 행사 자동 수집 실행 이력 (Pet Event Import Runs)
+// =============================================================================
+export const petEventImportRuns = pgTable("pet_event_import_runs", {
+  id: serial("id").primaryKey(),
+  startedAt: timestamp("started_at").notNull(),
+  finishedAt: timestamp("finished_at").notNull(),
+  durationMs: integer("duration_ms").notNull(),
+  fetched: integer("fetched").notNull().default(0),
+  created: integer("created").notNull().default(0),
+  duplicates: integer("duplicates").notNull().default(0),
+  failuresJson: jsonb("failures_json").$type<Array<{ source: string; message: string }>>().notNull().default([]),
+}, (t) => ({
+  byStartedAt: index("idx_pet_event_import_runs_started_at").on(t.startedAt),
+}));
+
+export type PetEventImportRun = typeof petEventImportRuns.$inferSelect;
+export const insertPetEventImportRunSchema = createInsertSchema(petEventImportRuns).omit({ id: true });
+export type InsertPetEventImportRun = z.infer<typeof insertPetEventImportRunSchema>;
