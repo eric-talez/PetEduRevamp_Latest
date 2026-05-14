@@ -32,6 +32,23 @@ export interface ImportFailure {
   title?: string | null;
 }
 
+export interface BodyFetchStats {
+  /** 본문 페치를 실제로 시도한 횟수 (캐시 히트 제외) */
+  attempted: number;
+  /** 본문 텍스트를 성공적으로 받은 횟수 */
+  succeeded: number;
+  /** 본문 페치 후 추출에 성공해 후보가 살아남은 건수 */
+  rescued: number;
+  /** robots.txt User-agent: * Disallow 로 차단된 횟수 */
+  robotsBlocked: number;
+  /** HTTP 4xx/5xx 응답으로 실패한 횟수 */
+  httpErrors: number;
+  /** BODY_FETCH_MAX_PER_RUN 한도에 걸려 시도조차 못한 횟수 */
+  limitExceeded: number;
+  /** 그 외 스킵 (URL 형식, content-type, SSRF, 리다이렉트, 본문 텍스트 없음 등) */
+  otherSkipped: number;
+}
+
 export interface ImportResult {
   runId?: number;
   startedAt: string;
@@ -42,6 +59,19 @@ export interface ImportResult {
   duplicates: number;
   failures: ImportFailure[];
   bySource: SourceStat[];
+  bodyFetch: BodyFetchStats;
+}
+
+export function emptyBodyFetchStats(): BodyFetchStats {
+  return {
+    attempted: 0,
+    succeeded: 0,
+    rescued: 0,
+    robotsBlocked: 0,
+    httpErrors: 0,
+    limitExceeded: 0,
+    otherSkipped: 0,
+  };
 }
 
 export interface FailureCandidate {
@@ -832,12 +862,18 @@ let bodyFetchCount = 0;
 const lastHostFetchAt = new Map<string, number>();
 const robotsCache = new Map<string, Array<string>>(); // host → list of disallowed path prefixes
 const bodyTextCache = new Map<string, string>(); // url → extracted text (per run)
+let bodyFetchStats: BodyFetchStats = emptyBodyFetchStats();
+
+export function getBodyFetchStatsSnapshot(): BodyFetchStats {
+  return { ...bodyFetchStats };
+}
 
 function resetBodyFetchState(): void {
   bodyFetchCount = 0;
   lastHostFetchAt.clear();
   robotsCache.clear();
   bodyTextCache.clear();
+  bodyFetchStats = emptyBodyFetchStats();
 }
 
 function safeParseUrl(raw: string): URL | null {
@@ -1015,10 +1051,14 @@ async function fetchPageBodyText(
   link: string,
 ): Promise<{ text: string } | { skipped: string }> {
   if (bodyFetchCount >= BODY_FETCH_MAX_PER_RUN) {
+    bodyFetchStats.limitExceeded++;
     return { skipped: '본문 페치 한도 초과' };
   }
   const url = safeParseUrl(link);
-  if (!url) return { skipped: '본문 페치 불가(URL 형식)' };
+  if (!url) {
+    bodyFetchStats.otherSkipped++;
+    return { skipped: '본문 페치 불가(URL 형식)' };
+  }
 
   const cached = bodyTextCache.get(url.toString());
   if (cached !== undefined) {
@@ -1030,6 +1070,7 @@ async function fetchPageBodyText(
     const disallow = await getRobotsDisallow(host, url.origin);
     if (!isPathAllowed(disallow, url.pathname)) {
       bodyTextCache.set(url.toString(), '');
+      bodyFetchStats.robotsBlocked++;
       return { skipped: 'robots.txt 차단' };
     }
   } catch {
@@ -1039,11 +1080,13 @@ async function fetchPageBodyText(
   // SSRF guard — refuse before we ever open a socket to a private/loopback IP.
   if (!(await isHostSafeForFetch(url.hostname))) {
     bodyTextCache.set(url.toString(), '');
+    bodyFetchStats.otherSkipped++;
     return { skipped: '본문 페치 차단(내부 주소)' };
   }
 
   await throttleHost(host);
   bodyFetchCount++;
+  bodyFetchStats.attempted++;
 
   try {
     // Follow up to 3 redirects manually so that every hop is re-validated by
@@ -1068,16 +1111,19 @@ async function fetchPageBodyText(
         const loc = res.headers.get('location');
         if (!loc || hops >= 3) {
           bodyTextCache.set(url.toString(), '');
+          bodyFetchStats.otherSkipped++;
           return { skipped: `본문 페치 리다이렉트 ${hops >= 3 ? '한도' : '없음'}` };
         }
         try { await res.body?.cancel?.(); } catch { /* ignore */ }
         const next = safeParseUrl(new URL(loc, current).toString());
         if (!next) {
           bodyTextCache.set(url.toString(), '');
+          bodyFetchStats.otherSkipped++;
           return { skipped: '본문 페치 리다이렉트 차단(URL 형식)' };
         }
         if (!(await isHostSafeForFetch(next.hostname))) {
           bodyTextCache.set(url.toString(), '');
+          bodyFetchStats.otherSkipped++;
           return { skipped: '본문 페치 리다이렉트 차단(내부 주소)' };
         }
         // Each new host gets its own throttle slot.
@@ -1090,15 +1136,18 @@ async function fetchPageBodyText(
     }
     if (!res) {
       bodyTextCache.set(url.toString(), '');
+      bodyFetchStats.otherSkipped++;
       return { skipped: '본문 페치 응답 없음' };
     }
     if (!res.ok) {
       bodyTextCache.set(url.toString(), '');
+      bodyFetchStats.httpErrors++;
       return { skipped: `본문 페치 HTTP ${res.status}` };
     }
     const ct = (res.headers.get('content-type') ?? '').toLowerCase();
     if (ct && !ct.includes('html') && !ct.includes('xml') && !ct.includes('text/plain')) {
       bodyTextCache.set(url.toString(), '');
+      bodyFetchStats.otherSkipped++;
       return { skipped: `본문 페치 스킵(content-type: ${ct.slice(0, 40)})` };
     }
 
@@ -1124,12 +1173,15 @@ async function fetchPageBodyText(
     const text = htmlToText(html).slice(0, 16_000);
     if (!text) {
       bodyTextCache.set(url.toString(), '');
+      bodyFetchStats.otherSkipped++;
       return { skipped: '본문 페치 후 텍스트 없음' };
     }
     bodyTextCache.set(url.toString(), text);
+    bodyFetchStats.succeeded++;
     return { text };
   } catch (e) {
     bodyTextCache.set(url.toString(), '');
+    bodyFetchStats.otherSkipped++;
     const msg = e instanceof Error ? e.message : String(e);
     return { skipped: `본문 페치 오류: ${msg.slice(0, 80)}` };
   }
@@ -1207,6 +1259,7 @@ async function normalizeSearchResult(
       // that happen to share a snippet with the candidate title.
       if (matchesPetKeyword(fetched.text)) {
         outcome = await tryResolveFromText(`${fullText} ${fetched.text}`);
+        if (outcome.ok) bodyFetchStats.rescued++;
       } else {
         bodyContext += ' (본문에 반려동물 키워드 없음)';
       }
@@ -1685,6 +1738,7 @@ export class EventUpdaterService {
         duplicates: r.duplicates,
         failures: (Array.isArray(r.failuresJson) ? r.failuresJson : []).filter((f) => f?.source !== '__pruned'),
         bySource: Array.isArray(r.bySourceJson) ? r.bySourceJson : [],
+        bodyFetch: { ...emptyBodyFetchStats(), ...(r.bodyFetchJson ?? {}) },
       }));
     } catch (e) {
       logServerError('[eventUpdater] 이력 조회 실패:', e);
@@ -1749,6 +1803,7 @@ export class EventUpdaterService {
         duplicates: r.duplicates,
         failures: (Array.isArray(r.failuresJson) ? r.failuresJson : []).filter((f) => f?.source !== '__pruned'),
         bySource: Array.isArray(r.bySourceJson) ? r.bySourceJson : [],
+        bodyFetch: { ...emptyBodyFetchStats(), ...(r.bodyFetchJson ?? {}) },
       };
     } catch (e) {
       logServerError('[eventUpdater] 마지막 결과 복원 실패:', e);
@@ -1892,6 +1947,7 @@ export class EventUpdaterService {
 
     const finishedAt = new Date();
     const bySource = Array.from(sourceStats.values()).sort((a, b) => a.source.localeCompare(b.source, 'ko'));
+    const bodyFetch = getBodyFetchStatsSnapshot();
     const result: ImportResult = {
       startedAt: startedAt.toISOString(),
       finishedAt: finishedAt.toISOString(),
@@ -1901,6 +1957,7 @@ export class EventUpdaterService {
       duplicates,
       failures,
       bySource,
+      bodyFetch,
     };
     try {
       const saved = await storage.createPetEventImportRun({
@@ -1912,6 +1969,7 @@ export class EventUpdaterService {
         duplicates: result.duplicates,
         failuresJson: result.failures,
         bySourceJson: result.bySource,
+        bodyFetchJson: result.bodyFetch,
       });
       result.runId = saved.id;
     } catch (e) {
@@ -1920,7 +1978,8 @@ export class EventUpdaterService {
     this.lastResult = result;
 
     console.log(
-      `[eventUpdater] 완료: 수집 ${fetched} / 신규 ${created} / 중복 ${duplicates} / 실패 ${failures.length} (${result.durationMs}ms)`
+      `[eventUpdater] 완료: 수집 ${fetched} / 신규 ${created} / 중복 ${duplicates} / 실패 ${failures.length} ` +
+      `/ 본문 페치 ${bodyFetch.attempted}건(성공 ${bodyFetch.succeeded}, 구조 ${bodyFetch.rescued}, robots ${bodyFetch.robotsBlocked}, HTTP ${bodyFetch.httpErrors}, 한도 ${bodyFetch.limitExceeded}) (${result.durationMs}ms)`
     );
 
     if (failures.length > 0) {

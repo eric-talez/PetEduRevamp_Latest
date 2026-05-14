@@ -41,6 +41,26 @@ interface SourceStat {
   failures: number;
 }
 
+interface BodyFetchStats {
+  attempted: number;
+  succeeded: number;
+  rescued: number;
+  robotsBlocked: number;
+  httpErrors: number;
+  limitExceeded: number;
+  otherSkipped: number;
+}
+
+const emptyBodyFetch = (): BodyFetchStats => ({
+  attempted: 0,
+  succeeded: 0,
+  rescued: 0,
+  robotsBlocked: 0,
+  httpErrors: 0,
+  limitExceeded: 0,
+  otherSkipped: 0,
+});
+
 interface ImportResult {
   runId?: number;
   startedAt: string;
@@ -51,7 +71,29 @@ interface ImportResult {
   duplicates: number;
   failures: ImportFailureItem[];
   bySource: SourceStat[];
+  bodyFetch?: BodyFetchStats | null;
 }
+
+type FailureClass = "body_fetched" | "robots_blocked" | "body_http" | "body_limit" | "body_other" | "no_body";
+
+const classifyFailure = (msg: string): FailureClass => {
+  // Reasons appended by normalizeSearchResult after the body-fetch fallback runs.
+  if (/\| 본문 \d+자/.test(msg)) return "body_fetched";
+  if (msg.includes("robots.txt 차단")) return "robots_blocked";
+  if (/본문 페치 HTTP \d+/.test(msg)) return "body_http";
+  if (msg.includes("본문 페치 한도 초과")) return "body_limit";
+  if (msg.includes("본문 페치")) return "body_other";
+  return "no_body";
+};
+
+const FAILURE_CLASS_LABELS: Record<FailureClass, string> = {
+  body_fetched: "본문 페치 시도됨",
+  robots_blocked: "robots 차단됨",
+  body_http: "HTTP 오류",
+  body_limit: "한도 초과",
+  body_other: "기타 페치 스킵",
+  no_body: "본문 페치 안 됨",
+};
 
 interface FailureCandidate {
   runId: number;
@@ -152,6 +194,7 @@ export default function AdminPetEventsPage() {
   const [expandedHistoryIdx, setExpandedHistoryIdx] = useState<number | null>(0);
   const [failuresOpen, setFailuresOpen] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
+  const [failureClassFilter, setFailureClassFilter] = useState<"all" | FailureClass>("all");
   const [pendingResolution, setPendingResolution] = useState<{ runId: number; idx: number } | null>(null);
 
   const runGeocode = async (opts?: { silentOnEmpty?: boolean; force?: boolean }) => {
@@ -294,10 +337,21 @@ export default function AdminPetEventsPage() {
   });
   const failureCandidates = failuresData?.data ?? [];
   const openCandidates = useMemo(() => failureCandidates.filter((c) => c.status === "open"), [failureCandidates]);
-  const visibleCandidates = useMemo(
+  const candidateClassPool = useMemo(
     () => (showResolved ? failureCandidates : openCandidates),
     [failureCandidates, openCandidates, showResolved],
   );
+  const candidateClassCounts = useMemo(() => {
+    const base: Record<FailureClass, number> = {
+      body_fetched: 0, robots_blocked: 0, body_http: 0, body_limit: 0, body_other: 0, no_body: 0,
+    };
+    for (const c of candidateClassPool) base[classifyFailure(c.message)]++;
+    return base;
+  }, [candidateClassPool]);
+  const visibleCandidates = useMemo(() => {
+    if (failureClassFilter === "all") return candidateClassPool;
+    return candidateClassPool.filter((c) => classifyFailure(c.message) === failureClassFilter);
+  }, [candidateClassPool, failureClassFilter]);
 
   const resolveFailure = useMutation({
     mutationFn: async (vars: { runId: number; idx: number; resolvedEventId?: number | null }) => {
@@ -582,6 +636,20 @@ export default function AdminPetEventsPage() {
                     마지막 수집: {formatRelative(lastRun.startedAt)} · 신규 {lastRun.created} · 중복 {lastRun.duplicates}
                     {lastRun.failures.length > 0 ? ` · 실패 ${lastRun.failures.length}` : ""}
                   </Badge>
+                  {lastRun.bodyFetch && lastRun.bodyFetch.attempted + lastRun.bodyFetch.limitExceeded + lastRun.bodyFetch.robotsBlocked > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs bg-sky-50 text-sky-800 border-sky-200"
+                      data-testid="badge-body-fetch-summary"
+                      title={`시도 ${lastRun.bodyFetch.attempted} · 성공 ${lastRun.bodyFetch.succeeded} · 후보 구조 ${lastRun.bodyFetch.rescued} · robots ${lastRun.bodyFetch.robotsBlocked} · HTTP 오류 ${lastRun.bodyFetch.httpErrors} · 한도 초과 ${lastRun.bodyFetch.limitExceeded} · 기타 ${lastRun.bodyFetch.otherSkipped}`}
+                    >
+                      본문 페치 {lastRun.bodyFetch.attempted}/{lastRun.bodyFetch.attempted + lastRun.bodyFetch.limitExceeded + lastRun.bodyFetch.robotsBlocked}
+                      {lastRun.bodyFetch.rescued > 0 ? ` · 구조 ${lastRun.bodyFetch.rescued}` : ""}
+                      {lastRun.bodyFetch.robotsBlocked > 0 ? ` · robots ${lastRun.bodyFetch.robotsBlocked}` : ""}
+                      {lastRun.bodyFetch.httpErrors > 0 ? ` · HTTP ${lastRun.bodyFetch.httpErrors}` : ""}
+                      {lastRun.bodyFetch.limitExceeded > 0 ? ` · 한도 ${lastRun.bodyFetch.limitExceeded}` : ""}
+                    </Badge>
+                  )}
                   <button
                     type="button"
                     onClick={() => setHistoryOpen(true)}
@@ -966,6 +1034,31 @@ export default function AdminPetEventsPage() {
               <span>처리·숨김 항목 포함</span>
             </label>
           </div>
+          <div className="flex flex-wrap items-center gap-1.5 mb-3" data-testid="failure-class-filters">
+            <span className="text-xs font-medium text-stone-500 mr-1">상태 분류</span>
+            {(["all", "body_fetched", "robots_blocked", "body_http", "body_limit", "body_other", "no_body"] as const).map((k) => {
+              const isAll = k === "all";
+              const count = isAll
+                ? candidateClassPool.length
+                : (candidateClassCounts[k as FailureClass] ?? 0);
+              const active = failureClassFilter === k;
+              return (
+                <Button
+                  key={k}
+                  size="sm"
+                  variant={active ? "default" : "outline"}
+                  className={`h-6 rounded-full text-[11px] px-2 ${active ? "bg-stone-900 hover:bg-stone-800" : ""}`}
+                  onClick={() => setFailureClassFilter(k)}
+                  data-testid={`chip-failure-class-${k}`}
+                >
+                  {isAll ? "전체" : FAILURE_CLASS_LABELS[k as FailureClass]}
+                  <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${active ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600"}`}>
+                    {count}
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
           {failuresLoading ? (
             <div className="py-8 text-center text-sm text-stone-500">불러오는 중…</div>
           ) : visibleCandidates.length === 0 ? (
@@ -1003,6 +1096,13 @@ export default function AdminPetEventsPage() {
                         {cleanedTitle && (
                           <div className="font-medium text-stone-800 line-clamp-2 mb-0.5">{cleanedTitle}</div>
                         )}
+                        <Badge
+                          variant="outline"
+                          className="mb-1 text-[10px] bg-stone-50 text-stone-700 border-stone-200"
+                          data-testid={`badge-failure-class-${c.runId}-${c.idx}`}
+                        >
+                          {FAILURE_CLASS_LABELS[classifyFailure(c.message)]}
+                        </Badge>
                         <div className="text-amber-700 line-clamp-2">{c.message}</div>
                         {c.link && (
                           <a
@@ -1122,6 +1222,35 @@ export default function AdminPetEventsPage() {
                     </button>
                     {expanded && (
                       <div className="border-t border-stone-200 bg-stone-50/50 p-3">
+                        {h.bodyFetch && (h.bodyFetch.attempted + h.bodyFetch.limitExceeded + h.bodyFetch.robotsBlocked > 0) && (
+                          <div
+                            className="mb-3 flex flex-wrap items-center gap-1.5 text-[11px] text-stone-700"
+                            data-testid={`row-body-fetch-${idx}`}
+                          >
+                            <span className="font-medium text-stone-500">본문 페치</span>
+                            <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-800 border-sky-200">
+                              시도 {h.bodyFetch.attempted}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-200">
+                              성공 {h.bodyFetch.succeeded}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-200">
+                              후보 구조 {h.bodyFetch.rescued}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] bg-stone-50 text-stone-700 border-stone-200">
+                              robots 차단 {h.bodyFetch.robotsBlocked}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200">
+                              HTTP 오류 {h.bodyFetch.httpErrors}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200">
+                              한도 초과 {h.bodyFetch.limitExceeded}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] bg-stone-50 text-stone-600 border-stone-200">
+                              기타 {h.bodyFetch.otherSkipped}
+                            </Badge>
+                          </div>
+                        )}
                         {h.bySource.length === 0 ? (
                           <div className="text-xs text-stone-400">소스별 통계가 기록되지 않은 이전 실행입니다.</div>
                         ) : (

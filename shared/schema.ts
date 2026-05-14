@@ -3948,6 +3948,15 @@ export const petEventImportRuns = pgTable("pet_event_import_runs", {
     title?: string | null;
   }>>().notNull().default([]),
   bySourceJson: jsonb("by_source_json").$type<Array<{ source: string; fetched: number; created: number; duplicates: number; failures: number }>>().notNull().default([]),
+  bodyFetchJson: jsonb("body_fetch_json").$type<{
+    attempted: number;
+    succeeded: number;
+    rescued: number;
+    robotsBlocked: number;
+    httpErrors: number;
+    limitExceeded: number;
+    otherSkipped: number;
+  } | null>(),
 }, (t) => ({
   byStartedAt: index("idx_pet_event_import_runs_started_at").on(t.startedAt),
 }));
