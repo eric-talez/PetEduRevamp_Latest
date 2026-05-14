@@ -1,0 +1,731 @@
+Goal:
+Add a new feature to the existing Talez / PetEduRevamp platform: a Korea-only pet event map that collects and displays dog/pet-related local events, festivals, pop-ups, pet fairs, adoption events, and community events in South Korea.
+
+Feature name:
+Korea Pet Events Map
+Korean UI name:
+전국 반려견 행사 지도
+
+Important context:
+This is NOT a new standalone project. This must be integrated safely into the existing PetEduRevamp_Replit codebase.
+
+Before coding:
+1. Inspect the existing project structure.
+2. Identify the frontend routing system.
+3. Identify the backend API route registration pattern.
+4. Identify the current Drizzle/PostgreSQL schema style.
+5. Identify existing event, location, map, community, and news-related modules.
+6. Reuse existing UI components, styling system, API patterns, storage patterns, and auth/admin middleware where possible.
+7. Do not break existing routes, login, admin, payment, AI, location, institute, event, or community features.
+
+Business goal:
+Talez wants to show Korea-based pet/dog-related regional events in one place. Users should be able to open a map, browse markers across South Korea, filter events by region/category/date, and click each event to see details and the original source.
+
+Important clarification:
+Google Maps API is used for:
+- Rendering the map
+- Showing markers
+- Marker clustering
+- Info windows
+- Geocoding addresses into coordinates
+- Optionally enriching venue/location information
+
+Google Maps API is NOT the primary event data source. Event data should come from:
+- Existing event/news system if available
+- Google News RSS search queries
+- Manually configurable source URLs
+- Future official local government/city event pages
+- Future pet fair/adoption/shelter/event provider sources
+
+Use Google Maps Platform properly:
+- Maps JavaScript API for frontend map rendering
+- Geocoding API for server-side address-to-coordinate conversion
+- Places API Text Search only as optional venue enrichment, not as the main event source
+- Use minimal fields/field masks when calling Places API to control cost
+- Cache geocoding and place results in the database
+
+Environment variables:
+The current project already appears to reference Google Maps API keys. Use the existing convention where possible, but make the implementation clean and explicit.
+
+Required environment variables:
+- VITE_GOOGLE_MAPS_API_KEY
+  - Browser-side key for Google Maps JavaScript API
+  - This key may be exposed to the frontend, but must be restricted in Google Cloud Console by domain/referrer.
+- GOOGLE_MAPS_API_KEY
+  - Server-side key for Geocoding API / Places API
+  - This key must never be exposed to the client.
+
+Optional feature flags:
+- KOREA_PET_EVENTS_ENABLED=true
+- KOREA_PET_EVENTS_INGESTION_ENABLED=true
+- KOREA_PET_EVENTS_INTERVAL_SEC=900
+- KOREA_PET_EVENTS_CONCURRENCY=2
+- KOREA_PET_EVENTS_GEOCODE_ENABLED=true
+- KOREA_PET_EVENTS_USE_PLACES=false
+
+API key security:
+- Never hardcode API keys.
+- Never send GOOGLE_MAPS_API_KEY to the frontend.
+- Frontend should only use VITE_GOOGLE_MAPS_API_KEY.
+- Server-side geocoding must use GOOGLE_MAPS_API_KEY only.
+- Add clear setup instructions for Replit Secrets.
+
+Main frontend route:
+Add a user-facing page:
+
+/pet-events-map
+
+Alternative route alias if easy:
+/korea-pet-events
+
+Page title:
+전국 반려견 행사 지도
+
+Subtitle:
+한국에서 열리는 반려견·반려동물 행사, 펫페어, 입양 이벤트를 한눈에 확인하세요.
+
+Core user experience:
+The page should have:
+1. Google Map centered on South Korea
+2. Event markers on the map
+3. Event list/cards
+4. Filters
+5. Marker click detail panel
+6. Source/original article link
+7. Mobile responsive layout
+
+Default map:
+- Center: South Korea
+- Suggested center:
+  - lat: 36.5
+  - lng: 127.8
+- Default zoom: show most of South Korea
+- Restrict displayed event data to South Korea only
+- Do not show global events
+
+Frontend UI layout:
+Desktop:
+- Left panel: filters + event cards
+- Right/main area: Google Map
+
+Mobile:
+- Top: map
+- Bottom: event cards
+- Sticky filter button or collapsible filter panel
+
+Filters:
+- Keyword search
+- Province
+- City
+- Category
+- Date range
+- This week
+- This month
+- Adoption only
+- Pet fair only
+- Dog-friendly events only
+- Has exact map location only
+
+Korean filter labels:
+- 검색어
+- 지역
+- 시/군/구
+- 카테고리
+- 날짜
+- 이번 주
+- 이번 달
+- 입양 행사
+- 펫페어
+- 애견동반
+- 정확한 위치만 보기
+
+Empty state:
+현재 조건에 맞는 반려동물 행사가 없습니다.
+
+Loading state:
+행사 정보를 불러오는 중입니다...
+
+Error state:
+행사 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+
+Event card fields:
+Each event card should show:
+- title
+- event date
+- venue name
+- city/province
+- category badge
+- short summary
+- source name
+- source/original link button
+- “지도에서 보기” button
+
+Korean buttons:
+- 원문 보기
+- 지도에서 보기
+- 자세히 보기
+- 필터 초기화
+
+Map marker behavior:
+- Show one marker per event with valid lat/lng.
+- Use category-specific marker colors/icons if feasible.
+- Clicking a marker opens an info window or side panel.
+- Clicking an event card pans and zooms the map to the marker.
+- If many markers exist, use marker clustering.
+- If an event has no reliable coordinates, show it in the list but not as a marker.
+
+Event categories:
+Use these internal category values:
+- PET_FAIR
+- FESTIVAL
+- ADOPTION
+- POPUP
+- COMMUNITY
+- TRAINING
+- DOG_FRIENDLY_MARKET
+- SHELTER_EVENT
+- BRAND_EVENT
+- OTHER
+
+Korean category labels:
+- PET_FAIR: 펫페어
+- FESTIVAL: 축제
+- ADOPTION: 입양행사
+- POPUP: 팝업
+- COMMUNITY: 지역행사
+- TRAINING: 교육/훈련
+- DOG_FRIENDLY_MARKET: 애견동반 마켓
+- SHELTER_EVENT: 보호소 행사
+- BRAND_EVENT: 브랜드 행사
+- OTHER: 기타
+
+Backend API namespace:
+Use:
+
+/api/korea-pet-events
+
+Required API endpoints:
+
+GET /api/korea-pet-events
+Query params:
+- q
+- province
+- city
+- category
+- from
+- to
+- status
+- hasLocation
+- bounds
+- limit
+- offset
+
+Example response:
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "서울 반려견 입양 캠페인",
+      "summary": "서울에서 열리는 유기견 입양 캠페인입니다.",
+      "category": "ADOPTION",
+      "eventStartDate": "2026-06-01",
+      "eventEndDate": "2026-06-01",
+      "venueName": "서울광장",
+      "address": "서울특별시 중구 세종대로 110",
+      "city": "중구",
+      "province": "서울",
+      "lat": 37.5665,
+      "lng": 126.9780,
+      "locationConfidence": 0.95,
+      "relevanceScore": 0.98,
+      "sourceName": "Sample Source",
+      "sourceUrl": "https://example.com/event",
+      "imageUrl": null,
+      "tags": ["반려견", "입양", "서울"],
+      "status": "active"
+    }
+  ],
+  "total": 1
+}
+
+GET /api/korea-pet-events/:id
+- Return full details of one event.
+
+POST /api/korea-pet-events/refresh
+- Admin-only if auth/admin middleware exists.
+- Manually trigger event ingestion.
+
+GET /api/korea-pet-events/sources
+- Admin-only or protected.
+- Return source catalog.
+
+POST /api/korea-pet-events/sources
+- Admin-only.
+- Add a source.
+
+PATCH /api/korea-pet-events/sources/:id
+- Admin-only.
+- Enable, disable, or update a source.
+
+PATCH /api/korea-pet-events/:id/status
+- Admin-only.
+- Update status to active, hidden, needs_review, expired.
+
+Database:
+Use the existing Drizzle/PostgreSQL schema style in shared/schema.ts or the project’s current schema location.
+
+Add tables similar to:
+
+koreaPetEvents:
+- id serial primary key
+- title text not null
+- normalizedTitle text
+- summary text
+- category varchar(50)
+- eventStartDate date
+- eventEndDate date
+- venueName text
+- address text
+- city varchar(100)
+- province varchar(100)
+- lat decimal or text depending on existing project convention
+- lng decimal or text depending on existing project convention
+- locationConfidence decimal/text
+- relevanceScore decimal/text
+- sourceName text
+- sourceUrl text unique or indexed
+- imageUrl text
+- tags jsonb
+- status varchar(30) default active
+  - active
+  - hidden
+  - expired
+  - needs_review
+- createdAt timestamp defaultNow
+- updatedAt timestamp defaultNow
+- lastSeenAt timestamp defaultNow
+
+koreaPetEventSources:
+- id serial primary key
+- name text not null
+- publisher text
+- type varchar(50)
+  - google_news_rss
+  - rss
+  - official_page
+  - manual
+- url text not null
+- enabled boolean default true
+- priority integer default 5
+- pollIntervalSec integer default 3600
+- maxItemsPerFetch integer default 20
+- lastFetchedAt timestamp
+- nextFetchAt timestamp
+- errorCount integer default 0
+- backoffUntil timestamp
+- createdAt timestamp defaultNow
+- updatedAt timestamp defaultNow
+
+geocodeCache:
+- id serial primary key
+- query text not null
+- normalizedQuery text unique not null
+- lat decimal/text
+- lng decimal/text
+- formattedAddress text
+- placeId text
+- confidence decimal/text
+- provider varchar(50)
+  - google_geocoding
+  - google_places
+- raw jsonb optional
+- createdAt timestamp defaultNow
+- updatedAt timestamp defaultNow
+
+Optional:
+koreaPetEventSourceRefs:
+- id serial primary key
+- eventId integer references koreaPetEvents(id)
+- sourceName text
+- sourceUrl text
+- sourceTitle text
+- publishedAt timestamp
+- createdAt timestamp defaultNow
+
+Data ingestion:
+Create a modular ingestion system.
+
+Suggested backend module structure:
+server/korea-pet-events/
+  routes.ts
+  types.ts
+  source-catalog.ts
+  scheduler.ts
+  ingest.ts
+  extract.ts
+  geocode.ts
+  dedupe.ts
+  repository.ts
+  seed.ts
+
+Do not force this structure if the existing project uses a different pattern. Follow the existing pattern if there is one.
+
+Source catalog:
+Start with Google News RSS queries for Korean pet events.
+
+Example source queries:
+- 반려견 행사 한국
+- 애견 행사 한국
+- 반려동물 행사 한국
+- 펫페어 한국
+- 강아지 행사 서울
+- 반려견 입양 행사
+- 유기견 입양 행사
+- 애견동반 축제
+- 반려동물 문화축제
+- 펫 박람회
+- 댕댕이 축제
+- 도그 페스티벌
+
+Source object fields:
+- id
+- name
+- publisher
+- type
+- url
+- enabled
+- priority
+- pollIntervalSec
+- maxItemsPerFetch
+
+Important:
+Do not rely on scraping unauthorized websites. For MVP, use RSS/search feeds and manually configurable source URLs. Store the original source URL.
+
+Keyword filter:
+Include Korean keywords:
+- 반려견
+- 애견
+- 강아지
+- 반려동물
+- 펫
+- 펫페어
+- 애견동반
+- 반려견 행사
+- 반려동물 행사
+- 강아지 행사
+- 입양 행사
+- 유기견 입양
+- 유기동물 입양
+- 펫 박람회
+- 펫 축제
+- 애견 카페 행사
+- 반려견 운동회
+- 도그 페스티벌
+- 댕댕이
+- 멍멍이
+- 보호소 행사
+
+English keywords:
+- pet event Korea
+- dog event Korea
+- pet fair Korea
+- dog festival Korea
+- pet expo Korea
+- dog adoption Korea
+
+Korea region keywords:
+- 서울
+- 경기
+- 인천
+- 부산
+- 대구
+- 대전
+- 광주
+- 울산
+- 세종
+- 강원
+- 충북
+- 충남
+- 전북
+- 전남
+- 경북
+- 경남
+- 제주
+
+Filtering rules:
+Include only if:
+- It is South Korea-related
+- It is pet/dog/companion-animal related
+- It is event-related
+- It mentions a fair, festival, adoption event, pop-up, class, campaign, local gathering, cultural event, market, or pet-friendly event
+
+Exclude if:
+- It is only product news
+- It is only a generic article with no event
+- It is overseas only
+- It is unrelated animal news
+- It has no useful event/date/location signal
+- It is an obvious duplicate
+
+Extraction:
+For every candidate item, extract:
+- title
+- summary
+- eventStartDate
+- eventEndDate
+- venueName
+- address
+- city
+- province
+- category
+- tags
+- sourceName
+- sourceUrl
+- imageUrl
+- relevanceScore
+- locationConfidence
+
+Use deterministic extraction first:
+- keyword matching
+- regex for dates
+- Korean region detection
+- venue/address patterns
+
+If there is already an AI utility in the project, optionally use AI extraction only when deterministic extraction is insufficient. Do not make AI extraction required for the MVP.
+
+Deduplication:
+Deduplicate by:
+- normalized title
+- normalized source URL
+- event date
+- venue/address
+- similar title + same city + same date
+
+If duplicates are found:
+- Keep the stronger event record
+- Prefer official source over secondary news
+- Update lastSeenAt
+- Optionally add source reference
+
+Geocoding:
+Create a server-side geocoding service.
+
+Rules:
+1. If address exists, geocode address.
+2. If address does not exist but venue + city/province exists, geocode “venueName city province South Korea”.
+3. If only city/province exists, geocode broader city/province with lower confidence.
+4. Cache all geocoding results.
+5. Do not call Google repeatedly for the same normalized query.
+6. Store confidence:
+   - 0.95 exact address
+   - 0.80 venue match
+   - 0.60 city/province only
+   - below 0.60 should be needs_review
+7. If geocoding fails, still save the event with status needs_review.
+
+Google Places optional enrichment:
+If KOREA_PET_EVENTS_USE_PLACES=true:
+- Use Places Text Search only for venue enrichment.
+- Use minimal fields.
+- Store placeId if available.
+- Do not use Places as the main source of event data.
+
+Scheduler:
+Add a scheduler that runs ingestion periodically only when enabled.
+
+Requirements:
+- Use KOREA_PET_EVENTS_ENABLED and KOREA_PET_EVENTS_INGESTION_ENABLED.
+- Respect pollIntervalSec per source.
+- Process due sources only.
+- Support concurrency limit.
+- Add per-source timeout.
+- Add exponential backoff on failure.
+- Avoid overlapping runs.
+- Log clearly:
+  - source id/name
+  - fetched count
+  - accepted count
+  - duplicate count
+  - geocoded count
+  - failed count
+  - duration
+  - errors
+
+Register scheduler in server startup only after DB and routes are ready.
+Make sure it does not crash the server if ingestion fails.
+
+Expiration cleanup:
+- Mark events expired when eventEndDate is older than today.
+- If eventEndDate is null, mark expired when lastSeenAt is older than 45 days.
+- Do not permanently delete old events in MVP.
+
+Seed/test data:
+Add a seed script or route that creates 5-10 sample events for UI testing.
+
+Sample events:
+1. 서울 반려견 입양 캠페인
+   - category: ADOPTION
+   - province: 서울
+   - city: 중구
+   - venue: 서울광장
+   - address: 서울특별시 중구 세종대로 110
+
+2. 부산 펫페어
+   - category: PET_FAIR
+   - province: 부산
+   - city: 해운대구
+   - venue: 벡스코
+   - address: 부산광역시 해운대구 APEC로 55
+
+3. 제주 반려견 동반 플리마켓
+   - category: DOG_FRIENDLY_MARKET
+   - province: 제주
+   - city: 제주시
+   - venue: 제주 시민복지타운 광장
+
+4. 대구 유기견 입양 행사
+   - category: SHELTER_EVENT
+   - province: 대구
+   - city: 수성구
+
+5. 인천 반려동물 문화축제
+   - category: FESTIVAL
+   - province: 인천
+   - city: 연수구
+   - venue: 송도 센트럴파크
+
+Frontend implementation details:
+Use the existing React/Vite frontend pattern.
+
+Create components similar to:
+client/src/pages/PetEventsMapPage.tsx
+client/src/components/pet-events/PetEventMap.tsx
+client/src/components/pet-events/PetEventFilters.tsx
+client/src/components/pet-events/PetEventCard.tsx
+client/src/components/pet-events/PetEventDetailPanel.tsx
+client/src/components/pet-events/CategoryBadge.tsx
+
+If the project uses a different folder structure, adapt to the existing structure.
+
+Use existing UI system:
+- Existing button/card/input/select components if available
+- Existing Tailwind classes if available
+- Existing query client / fetch helper if available
+- Existing auth/admin utilities if available
+
+Frontend map library:
+Use Google Maps JavaScript API.
+If the project already has a Google Maps loader/helper, reuse it.
+Otherwise create a small safe loader hook.
+
+Required behavior:
+- Load map only when API key exists.
+- If key missing, show helpful Korean error.
+- Render markers.
+- Render info windows.
+- Support marker clustering if feasible.
+- Avoid reloading the Google Maps script multiple times.
+- Clean up listeners on unmount.
+
+Admin review:
+If admin UI exists, add basic management there if simple.
+If too large, implement backend endpoints only and leave TODO notes.
+
+Admin actions:
+- activate event
+- hide event
+- mark needs_review
+- mark expired
+- edit title/date/location if possible
+
+Integration with existing events/news:
+Inspect existing event/community/news/location functionality first.
+If there is already an events module:
+- Do not replace it.
+- Add this as a separate Korea pet event module.
+- Reuse existing events table only if it is clearly appropriate.
+- Otherwise create separate korea_pet_events tables to avoid breaking existing data.
+
+Navigation:
+Add a link to the new page in the appropriate user-facing navigation if one exists.
+
+Suggested Korean nav label:
+반려견 행사 지도
+
+Quality requirements:
+- TypeScript types should be clean.
+- API responses should be consistent with existing project standards.
+- Use Zod validation if the project already uses it.
+- Add safe error handling.
+- Add loading/empty/error UI states.
+- Make mobile responsive.
+- Do not break production build.
+- Do not expose server API keys.
+- Do not add excessive dependencies unless necessary.
+- Keep implementation modular.
+
+Performance:
+- Paginate event list.
+- Support bounds filtering if map bounds are provided.
+- Index event_start_date, province, city, category, status if possible.
+- Cache geocoding.
+- Avoid too many Google API calls.
+- Avoid frontend rendering too many markers without clustering.
+
+MVP acceptance criteria:
+The implementation is complete when:
+
+1. /pet-events-map loads successfully.
+2. Google Map is centered on South Korea.
+3. Seeded Korea pet events appear as markers and cards.
+4. Event cards show title, date, location, category, summary, and source link.
+5. Clicking marker opens event detail.
+6. Clicking “지도에서 보기” pans map to the marker.
+7. Filters work for keyword, region, category, date, and has-location.
+8. GET /api/korea-pet-events returns event JSON.
+9. POST /api/korea-pet-events/refresh can trigger ingestion in admin/protected mode.
+10. Geocoding uses GOOGLE_MAPS_API_KEY server-side and caches results.
+11. VITE_GOOGLE_MAPS_API_KEY is used client-side only.
+12. Old events are marked expired.
+13. Project passes:
+   - npm run check
+   - npm run build
+14. Existing app routes still work.
+
+Verification commands:
+After implementation, provide exact commands:
+
+npm install
+npm run check
+npm run db:push
+npm run dev
+
+Also provide curl examples:
+
+curl "http://localhost:5000/api/korea-pet-events?province=서울"
+curl "http://localhost:5000/api/korea-pet-events?category=ADOPTION"
+curl -X POST "http://localhost:5000/api/korea-pet-events/refresh"
+
+If auth is required for refresh, explain how to test it while logged in or with the existing admin auth pattern.
+
+Final response:
+After coding, summarize:
+1. Files created
+2. Files modified
+3. New database tables
+4. New environment variables
+5. How to add Google Maps keys in Replit Secrets
+6. How to seed sample data
+7. How to run locally
+8. How to test the page
+9. Known limitations
+10. Recommended next steps
+
+Recommended next steps after MVP:
+- Add official city/government event sources
+- Add pet fair official sources
+- Add shelter/adoption event sources
+- Add admin review page
+- Add notification alerts for nearby pet events
+- Add user favorites/saved events
+- Add “near me” search if user permits location
