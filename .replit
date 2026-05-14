@@ -70,13 +70,12 @@ name = "Check and Fix"
 author = "agent"
 mode = "sequential"
 
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node scripts/check-missing-endpoints.cjs && npm run dev"
-waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
+args = "node scripts/check-missing-endpoints.cjs"
 
 [languages.typescript]
 pattern = "**/{*.ts,*.tsx}"
