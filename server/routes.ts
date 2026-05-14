@@ -24061,6 +24061,39 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  app.get('/api/admin/pet-events/body-fetch-settings', requireAuth('admin'), async (_req, res) => {
+    try {
+      res.json({ success: true, data: storage.getBodyFetchSettings() });
+    } catch (error) {
+      logServerError('본문 페치 한도 조회 오류:', error);
+      res.status(500).json({ error: '조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.patch('/api/admin/pet-events/body-fetch-settings', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const body = req.body ?? {};
+      const perRunMaxRaw = body.perRunMax;
+      const perHostMaxRaw = body.perHostMax;
+      const isInt = (v: unknown) =>
+        typeof v === 'number' && Number.isFinite(v) && Number.isInteger(v);
+      if (perRunMaxRaw !== undefined && (!isInt(perRunMaxRaw) || perRunMaxRaw < 0 || perRunMaxRaw > 200)) {
+        return res.status(400).json({ error: 'perRunMax 는 0~200 사이의 정수여야 합니다.', code: 'INVALID_INPUT' });
+      }
+      if (perHostMaxRaw !== undefined && (!isInt(perHostMaxRaw) || perHostMaxRaw < 0 || perHostMaxRaw > 200)) {
+        return res.status(400).json({ error: 'perHostMax 는 0~200 사이의 정수여야 합니다.', code: 'INVALID_INPUT' });
+      }
+      const updated = storage.updateBodyFetchSettings({
+        perRunMax: perRunMaxRaw,
+        perHostMax: perHostMaxRaw,
+      });
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      logServerError('본문 페치 한도 저장 오류:', error);
+      res.status(500).json({ error: '저장 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   app.get('/api/admin/pet-events/import/last', requireAuth('admin'), async (_req, res) => {
     try {
       res.json({ success: true, data: eventUpdater.getLastResult() });

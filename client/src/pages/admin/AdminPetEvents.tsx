@@ -24,7 +24,7 @@ import {
   type PetEvent,
   type PetEventCategory,
 } from "@shared/schema";
-import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2, XCircle, ExternalLink, Eye, EyeOff, Undo2, Inbox } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2, XCircle, ExternalLink, Eye, EyeOff, Undo2, Inbox, Settings2 } from "lucide-react";
 
 interface ImportFailureItem {
   source: string;
@@ -617,6 +617,52 @@ export default function AdminPetEventsPage() {
 
   const selectedCount = selectedIds.size;
 
+  const { data: bodyFetchSettingsData } = useQuery<{ success: boolean; data: { perRunMax: number; perHostMax: number } }>({
+    queryKey: ["/api/admin/pet-events/body-fetch-settings"],
+  });
+  const [perRunDraft, setPerRunDraft] = useState<string>("");
+  const [perHostDraft, setPerHostDraft] = useState<string>("");
+  useEffect(() => {
+    if (bodyFetchSettingsData?.data) {
+      setPerRunDraft(String(bodyFetchSettingsData.data.perRunMax));
+      setPerHostDraft(String(bodyFetchSettingsData.data.perHostMax));
+    }
+  }, [bodyFetchSettingsData?.data?.perRunMax, bodyFetchSettingsData?.data?.perHostMax]);
+
+  const saveBodyFetchSettings = useMutation({
+    mutationFn: async (vars: { perRunMax: number; perHostMax: number }) => {
+      const res = await apiRequest("PATCH", "/api/admin/pet-events/body-fetch-settings", vars);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "저장 실패");
+      return json.data as { perRunMax: number; perHostMax: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/body-fetch-settings"] });
+      toast({ title: "본문 페치 한도가 저장되었습니다", description: "다음 자동 수집 실행부터 적용됩니다." });
+    },
+    onError: (e: Error) => toast({ title: "저장 실패", description: e.message, variant: "destructive" }),
+  });
+
+  const onSaveBodyFetchSettings = () => {
+    const perRunMax = Number(perRunDraft);
+    const perHostMax = Number(perHostDraft);
+    if (!Number.isInteger(perRunMax) || perRunMax < 0 || perRunMax > 200) {
+      toast({ title: "Run당 최대 호출 수는 0~200 정수여야 합니다", variant: "destructive" });
+      return;
+    }
+    if (!Number.isInteger(perHostMax) || perHostMax < 0 || perHostMax > 200) {
+      toast({ title: "사이트당 최대 호출 수는 0~200 정수여야 합니다", variant: "destructive" });
+      return;
+    }
+    saveBodyFetchSettings.mutate({ perRunMax, perHostMax });
+  };
+
+  const settingsDirty =
+    bodyFetchSettingsData?.data
+      ? String(bodyFetchSettingsData.data.perRunMax) !== perRunDraft ||
+        String(bodyFetchSettingsData.data.perHostMax) !== perHostDraft
+      : false;
+
   return (
     <div className="min-h-screen bg-stone-50 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
@@ -687,6 +733,54 @@ export default function AdminPetEventsPage() {
             </Button>
           </div>
         </div>
+
+        <Card className="p-3 mb-4" data-testid="card-body-fetch-settings">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+              <Settings2 className="w-4 h-4" /> 본문 페치 한도
+            </div>
+            <div className="flex flex-col">
+              <label className="text-[11px] text-stone-500 mb-0.5" htmlFor="perRunMax">Run당 최대 호출 수 (0~200)</label>
+              <Input
+                id="perRunMax"
+                type="number"
+                min={0}
+                max={200}
+                step={1}
+                value={perRunDraft}
+                onChange={(e) => setPerRunDraft(e.target.value)}
+                className="h-8 w-32"
+                data-testid="input-body-fetch-per-run"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-[11px] text-stone-500 mb-0.5" htmlFor="perHostMax">사이트당 최대 호출 수 (0~200)</label>
+              <Input
+                id="perHostMax"
+                type="number"
+                min={0}
+                max={200}
+                step={1}
+                value={perHostDraft}
+                onChange={(e) => setPerHostDraft(e.target.value)}
+                className="h-8 w-32"
+                data-testid="input-body-fetch-per-host"
+              />
+            </div>
+            <Button
+              size="sm"
+              onClick={onSaveBodyFetchSettings}
+              disabled={!settingsDirty || saveBodyFetchSettings.isPending}
+              className="h-8 bg-stone-900 hover:bg-stone-800"
+              data-testid="button-save-body-fetch-settings"
+            >
+              {saveBodyFetchSettings.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "저장"}
+            </Button>
+            <span className="text-[11px] text-stone-500 ml-auto">
+              저장 시 다음 자동 수집 실행부터 즉시 반영됩니다.
+            </span>
+          </div>
+        </Card>
 
         <Card className="p-3 mb-4">
           <div className="flex flex-wrap items-center gap-2">

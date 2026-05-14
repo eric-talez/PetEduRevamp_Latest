@@ -852,14 +852,19 @@ type NormalizeResult =
 //  - robots.txt 의 User-agent: * Disallow 규칙 존중 (간이 파싱)
 //  - 페치/파싱 실패는 조용히 폴백; 절대 import run 자체를 깨뜨리지 않음.
 
-const BODY_FETCH_MAX_PER_RUN = 30;
+const BODY_FETCH_DEFAULT_MAX_PER_RUN = 30;
+const BODY_FETCH_DEFAULT_MAX_PER_HOST = 10;
+const BODY_FETCH_HARD_CAP = 200;
 const BODY_FETCH_TIMEOUT_MS = 8_000;
 const BODY_FETCH_MAX_BYTES = 512 * 1024;
 const HOST_MIN_INTERVAL_MS = 1_500;
 const BODY_FETCH_USER_AGENT = 'TALEZ-EventUpdaterBot/1.0 (+https://talez.app/bot)';
 
 let bodyFetchCount = 0;
+let bodyFetchMaxPerRun = BODY_FETCH_DEFAULT_MAX_PER_RUN;
+let bodyFetchMaxPerHost = BODY_FETCH_DEFAULT_MAX_PER_HOST;
 const lastHostFetchAt = new Map<string, number>();
+const hostFetchCount = new Map<string, number>();
 const robotsCache = new Map<string, Array<string>>(); // host → list of disallowed path prefixes
 const bodyTextCache = new Map<string, string>(); // url → extracted text (per run)
 let bodyFetchStats: BodyFetchStats = emptyBodyFetchStats();
@@ -868,9 +873,16 @@ export function getBodyFetchStatsSnapshot(): BodyFetchStats {
   return { ...bodyFetchStats };
 }
 
+export function setBodyFetchLimits(opts: { perRunMax: number; perHostMax: number }): void {
+  const clamp = (v: number) => Math.min(BODY_FETCH_HARD_CAP, Math.max(0, Math.floor(v)));
+  bodyFetchMaxPerRun = clamp(opts.perRunMax);
+  bodyFetchMaxPerHost = clamp(opts.perHostMax);
+}
+
 function resetBodyFetchState(): void {
   bodyFetchCount = 0;
   lastHostFetchAt.clear();
+  hostFetchCount.clear();
   robotsCache.clear();
   bodyTextCache.clear();
   bodyFetchStats = emptyBodyFetchStats();
@@ -1050,7 +1062,7 @@ function htmlToText(html: string): string {
 async function fetchPageBodyText(
   link: string,
 ): Promise<{ text: string } | { skipped: string }> {
-  if (bodyFetchCount >= BODY_FETCH_MAX_PER_RUN) {
+  if (bodyFetchCount >= bodyFetchMaxPerRun) {
     bodyFetchStats.limitExceeded++;
     return { skipped: '본문 페치 한도 초과' };
   }
@@ -1066,6 +1078,10 @@ async function fetchPageBodyText(
   }
 
   const host = url.host;
+  if ((hostFetchCount.get(host) ?? 0) >= bodyFetchMaxPerHost) {
+    bodyFetchStats.limitExceeded++;
+    return { skipped: '본문 페치 한도 초과(사이트당)' };
+  }
   try {
     const disallow = await getRobotsDisallow(host, url.origin);
     if (!isPathAllowed(disallow, url.pathname)) {
@@ -1086,6 +1102,7 @@ async function fetchPageBodyText(
 
   await throttleHost(host);
   bodyFetchCount++;
+  hostFetchCount.set(host, (hostFetchCount.get(host) ?? 0) + 1);
   bodyFetchStats.attempted++;
 
   try {
@@ -1842,6 +1859,12 @@ export class EventUpdaterService {
     }
     this.running = true;
     resetRunFlags();
+    try {
+      const limits = storage.getBodyFetchSettings();
+      setBodyFetchLimits({ perRunMax: limits.perRunMax, perHostMax: limits.perHostMax });
+    } catch {
+      // 설정 로드 실패 시 기본값 유지
+    }
     const startedAt = new Date();
     const failures: ImportResult['failures'] = [];
     let fetched = 0;

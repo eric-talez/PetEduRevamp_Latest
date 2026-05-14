@@ -5120,6 +5120,28 @@ class Storage {
     return this.pointSettings;
   }
 
+  // 행사 수집 본문 페치 한도 설정 (관리자 조정 가능)
+  bodyFetchSettings: { perRunMax: number; perHostMax: number } = {
+    perRunMax: 30,
+    perHostMax: 10,
+  };
+
+  getBodyFetchSettings() {
+    return { ...this.bodyFetchSettings };
+  }
+
+  updateBodyFetchSettings(settings: { perRunMax?: number; perHostMax?: number }) {
+    const clamp = (v: number, min: number, max: number) =>
+      Math.min(max, Math.max(min, Math.floor(v)));
+    if (typeof settings.perRunMax === 'number' && Number.isFinite(settings.perRunMax)) {
+      this.bodyFetchSettings.perRunMax = clamp(settings.perRunMax, 0, 200);
+    }
+    if (typeof settings.perHostMax === 'number' && Number.isFinite(settings.perHostMax)) {
+      this.bodyFetchSettings.perHostMax = clamp(settings.perHostMax, 0, 200);
+    }
+    return { ...this.bodyFetchSettings };
+  }
+
   // ===== 대체 훈련사 시스템 메서드들 =====
 
   // 대체 훈련사 게시글 조회 (PostgreSQL 데이터베이스 사용)
