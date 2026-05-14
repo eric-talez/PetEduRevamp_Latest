@@ -413,12 +413,425 @@ async function fetchSeoulPetCulturalEvents(): Promise<CrawledEvent[]> {
   return out;
 }
 
-const SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }> = [
+// ─────────────────────────────────────────────────────────────────────────────
+// Search-engine sources: Google, Naver, Daum
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CURRENT_YEAR = new Date().getFullYear();
+const SEARCH_KEYWORDS: string[] = [
+  `반려견 축제 ${CURRENT_YEAR}`,
+  `펫페어 ${CURRENT_YEAR}`,
+  `강아지 입양 행사 ${CURRENT_YEAR}`,
+  `도그쇼 ${CURRENT_YEAR}`,
+  `반려동물 행사 ${CURRENT_YEAR}`,
+  `반려견 대회 ${CURRENT_YEAR}`,
+];
+
+/** Max API calls per source per run (to protect quotas/billing). */
+const MAX_REQUESTS_PER_SEARCH_SOURCE = 6;
+
+const KR_REGIONS = [
+  '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
+  '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
+];
+
+/**
+ * Extract a date range from Korean free text.
+ * Handles patterns like:
+ *   "2026년 5월 14일~16일", "2026.05.14~2026.05.16", "2026-05-14 ~ 2026-05-16"
+ */
+function extractDateRange(text: string): { startDate: Date; endDate: Date } | null {
+  // Priority 1: Partial end-day range — "2026년 5월 14일~16일" or "2026.5.14~16"
+  // Must be checked FIRST before the full-date scanner picks up only the start date.
+  const partialRe = /(\d{4})[년.\/\-]\s*(\d{1,2})[월.\/\-]\s*(\d{1,2})일?\s*[~\-]\s*(\d{1,2})일?/;
+  const pm = text.match(partialRe);
+  if (pm) {
+    const sd = parseFlexibleDate(`${pm[1]}-${pm[2]}-${pm[3]}`);
+    const ed = parseFlexibleDate(`${pm[1]}-${pm[2]}-${pm[4]}`, true);
+    if (sd && ed && ed >= sd) return { startDate: sd, endDate: ed };
+  }
+
+  // Priority 2: Two fully-specified dates — "2026.05.14 ~ 2026.05.16"
+  const fullDateRe = /(\d{4})[년.\/\-]\s*(\d{1,2})[월.\/\-]\s*(\d{1,2})일?/g;
+  const found: Array<{ y: number; m: number; d: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = fullDateRe.exec(text)) !== null) {
+    found.push({ y: parseInt(m[1], 10), m: parseInt(m[2], 10), d: parseInt(m[3], 10) });
+    if (found.length >= 2) break;
+  }
+  if (found.length >= 2) {
+    const sd = parseFlexibleDate(`${found[0].y}-${found[0].m}-${found[0].d}`);
+    const ed = parseFlexibleDate(`${found[1].y}-${found[1].m}-${found[1].d}`, true);
+    if (sd && ed) return { startDate: sd, endDate: ed };
+  }
+
+  // Priority 3: Single date — treat as single-day event.
+  if (found.length === 1) {
+    const sd = parseFlexibleDate(`${found[0].y}-${found[0].m}-${found[0].d}`);
+    if (sd) return { startDate: sd, endDate: sd };
+  }
+
+  return null;
+}
+
+/**
+ * Extract the first recognizable Korean location from free text.
+ * Returns a venue address if found, otherwise the first Korean region name + context.
+ */
+function extractLocationFromText(text: string): string | null {
+  const venue = lookupVenue(text);
+  if (venue) return venue.address;
+  for (const region of KR_REGIONS) {
+    const idx = text.indexOf(region);
+    if (idx >= 0) {
+      return text.slice(idx, idx + 20).trim().split(/[\s,·\n]/)[0] || region;
+    }
+  }
+  return null;
+}
+
+/**
+ * Geocode a Korean address using Google Maps Geocoding API.
+ * Returns null if the Maps key is not set or geocoding fails.
+ */
+async function geocodeAddress(address: string): Promise<{ lat: string; lng: string } | null> {
+  const key = process.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!key) return null;
+  try {
+    const url =
+      `https://maps.googleapis.com/maps/api/geocode/json` +
+      `?address=${encodeURIComponent(address)}&language=ko&region=KR&key=${key}`;
+    const res = await withTimeout(
+      fetch(url, { headers: { Accept: 'application/json' } }),
+      SOURCE_TIMEOUT_MS,
+      'geocode',
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      status: string;
+      results?: Array<{ geometry?: { location?: { lat: number; lng: number } } }>;
+    };
+    if (json.status !== 'OK' || !json.results?.[0]?.geometry?.location) return null;
+    const loc = json.results[0].geometry.location;
+    return { lat: String(loc.lat), lng: String(loc.lng) };
+  } catch {
+    return null;
+  }
+}
+
+type NormalizeResult =
+  | { ok: true; event: CrawledEvent }
+  | { ok: false; reason: string };
+
+/**
+ * Normalise a search result (title + snippet + link + image) into a CrawledEvent.
+ * Always returns a structured result — callers must check `.ok` to decide whether
+ * to keep the event or record the failure reason in ImportResult.failures.
+ */
+async function normalizeSearchResult(
+  rawTitle: string,
+  rawSnippet: string,
+  link: string | null,
+  image: string | null,
+  source: string,
+): Promise<NormalizeResult> {
+  const title = rawTitle.replace(/<[^>]+>/g, '').trim();
+  const snippet = rawSnippet.replace(/<[^>]+>/g, '').trim();
+  const fullText = `${title} ${snippet}`;
+
+  if (!matchesPetKeyword(fullText)) {
+    return { ok: false, reason: `반려동물 키워드 미포함: "${title.slice(0, 60)}"` };
+  }
+
+  const dates = extractDateRange(fullText);
+  if (!dates) {
+    return { ok: false, reason: `날짜 추출 실패: "${title.slice(0, 60)}"` };
+  }
+
+  const locationText = extractLocationFromText(fullText);
+  if (!locationText) {
+    return { ok: false, reason: `장소 추출 실패: "${title.slice(0, 60)}"` };
+  }
+
+  // Prefer venue lookup (has hard-coded coords), otherwise geocode.
+  const venue = lookupVenue(fullText);
+  let lat: string, lng: string, location: string;
+  if (venue) {
+    lat = venue.lat;
+    lng = venue.lng;
+    location = venue.address;
+  } else {
+    const coords = await geocodeAddress(locationText);
+    if (!coords) {
+      return { ok: false, reason: `지오코딩 실패: "${locationText.slice(0, 60)}"` };
+    }
+    lat = coords.lat;
+    lng = coords.lng;
+    location = locationText;
+  }
+
+  // Infer category from keywords.
+  let category: PetEventCategory = 'other';
+  const lc = fullText.toLowerCase();
+  if (lc.includes('입양') || lc.includes('분양')) category = 'adoption';
+  else if (lc.includes('펫페어') || lc.includes('pet fair') || lc.includes('박람회')) category = 'pet_fair';
+  else if (lc.includes('축제') || lc.includes('festival')) category = 'festival';
+  else if (lc.includes('대회') || lc.includes('도그쇼') || lc.includes('competition')) category = 'competition';
+  else if (lc.includes('훈련') || lc.includes('교육')) category = 'training';
+
+  return {
+    ok: true,
+    event: {
+      title: title.slice(0, 200),
+      description: snippet.slice(0, 500) || null,
+      startDate: dates.startDate,
+      endDate: dates.endDate,
+      location,
+      lat,
+      lng,
+      category,
+      imageUrl: image,
+      websiteUrl: link,
+      source,
+    },
+  };
+}
+
+type SearchFetchResult = { events: CrawledEvent[]; failures: ImportResult['failures'] };
+
+/**
+ * Source F: Google Custom Search JSON API.
+ * Requires GOOGLE_CUSTOM_SEARCH_API_KEY + GOOGLE_CUSTOM_SEARCH_CX.
+ * Missing keys → skips with a log message, no error thrown.
+ * Per-keyword HTTP errors and normalization failures are returned in `failures`.
+ */
+async function fetchGoogleSearchEvents(): Promise<SearchFetchResult> {
+  const apiKey = process.env.GOOGLE_CUSTOM_SEARCH_API_KEY;
+  const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX;
+  if (!apiKey || !cx) {
+    console.log('[eventUpdater] Google Custom Search 키 미설정, 건너뜁니다.');
+    return { events: [], failures: [] };
+  }
+
+  const events: CrawledEvent[] = [];
+  const failures: ImportResult['failures'] = [];
+  let requestCount = 0;
+
+  for (const keyword of SEARCH_KEYWORDS) {
+    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+    try {
+      const url =
+        `https://www.googleapis.com/customsearch/v1` +
+        `?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}` +
+        `&q=${encodeURIComponent(keyword)}&num=10&lr=lang_ko&gl=kr`;
+      const res = await withTimeout(
+        fetch(url, { headers: { Accept: 'application/json' } }),
+        SOURCE_TIMEOUT_MS,
+        'google-cse',
+      );
+      requestCount++;
+      if (!res.ok) {
+        const msg = `HTTP ${res.status} (키워드: "${keyword}")`;
+        logServerError(`[eventUpdater] Google CSE ${msg}`);
+        failures.push({ source: 'Google 검색', message: msg });
+        continue;
+      }
+      const json = (await res.json()) as {
+        items?: Array<{
+          title: string;
+          snippet?: string;
+          link?: string;
+          pagemap?: { cse_image?: Array<{ src: string }> };
+        }>;
+      };
+      for (const item of json.items ?? []) {
+        const image = item.pagemap?.cse_image?.[0]?.src ?? null;
+        const result = await normalizeSearchResult(
+          item.title,
+          item.snippet ?? '',
+          item.link ?? null,
+          image,
+          'Google 검색',
+        );
+        if (result.ok) {
+          events.push(result.event);
+        } else {
+          failures.push({ source: 'Google 검색', message: result.reason });
+        }
+      }
+    } catch (e) {
+      const msg = `요청 오류 (키워드: "${keyword}"): ${e instanceof Error ? e.message : String(e)}`;
+      logServerError(`[eventUpdater] Google CSE ${msg}`, e);
+      failures.push({ source: 'Google 검색', message: msg });
+    }
+  }
+  return { events, failures };
+}
+
+/**
+ * Source G: Naver Search API — news + webkr endpoints.
+ * Requires NAVER_SEARCH_CLIENT_ID + NAVER_SEARCH_CLIENT_SECRET.
+ * Missing keys → skips with a log message, no error thrown.
+ * Per-endpoint HTTP errors and normalization failures are returned in `failures`.
+ */
+async function fetchNaverSearchEvents(): Promise<SearchFetchResult> {
+  const clientId = process.env.NAVER_SEARCH_CLIENT_ID;
+  const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    console.log('[eventUpdater] Naver 검색 API 키 미설정, 건너뜁니다.');
+    return { events: [], failures: [] };
+  }
+
+  const events: CrawledEvent[] = [];
+  const failures: ImportResult['failures'] = [];
+  const headers = {
+    'X-Naver-Client-Id': clientId,
+    'X-Naver-Client-Secret': clientSecret,
+    Accept: 'application/json',
+  };
+  const endpoints = ['news', 'webkr'] as const;
+  let requestCount = 0;
+
+  for (const keyword of SEARCH_KEYWORDS) {
+    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+    for (const endpoint of endpoints) {
+      if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+      try {
+        const url =
+          `https://openapi.naver.com/v1/search/${endpoint}` +
+          `?query=${encodeURIComponent(keyword)}&display=10&start=1&sort=date`;
+        const res = await withTimeout(
+          fetch(url, { headers }),
+          SOURCE_TIMEOUT_MS,
+          `naver-${endpoint}`,
+        );
+        requestCount++;
+        if (!res.ok) {
+          const msg = `HTTP ${res.status} (${endpoint}, 키워드: "${keyword}")`;
+          logServerError(`[eventUpdater] Naver ${msg}`);
+          failures.push({ source: 'Naver 검색', message: msg });
+          continue;
+        }
+        const json = (await res.json()) as {
+          items?: Array<{
+            title: string;
+            description?: string;
+            link?: string;
+            originallink?: string;
+          }>;
+        };
+        for (const item of json.items ?? []) {
+          const result = await normalizeSearchResult(
+            item.title,
+            item.description ?? '',
+            item.link ?? item.originallink ?? null,
+            null,
+            'Naver 검색',
+          );
+          if (result.ok) {
+            events.push(result.event);
+          } else {
+            failures.push({ source: 'Naver 검색', message: result.reason });
+          }
+        }
+      } catch (e) {
+        const msg = `요청 오류 (${endpoint}, 키워드: "${keyword}"): ${e instanceof Error ? e.message : String(e)}`;
+        logServerError(`[eventUpdater] Naver ${msg}`, e);
+        failures.push({ source: 'Naver 검색', message: msg });
+      }
+    }
+  }
+  return { events, failures };
+}
+
+/**
+ * Source H: Daum/Kakao Search API — web + blog endpoints.
+ * Requires KAKAO_REST_API_KEY.
+ * Missing key → skips with a log message, no error thrown.
+ * Per-endpoint HTTP errors and normalization failures are returned in `failures`.
+ */
+async function fetchDaumSearchEvents(): Promise<SearchFetchResult> {
+  const apiKey = process.env.KAKAO_REST_API_KEY;
+  if (!apiKey) {
+    console.log('[eventUpdater] Kakao REST API 키 미설정, 건너뜁니다.');
+    return { events: [], failures: [] };
+  }
+
+  const events: CrawledEvent[] = [];
+  const failures: ImportResult['failures'] = [];
+  const headers = {
+    Authorization: `KakaoAK ${apiKey}`,
+    Accept: 'application/json',
+  };
+  const searchTypes = ['web', 'blog'] as const;
+  let requestCount = 0;
+
+  for (const keyword of SEARCH_KEYWORDS) {
+    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+    for (const searchType of searchTypes) {
+      if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+      try {
+        const url =
+          `https://dapi.kakao.com/v2/search/${searchType}` +
+          `?query=${encodeURIComponent(keyword)}&size=10&sort=recency`;
+        const res = await withTimeout(
+          fetch(url, { headers }),
+          SOURCE_TIMEOUT_MS,
+          `daum-${searchType}`,
+        );
+        requestCount++;
+        if (!res.ok) {
+          const msg = `HTTP ${res.status} (${searchType}, 키워드: "${keyword}")`;
+          logServerError(`[eventUpdater] Daum ${msg}`);
+          failures.push({ source: 'Daum 검색', message: msg });
+          continue;
+        }
+        const json = (await res.json()) as {
+          documents?: Array<{
+            title: string;
+            contents?: string;
+            url?: string;
+            thumbnail?: string;
+          }>;
+        };
+        for (const doc of json.documents ?? []) {
+          const result = await normalizeSearchResult(
+            doc.title,
+            doc.contents ?? '',
+            doc.url ?? null,
+            doc.thumbnail ?? null,
+            'Daum 검색',
+          );
+          if (result.ok) {
+            events.push(result.event);
+          } else {
+            failures.push({ source: 'Daum 검색', message: result.reason });
+          }
+        }
+      } catch (e) {
+        const msg = `요청 오류 (${searchType}, 키워드: "${keyword}"): ${e instanceof Error ? e.message : String(e)}`;
+        logServerError(`[eventUpdater] Daum ${msg}`, e);
+        failures.push({ source: 'Daum 검색', message: msg });
+      }
+    }
+  }
+  return { events, failures };
+}
+
+/** Sources that return simple CrawledEvent[]; any thrown error is caught by runImport. */
+const SIMPLE_SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }> = [
   { name: 'VisitKorea(축제)', fn: fetchVisitKoreaFestivals },
   { name: 'VisitKorea(키워드)', fn: fetchVisitKoreaPetKeyword },
   { name: '케이펫페어 공식', fn: fetchKpetfairOfficial },
   { name: '동물보호관리시스템', fn: fetchAnimalProtectEvents },
   { name: '서울 열린데이터광장(문화행사)', fn: fetchSeoulPetCulturalEvents },
+];
+
+/** Search-engine sources that return both events and per-item failure entries. */
+const SEARCH_SOURCES: Array<{ name: string; fn: () => Promise<SearchFetchResult> }> = [
+  { name: 'Google 검색', fn: fetchGoogleSearchEvents },
+  { name: 'Naver 검색', fn: fetchNaverSearchEvents },
+  { name: 'Daum 검색', fn: fetchDaumSearchEvents },
 ];
 
 async function notifyAdminsOnFailure(failures: ImportResult['failures']): Promise<void> {
@@ -576,11 +989,28 @@ export class EventUpdaterService {
 
     try {
       const collected: CrawledEvent[] = [];
-      for (const source of SOURCES) {
+
+      // Simple sources: throw on failure → caught here and recorded.
+      for (const source of SIMPLE_SOURCES) {
         try {
           const items = await source.fn();
           fetched += items.length;
           collected.push(...items);
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          failures.push({ source: source.name, message });
+          logServerError(`[eventUpdater] 소스 ${source.name} 수집 실패:`, e);
+        }
+      }
+
+      // Search-engine sources: return structured { events, failures }.
+      // Per-item normalization failures are included in the returned failures array.
+      for (const source of SEARCH_SOURCES) {
+        try {
+          const result = await source.fn();
+          fetched += result.events.length;
+          collected.push(...result.events);
+          failures.push(...result.failures);
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
           failures.push({ source: source.name, message });
