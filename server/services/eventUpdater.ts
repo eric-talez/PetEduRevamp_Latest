@@ -156,9 +156,269 @@ async function fetchVisitKoreaPetKeyword(): Promise<CrawledEvent[]> {
   return out;
 }
 
+/**
+ * 알려진 행사 전시장/공원의 좌표 룩업.
+ * HTML/공공 OpenAPI 응답에 좌표가 없을 때 장소명으로 매칭해 lat/lng 를 보완.
+ */
+const VENUE_COORDS: Array<{ keywords: string[]; lat: string; lng: string; address: string }> = [
+  { keywords: ['kintex', '킨텍스'], lat: '37.6709', lng: '126.7409', address: '경기도 고양시 일산서구 킨텍스로 217 (킨텍스)' },
+  { keywords: ['coex', '코엑스'], lat: '37.5126', lng: '127.0589', address: '서울특별시 강남구 영동대로 513 (코엑스)' },
+  { keywords: ['setec', '세텍'], lat: '37.4929', lng: '127.0648', address: '서울특별시 강남구 남부순환로 3104 (SETEC)' },
+  { keywords: ['bexco', '벡스코'], lat: '35.1689', lng: '129.1342', address: '부산광역시 해운대구 APEC로 55 (BEXCO)' },
+  { keywords: ['exco', '엑스코'], lat: '35.8839', lng: '128.6094', address: '대구광역시 북구 엑스코로 10 (EXCO)' },
+  { keywords: ['at센터', 'at center', '에이티센터', '양재 at'], lat: '37.4684', lng: '127.0388', address: '서울특별시 서초구 강남대로 27 (aT센터)' },
+  { keywords: ['마곡', 'magok'], lat: '37.5635', lng: '126.8266', address: '서울특별시 강서구 마곡중앙로 38 (코엑스 마곡전시장)' },
+  { keywords: ['송도컨벤시아', 'songdo convensia'], lat: '37.3825', lng: '126.6437', address: '인천광역시 연수구 센트럴로 123 (송도컨벤시아)' },
+];
+
+function lookupVenue(text: string): { lat: string; lng: string; address: string } | null {
+  const lc = text.toLowerCase();
+  for (const v of VENUE_COORDS) {
+    if (v.keywords.some((k) => lc.includes(k.toLowerCase()))) return v;
+  }
+  return null;
+}
+
+function parseFlexibleDate(input: string, endOfDay = false): Date | null {
+  const s = input.trim();
+  if (!s) return null;
+  // 2026-05-14, 2026.05.14, 2026/05/14, 20260514
+  const m1 = s.match(/(\d{4})[.\-/]?(\d{1,2})[.\-/]?(\d{1,2})/);
+  if (!m1) return null;
+  const y = m1[1];
+  const mo = m1[2].padStart(2, '0');
+  const d = m1[3].padStart(2, '0');
+  const time = endOfDay ? 'T23:59:59+09:00' : 'T00:00:00+09:00';
+  const dt = new Date(`${y}-${mo}-${d}${time}`);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+/**
+ * Source C: 케이펫페어 공식 (kpetfair.co.kr) — 정적 HTML 파싱.
+ * 사이트 구조 변경/네트워크 실패 시 빈 배열 반환(파싱 단계 실패는 throw 하지 않음).
+ * 좌표는 본문에 포함된 전시장명(KINTEX/COEX/SETEC 등)으로 VENUE_COORDS 매칭.
+ */
+async function fetchKpetfairOfficial(): Promise<CrawledEvent[]> {
+  const url = 'https://www.kpetfair.co.kr/';
+  let html = '';
+  try {
+    const res = await withTimeout(
+      fetch(url, { headers: { 'User-Agent': 'TALEZ-EventUpdater/1.0', Accept: 'text/html' } }),
+      SOURCE_TIMEOUT_MS,
+      'kpetfair-html',
+    );
+    if (!res.ok) throw new Error(`Kpetfair HTTP ${res.status}`);
+    html = await res.text();
+  } catch (e) {
+    throw e instanceof Error ? e : new Error(String(e));
+  }
+
+  const out: CrawledEvent[] = [];
+  try {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM(html);
+    const doc = dom.window.document;
+
+    // 후보 1: JSON-LD Event 스키마.
+    const ldNodes = Array.from(doc.querySelectorAll('script[type="application/ld+json"]')) as Element[];
+    for (const node of ldNodes) {
+      try {
+        const data = JSON.parse(node.textContent ?? 'null');
+        const arr = Array.isArray(data) ? data : [data];
+        for (const item of arr) {
+          if (!item || typeof item !== 'object') continue;
+          if (String(item['@type'] ?? '').toLowerCase() !== 'event') continue;
+          const title = String(item.name ?? '').trim();
+          const sd = parseFlexibleDate(String(item.startDate ?? ''));
+          const ed = parseFlexibleDate(String(item.endDate ?? item.startDate ?? ''), true);
+          if (!title || !sd || !ed) continue;
+          const locName = String(item.location?.name ?? item.location?.address ?? '').trim();
+          const venue = lookupVenue(`${title} ${locName}`);
+          if (!venue) continue;
+          out.push({
+            title,
+            description: typeof item.description === 'string' ? item.description.slice(0, 500) : null,
+            startDate: sd,
+            endDate: ed,
+            location: locName || venue.address,
+            lat: venue.lat,
+            lng: venue.lng,
+            category: 'pet_fair',
+            imageUrl: typeof item.image === 'string' ? item.image : null,
+            websiteUrl: typeof item.url === 'string' ? item.url : url,
+            source: '케이펫페어 공식',
+          });
+        }
+      } catch {
+        // JSON-LD 단일 블록 파싱 실패는 무시
+      }
+    }
+
+    // 후보 2: 일정 텍스트 휴리스틱 — "YYYY.MM.DD ~ MM.DD KINTEX" 같은 패턴.
+    if (out.length === 0) {
+      const text = doc.body?.textContent ?? '';
+      const re = /(\d{4}[.\-/]\d{1,2}[.\-/]\d{1,2})\s*[~-]\s*(\d{1,4}[.\-/]?\d{1,2}[.\-/]?\d{1,2})\s*([^\n\r]{0,80})/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        const sd = parseFlexibleDate(m[1]);
+        let ed = parseFlexibleDate(m[2], true);
+        if (sd && !ed) {
+          // 종료일이 월/일만 표기된 경우 시작일의 연도를 차용.
+          const tail = m[2];
+          const mm = tail.match(/(\d{1,2})[.\-/](\d{1,2})/);
+          if (mm) ed = parseFlexibleDate(`${sd.getUTCFullYear()}-${mm[1]}-${mm[2]}`, true);
+        }
+        const tail = m[3] ?? '';
+        const venue = lookupVenue(tail);
+        if (!sd || !ed || !venue) continue;
+        const title = `케이펫페어 ${tail.replace(/[\s\u00A0]+/g, ' ').trim().slice(0, 80)}`.trim();
+        if (!matchesPetKeyword(title)) continue;
+        out.push({
+          title,
+          description: null,
+          startDate: sd,
+          endDate: ed,
+          location: venue.address,
+          lat: venue.lat,
+          lng: venue.lng,
+          category: 'pet_fair',
+          imageUrl: null,
+          websiteUrl: url,
+          source: '케이펫페어 공식',
+        });
+      }
+    }
+  } catch (e) {
+    // 파싱 단계 오류는 0건으로 처리해 다른 소스에 영향 주지 않도록 함.
+    logServerError('[eventUpdater] kpetfair 파싱 실패:', e);
+    return [];
+  }
+
+  return out;
+}
+
+/**
+ * Source D: 농림축산검역본부 동물보호관리시스템(공공데이터포털) — 행사정보(eventInfo).
+ * `ANIMAL_PROTECT_API_KEY` 미설정 시 빈 배열 반환.
+ * 응답에 좌표가 없으므로 행사장명으로 VENUE_COORDS 매칭, 미매칭 시 스킵.
+ */
+async function fetchAnimalProtectEvents(): Promise<CrawledEvent[]> {
+  const key = process.env.ANIMAL_PROTECT_API_KEY;
+  if (!key) return [];
+
+  const today = new Date();
+  const yyyyMMdd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  const after = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
+  const yyyyMMddEnd = `${after.getFullYear()}${String(after.getMonth() + 1).padStart(2, '0')}${String(after.getDate()).padStart(2, '0')}`;
+  const url =
+    `https://apis.data.go.kr/1543061/abandonmentPublicEventSrvc/eventInfo` +
+    `?serviceKey=${encodeURIComponent(key)}&_type=json&numOfRows=100&pageNo=1` +
+    `&bgnde=${yyyyMMdd}&endde=${yyyyMMddEnd}`;
+
+  const res = await withTimeout(
+    fetch(url, { headers: { Accept: 'application/json' } }),
+    SOURCE_TIMEOUT_MS,
+    'animal-protect',
+  );
+  if (!res.ok) throw new Error(`AnimalProtect HTTP ${res.status}`);
+  const json = (await res.json()) as {
+    response?: { body?: { items?: { item?: Array<Record<string, unknown>> | Record<string, unknown> } } };
+  };
+  const raw = json?.response?.body?.items?.item;
+  const items: Array<Record<string, unknown>> = Array.isArray(raw) ? raw : raw ? [raw] : [];
+
+  const out: CrawledEvent[] = [];
+  for (const it of items) {
+    const title = String(it.eventNm ?? it.eventNm_ko ?? '').trim();
+    if (!title) continue;
+    const sdRaw = String(it.eventStdde ?? it.eventStartDate ?? '');
+    const edRaw = String(it.eventEnddde ?? it.eventEndDate ?? sdRaw);
+    const sd = parseFlexibleDate(sdRaw);
+    const ed = parseFlexibleDate(edRaw, true);
+    if (!sd || !ed) continue;
+    const place = String(it.eventPlace ?? it.eventAddr ?? '').trim();
+    const venue = lookupVenue(place);
+    if (!venue) continue;
+    out.push({
+      title,
+      description: typeof it.eventCn === 'string' ? (it.eventCn as string).slice(0, 500) : null,
+      startDate: sd,
+      endDate: ed,
+      location: place || venue.address,
+      lat: venue.lat,
+      lng: venue.lng,
+      category: 'adoption',
+      imageUrl: typeof it.popfile === 'string' ? (it.popfile as string) : null,
+      websiteUrl: 'https://www.animal.go.kr/',
+      source: '동물보호관리시스템',
+    });
+  }
+  return out;
+}
+
+/**
+ * Source E: 서울 열린데이터광장 문화행사정보 (culturalEventInfo) — '반려/펫' 키워드 필터.
+ * `SEOUL_OPENAPI_KEY` 미설정 시 빈 배열 반환.
+ * 응답의 LOT/LAT 좌표를 우선 사용, 없으면 PLACE 텍스트로 VENUE_COORDS 매칭.
+ */
+async function fetchSeoulPetCulturalEvents(): Promise<CrawledEvent[]> {
+  const key = process.env.SEOUL_OPENAPI_KEY;
+  if (!key) return [];
+
+  const url = `http://openapi.seoul.go.kr:8088/${encodeURIComponent(key)}/json/culturalEventInfo/1/200/`;
+  const res = await withTimeout(
+    fetch(url, { headers: { Accept: 'application/json' } }),
+    SOURCE_TIMEOUT_MS,
+    'seoul-cultural',
+  );
+  if (!res.ok) throw new Error(`Seoul(culturalEventInfo) HTTP ${res.status}`);
+  const json = (await res.json()) as { culturalEventInfo?: { row?: Array<Record<string, unknown>> } };
+  const rows = Array.isArray(json?.culturalEventInfo?.row) ? json.culturalEventInfo!.row! : [];
+
+  const out: CrawledEvent[] = [];
+  for (const r of rows) {
+    const title = String(r.TITLE ?? '').trim();
+    if (!title) continue;
+    const haystack = `${title} ${String(r.PROGRAM ?? '')} ${String(r.GUNAME ?? '')}`;
+    if (!matchesPetKeyword(haystack)) continue;
+    const dateStr = String(r.DATE ?? r.STRTDATE ?? '');
+    // "2026-05-14~2026-05-15" 또는 "2026-05-14"
+    const parts = dateStr.split('~').map((s) => s.trim());
+    const sd = parseFlexibleDate(parts[0] ?? '');
+    const ed = parseFlexibleDate(parts[1] ?? parts[0] ?? '', true);
+    if (!sd || !ed) continue;
+    const place = String(r.PLACE ?? '').trim();
+    let lat = String(r.LAT ?? '').trim();
+    let lng = String(r.LOT ?? '').trim();
+    if (!lat || !lng) {
+      const venue = lookupVenue(place);
+      if (!venue) continue;
+      lat = venue.lat;
+      lng = venue.lng;
+    }
+    out.push({
+      title,
+      description: null,
+      startDate: sd,
+      endDate: ed,
+      location: place,
+      lat,
+      lng,
+      category: 'festival',
+      imageUrl: typeof r.MAIN_IMG === 'string' ? (r.MAIN_IMG as string) : null,
+      websiteUrl: typeof r.HMPG_ADDR === 'string' ? (r.HMPG_ADDR as string) : null,
+      source: '서울 열린데이터광장(문화행사)',
+    });
+  }
+  return out;
+}
+
 const SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }> = [
   { name: 'VisitKorea(축제)', fn: fetchVisitKoreaFestivals },
   { name: 'VisitKorea(키워드)', fn: fetchVisitKoreaPetKeyword },
+  { name: '케이펫페어 공식', fn: fetchKpetfairOfficial },
+  { name: '동물보호관리시스템', fn: fetchAnimalProtectEvents },
+  { name: '서울 열린데이터광장(문화행사)', fn: fetchSeoulPetCulturalEvents },
 ];
 
 async function notifyAdminsOnFailure(failures: ImportResult['failures']): Promise<void> {
