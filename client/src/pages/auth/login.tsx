@@ -101,20 +101,11 @@ export default function Login() {
       
       if (userData.success && userData.data?.user) {
         const user = userData.data.user;
-        
-        // 이전 인증 상태 초기화 후 새 역할로 전환
-        auth.logout();
 
-        // 로그인 성공 시 인증 이벤트 발행
-        window.dispatchEvent(new CustomEvent('login', {
-          detail: {
-            role: user.role,
-            name: user.name,
-            userRole: user.role,
-            userName: user.name
-          }
-        }));
-
+        // 서버 응답으로 받은 역할(user.role)을 단일 소스로 사용해 클라이언트 상태를 즉시 동기화한다.
+        // 이전 세션의 역할(예: admin)이 남아 라우팅을 잘못 결정하지 않도록,
+        // auth.logout() → dispatch('login') → auth.login() 다단계 호출로 인한 레이스를 제거하고
+        // 한 번의 auth.login()만 호출한 뒤 하드 네비게이션으로 새 세션 기준으로 페이지를 새로 로드한다.
         auth.login(user.role, user.name, false);
 
         toast({
@@ -123,13 +114,15 @@ export default function Login() {
           variant: "default",
         });
 
-        // 역할에 따른 대시보드로 이동
-        const dashboardPath = user.role === 'pet-owner' ? '/dashboard' : 
-                             user.role === 'trainer' ? '/trainer/dashboard' : 
-                             user.role === 'institute-admin' ? '/institute/dashboard' : 
+        // 역할에 따른 대시보드로 이동 (서버 응답의 user.role 기준)
+        const dashboardPath = user.role === 'pet-owner' ? '/dashboard' :
+                             user.role === 'trainer' ? '/trainer/dashboard' :
+                             user.role === 'institute-admin' ? '/institute/dashboard' :
                              user.role === 'admin' ? '/admin/dashboard' : '/dashboard';
-        
-        setLocation(dashboardPath);
+
+        // 하드 네비게이션으로 React 상태 레이스(이전 역할의 早期 리다이렉트, 캐시된 /api/auth/me 등)를 차단
+        window.location.assign(dashboardPath);
+        return;
       } else {
         throw new Error(userData.message || '로그인에 실패했습니다.');
       }
