@@ -23966,6 +23966,21 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  app.post('/api/admin/pet-events/bulk-deactivate', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+      const validIds = ids.map((v: unknown) => Number(v)).filter((n: number) => Number.isInteger(n) && n > 0);
+      if (validIds.length === 0) {
+        return res.status(400).json({ error: '비활성화할 행사 ID를 선택해주세요.', code: 'INVALID_IDS' });
+      }
+      const updated = await storage.bulkDeactivatePetEvents(validIds);
+      res.json({ success: true, data: { updated } });
+    } catch (error) {
+      logServerError('반려견 행사 일괄 비활성화 오류:', error, req);
+      res.status(500).json({ error: '일괄 비활성화 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   app.post('/api/admin/pet-events/bulk-delete', requireAuth('admin'), csrfProtection, async (req, res) => {
     try {
       const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];

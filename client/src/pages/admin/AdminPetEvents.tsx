@@ -24,7 +24,7 @@ import {
   type PetEvent,
   type PetEventCategory,
 } from "@shared/schema";
-import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 
 interface ImportResult {
   startedAt: string;
@@ -162,6 +162,41 @@ export default function AdminPetEventsPage() {
     });
     return Array.from(set).sort();
   }, [items]);
+
+  const inactiveCount = useMemo(() => items.filter((it) => !it.isActive).length, [items]);
+  const activeCount = items.length - inactiveCount;
+  const sourceCounts = useMemo(() => {
+    const map = new Map<string, { total: number; pending: number }>();
+    let noneTotal = 0;
+    let nonePending = 0;
+    items.forEach((it) => {
+      const src = (it.source ?? "").trim();
+      if (!src) {
+        noneTotal++;
+        if (!it.isActive) nonePending++;
+        return;
+      }
+      const cur = map.get(src) ?? { total: 0, pending: 0 };
+      cur.total++;
+      if (!it.isActive) cur.pending++;
+      map.set(src, cur);
+    });
+    return { bySrc: map, none: { total: noneTotal, pending: nonePending } };
+  }, [items]);
+
+  const sourceBadgeClass = (src: string) => {
+    const palette = [
+      "bg-amber-50 text-amber-800 border-amber-200",
+      "bg-sky-50 text-sky-800 border-sky-200",
+      "bg-emerald-50 text-emerald-800 border-emerald-200",
+      "bg-violet-50 text-violet-800 border-violet-200",
+      "bg-rose-50 text-rose-800 border-rose-200",
+      "bg-cyan-50 text-cyan-800 border-cyan-200",
+    ];
+    let h = 0;
+    for (let i = 0; i < src.length; i++) h = (h * 31 + src.charCodeAt(i)) >>> 0;
+    return palette[h % palette.length];
+  };
 
   const slugifySource = (src: string) =>
     src.toLowerCase().replace(/[^a-z0-9가-힣]+/g, "-").replace(/(^-|-$)/g, "") || "src";
@@ -340,6 +375,22 @@ export default function AdminPetEventsPage() {
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
 
+  const bulkDeactivate = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const res = await apiRequest("POST", "/api/admin/pet-events/bulk-deactivate", { ids });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "일괄 비활성화 실패");
+      return json.data as { updated: number };
+    },
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
+      toast({ title: `${r.updated}건 비활성화되었습니다` });
+      clearSelection();
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
   const bulkDelete = useMutation({
     mutationFn: async (ids: number[]) => {
       const res = await apiRequest("POST", "/api/admin/pet-events/bulk-delete", { ids });
@@ -361,6 +412,12 @@ export default function AdminPetEventsPage() {
     if (ids.length === 0) return;
     if (!confirm(`선택한 ${ids.length}건을 활성화할까요?`)) return;
     bulkActivate.mutate(ids);
+  };
+  const handleBulkDeactivate = () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`선택한 ${ids.length}건을 비활성화할까요?`)) return;
+    bulkDeactivate.mutate(ids);
   };
   const handleBulkDelete = () => {
     const ids = Array.from(selectedIds);
@@ -445,9 +502,9 @@ export default function AdminPetEventsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium text-stone-500 mr-1">상태</span>
             {([
-              { v: "all", label: "전체" },
-              { v: "inactive", label: "비활성(검수 대기)" },
-              { v: "active", label: "활성" },
+              { v: "all", label: "전체", count: items.length },
+              { v: "inactive", label: "검수 대기", count: inactiveCount },
+              { v: "active", label: "활성", count: activeCount },
             ] as const).map((opt) => (
               <Button
                 key={opt.v}
@@ -458,6 +515,17 @@ export default function AdminPetEventsPage() {
                 data-testid={`chip-status-${opt.v}`}
               >
                 {opt.label}
+                <span
+                  className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                    statusFilter === opt.v
+                      ? "bg-white/20 text-white"
+                      : opt.v === "inactive" && opt.count > 0
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-stone-100 text-stone-600"
+                  }`}
+                >
+                  {opt.count}
+                </span>
               </Button>
             ))}
             <span className="text-xs font-medium text-stone-500 ml-3 mr-1">출처</span>
@@ -470,27 +538,54 @@ export default function AdminPetEventsPage() {
             >
               전체
             </Button>
-            {sources.map((src) => (
+            {sources.map((src) => {
+              const c = sourceCounts.bySrc.get(src) ?? { total: 0, pending: 0 };
+              return (
+                <Button
+                  key={src}
+                  size="sm"
+                  variant={sourceFilter === src ? "default" : "outline"}
+                  className={`h-7 rounded-full text-xs ${sourceFilter === src ? "bg-stone-900 hover:bg-stone-800" : ""}`}
+                  onClick={() => setSourceFilter(src)}
+                  data-testid={`chip-source-${slugifySource(src)}`}
+                >
+                  {src}
+                  <span
+                    className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                      sourceFilter === src ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600"
+                    }`}
+                  >
+                    {c.total}
+                  </span>
+                  {c.pending > 0 && (
+                    <span
+                      className="ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-800"
+                      title={`검수 대기 ${c.pending}건`}
+                    >
+                      신규 {c.pending}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
+            {sourceCounts.none.total > 0 && (
               <Button
-                key={src}
                 size="sm"
-                variant={sourceFilter === src ? "default" : "outline"}
-                className={`h-7 rounded-full text-xs ${sourceFilter === src ? "bg-stone-900 hover:bg-stone-800" : ""}`}
-                onClick={() => setSourceFilter(src)}
-                data-testid={`chip-source-${slugifySource(src)}`}
+                variant={sourceFilter === "__none__" ? "default" : "outline"}
+                className={`h-7 rounded-full text-xs ${sourceFilter === "__none__" ? "bg-stone-900 hover:bg-stone-800" : ""}`}
+                onClick={() => setSourceFilter("__none__")}
+                data-testid="chip-source-none"
               >
-                {src}
+                출처 없음
+                <span
+                  className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                    sourceFilter === "__none__" ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600"
+                  }`}
+                >
+                  {sourceCounts.none.total}
+                </span>
               </Button>
-            ))}
-            <Button
-              size="sm"
-              variant={sourceFilter === "__none__" ? "default" : "outline"}
-              className={`h-7 rounded-full text-xs ${sourceFilter === "__none__" ? "bg-stone-900 hover:bg-stone-800" : ""}`}
-              onClick={() => setSourceFilter("__none__")}
-              data-testid="chip-source-none"
-            >
-              출처 없음
-            </Button>
+            )}
           </div>
           {filteredItems.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t">
@@ -515,6 +610,18 @@ export default function AdminPetEventsPage() {
                     ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                     : <CheckCircle2 className="w-4 h-4 mr-1" />}
                   선택 항목 활성화
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={selectedCount === 0 || bulkDeactivate.isPending}
+                  onClick={handleBulkDeactivate}
+                  data-testid="button-bulk-deactivate"
+                >
+                  {bulkDeactivate.isPending
+                    ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    : <XCircle className="w-4 h-4 mr-1" />}
+                  선택 항목 비활성화
                 </Button>
                 <Button
                   size="sm"
@@ -566,11 +673,23 @@ export default function AdminPetEventsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold flex items-center gap-2 flex-wrap">
                           <span className="break-words">{it.title}</span>
-                          {!it.isActive && <Badge variant="secondary" className="text-xs">비활성</Badge>}
+                          {!it.isActive && (
+                            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200" data-testid={`badge-pending-${it.id}`}>
+                              검수 대기
+                            </Badge>
+                          )}
                         </div>
-                        <div className="text-xs text-stone-500 mt-1">
-                          {PET_EVENT_CATEGORY_LABELS[it.category as PetEventCategory] ?? it.category}
-                          {it.source && <span className="ml-2 text-stone-400">· {it.source}</span>}
+                        <div className="text-xs text-stone-500 mt-1 flex items-center gap-1.5 flex-wrap">
+                          <span>{PET_EVENT_CATEGORY_LABELS[it.category as PetEventCategory] ?? it.category}</span>
+                          {it.source && it.source.trim() && (
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] ${sourceBadgeClass(it.source.trim())}`}
+                              data-testid={`badge-source-${it.id}`}
+                            >
+                              {it.source.trim()}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>

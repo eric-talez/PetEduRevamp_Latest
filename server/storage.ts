@@ -8225,6 +8225,17 @@ class HybridStorage extends Storage {
       .returning({ id: petEvents.id });
     return result.length;
   }
+
+  async bulkDeactivatePetEvents(ids: number[]): Promise<number> {
+    await this.ensurePetEventsTable();
+    if (!ids.length) return 0;
+    const result = await db
+      .update(petEvents)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(inArray(petEvents.id, ids))
+      .returning({ id: petEvents.id });
+    return result.length;
+  }
 }
 
 const storage = new HybridStorage();
