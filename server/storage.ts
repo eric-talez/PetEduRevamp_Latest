@@ -8011,6 +8011,34 @@ class HybridStorage extends Storage {
     };
   }
 
+  // 예약 목록 조회 (PostgreSQL)
+  // dashboard.ts 가 사용하는 필드 중 일부(serviceType/scheduledAt)는 스키마와 명칭이 다르므로
+  // 호환을 위한 alias 를 함께 노출한다.
+  async getReservations(userId?: number): Promise<any[]> {
+    try {
+      const rows = userId
+        ? await db
+            .select()
+            .from(reservationsTable)
+            .where(eq(reservationsTable.userId, userId))
+            .orderBy(desc(reservationsTable.date))
+        : await db
+            .select()
+            .from(reservationsTable)
+            .orderBy(desc(reservationsTable.date));
+
+      return rows.map((r) => ({
+        ...r,
+        // dashboard.ts 호환 alias
+        serviceType: r.reservationType,
+        scheduledAt: r.date,
+      }));
+    } catch (error) {
+      logServerError('[Storage] 예약 목록 조회 실패:', error);
+      return [];
+    }
+  }
+
   // 화상수업/세션 예약 생성 (PostgreSQL)
   async createReservation(data: {
     userId: number;
