@@ -8192,6 +8192,27 @@ class HybridStorage extends Storage {
     const result = await db.delete(petEvents).where(eq(petEvents.id, id)).returning({ id: petEvents.id });
     return result.length > 0;
   }
+
+  async bulkActivatePetEvents(ids: number[]): Promise<number> {
+    await this.ensurePetEventsTable();
+    if (!ids.length) return 0;
+    const result = await db
+      .update(petEvents)
+      .set({ isActive: true, updatedAt: new Date() })
+      .where(inArray(petEvents.id, ids))
+      .returning({ id: petEvents.id });
+    return result.length;
+  }
+
+  async bulkDeletePetEvents(ids: number[]): Promise<number> {
+    await this.ensurePetEventsTable();
+    if (!ids.length) return 0;
+    const result = await db
+      .delete(petEvents)
+      .where(inArray(petEvents.id, ids))
+      .returning({ id: petEvents.id });
+    return result.length;
+  }
 }
 
 const storage = new HybridStorage();

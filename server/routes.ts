@@ -23951,6 +23951,36 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  app.post('/api/admin/pet-events/bulk-activate', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+      const validIds = ids.map((v: unknown) => Number(v)).filter((n: number) => Number.isInteger(n) && n > 0);
+      if (validIds.length === 0) {
+        return res.status(400).json({ error: '활성화할 행사 ID를 선택해주세요.', code: 'INVALID_IDS' });
+      }
+      const updated = await storage.bulkActivatePetEvents(validIds);
+      res.json({ success: true, data: { updated } });
+    } catch (error) {
+      logServerError('반려견 행사 일괄 활성화 오류:', error, req);
+      res.status(500).json({ error: '일괄 활성화 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.post('/api/admin/pet-events/bulk-delete', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+      const validIds = ids.map((v: unknown) => Number(v)).filter((n: number) => Number.isInteger(n) && n > 0);
+      if (validIds.length === 0) {
+        return res.status(400).json({ error: '삭제할 행사 ID를 선택해주세요.', code: 'INVALID_IDS' });
+      }
+      const deleted = await storage.bulkDeletePetEvents(validIds);
+      res.json({ success: true, data: { deleted } });
+    } catch (error) {
+      logServerError('반려견 행사 일괄 삭제 오류:', error, req);
+      res.status(500).json({ error: '일괄 삭제 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   // 주소 → 좌표 지오코딩 (관리자 행사 등록용)
   app.get('/api/admin/geocode', requireAuth('admin'), async (req, res) => {
     try {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -20,7 +21,7 @@ import {
   type PetEvent,
   type PetEventCategory,
 } from "@shared/schema";
-import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, CheckCircle2 } from "lucide-react";
 
 const toLocalInput = (d: string | Date | null | undefined) => {
   if (!d) return "";
@@ -60,12 +61,17 @@ const emptyForm = (): FormState => ({
   isActive: true,
 });
 
+type StatusFilter = "all" | "active" | "inactive";
+
 export default function AdminPetEventsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [geocoding, setGeocoding] = useState(false);
   const [lastGeocodedAddress, setLastGeocodedAddress] = useState<string>("");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
 
   const runGeocode = async (opts?: { silentOnEmpty?: boolean; force?: boolean }) => {
     const address = form.location.trim();
@@ -102,6 +108,62 @@ export default function AdminPetEventsPage() {
     queryKey: ["/api/admin/pet-events"],
   });
   const items = data?.data ?? [];
+
+  const sources = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach((it) => {
+      if (it.source && it.source.trim()) set.add(it.source.trim());
+    });
+    return Array.from(set).sort();
+  }, [items]);
+
+  const slugifySource = (src: string) =>
+    src.toLowerCase().replace(/[^a-z0-9가-힣]+/g, "-").replace(/(^-|-$)/g, "") || "src";
+
+  useEffect(() => {
+    if (selectedIds.size === 0) return;
+    const validIds = new Set(items.map((it) => it.id));
+    let changed = false;
+    const next = new Set<number>();
+    selectedIds.forEach((id) => {
+      if (validIds.has(id)) next.add(id);
+      else changed = true;
+    });
+    if (changed) setSelectedIds(next);
+  }, [items, selectedIds]);
+
+  const filteredItems = useMemo(() => {
+    return items.filter((it) => {
+      if (statusFilter === "active" && !it.isActive) return false;
+      if (statusFilter === "inactive" && it.isActive) return false;
+      if (sourceFilter !== "all") {
+        const src = (it.source ?? "").trim();
+        if (sourceFilter === "__none__" ? src !== "" : src !== sourceFilter) return false;
+      }
+      return true;
+    });
+  }, [items, statusFilter, sourceFilter]);
+
+  const filteredIds = useMemo(() => filteredItems.map((it) => it.id), [filteredItems]);
+  const allFilteredSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+  const someFilteredSelected = filteredIds.some((id) => selectedIds.has(id));
+
+  const toggleSelect = (id: number, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) filteredIds.forEach((id) => next.add(id));
+      else filteredIds.forEach((id) => next.delete(id));
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
 
   const save = useMutation({
     mutationFn: async () => {
@@ -208,6 +270,51 @@ export default function AdminPetEventsPage() {
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
 
+  const bulkActivate = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const res = await apiRequest("POST", "/api/admin/pet-events/bulk-activate", { ids });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "일괄 활성화 실패");
+      return json.data as { updated: number };
+    },
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
+      toast({ title: `${r.updated}건 활성화되었습니다` });
+      clearSelection();
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
+  const bulkDelete = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const res = await apiRequest("POST", "/api/admin/pet-events/bulk-delete", { ids });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "일괄 삭제 실패");
+      return json.data as { deleted: number };
+    },
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
+      toast({ title: `${r.deleted}건 삭제되었습니다` });
+      clearSelection();
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
+  const handleBulkActivate = () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`선택한 ${ids.length}건을 활성화할까요?`)) return;
+    bulkActivate.mutate(ids);
+  };
+  const handleBulkDelete = () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`선택한 ${ids.length}건을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
+    bulkDelete.mutate(ids);
+  };
+
   const openCreate = () => { setForm(emptyForm()); setLastGeocodedAddress(""); setOpen(true); };
   const openEdit = (it: PetEvent) => {
     setLastGeocodedAddress(it.location);
@@ -228,6 +335,8 @@ export default function AdminPetEventsPage() {
     });
     setOpen(true);
   };
+
+  const selectedCount = selectedIds.size;
 
   return (
     <div className="min-h-screen bg-stone-50 p-4 md:p-6">
@@ -253,49 +362,165 @@ export default function AdminPetEventsPage() {
           </div>
         </div>
 
+        <Card className="p-3 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-stone-500 mr-1">상태</span>
+            {([
+              { v: "all", label: "전체" },
+              { v: "inactive", label: "비활성(검수 대기)" },
+              { v: "active", label: "활성" },
+            ] as const).map((opt) => (
+              <Button
+                key={opt.v}
+                size="sm"
+                variant={statusFilter === opt.v ? "default" : "outline"}
+                className={`h-7 rounded-full text-xs ${statusFilter === opt.v ? "bg-stone-900 hover:bg-stone-800" : ""}`}
+                onClick={() => setStatusFilter(opt.v)}
+                data-testid={`chip-status-${opt.v}`}
+              >
+                {opt.label}
+              </Button>
+            ))}
+            <span className="text-xs font-medium text-stone-500 ml-3 mr-1">출처</span>
+            <Button
+              size="sm"
+              variant={sourceFilter === "all" ? "default" : "outline"}
+              className={`h-7 rounded-full text-xs ${sourceFilter === "all" ? "bg-stone-900 hover:bg-stone-800" : ""}`}
+              onClick={() => setSourceFilter("all")}
+              data-testid="chip-source-all"
+            >
+              전체
+            </Button>
+            {sources.map((src) => (
+              <Button
+                key={src}
+                size="sm"
+                variant={sourceFilter === src ? "default" : "outline"}
+                className={`h-7 rounded-full text-xs ${sourceFilter === src ? "bg-stone-900 hover:bg-stone-800" : ""}`}
+                onClick={() => setSourceFilter(src)}
+                data-testid={`chip-source-${slugifySource(src)}`}
+              >
+                {src}
+              </Button>
+            ))}
+            <Button
+              size="sm"
+              variant={sourceFilter === "__none__" ? "default" : "outline"}
+              className={`h-7 rounded-full text-xs ${sourceFilter === "__none__" ? "bg-stone-900 hover:bg-stone-800" : ""}`}
+              onClick={() => setSourceFilter("__none__")}
+              data-testid="chip-source-none"
+            >
+              출처 없음
+            </Button>
+          </div>
+          {filteredItems.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t">
+              <label className="flex items-center gap-2 text-xs text-stone-700 cursor-pointer">
+                <Checkbox
+                  checked={allFilteredSelected ? true : (someFilteredSelected ? "indeterminate" : false)}
+                  onCheckedChange={(v) => toggleSelectAll(v === true)}
+                  data-testid="checkbox-select-all"
+                />
+                <span>현재 목록 전체 선택 ({filteredIds.length}건)</span>
+              </label>
+              <span className="text-xs text-stone-500 ml-2">선택됨: <strong className="text-stone-800">{selectedCount}</strong>건</span>
+              <div className="ml-auto flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={selectedCount === 0 || bulkActivate.isPending}
+                  onClick={handleBulkActivate}
+                  data-testid="button-bulk-activate"
+                >
+                  {bulkActivate.isPending
+                    ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    : <CheckCircle2 className="w-4 h-4 mr-1" />}
+                  선택 항목 활성화
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                  disabled={selectedCount === 0 || bulkDelete.isPending}
+                  onClick={handleBulkDelete}
+                  data-testid="button-bulk-delete"
+                >
+                  {bulkDelete.isPending
+                    ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    : <Trash2 className="w-4 h-4 mr-1" />}
+                  선택 항목 삭제
+                </Button>
+                {selectedCount > 0 && (
+                  <Button size="sm" variant="ghost" onClick={clearSelection} data-testid="button-clear-selection">
+                    선택 해제
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </Card>
+
         {isLoading ? (
           <div className="text-center py-12 text-stone-500">불러오는 중…</div>
-        ) : items.length === 0 ? (
-          <Card className="p-8 text-center text-stone-400">등록된 행사가 없습니다.</Card>
+        ) : filteredItems.length === 0 ? (
+          <Card className="p-8 text-center text-stone-400">
+            {items.length === 0 ? "등록된 행사가 없습니다." : "조건에 해당하는 행사가 없습니다."}
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((it) => (
-              <Card key={it.id} className="p-4" data-testid={`card-admin-event-${it.id}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="font-semibold flex items-center gap-2">
-                      {it.title}
-                      {!it.isActive && <Badge variant="secondary" className="text-xs">비활성</Badge>}
+            {filteredItems.map((it) => {
+              const checked = selectedIds.has(it.id);
+              return (
+                <Card
+                  key={it.id}
+                  className={`p-4 ${checked ? "ring-2 ring-stone-900" : ""}`}
+                  data-testid={`card-admin-event-${it.id}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => toggleSelect(it.id, v === true)}
+                        className="mt-1"
+                        data-testid={`checkbox-event-${it.id}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold flex items-center gap-2 flex-wrap">
+                          <span className="break-words">{it.title}</span>
+                          {!it.isActive && <Badge variant="secondary" className="text-xs">비활성</Badge>}
+                        </div>
+                        <div className="text-xs text-stone-500 mt-1">
+                          {PET_EVENT_CATEGORY_LABELS[it.category as PetEventCategory] ?? it.category}
+                          {it.source && <span className="ml-2 text-stone-400">· {it.source}</span>}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-stone-500 mt-1">
-                      {PET_EVENT_CATEGORY_LABELS[it.category as PetEventCategory] ?? it.category}
+                    <div className="flex flex-col gap-1">
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(it)} data-testid={`button-edit-event-${it.id}`}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-red-600"
+                        onClick={() => { if (confirm(`${it.title} 행사를 삭제할까요?`)) del.mutate(it.id); }}
+                        data-testid={`button-delete-event-${it.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(it)} data-testid={`button-edit-event-${it.id}`}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-red-600"
-                      onClick={() => { if (confirm(`${it.title} 행사를 삭제할까요?`)) del.mutate(it.id); }}
-                      data-testid={`button-delete-event-${it.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  <div className="mt-3 space-y-1 text-xs text-stone-600">
+                    <div className="flex items-center"><Calendar className="w-3.5 h-3.5 mr-1.5" />{new Date(it.startDate).toLocaleDateString("ko-KR")} ~ {new Date(it.endDate).toLocaleDateString("ko-KR")}</div>
+                    <div className="flex items-start"><MapPin className="w-3.5 h-3.5 mr-1.5 mt-0.5 shrink-0" /><span className="line-clamp-2">{it.location}</span></div>
                   </div>
-                </div>
-                <div className="mt-3 space-y-1 text-xs text-stone-600">
-                  <div className="flex items-center"><Calendar className="w-3.5 h-3.5 mr-1.5" />{new Date(it.startDate).toLocaleDateString("ko-KR")} ~ {new Date(it.endDate).toLocaleDateString("ko-KR")}</div>
-                  <div className="flex items-start"><MapPin className="w-3.5 h-3.5 mr-1.5 mt-0.5 shrink-0" /><span className="line-clamp-2">{it.location}</span></div>
-                </div>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t text-sm">
-                  <span className="text-stone-500">활성(공개)</span>
-                  <Switch checked={it.isActive} onCheckedChange={() => toggleActive.mutate(it)} data-testid={`switch-active-${it.id}`} />
-                </div>
-              </Card>
-            ))}
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t text-sm">
+                    <span className="text-stone-500">활성(공개)</span>
+                    <Switch checked={it.isActive} onCheckedChange={() => toggleActive.mutate(it)} data-testid={`switch-active-${it.id}`} />
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
