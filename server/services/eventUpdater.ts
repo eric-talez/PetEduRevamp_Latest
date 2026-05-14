@@ -443,10 +443,13 @@ async function notifyAdminsOnFailure(failures: ImportResult['failures']): Promis
   }
 }
 
+const HISTORY_MAX = 50;
+
 export class EventUpdaterService {
   private updateTimer: NodeJS.Timeout | null = null;
   private running = false;
   private lastResult: ImportResult | null = null;
+  private history: ImportResult[] = [];
   private started = false;
 
   /** 매일 03:00 KST 실행 스케줄 시작 (idempotent) */
@@ -487,6 +490,15 @@ export class EventUpdaterService {
 
   public getLastResult(): ImportResult | null {
     return this.lastResult;
+  }
+
+  public getHistory(limit = HISTORY_MAX): ImportResult[] {
+    const n = Math.max(1, Math.min(HISTORY_MAX, limit));
+    return this.history.slice(0, n);
+  }
+
+  public isRunning(): boolean {
+    return this.running;
   }
 
   /** 수동/스케줄 단일 실행. 동시 실행 방지. */
@@ -567,6 +579,10 @@ export class EventUpdaterService {
       failures,
     };
     this.lastResult = result;
+    this.history.unshift(result);
+    if (this.history.length > HISTORY_MAX) {
+      this.history.length = HISTORY_MAX;
+    }
 
     console.log(
       `[eventUpdater] 완료: 수집 ${fetched} / 신규 ${created} / 중복 ${duplicates} / 실패 ${failures.length} (${result.durationMs}ms)`

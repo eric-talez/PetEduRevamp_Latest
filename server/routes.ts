@@ -24055,6 +24055,24 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  app.get('/api/admin/pet-events/import/history', requireAuth('admin'), async (req, res) => {
+    try {
+      const rawLimit = Number(req.query.limit);
+      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 20;
+      res.json({
+        success: true,
+        data: {
+          running: eventUpdater.isRunning(),
+          last: eventUpdater.getLastResult(),
+          history: eventUpdater.getHistory(limit),
+        },
+      });
+    } catch (error) {
+      logServerError('반려견 행사 자동 수집 이력 조회 오류:', error);
+      res.status(500).json({ error: '조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   console.log('[Pet Events] 전국 반려견 행사 지도 API가 등록되었습니다.');
 
   // =============================================

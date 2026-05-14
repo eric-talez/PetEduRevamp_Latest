@@ -14,6 +14,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import {
   PET_EVENT_CATEGORIES,
@@ -21,7 +24,49 @@ import {
   type PetEvent,
   type PetEventCategory,
 } from "@shared/schema";
-import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2 } from "lucide-react";
+
+interface ImportResult {
+  startedAt: string;
+  finishedAt: string;
+  durationMs: number;
+  fetched: number;
+  created: number;
+  duplicates: number;
+  failures: Array<{ source: string; message: string }>;
+}
+
+interface ImportHistoryResponse {
+  success: boolean;
+  data: {
+    running: boolean;
+    last: ImportResult | null;
+    history: ImportResult[];
+  };
+}
+
+const formatRelative = (iso: string): string => {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 0) return "방금";
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return `${sec}초 전`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}분 전`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}시간 전`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}일 전`;
+  return new Date(iso).toLocaleDateString("ko-KR");
+};
+
+const formatDuration = (ms: number): string => {
+  if (ms < 1000) return `${ms}ms`;
+  const s = ms / 1000;
+  if (s < 60) return `${s.toFixed(1)}초`;
+  const m = Math.floor(s / 60);
+  const rem = Math.floor(s % 60);
+  return `${m}분 ${rem}초`;
+};
 
 const toLocalInput = (d: string | Date | null | undefined) => {
   if (!d) return "";
@@ -72,6 +117,7 @@ export default function AdminPetEventsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const runGeocode = async (opts?: { silentOnEmpty?: boolean; force?: boolean }) => {
     const address = form.location.trim();
@@ -165,6 +211,13 @@ export default function AdminPetEventsPage() {
   };
   const clearSelection = () => setSelectedIds(new Set());
 
+  const { data: historyData } = useQuery<ImportHistoryResponse>({
+    queryKey: ["/api/admin/pet-events/import/history"],
+    refetchInterval: 30_000,
+  });
+  const lastRun = historyData?.data?.last ?? null;
+  const history = historyData?.data?.history ?? [];
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: {
@@ -247,6 +300,7 @@ export default function AdminPetEventsPage() {
     onSuccess: (r) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/history"] });
       const failMsg = r.failures.length > 0 ? ` · 실패 ${r.failures.length}건` : "";
       toast({
         title: "자동 수집 완료",
@@ -345,6 +399,31 @@ export default function AdminPetEventsPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">전국 반려견 행사 관리</h1>
             <p className="text-sm text-stone-500 mt-1">/pet-events-map 지도에 표시될 행사를 관리합니다.</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2" data-testid="last-import-badge">
+              {lastRun ? (
+                <>
+                  <Badge variant="secondary" className="text-xs">
+                    {lastRun.failures.length === 0 ? (
+                      <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="w-3 h-3 mr-1 text-amber-600" />
+                    )}
+                    마지막 수집: {formatRelative(lastRun.startedAt)} · 신규 {lastRun.created} · 중복 {lastRun.duplicates}
+                    {lastRun.failures.length > 0 ? ` · 실패 ${lastRun.failures.length}` : ""}
+                  </Badge>
+                  <button
+                    type="button"
+                    onClick={() => setHistoryOpen(true)}
+                    className="text-xs text-stone-500 underline-offset-2 hover:underline inline-flex items-center"
+                    data-testid="button-open-history"
+                  >
+                    <History className="w-3 h-3 mr-1" /> 이력 보기 ({history.length})
+                  </button>
+                </>
+              ) : (
+                <span className="text-xs text-stone-400">아직 자동 수집 이력이 없습니다.</span>
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -617,6 +696,71 @@ export default function AdminPetEventsPage() {
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-stone-900 hover:bg-stone-800" data-testid="button-save-event">
               {save.isPending ? "저장 중…" : "저장"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-import-history">
+          <DialogHeader>
+            <DialogTitle>자동 수집 실행 이력</DialogTitle>
+          </DialogHeader>
+          {history.length === 0 ? (
+            <div className="text-sm text-stone-500 py-8 text-center">표시할 이력이 없습니다.</div>
+          ) : (
+            <Table data-testid="table-import-history">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10"></TableHead>
+                  <TableHead>시작 시각</TableHead>
+                  <TableHead className="text-right">소요</TableHead>
+                  <TableHead className="text-right">수집</TableHead>
+                  <TableHead className="text-right">신규</TableHead>
+                  <TableHead className="text-right">중복</TableHead>
+                  <TableHead>실패</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {history.map((h, idx) => {
+                  const ok = h.failures.length === 0;
+                  return (
+                    <TableRow key={`${h.startedAt}-${idx}`} data-testid={`row-import-history-${idx}`}>
+                      <TableCell>
+                        {ok ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-amber-600" />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        <div>{new Date(h.startedAt).toLocaleString("ko-KR")}</div>
+                        <div className="text-stone-400">{formatRelative(h.startedAt)}</div>
+                      </TableCell>
+                      <TableCell className="text-right text-xs">{formatDuration(h.durationMs)}</TableCell>
+                      <TableCell className="text-right text-xs">{h.fetched}</TableCell>
+                      <TableCell className="text-right text-xs font-medium">{h.created}</TableCell>
+                      <TableCell className="text-right text-xs text-stone-500">{h.duplicates}</TableCell>
+                      <TableCell className="text-xs">
+                        {h.failures.length === 0 ? (
+                          <span className="text-stone-400">—</span>
+                        ) : (
+                          <ul className="space-y-0.5 text-amber-700">
+                            {h.failures.map((f, i) => (
+                              <li key={i}>
+                                <span className="font-medium">[{f.source}]</span> {f.message}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoryOpen(false)}>닫기</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
