@@ -8374,6 +8374,66 @@ class HybridStorage extends Storage {
       .returning({ id: petEventImportFailureResolutions.id });
     return result.length > 0;
   }
+
+  /**
+   * 일정 보존 기간이 지난 처리/숨김(resolved/dismissed) 후보를 정리한다.
+   *  - 대상 resolution 행을 삭제
+   *  - 해당 (runId, idx) 위치의 failuresJson 항목을 톰스톤 `{ source: '__pruned', message: '__pruned' }`로 치환
+   *    (배열 인덱스를 유지해야 다른 미처리 항목의 idx 매핑이 깨지지 않음)
+   *  - 표시 측(`getFailureCandidates`/`getHistory`)에서 톰스톤은 필터링되어 노출/카운트되지 않음
+   * @returns 정리된 항목 수
+   */
+  async pruneResolvedPetEventImportFailures(cutoff: Date): Promise<number> {
+    await this.ensureFailureResolutionsTable();
+    const stale = await db
+      .select()
+      .from(petEventImportFailureResolutions)
+      .where(and(
+        lte(petEventImportFailureResolutions.createdAt, cutoff),
+        inArray(petEventImportFailureResolutions.status, ['resolved', 'dismissed']),
+      ));
+    if (stale.length === 0) return 0;
+
+    const byRun = new Map<number, number[]>();
+    for (const r of stale) {
+      const arr = byRun.get(r.runId) ?? [];
+      arr.push(r.idx);
+      byRun.set(r.runId, arr);
+    }
+
+    let prunedCount = 0;
+    for (const [runId, idxList] of byRun.entries()) {
+      const [run] = await db
+        .select()
+        .from(petEventImportRuns)
+        .where(eq(petEventImportRuns.id, runId))
+        .limit(1);
+      if (!run) continue;
+      const failures = Array.isArray(run.failuresJson) ? [...run.failuresJson] : [];
+      let mutated = false;
+      for (const idx of idxList) {
+        if (idx < 0 || idx >= failures.length) continue;
+        const cur = failures[idx] as { source?: string } | undefined;
+        if (cur && cur.source === '__pruned') continue;
+        failures[idx] = { source: '__pruned', message: '__pruned' };
+        mutated = true;
+        prunedCount++;
+      }
+      if (mutated) {
+        await db
+          .update(petEventImportRuns)
+          .set({ failuresJson: failures })
+          .where(eq(petEventImportRuns.id, runId));
+      }
+      await db
+        .delete(petEventImportFailureResolutions)
+        .where(and(
+          eq(petEventImportFailureResolutions.runId, runId),
+          inArray(petEventImportFailureResolutions.idx, idxList),
+        ));
+    }
+    return prunedCount;
+  }
 }
 
 const storage = new HybridStorage();

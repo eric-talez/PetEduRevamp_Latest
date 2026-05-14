@@ -1235,7 +1235,17 @@ async function notifyAdminsOnFailure(failures: ImportResult['failures']): Promis
 }
 
 const HISTORY_MAX = 100;
+// 정리 정책 (관리자 운영 가이드):
+//  - HISTORY_RETENTION_DAYS: 수집 실행(run) 자체를 보관하는 최대 기간. 이 기간을 넘긴
+//    `petEventImportRuns` 행은 통째로 삭제되며, 자식 `petEventImportFailureResolutions`
+//    행도 ON DELETE CASCADE 로 함께 사라진다.
+//  - RESOLVED_RETENTION_DAYS: run 자체는 아직 살아 있어도, "처리(resolved)" 또는
+//    "숨김(dismissed)" 으로 마킹된 실패 후보는 이 기간이 지나면 정리된다.
+//    failuresJson 의 해당 인덱스 위치는 톰스톤(`__pruned`) 으로 치환되어 다른 미처리
+//    후보의 idx 매핑이 깨지지 않으면서, 검토 화면/카운트에서는 자동 제외된다.
+//  - CLEANUP_INTERVAL_MS: 부팅 직후 1회 + 24시간 주기로 위 두 정리 작업을 함께 실행한다.
 const HISTORY_RETENTION_DAYS = 90;
+const RESOLVED_RETENTION_DAYS = 90;
 const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export class EventUpdaterService {
@@ -1312,7 +1322,7 @@ export class EventUpdaterService {
         fetched: r.fetched,
         created: r.created,
         duplicates: r.duplicates,
-        failures: Array.isArray(r.failuresJson) ? r.failuresJson : [],
+        failures: (Array.isArray(r.failuresJson) ? r.failuresJson : []).filter((f) => f?.source !== '__pruned'),
         bySource: Array.isArray(r.bySourceJson) ? r.bySourceJson : [],
       }));
     } catch (e) {
@@ -1338,6 +1348,8 @@ export class EventUpdaterService {
       for (const run of rows) {
         const failures = Array.isArray(run.failuresJson) ? run.failuresJson : [];
         failures.forEach((f, idx) => {
+          // 보존 기간 경과로 정리된 톰스톤 항목은 노출하지 않는다.
+          if (f?.source === '__pruned') return;
           const res = resMap.get(`${run.id}:${idx}`);
           out.push({
             runId: run.id,
@@ -1374,7 +1386,7 @@ export class EventUpdaterService {
         fetched: r.fetched,
         created: r.created,
         duplicates: r.duplicates,
-        failures: Array.isArray(r.failuresJson) ? r.failuresJson : [],
+        failures: (Array.isArray(r.failuresJson) ? r.failuresJson : []).filter((f) => f?.source !== '__pruned'),
         bySource: Array.isArray(r.bySourceJson) ? r.bySourceJson : [],
       };
     } catch (e) {
@@ -1387,10 +1399,19 @@ export class EventUpdaterService {
       const cutoff = new Date(Date.now() - HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
       const removed = await storage.deletePetEventImportRunsOlderThan(cutoff);
       if (removed > 0) {
-        console.log(`[eventUpdater] 90일 초과 이력 ${removed}건 정리`);
+        console.log(`[eventUpdater] ${HISTORY_RETENTION_DAYS}일 초과 이력 ${removed}건 정리`);
       }
     } catch (e) {
       logServerError('[eventUpdater] 이력 정리 실패:', e);
+    }
+    try {
+      const resolvedCutoff = new Date(Date.now() - RESOLVED_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      const pruned = await storage.pruneResolvedPetEventImportFailures(resolvedCutoff);
+      if (pruned > 0) {
+        console.log(`[eventUpdater] ${RESOLVED_RETENTION_DAYS}일 초과 처리/숨김 후보 ${pruned}건 정리`);
+      }
+    } catch (e) {
+      logServerError('[eventUpdater] 처리/숨김 후보 정리 실패:', e);
     }
   }
 
