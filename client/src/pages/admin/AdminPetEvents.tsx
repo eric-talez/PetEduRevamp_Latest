@@ -20,7 +20,7 @@ import {
   type PetEvent,
   type PetEventCategory,
 } from "@shared/schema";
-import { Plus, Pencil, Trash2, Calendar, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate } from "lucide-react";
 
 const toLocalInput = (d: string | Date | null | undefined) => {
   if (!d) return "";
@@ -64,6 +64,39 @@ export default function AdminPetEventsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
+  const [geocoding, setGeocoding] = useState(false);
+  const [lastGeocodedAddress, setLastGeocodedAddress] = useState<string>("");
+
+  const runGeocode = async (opts?: { silentOnEmpty?: boolean; force?: boolean }) => {
+    const address = form.location.trim();
+    if (!address) {
+      if (!opts?.silentOnEmpty) toast({ title: "장소를 입력해주세요", variant: "destructive" });
+      return;
+    }
+    if (!opts?.force && address === lastGeocodedAddress) return;
+    setGeocoding(true);
+    try {
+      const res = await apiRequest("GET", `/api/admin/geocode?address=${encodeURIComponent(address)}`);
+      const json = await res.json();
+      if (!res.ok || !json?.data) throw new Error(json?.error || "좌표를 찾지 못했습니다");
+      setForm((prev) => ({
+        ...prev,
+        lat: String(json.data.lat),
+        lng: String(json.data.lng),
+      }));
+      setLastGeocodedAddress(address);
+      toast({ title: "좌표가 자동으로 입력되었습니다", description: json.data.formattedAddress });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "주소로 좌표를 찾지 못했습니다.";
+      toast({
+        title: "좌표 자동 채우기 실패",
+        description: `${message} 위·경도를 직접 입력해주세요.`,
+        variant: "destructive",
+      });
+    } finally {
+      setGeocoding(false);
+    }
+  };
 
   const { data, isLoading } = useQuery<{ success: boolean; data: PetEvent[] }>({
     queryKey: ["/api/admin/pet-events"],
@@ -151,8 +184,9 @@ export default function AdminPetEventsPage() {
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
 
-  const openCreate = () => { setForm(emptyForm()); setOpen(true); };
+  const openCreate = () => { setForm(emptyForm()); setLastGeocodedAddress(""); setOpen(true); };
   const openEdit = (it: PetEvent) => {
+    setLastGeocodedAddress(it.location);
     setForm({
       id: it.id,
       title: it.title,
@@ -264,7 +298,28 @@ export default function AdminPetEventsPage() {
             </div>
             <div>
               <label className="text-sm font-medium">장소</label>
-              <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="mt-1" placeholder="예: 서울 코엑스 (강남구 영동대로 513)" data-testid="input-form-location" />
+              <div className="mt-1 flex gap-2">
+                <Input
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  onBlur={() => runGeocode({ silentOnEmpty: true })}
+                  className="flex-1"
+                  placeholder="예: 서울 코엑스 (강남구 영동대로 513)"
+                  data-testid="input-form-location"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => runGeocode({ force: true })}
+                  disabled={geocoding || !form.location.trim()}
+                  data-testid="button-geocode"
+                  className="shrink-0"
+                >
+                  {geocoding ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Locate className="w-4 h-4 mr-1" />}
+                  좌표 자동 채우기
+                </Button>
+              </div>
+              <p className="text-xs text-stone-500 mt-1">주소를 입력하면 위·경도가 자동으로 채워집니다. 실패 시 직접 입력할 수 있습니다.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

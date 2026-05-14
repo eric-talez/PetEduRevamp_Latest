@@ -23951,6 +23951,56 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  // 주소 → 좌표 지오코딩 (관리자 행사 등록용)
+  app.get('/api/admin/geocode', requireAuth('admin'), async (req, res) => {
+    try {
+      const address = typeof req.query.address === 'string' ? req.query.address.trim() : '';
+      if (!address) return res.status(400).json({ error: '주소가 필요합니다.', code: 'MISSING_ADDRESS' });
+
+      const GOOGLE_MAPS_API_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (!GOOGLE_MAPS_API_KEY) {
+        logger.error('VITE_GOOGLE_MAPS_API_KEY가 설정되지 않음');
+        return res.status(500).json({ error: 'Google Maps API 키가 설정되지 않았습니다.', code: 'MISSING_API_KEY' });
+      }
+
+      const params = new URLSearchParams({
+        address,
+        key: GOOGLE_MAPS_API_KEY,
+        language: 'ko',
+        region: 'KR',
+      });
+      interface GeocodeResult {
+        formatted_address: string;
+        geometry: { location: { lat: number; lng: number } };
+      }
+      interface GeocodeResponse {
+        status: string;
+        results?: GeocodeResult[];
+      }
+      const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params}`);
+      if (!r.ok) throw new Error(`Geocoding API 오류: ${r.status} ${r.statusText}`);
+      const data = (await r.json()) as GeocodeResponse;
+      if (data.status === 'ZERO_RESULTS' || !data.results?.length) {
+        return res.status(404).json({ error: '좌표를 찾지 못했습니다.', code: 'ZERO_RESULTS' });
+      }
+      if (data.status !== 'OK') {
+        return res.status(502).json({ error: `Geocoding API 오류: ${data.status}`, code: 'GEOCODE_FAILED' });
+      }
+      const top = data.results[0];
+      res.json({
+        success: true,
+        data: {
+          lat: top.geometry.location.lat,
+          lng: top.geometry.location.lng,
+          formattedAddress: top.formatted_address,
+        },
+      });
+    } catch (error) {
+      logServerError('지오코딩 오류:', error, req);
+      res.status(500).json({ error: '지오코딩에 실패했습니다.', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   console.log('[Pet Events] 전국 반려견 행사 지도 API가 등록되었습니다.');
 
   // =============================================
