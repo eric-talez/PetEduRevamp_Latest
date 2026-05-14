@@ -708,6 +708,14 @@ export function Sidebar({
                       onClick={handleItemClick} 
                       show={true}
                     >근처 훈련소 찾기</AccessibleNavItem>
+                    <AccessibleNavItem
+                      href="/pet-events-map"
+                      icon={<CalendarDays className="w-5 h-5 mr-2" />}
+                      hoverIcon={<CalendarDays className="w-5 h-5 mr-2 text-primary" />}
+                      active={isActive("/pet-events-map")}
+                      onClick={handleItemClick}
+                      show={true}
+                    >행사 지도</AccessibleNavItem>
                     <AccessibleNavItem 
                       href="/community" 
                       icon={<MessageSquare className="w-5 h-5 mr-2" />}
@@ -824,6 +832,7 @@ export function Sidebar({
                         <AccessibleNavItem href="/courses" icon={<GraduationCap className="w-5 h-5 mr-2" />} hoverIcon={<BookOpen className="w-5 h-5 mr-2 text-primary" />} active={isActive("/courses")} onClick={handleItemClick} show={isMenuVisible('learning')} highlighted badge="인기">강의 찾기</AccessibleNavItem>
                         <AccessibleNavItem href="/trainers" icon={<UserRoundCheck className="w-5 h-5 mr-2" />} hoverIcon={<Award className="w-5 h-5 mr-2 text-primary" />} active={isActive("/trainers")} onClick={handleItemClick} show={isMenuVisible('learning')}>전문가 찾기</AccessibleNavItem>
                         <AccessibleNavItem href="/institutes" icon={<MapPin className="w-5 h-5 mr-2" />} hoverIcon={<Navigation className="w-5 h-5 mr-2 text-primary" />} active={isActive("/institutes")} onClick={handleItemClick} show={isMenuVisible('location')}>시설 찾기</AccessibleNavItem>
+                        <AccessibleNavItem href="/pet-events-map" icon={<CalendarDays className="w-5 h-5 mr-2" />} hoverIcon={<CalendarDays className="w-5 h-5 mr-2 text-primary" />} active={isActive("/pet-events-map")} onClick={handleItemClick} show={isMenuVisible('location')}>행사 지도</AccessibleNavItem>
                         {isMenuVisible('shop') && <SpecialShopLink expanded={expanded}>쇼핑몰</SpecialShopLink>}
                       </>
                     )}
