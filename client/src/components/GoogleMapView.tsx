@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { LocalErrorBoundary } from '@/components/ErrorBoundary';
 import { Plus, Minus, Maximize2, Minimize2 } from 'lucide-react';
+import { MarkerClusterer, SuperClusterAlgorithm } from '@googlemaps/markerclusterer';
 
 interface GoogleMapViewProps {
   locations?: Array<{
@@ -69,6 +70,7 @@ function GoogleMapViewInner({
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCustomControls, setShowCustomControls] = useState<boolean>(
@@ -204,12 +206,15 @@ function GoogleMapViewInner({
       return;
     }
 
-    // 기존 마커 제거
+    // 기존 마커 + 클러스터 제거
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+    }
     markers.forEach(marker => marker.setMap(null));
     setMarkers([]);
 
-    // 새 마커 생성
-    const newMarkers = locations
+    // 새 마커 생성 (클러스터 대상)
+    const clusterMarkers = locations
       .filter(loc => loc.coordinates)
       .map(location => {
         const icon = categoryIcons[location.type || 'default'] || categoryIcons.default;
@@ -269,7 +274,19 @@ function GoogleMapViewInner({
         return marker;
       });
 
-    // 내 위치 마커 추가
+    // 행사·시설 마커 클러스터링 (가까운 마커 묶음)
+    const allMarkers: google.maps.Marker[] = [...clusterMarkers];
+    if (clusterMarkers.length > 0) {
+      clustererRef.current = new MarkerClusterer({
+        map,
+        markers: clusterMarkers,
+        algorithm: new SuperClusterAlgorithm({ radius: 80, maxZoom: 14 }),
+      });
+    } else {
+      clustererRef.current = null;
+    }
+
+    // 내 위치 마커 추가 (클러스터 대상 아님)
     if (userLocation) {
       const userMarker = new google.maps.Marker({
         position: { lat: userLocation.lat, lng: userLocation.lng },
@@ -307,15 +324,15 @@ function GoogleMapViewInner({
         userInfoWindow.open(map, userMarker);
       });
 
-      newMarkers.push(userMarker);
+      allMarkers.push(userMarker);
     }
 
-    setMarkers(newMarkers);
+    setMarkers(allMarkers);
 
     // 마커들이 모두 보이도록 지도 범위 조정
-    if (newMarkers.length > 0) {
+    if (allMarkers.length > 0) {
       const bounds = new google.maps.LatLngBounds();
-      newMarkers.forEach(marker => {
+      allMarkers.forEach(marker => {
         const position = marker.getPosition();
         if (position) {
           bounds.extend(position);

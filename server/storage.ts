@@ -36,6 +36,9 @@ import {
   type StoreOrderItem,
   type StoreOrderStatus,
   aiAnalysisShareTokens,
+  petEvents,
+  type PetEvent,
+  type InsertPetEvent,
 } from "../shared/schema";
 import { logServerError } from './middleware/audit-logger';
 
@@ -8073,6 +8076,121 @@ class HybridStorage extends Storage {
       logServerError('[Storage] 예약 생성 실패:', error);
       throw error;
     }
+  }
+
+  // =============================================================================
+  // 전국 반려견 행사 (Pet Events)
+  // =============================================================================
+  private petEventsReady: Promise<void> | null = null;
+  private async ensurePetEventsTable(): Promise<void> {
+    if (this.petEventsReady) return this.petEventsReady;
+    this.petEventsReady = (async () => {
+      try {
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS pet_events (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(200) NOT NULL,
+            description TEXT,
+            start_date TIMESTAMP NOT NULL,
+            end_date TIMESTAMP NOT NULL,
+            location TEXT NOT NULL,
+            lat NUMERIC(10,7) NOT NULL,
+            lng NUMERIC(10,7) NOT NULL,
+            category VARCHAR(30) NOT NULL DEFAULT 'other',
+            image_url TEXT,
+            website_url TEXT,
+            source VARCHAR(100),
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_events_category ON pet_events(category)`);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_events_active ON pet_events(is_active)`);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_events_start_date ON pet_events(start_date)`);
+        await this.seedPetEventsIfEmpty();
+      } catch (err) {
+        logServerError('[DB] pet_events 테이블 마이그레이션 실패:', err);
+        // Reset so the next call retries instead of returning a successful resolved promise.
+        this.petEventsReady = null;
+        throw err;
+      }
+    })();
+    return this.petEventsReady;
+  }
+
+  private async seedPetEventsIfEmpty(): Promise<void> {
+    try {
+      const res: any = await db.execute(sql`SELECT COUNT(*)::int AS c FROM pet_events`);
+      const rows = res.rows || res;
+      const c = Array.isArray(rows) && rows.length ? Number(rows[0].c ?? rows[0].count ?? 0) : 0;
+      if (c > 0) return;
+      const now = new Date();
+      const inDays = (d: number) => new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+      const seeds: InsertPetEvent[] = [
+        { title: '서울 펫쇼 2026', description: '국내 최대 규모 반려동물 박람회. 사료·용품·서비스 통합 전시.', startDate: inDays(7), endDate: inDays(9), location: '서울 코엑스 (강남구 영동대로 513)', lat: '37.5125000', lng: '127.0588000', category: 'pet_fair', imageUrl: null, websiteUrl: 'https://example.com/seoulpetshow', source: '직접 등록', isActive: true },
+        { title: '부산 반려동물 입양 페스티벌', description: '유기견·유기묘 입양 상담 및 무료 건강검진 부스 운영.', startDate: inDays(14), endDate: inDays(15), location: '부산 벡스코 (해운대구 APEC로 55)', lat: '35.1689000', lng: '129.1338000', category: 'adoption', imageUrl: null, websiteUrl: null, source: '직접 등록', isActive: true },
+        { title: '전국 어질리티 챔피언십', description: '전국 훈련사 및 보호자 참가. 종목별 시상.', startDate: inDays(28), endDate: inDays(29), location: '경기 일산 킨텍스 (고양시 일산서구 킨텍스로 217)', lat: '37.6695000', lng: '126.7503000', category: 'training_contest', imageUrl: null, websiteUrl: null, source: '직접 등록', isActive: true },
+        { title: '대구 댕댕이 페스티벌', description: '반려견 동반 야외 축제. 패션쇼·플리마켓·푸드트럭.', startDate: inDays(21), endDate: inDays(21), location: '대구 두류공원 (달서구 두류공원로 36)', lat: '35.8554000', lng: '128.5615000', category: 'festival', imageUrl: null, websiteUrl: null, source: '직접 등록', isActive: true },
+        { title: '광주 반려견 무료 건강검진', description: '치과·심장사상충 검진 무료 제공. 사전 예약 필수.', startDate: inDays(3), endDate: inDays(3), location: '광주 김대중컨벤션센터 (서구 상무누리로 30)', lat: '35.1466000', lng: '126.8420000', category: 'medical', imageUrl: null, websiteUrl: null, source: '직접 등록', isActive: true },
+        { title: '제주 펫 트래블 위크', description: '제주 전역 반려동물 동반 가능 숙소·관광지 소개 부스.', startDate: inDays(45), endDate: inDays(50), location: '제주 ICC (서귀포시 중문관광로 224)', lat: '33.2496000', lng: '126.4108000', category: 'festival', imageUrl: null, websiteUrl: null, source: '직접 등록', isActive: true },
+      ];
+      for (const s of seeds) {
+        await db.insert(petEvents).values(s);
+      }
+      console.log(`[DB] pet_events 시드 ${seeds.length}건 삽입 완료`);
+    } catch (e) {
+      logServerError('[DB] pet_events 시드 실패:', e);
+    }
+  }
+
+  async listPetEvents(opts: {
+    activeOnly?: boolean;
+    category?: string;
+    from?: Date;
+    to?: Date;
+  } = {}): Promise<PetEvent[]> {
+    await this.ensurePetEventsTable();
+    const conds = [] as ReturnType<typeof eq>[];
+    if (opts.activeOnly) conds.push(eq(petEvents.isActive, true));
+    if (opts.category) conds.push(eq(petEvents.category, opts.category));
+    if (opts.from) conds.push(gte(petEvents.endDate, opts.from));
+    if (opts.to) conds.push(lte(petEvents.startDate, opts.to));
+    const q = conds.length
+      ? db.select().from(petEvents).where(and(...conds))
+      : db.select().from(petEvents);
+    return await q.orderBy(petEvents.startDate);
+  }
+
+  async getPetEvent(id: number): Promise<PetEvent | null> {
+    await this.ensurePetEventsTable();
+    const rows = await db.select().from(petEvents).where(eq(petEvents.id, id)).limit(1);
+    return rows[0] ?? null;
+  }
+
+  async createPetEvent(data: InsertPetEvent): Promise<PetEvent> {
+    await this.ensurePetEventsTable();
+    const [row] = await db.insert(petEvents).values({
+      ...data,
+      isActive: data.isActive ?? true,
+    }).returning();
+    return row;
+  }
+
+  async updatePetEvent(id: number, patch: Partial<InsertPetEvent>): Promise<PetEvent | null> {
+    await this.ensurePetEventsTable();
+    const [row] = await db
+      .update(petEvents)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(eq(petEvents.id, id))
+      .returning();
+    return row ?? null;
+  }
+
+  async deletePetEvent(id: number): Promise<boolean> {
+    await this.ensurePetEventsTable();
+    const result = await db.delete(petEvents).where(eq(petEvents.id, id)).returning({ id: petEvents.id });
+    return result.length > 0;
   }
 }
 

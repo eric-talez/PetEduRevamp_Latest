@@ -3865,3 +3865,67 @@ export type InsertStoreMenuItem = z.infer<typeof insertStoreMenuItemSchema>;
 export type StoreOrder = typeof storeOrders.$inferSelect;
 export type StoreOrderItem = typeof storeOrderItems.$inferSelect;
 export type CreateStoreOrderRequest = z.infer<typeof createStoreOrderRequestSchema>;
+
+// =============================================
+// 전국 반려견 행사 (Pet Events) — 지도 마커용 행사 데이터
+// =============================================
+export const PET_EVENT_CATEGORIES = [
+  'pet_fair',         // 펫페어/박람회
+  'adoption',         // 입양 이벤트
+  'training_contest', // 훈련/스포츠 대회
+  'festival',         // 축제/파티
+  'medical',          // 건강/의료 캠페인
+  'education',        // 교육/세미나
+  'other',            // 기타
+] as const;
+export type PetEventCategory = typeof PET_EVENT_CATEGORIES[number];
+
+export const PET_EVENT_CATEGORY_LABELS: Record<PetEventCategory, string> = {
+  pet_fair: '펫페어',
+  adoption: '입양 이벤트',
+  training_contest: '훈련 대회',
+  festival: '축제',
+  medical: '건강 캠페인',
+  education: '교육·세미나',
+  other: '기타',
+};
+
+export const petEvents = pgTable("pet_events", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  location: text("location").notNull(),
+  lat: decimal("lat", { precision: 10, scale: 7 }).notNull(),
+  lng: decimal("lng", { precision: 10, scale: 7 }).notNull(),
+  category: varchar("category", { length: 30 }).notNull().default('other'),
+  imageUrl: text("image_url"),
+  websiteUrl: text("website_url"),
+  source: varchar("source", { length: 100 }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => ({
+  byCategory: index("idx_pet_events_category").on(t.category),
+  byActive: index("idx_pet_events_active").on(t.isActive),
+  byStartDate: index("idx_pet_events_start_date").on(t.startDate),
+}));
+
+export const insertPetEventSchema = createInsertSchema(petEvents, {
+  title: z.string().trim().min(1, '행사명을 입력해주세요').max(200),
+  location: z.string().trim().min(1, '장소를 입력해주세요'),
+  category: z.enum(PET_EVENT_CATEGORIES),
+  lat: z.union([z.string(), z.number()]).transform(v => String(v)),
+  lng: z.union([z.string(), z.number()]).transform(v => String(v)),
+  startDate: z.union([z.string(), z.date()]).transform(v => new Date(v)),
+  endDate: z.union([z.string(), z.date()]).transform(v => new Date(v)),
+  description: z.string().optional().nullable(),
+  imageUrl: z.string().url().optional().nullable().or(z.literal('').transform(() => null)),
+  websiteUrl: z.string().url().optional().nullable().or(z.literal('').transform(() => null)),
+  source: z.string().max(100).optional().nullable(),
+  isActive: z.boolean().optional(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type PetEvent = typeof petEvents.$inferSelect;
+export type InsertPetEvent = z.infer<typeof insertPetEventSchema>;

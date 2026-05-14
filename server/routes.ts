@@ -375,6 +375,9 @@ import {
   createStoreOrderRequestSchema,
   insertStoreMenuItemSchema,
   STORE_ORDER_STATUSES,
+  // 전국 반려견 행사
+  insertPetEventSchema,
+  PET_EVENT_CATEGORIES,
 } from "../shared/schema";
 import { 
   analyzePetBehavior, 
@@ -23849,6 +23852,106 @@ export function registerTrainerCertificationRoutes(app: Express) {
   });
 
   console.log('[Store Orders] 매장 QR 주문 시스템 API가 등록되었습니다.');
+
+  // ============ 전국 반려견 행사 (Pet Events) ============
+  app.get('/api/pet-events', async (req, res) => {
+    try {
+      const category = (req.query.category as string | undefined)?.trim();
+      const from = (req.query.from as string | undefined)?.trim();
+      const to = (req.query.to as string | undefined)?.trim();
+      const opts: {
+        activeOnly: boolean;
+        category?: string;
+        from?: Date;
+        to?: Date;
+      } = { activeOnly: true };
+      if (category && (PET_EVENT_CATEGORIES as readonly string[]).includes(category)) {
+        opts.category = category;
+      }
+      if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) opts.from = new Date(`${from}T00:00:00`);
+      if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) opts.to = new Date(`${to}T23:59:59.999`);
+      const items = await storage.listPetEvents(opts);
+      res.json({ success: true, data: items });
+    } catch (error) {
+      logServerError('반려견 행사 목록 조회 오류:', error, req);
+      res.status(500).json({ error: '행사 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.get('/api/pet-events/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const item = await storage.getPetEvent(id);
+      if (!item || !item.isActive) return res.status(404).json({ error: '행사를 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      res.json({ success: true, data: item });
+    } catch (error) {
+      logServerError('반려견 행사 상세 조회 오류:', error, req);
+      res.status(500).json({ error: '행사 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.get('/api/admin/pet-events', requireAuth('admin'), async (req, res) => {
+    try {
+      const items = await storage.listPetEvents({});
+      res.json({ success: true, data: items });
+    } catch (error) {
+      logServerError('관리자 반려견 행사 목록 오류:', error, req);
+      res.status(500).json({ error: '행사 조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.post('/api/admin/pet-events', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const parsed = insertPetEventSchema.parse(req.body || {});
+      if (parsed.endDate < parsed.startDate) {
+        return res.status(400).json({ error: '종료일은 시작일 이후여야 합니다.', code: 'INVALID_DATE_RANGE' });
+      }
+      const created = await storage.createPetEvent(parsed);
+      res.status(201).json({ success: true, data: created });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') return res.status(400).json({ error: '입력값이 올바르지 않습니다.', code: 'VALIDATION_ERROR', details: error.errors });
+      logServerError('반려견 행사 생성 오류:', error, req);
+      res.status(500).json({ error: '행사 생성 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.patch('/api/admin/pet-events/:id', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const existing = await storage.getPetEvent(id);
+      if (!existing) return res.status(404).json({ error: '행사를 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      const parsed = insertPetEventSchema.partial().parse(req.body || {});
+      const effectiveStart = parsed.startDate ?? existing.startDate;
+      const effectiveEnd = parsed.endDate ?? existing.endDate;
+      if (effectiveEnd < effectiveStart) {
+        return res.status(400).json({ error: '종료일은 시작일 이후여야 합니다.', code: 'INVALID_DATE_RANGE' });
+      }
+      const updated = await storage.updatePetEvent(id, parsed);
+      if (!updated) return res.status(404).json({ error: '행사를 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') return res.status(400).json({ error: '입력값이 올바르지 않습니다.', code: 'VALIDATION_ERROR', details: error.errors });
+      logServerError('반려견 행사 수정 오류:', error, req);
+      res.status(500).json({ error: '행사 수정 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.delete('/api/admin/pet-events/:id', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID', code: 'INVALID_ID' });
+      const ok = await storage.deletePetEvent(id);
+      if (!ok) return res.status(404).json({ error: '행사를 찾을 수 없습니다.', code: 'NOT_FOUND' });
+      res.json({ success: true });
+    } catch (error) {
+      logServerError('반려견 행사 삭제 오류:', error, req);
+      res.status(500).json({ error: '행사 삭제 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  console.log('[Pet Events] 전국 반려견 행사 지도 API가 등록되었습니다.');
 
   // =============================================
   // 반려동물 예방접종 QR 여권 (Pet Vaccination Passport)

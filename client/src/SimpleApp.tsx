@@ -43,6 +43,7 @@ import AdminMenuConfigPage from "./pages/admin/menu-config";
 import CustomerOrderPage from "./pages/customer/order";
 import AdminStoreOrdersPage from "./pages/admin/store-orders";
 import AdminStoreMenuPage from "./pages/admin/store-menu";
+import AdminPetEventsPage from "./pages/admin/AdminPetEvents";
 import EventsPage from "./pages/events";
 import EventDetailPage from "./pages/events/event-detail";
 import EventCalendarPage from "./pages/events/calendar";
@@ -2005,6 +2006,9 @@ function AuthenticatedRoutes() {
         </Route>
         <Route path="/admin/store-menu">
           {() => <ProtectedAdminRoute component={AdminStoreMenuPage} />}
+        </Route>
+        <Route path="/admin/pet-events">
+          {() => <ProtectedAdminRoute component={AdminPetEventsPage} />}
         </Route>
 
         {/* 404 페이지 */}
