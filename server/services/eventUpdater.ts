@@ -864,86 +864,79 @@ async function normalizeSearchResult(
 
 type SearchFetchResult = { events: CrawledEvent[]; failures: ImportResult['failures'] };
 
-/**
- * Source F: Google Custom Search JSON API.
- * Requires GOOGLE_CUSTOM_SEARCH_API_KEY + GOOGLE_CUSTOM_SEARCH_CX.
- * Missing keys → skips with a log message, no error thrown.
- * Per-keyword HTTP errors and normalization failures are returned in `failures`.
- */
-async function fetchGoogleSearchEvents(): Promise<SearchFetchResult> {
-  const apiKey = process.env.GOOGLE_CUSTOM_SEARCH_API_KEY;
-  const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX;
-  if (!apiKey || !cx) {
-    console.log('[eventUpdater] Google Custom Search 키 미설정, 건너뜁니다.');
-    return { events: [], failures: [] };
-  }
+// ── Provider status ───────────────────────────────────────────────────────────
 
-  const events: CrawledEvent[] = [];
-  const failures: ImportResult['failures'] = [];
-  let requestCount = 0;
+type ProviderReason = 'ok' | 'missing_credentials' | 'permission_denied';
 
-  for (const keyword of SEARCH_KEYWORDS) {
-    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
-    try {
-      const url =
-        `https://www.googleapis.com/customsearch/v1` +
-        `?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}` +
-        `&q=${encodeURIComponent(keyword)}&num=10&lr=lang_ko&gl=kr`;
-      const res = await withTimeout(
-        fetch(url, { headers: { Accept: 'application/json' } }),
-        SOURCE_TIMEOUT_MS,
-        'google-cse',
-      );
-      requestCount++;
-      if (!res.ok) {
-        const msg = `HTTP ${res.status} (키워드: "${keyword}")`;
-        logServerError(`[eventUpdater] Google CSE ${msg}`);
-        failures.push({ source: 'Google 검색', message: msg });
-        continue;
-      }
-      const json = (await res.json()) as {
-        items?: Array<{
-          title: string;
-          snippet?: string;
-          link?: string;
-          pagemap?: { cse_image?: Array<{ src: string }> };
-        }>;
-      };
-      for (const item of json.items ?? []) {
-        const image = item.pagemap?.cse_image?.[0]?.src ?? null;
-        const result = await normalizeSearchResult(
-          item.title,
-          item.snippet ?? '',
-          item.link ?? null,
-          image,
-          'Google 검색',
-        );
-        if (result.ok) {
-          events.push(result.event);
-        } else {
-          failures.push({ source: 'Google 검색', message: result.reason });
-        }
-      }
-    } catch (e) {
-      const msg = `요청 오류 (키워드: "${keyword}"): ${e instanceof Error ? e.message : String(e)}`;
-      logServerError(`[eventUpdater] Google CSE ${msg}`, e);
-      failures.push({ source: 'Google 검색', message: msg });
-    }
-  }
-  return { events, failures };
+export interface ProviderStatus {
+  enabled: boolean;
+  reason: ProviderReason;
 }
 
+/** Module-level flag: set to true when Google returns 403/PERMISSION_DENIED. */
+let googlePermissionDenied = false;
+
+/** Reset at the start of each import run so the flag reflects only the current run. */
+function resetRunFlags(): void {
+  googlePermissionDenied = false;
+}
+
+export function getProviderStatuses(): {
+  google: ProviderStatus;
+  naver: ProviderStatus;
+  kakao: ProviderStatus;
+} {
+  const hasGoogleKey = !!(
+    process.env.GOOGLE_CUSTOM_SEARCH_API_KEY && process.env.GOOGLE_CUSTOM_SEARCH_CX
+  );
+  const hasNaverKey = !!(
+    process.env.NAVER_SEARCH_CLIENT_ID && process.env.NAVER_SEARCH_CLIENT_SECRET
+  );
+  const hasKakaoKey = !!process.env.KAKAO_REST_API_KEY;
+
+  const google: ProviderStatus = googlePermissionDenied
+    ? { enabled: false, reason: 'permission_denied' }
+    : hasGoogleKey
+      ? { enabled: true, reason: 'ok' }
+      : { enabled: false, reason: 'missing_credentials' };
+
+  const naver: ProviderStatus = hasNaverKey
+    ? { enabled: true, reason: 'ok' }
+    : { enabled: false, reason: 'missing_credentials' };
+
+  const kakao: ProviderStatus = hasKakaoKey
+    ? { enabled: true, reason: 'ok' }
+    : { enabled: false, reason: 'missing_credentials' };
+
+  return { google, naver, kakao };
+}
+
+function logProviderStatuses(): void {
+  const { google, naver, kakao } = getProviderStatuses();
+  const googleLabel =
+    google.reason === 'permission_denied'
+      ? 'permission denied'
+      : google.enabled
+        ? 'active'
+        : 'disabled';
+  const naverLabel = naver.enabled ? 'active' : 'missing credentials';
+  const kakaoLabel = kakao.enabled ? 'active' : 'missing credentials';
+  console.log(`[eventUpdater] Google: ${googleLabel}`);
+  console.log(`[eventUpdater] Naver: ${naverLabel}`);
+  console.log(`[eventUpdater] Kakao: ${kakaoLabel}`);
+}
+
+// ── Search provider implementations ──────────────────────────────────────────
+
 /**
- * Source G: Naver Search API — news + webkr endpoints.
+ * Source G (primary): Naver Search API — news + webkr endpoints.
  * Requires NAVER_SEARCH_CLIENT_ID + NAVER_SEARCH_CLIENT_SECRET.
- * Missing keys → skips with a log message, no error thrown.
- * Per-endpoint HTTP errors and normalization failures are returned in `failures`.
+ * Missing keys → returns empty with a status log line, no error thrown.
  */
 async function fetchNaverSearchEvents(): Promise<SearchFetchResult> {
   const clientId = process.env.NAVER_SEARCH_CLIENT_ID;
   const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    console.log('[eventUpdater] Naver 검색 API 키 미설정, 건너뜁니다.');
     return { events: [], failures: [] };
   }
 
@@ -1010,15 +1003,13 @@ async function fetchNaverSearchEvents(): Promise<SearchFetchResult> {
 }
 
 /**
- * Source H: Daum/Kakao Search API — web + blog endpoints.
+ * Source H (secondary): Daum/Kakao Search API — web + blog endpoints.
  * Requires KAKAO_REST_API_KEY.
- * Missing key → skips with a log message, no error thrown.
- * Per-endpoint HTTP errors and normalization failures are returned in `failures`.
+ * Missing key → returns empty, no error thrown.
  */
 async function fetchDaumSearchEvents(): Promise<SearchFetchResult> {
   const apiKey = process.env.KAKAO_REST_API_KEY;
   if (!apiKey) {
-    console.log('[eventUpdater] Kakao REST API 키 미설정, 건너뜁니다.');
     return { events: [], failures: [] };
   }
 
@@ -1083,6 +1074,94 @@ async function fetchDaumSearchEvents(): Promise<SearchFetchResult> {
   return { events, failures };
 }
 
+/**
+ * Source F (optional/last): Google Custom Search JSON API.
+ * Requires GOOGLE_CUSTOM_SEARCH_API_KEY + GOOGLE_CUSTOM_SEARCH_CX.
+ * Missing keys → returns empty immediately (disabled).
+ * A 403 or PERMISSION_DENIED body sets the module-level flag and skips
+ * remaining keywords without adding entries to `failures`.
+ */
+async function fetchGoogleSearchEvents(): Promise<SearchFetchResult> {
+  const apiKey = process.env.GOOGLE_CUSTOM_SEARCH_API_KEY;
+  const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX;
+  if (!apiKey || !cx) {
+    return { events: [], failures: [] };
+  }
+  if (googlePermissionDenied) {
+    return { events: [], failures: [] };
+  }
+
+  const events: CrawledEvent[] = [];
+  const failures: ImportResult['failures'] = [];
+  let requestCount = 0;
+
+  for (const keyword of SEARCH_KEYWORDS) {
+    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+    if (googlePermissionDenied) break;
+    try {
+      const url =
+        `https://www.googleapis.com/customsearch/v1` +
+        `?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}` +
+        `&q=${encodeURIComponent(keyword)}&num=10&lr=lang_ko&gl=kr`;
+      const res = await withTimeout(
+        fetch(url, { headers: { Accept: 'application/json' } }),
+        SOURCE_TIMEOUT_MS,
+        'google-cse',
+      );
+      requestCount++;
+      if (res.status === 403) {
+        googlePermissionDenied = true;
+        console.log('[eventUpdater] Google: permission denied');
+        break;
+      }
+      if (!res.ok) {
+        let body = '';
+        try { body = await res.text(); } catch { /* ignore */ }
+        if (
+          body.includes('PERMISSION_DENIED') ||
+          body.includes('This project does not have access to Custom Search JSON API')
+        ) {
+          googlePermissionDenied = true;
+          console.log('[eventUpdater] Google: permission denied');
+          break;
+        }
+        const msg = `HTTP ${res.status} (키워드: "${keyword}")`;
+        logServerError(`[eventUpdater] Google CSE ${msg}`);
+        failures.push({ source: 'Google 검색', message: msg });
+        continue;
+      }
+      const json = (await res.json()) as {
+        items?: Array<{
+          title: string;
+          snippet?: string;
+          link?: string;
+          pagemap?: { cse_image?: Array<{ src: string }> };
+        }>;
+      };
+      for (const item of json.items ?? []) {
+        const image = item.pagemap?.cse_image?.[0]?.src ?? null;
+        const result = await normalizeSearchResult(
+          item.title,
+          item.snippet ?? '',
+          item.link ?? null,
+          image,
+          'Google 검색',
+        );
+        if (result.ok) {
+          events.push(result.event);
+        } else {
+          failures.push({ source: 'Google 검색', message: result.reason });
+        }
+      }
+    } catch (e) {
+      const msg = `요청 오류 (키워드: "${keyword}"): ${e instanceof Error ? e.message : String(e)}`;
+      logServerError(`[eventUpdater] Google CSE ${msg}`, e);
+      failures.push({ source: 'Google 검색', message: msg });
+    }
+  }
+  return { events, failures };
+}
+
 /** Sources that return simple CrawledEvent[]; any thrown error is caught by runImport. */
 const SIMPLE_SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }> = [
   { name: 'VisitKorea(축제)', fn: fetchVisitKoreaFestivals },
@@ -1092,11 +1171,14 @@ const SIMPLE_SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }>
   { name: '서울 열린데이터광장(문화행사)', fn: fetchSeoulPetCulturalEvents },
 ];
 
-/** Search-engine sources that return both events and per-item failure entries. */
+/**
+ * Search-engine sources: Naver (primary), Kakao (secondary), Google (optional/last).
+ * Each provider is isolated — one failure never aborts the others.
+ */
 const SEARCH_SOURCES: Array<{ name: string; fn: () => Promise<SearchFetchResult> }> = [
-  { name: 'Google 검색', fn: fetchGoogleSearchEvents },
   { name: 'Naver 검색', fn: fetchNaverSearchEvents },
   { name: 'Daum 검색', fn: fetchDaumSearchEvents },
+  { name: 'Google 검색', fn: fetchGoogleSearchEvents },
 ];
 
 async function notifyAdminsOnFailure(failures: ImportResult['failures']): Promise<void> {
@@ -1168,6 +1250,7 @@ export class EventUpdaterService {
     void this.restoreLastResult();
 
     console.log('✅ [eventUpdater] 행사 자동 수집 스케줄러 시작 (매일 03:00 KST)');
+    logProviderStatuses();
   }
 
   public stopScheduler(): void {
@@ -1246,11 +1329,15 @@ export class EventUpdaterService {
       throw new Error('이미 실행 중입니다.');
     }
     this.running = true;
+    resetRunFlags();
     const startedAt = new Date();
     const failures: ImportResult['failures'] = [];
     let fetched = 0;
     let created = 0;
     let duplicates = 0;
+
+    console.log('[eventUpdater] 수집 시작 — 공급자 상태:');
+    logProviderStatuses();
 
     try {
       const collected: CrawledEvent[] = [];

@@ -293,7 +293,7 @@ import Stripe from "stripe";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { eventRoutes } from "./routes/events";
-import { eventUpdater } from "./services/eventUpdater";
+import { eventUpdater, getProviderStatuses } from "./services/eventUpdater";
 import { parsePaymentIntentForPersistence, assertPaymentOwnership, isUniqueViolation } from "./services/payment-validation";
 import { 
   createPetSchema, 
@@ -24087,6 +24087,11 @@ export function registerTrainerCertificationRoutes(app: Express) {
       logServerError('반려견 행사 자동 수집 이력 조회 오류:', error);
       res.status(500).json({ error: '조회 실패', code: 'INTERNAL_SERVER_ERROR' });
     }
+  });
+
+  app.get('/api/admin/event-collection/providers', requireAuth('admin'), (_req, res) => {
+    const statuses = getProviderStatuses();
+    res.json({ success: true, providers: statuses });
   });
 
   console.log('[Pet Events] 전국 반려견 행사 지도 API가 등록되었습니다.');
