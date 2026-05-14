@@ -11248,7 +11248,7 @@ app.get('/api/search', async (req, res) => {
   app.use('/api', eventRoutes);
 
   // 이벤트 자동 업데이트 서비스 시작
-  eventUpdater.startScheduler && eventUpdater.startScheduler();
+  eventUpdater.startScheduler();
 
   // 서비스 검수 API
   app.get('/api/service/inspection', async (req, res) => {
@@ -23998,6 +23998,30 @@ export function registerTrainerCertificationRoutes(app: Express) {
     } catch (error) {
       logServerError('지오코딩 오류:', error, req);
       res.status(500).json({ error: '지오코딩에 실패했습니다.', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 자동 수집 트리거 (관리자 전용)
+  app.post('/api/admin/pet-events/import', requireAuth('admin'), csrfProtection, async (_req, res) => {
+    try {
+      const result = await eventUpdater.runImport();
+      res.json({ success: true, data: result });
+    } catch (error: any) {
+      const msg = error?.message || '자동 수집 실패';
+      if (msg.includes('이미 실행 중')) {
+        return res.status(409).json({ error: msg, code: 'ALREADY_RUNNING' });
+      }
+      logServerError('반려견 행사 자동 수집 오류:', error);
+      res.status(500).json({ error: '자동 수집 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.get('/api/admin/pet-events/import/last', requireAuth('admin'), async (_req, res) => {
+    try {
+      res.json({ success: true, data: eventUpdater.getLastResult() });
+    } catch (error) {
+      logServerError('반려견 행사 자동 수집 결과 조회 오류:', error);
+      res.status(500).json({ error: '조회 실패', code: 'INTERNAL_SERVER_ERROR' });
     }
   });
 

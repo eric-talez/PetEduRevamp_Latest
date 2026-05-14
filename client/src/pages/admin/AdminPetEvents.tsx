@@ -20,7 +20,7 @@ import {
   type PetEvent,
   type PetEventCategory,
 } from "@shared/schema";
-import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw } from "lucide-react";
 
 const toLocalInput = (d: string | Date | null | undefined) => {
   if (!d) return "";
@@ -170,6 +170,30 @@ export default function AdminPetEventsPage() {
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
 
+  const importNow = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/pet-events/import");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "자동 수집 실패");
+      return json.data as {
+        fetched: number;
+        created: number;
+        duplicates: number;
+        failures: Array<{ source: string; message: string }>;
+      };
+    },
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
+      const failMsg = r.failures.length > 0 ? ` · 실패 ${r.failures.length}건` : "";
+      toast({
+        title: "자동 수집 완료",
+        description: `수집 ${r.fetched} · 신규 ${r.created} · 중복 ${r.duplicates}${failMsg}. 신규 항목은 비활성 상태로 등록되었으니 검수 후 활성화해 주세요.`,
+      });
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
   const del = useMutation({
     mutationFn: async (id: number) => {
       const res = await apiRequest("DELETE", `/api/admin/pet-events/${id}`);
@@ -213,9 +237,20 @@ export default function AdminPetEventsPage() {
             <h1 className="text-2xl md:text-3xl font-bold">전국 반려견 행사 관리</h1>
             <p className="text-sm text-stone-500 mt-1">/pet-events-map 지도에 표시될 행사를 관리합니다.</p>
           </div>
-          <Button onClick={openCreate} className="bg-stone-900 hover:bg-stone-800" data-testid="button-add-event">
-            <Plus className="w-4 h-4 mr-1" /> 행사 추가
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => importNow.mutate()}
+              disabled={importNow.isPending}
+              variant="outline"
+              data-testid="button-import-events"
+            >
+              <RefreshCw className={`w-4 h-4 mr-1 ${importNow.isPending ? "animate-spin" : ""}`} />
+              {importNow.isPending ? "수집 중…" : "자동 수집 실행"}
+            </Button>
+            <Button onClick={openCreate} className="bg-stone-900 hover:bg-stone-800" data-testid="button-add-event">
+              <Plus className="w-4 h-4 mr-1" /> 행사 추가
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
