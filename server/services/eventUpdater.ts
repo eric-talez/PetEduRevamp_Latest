@@ -808,10 +808,374 @@ type NormalizeResult =
   | { ok: true; event: CrawledEvent }
   | { ok: false; reason: string; link: string | null; title: string | null };
 
+// ── Body-fetch fallback (robots/throttle aware) ──────────────────────────────
+//
+// 검색엔진의 description 은 한두 문장이라 날짜·장소가 빠져 있는 경우가 많다.
+// 후보의 link 로 가볍게 페치해 본문 텍스트를 추가 컨텍스트로 사용한 뒤
+// 같은 추출 로직을 한 번 더 돌린다.
+//
+// 안전장치:
+//  - run 1회당 최대 30회만 페치 (search 후보 폭주 방지)
+//  - host 별 최소 1.5s 간격
+//  - 비-HTTP(S) URL/HTML 외 컨텐츠 스킵
+//  - 응답 본문 512KB 까지만 읽음
+//  - robots.txt 의 User-agent: * Disallow 규칙 존중 (간이 파싱)
+//  - 페치/파싱 실패는 조용히 폴백; 절대 import run 자체를 깨뜨리지 않음.
+
+const BODY_FETCH_MAX_PER_RUN = 30;
+const BODY_FETCH_TIMEOUT_MS = 8_000;
+const BODY_FETCH_MAX_BYTES = 512 * 1024;
+const HOST_MIN_INTERVAL_MS = 1_500;
+const BODY_FETCH_USER_AGENT = 'TALEZ-EventUpdaterBot/1.0 (+https://talez.app/bot)';
+
+let bodyFetchCount = 0;
+const lastHostFetchAt = new Map<string, number>();
+const robotsCache = new Map<string, Array<string>>(); // host → list of disallowed path prefixes
+const bodyTextCache = new Map<string, string>(); // url → extracted text (per run)
+
+function resetBodyFetchState(): void {
+  bodyFetchCount = 0;
+  lastHostFetchAt.clear();
+  robotsCache.clear();
+  bodyTextCache.clear();
+}
+
+function safeParseUrl(raw: string): URL | null {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    return u;
+  } catch {
+    return null;
+  }
+}
+
+// ── SSRF guard ────────────────────────────────────────────────────────────────
+// Reject any address that points back into the host network or to RFC1918 /
+// link-local ranges. Applied to every DNS resolution AND to every redirect hop
+// so a public URL cannot trick us into hitting an internal service.
+
+function ipv4ToInt(addr: string): number | null {
+  const parts = addr.split('.');
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p of parts) {
+    const v = Number(p);
+    if (!Number.isInteger(v) || v < 0 || v > 255) return null;
+    n = (n << 8) + v;
+  }
+  return n >>> 0;
+}
+
+function isPrivateIPv4(addr: string): boolean {
+  const n = ipv4ToInt(addr);
+  if (n == null) return false;
+  // 0.0.0.0/8, 10/8, 100.64/10 (CGNAT), 127/8, 169.254/16, 172.16/12,
+  // 192.0.0/24, 192.0.2/24, 192.168/16, 198.18/15, 198.51.100/24,
+  // 203.0.113/24, 224/4 (multicast), 240/4 (reserved/broadcast)
+  const ranges: Array<[number, number]> = [
+    [0x00000000, 0xff000000],         // 0.0.0.0/8
+    [0x0a000000, 0xff000000],         // 10.0.0.0/8
+    [0x64400000, 0xffc00000],         // 100.64.0.0/10
+    [0x7f000000, 0xff000000],         // 127.0.0.0/8
+    [0xa9fe0000, 0xffff0000],         // 169.254.0.0/16
+    [0xac100000, 0xfff00000],         // 172.16.0.0/12
+    [0xc0000000, 0xffffff00],         // 192.0.0.0/24
+    [0xc0000200, 0xffffff00],         // 192.0.2.0/24
+    [0xc0a80000, 0xffff0000],         // 192.168.0.0/16
+    [0xc6120000, 0xfffe0000],         // 198.18.0.0/15
+    [0xc6336400, 0xffffff00],         // 198.51.100.0/24
+    [0xcb007100, 0xffffff00],         // 203.0.113.0/24
+    [0xe0000000, 0xf0000000],         // 224.0.0.0/4
+    [0xf0000000, 0xf0000000],         // 240.0.0.0/4 (incl. 255.255.255.255)
+  ];
+  for (const [base, mask] of ranges) {
+    if ((n & mask) === (base & mask)) return true;
+  }
+  return false;
+}
+
+function isPrivateIPv6(addr: string): boolean {
+  const lower = addr.toLowerCase().replace(/^\[|\]$/g, '').split('%')[0];
+  if (lower === '::' || lower === '::1') return true;            // unspecified, loopback
+  if (lower.startsWith('fe80:') || lower.startsWith('fe80::')) return true; // link-local
+  if (lower.startsWith('fc') || lower.startsWith('fd')) return true;        // ULA fc00::/7
+  if (lower.startsWith('ff')) return true;                       // multicast
+  // IPv4-mapped: ::ffff:a.b.c.d
+  const mapped = lower.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (mapped) return isPrivateIPv4(mapped[1]);
+  return false;
+}
+
+function isPrivateAddress(addr: string, family: number | string): boolean {
+  if (family === 4 || family === '4' || family === 'IPv4') return isPrivateIPv4(addr);
+  if (family === 6 || family === '6' || family === 'IPv6') return isPrivateIPv6(addr);
+  return false;
+}
+
+async function isHostSafeForFetch(hostname: string): Promise<boolean> {
+  // Reject literal IPs that decode to private space without bothering DNS.
+  if (/^[\d.]+$/.test(hostname) && isPrivateIPv4(hostname)) return false;
+  if (hostname.includes(':') && isPrivateIPv6(hostname)) return false;
+  try {
+    const dns = await import('node:dns/promises');
+    const records = await dns.lookup(hostname, { all: true });
+    if (!records.length) return false;
+    for (const r of records) {
+      if (isPrivateAddress(r.address, r.family)) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function getRobotsDisallow(host: string, origin: string): Promise<Array<string>> {
+  const cached = robotsCache.get(host);
+  if (cached) return cached;
+  const disallow: Array<string> = [];
+  try {
+    const res = await withTimeout(
+      fetch(`${origin}/robots.txt`, { headers: { 'User-Agent': BODY_FETCH_USER_AGENT, Accept: 'text/plain' } }),
+      Math.min(BODY_FETCH_TIMEOUT_MS, 4_000),
+      'robots',
+    );
+    if (res.ok) {
+      const text = (await res.text()).slice(0, 64 * 1024);
+      // Only honour the wildcard User-agent block — keep the parser tiny.
+      const lines = text.split(/\r?\n/);
+      let inWildcard = false;
+      for (const rawLine of lines) {
+        const line = rawLine.replace(/#.*$/, '').trim();
+        if (!line) continue;
+        const m = line.match(/^([A-Za-z-]+)\s*:\s*(.*)$/);
+        if (!m) continue;
+        const key = m[1].toLowerCase();
+        const value = m[2].trim();
+        if (key === 'user-agent') {
+          inWildcard = value === '*';
+        } else if (inWildcard && key === 'disallow' && value) {
+          disallow.push(value);
+        }
+      }
+    }
+  } catch {
+    // Treat fetch failures as "no robots restrictions" — do not block enrichment.
+  }
+  robotsCache.set(host, disallow);
+  return disallow;
+}
+
+function isPathAllowed(disallow: Array<string>, path: string): boolean {
+  for (const rule of disallow) {
+    if (rule === '/') return false;
+    if (path.startsWith(rule)) return false;
+  }
+  return true;
+}
+
+async function throttleHost(host: string): Promise<void> {
+  const last = lastHostFetchAt.get(host);
+  if (last == null) {
+    lastHostFetchAt.set(host, Date.now());
+    return;
+  }
+  const wait = last + HOST_MIN_INTERVAL_MS - Date.now();
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  lastHostFetchAt.set(host, Date.now());
+}
+
+function htmlToText(html: string): string {
+  // Drop scripts/styles, then strip tags. Cheap but good enough for date/place phrases.
+  const stripped = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ');
+  // Decode the handful of entities that meaningfully affect Korean date/location matching.
+  return stripped
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, n) => {
+      const code = parseInt(n, 10);
+      return Number.isFinite(code) ? String.fromCharCode(code) : ' ';
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Fetch the body of a candidate page and return a plain-text excerpt.
+ * Returns `{ text }` on success, or `{ skipped: <reason> }` to enrich the failure message.
+ */
+async function fetchPageBodyText(
+  link: string,
+): Promise<{ text: string } | { skipped: string }> {
+  if (bodyFetchCount >= BODY_FETCH_MAX_PER_RUN) {
+    return { skipped: '본문 페치 한도 초과' };
+  }
+  const url = safeParseUrl(link);
+  if (!url) return { skipped: '본문 페치 불가(URL 형식)' };
+
+  const cached = bodyTextCache.get(url.toString());
+  if (cached !== undefined) {
+    return cached ? { text: cached } : { skipped: '본문 페치 이전 실패(캐시)' };
+  }
+
+  const host = url.host;
+  try {
+    const disallow = await getRobotsDisallow(host, url.origin);
+    if (!isPathAllowed(disallow, url.pathname)) {
+      bodyTextCache.set(url.toString(), '');
+      return { skipped: 'robots.txt 차단' };
+    }
+  } catch {
+    // continue — robots fetch errors should not block enrichment.
+  }
+
+  // SSRF guard — refuse before we ever open a socket to a private/loopback IP.
+  if (!(await isHostSafeForFetch(url.hostname))) {
+    bodyTextCache.set(url.toString(), '');
+    return { skipped: '본문 페치 차단(내부 주소)' };
+  }
+
+  await throttleHost(host);
+  bodyFetchCount++;
+
+  try {
+    // Follow up to 3 redirects manually so that every hop is re-validated by
+    // safeParseUrl + isHostSafeForFetch — an attacker cannot 302 us into 127.0.0.1.
+    let current: URL = url;
+    let res: Response | null = null;
+    let hops = 0;
+    while (true) {
+      res = await withTimeout(
+        fetch(current.toString(), {
+          headers: {
+            'User-Agent': BODY_FETCH_USER_AGENT,
+            Accept: 'text/html,application/xhtml+xml',
+            'Accept-Language': 'ko,en;q=0.8',
+          },
+          redirect: 'manual',
+        }),
+        BODY_FETCH_TIMEOUT_MS,
+        `body-${current.host}`,
+      );
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get('location');
+        if (!loc || hops >= 3) {
+          bodyTextCache.set(url.toString(), '');
+          return { skipped: `본문 페치 리다이렉트 ${hops >= 3 ? '한도' : '없음'}` };
+        }
+        try { await res.body?.cancel?.(); } catch { /* ignore */ }
+        const next = safeParseUrl(new URL(loc, current).toString());
+        if (!next) {
+          bodyTextCache.set(url.toString(), '');
+          return { skipped: '본문 페치 리다이렉트 차단(URL 형식)' };
+        }
+        if (!(await isHostSafeForFetch(next.hostname))) {
+          bodyTextCache.set(url.toString(), '');
+          return { skipped: '본문 페치 리다이렉트 차단(내부 주소)' };
+        }
+        // Each new host gets its own throttle slot.
+        await throttleHost(next.host);
+        current = next;
+        hops++;
+        continue;
+      }
+      break;
+    }
+    if (!res) {
+      bodyTextCache.set(url.toString(), '');
+      return { skipped: '본문 페치 응답 없음' };
+    }
+    if (!res.ok) {
+      bodyTextCache.set(url.toString(), '');
+      return { skipped: `본문 페치 HTTP ${res.status}` };
+    }
+    const ct = (res.headers.get('content-type') ?? '').toLowerCase();
+    if (ct && !ct.includes('html') && !ct.includes('xml') && !ct.includes('text/plain')) {
+      bodyTextCache.set(url.toString(), '');
+      return { skipped: `본문 페치 스킵(content-type: ${ct.slice(0, 40)})` };
+    }
+
+    const reader = res.body?.getReader();
+    let html = '';
+    if (reader) {
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      let received = 0;
+      while (received < BODY_FETCH_MAX_BYTES) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value) {
+          received += value.byteLength;
+          html += decoder.decode(value, { stream: true });
+          if (received >= BODY_FETCH_MAX_BYTES) break;
+        }
+      }
+      try { await reader.cancel(); } catch { /* ignore */ }
+    } else {
+      html = (await res.text()).slice(0, BODY_FETCH_MAX_BYTES);
+    }
+
+    const text = htmlToText(html).slice(0, 16_000);
+    if (!text) {
+      bodyTextCache.set(url.toString(), '');
+      return { skipped: '본문 페치 후 텍스트 없음' };
+    }
+    bodyTextCache.set(url.toString(), text);
+    return { text };
+  } catch (e) {
+    bodyTextCache.set(url.toString(), '');
+    const msg = e instanceof Error ? e.message : String(e);
+    return { skipped: `본문 페치 오류: ${msg.slice(0, 80)}` };
+  }
+}
+
+interface ResolvedFields {
+  dates: { startDate: Date; endDate: Date };
+  lat: string;
+  lng: string;
+  location: string;
+}
+
+type ResolveOutcome =
+  | { ok: true; resolved: ResolvedFields }
+  | { ok: false; missing: 'dates' | 'location' };
+
+async function tryResolveFromText(fullText: string): Promise<ResolveOutcome> {
+  const dates = extractDateRange(fullText);
+  if (!dates) return { ok: false, missing: 'dates' };
+
+  const venue = lookupVenue(fullText);
+  if (venue) {
+    return { ok: true, resolved: { dates, lat: venue.lat, lng: venue.lng, location: venue.address } };
+  }
+  const locationText = extractLocationFromText(fullText);
+  if (locationText) {
+    const coords = await geocodeAddress(locationText);
+    if (coords) {
+      return { ok: true, resolved: { dates, lat: coords.lat, lng: coords.lng, location: locationText } };
+    }
+  }
+  const region = findRegionFallback(fullText);
+  if (region) {
+    return { ok: true, resolved: { dates, lat: region.lat, lng: region.lng, location: region.location } };
+  }
+  return { ok: false, missing: 'location' };
+}
+
 /**
  * Normalise a search result (title + snippet + link + image) into a CrawledEvent.
  * Always returns a structured result — callers must check `.ok` to decide whether
  * to keep the event or record the failure reason in ImportResult.failures.
+ *
+ * If the snippet alone fails to yield a date or location, the candidate's link is
+ * fetched (robots/throttle aware) and the body text is fed into a second extraction
+ * pass — typically rescues most "날짜/장소 추출 실패" entries.
  */
 async function normalizeSearchResult(
   rawTitle: string,
@@ -830,43 +1194,38 @@ async function normalizeSearchResult(
     return { ok: false, reason: `반려동물 키워드 미포함: "${title.slice(0, 60)}"${linkTail}`, link, title };
   }
 
-  const dates = extractDateRange(fullText);
-  if (!dates) {
-    return { ok: false, reason: `날짜 추출 실패: "${title.slice(0, 60)}"${linkTail}`, link, title };
-  }
+  let outcome = await tryResolveFromText(fullText);
+  let bodyContext = '';
 
-  // Prefer venue lookup (has hard-coded coords), then geocode the extracted
-  // address, then fall back to a 시/도 region keyword. We only fully discard
-  // the candidate when none of these resolve to coordinates.
-  const venue = lookupVenue(fullText);
-  let lat: string, lng: string, location: string;
-  if (venue) {
-    lat = venue.lat;
-    lng = venue.lng;
-    location = venue.address;
-  } else {
-    const locationText = extractLocationFromText(fullText);
-    let resolved: { lat: string; lng: string; location: string } | null = null;
-    if (locationText) {
-      const coords = await geocodeAddress(locationText);
-      if (coords) {
-        resolved = { lat: coords.lat, lng: coords.lng, location: locationText };
+  // Body-fetch fallback: only when initial extraction failed AND we have a link.
+  if (!outcome.ok && link) {
+    const fetched = await fetchPageBodyText(link);
+    if ('text' in fetched) {
+      bodyContext = ` | 본문 ${fetched.text.length}자`;
+      // Off-topic guard: the body itself must mention a pet keyword. Without
+      // this, link previews on news aggregators could drag in random pages
+      // that happen to share a snippet with the candidate title.
+      if (matchesPetKeyword(fetched.text)) {
+        outcome = await tryResolveFromText(`${fullText} ${fetched.text}`);
+      } else {
+        bodyContext += ' (본문에 반려동물 키워드 없음)';
       }
+    } else {
+      bodyContext = ` | ${fetched.skipped}`;
     }
-    if (!resolved) {
-      // Region-keyword fallback (시/도 단위) — keeps the candidate alive even
-      // when geocoding is unavailable or returns no result.
-      resolved = findRegionFallback(fullText);
-    }
-    if (!resolved) {
-      return { ok: false, reason: `장소 추출 실패: "${title.slice(0, 60)}"${linkTail}`, link, title };
-    }
-    lat = resolved.lat;
-    lng = resolved.lng;
-    location = resolved.location;
   }
 
-  // Infer category from keywords.
+  if (!outcome.ok) {
+    const label = outcome.missing === 'dates' ? '날짜 추출 실패' : '장소 추출 실패';
+    return {
+      ok: false,
+      reason: `${label}: "${title.slice(0, 60)}"${linkTail}${bodyContext}`,
+      link,
+      title,
+    };
+  }
+
+  // Infer category from keywords (title/snippet only — body could be too noisy).
   let category: PetEventCategory = 'other';
   const lc = fullText.toLowerCase();
   if (lc.includes('입양') || lc.includes('분양')) category = 'adoption';
@@ -875,6 +1234,7 @@ async function normalizeSearchResult(
   else if (lc.includes('대회') || lc.includes('도그쇼') || lc.includes('competition')) category = 'competition';
   else if (lc.includes('훈련') || lc.includes('교육')) category = 'training';
 
+  const { dates, lat, lng, location } = outcome.resolved;
   return {
     ok: true,
     event: {
@@ -910,6 +1270,7 @@ let googlePermissionDenied = false;
 /** Reset at the start of each import run so the flag reflects only the current run. */
 function resetRunFlags(): void {
   googlePermissionDenied = false;
+  resetBodyFetchState();
 }
 
 export function getProviderStatuses(): {
