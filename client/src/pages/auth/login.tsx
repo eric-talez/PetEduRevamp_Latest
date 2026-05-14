@@ -65,11 +65,9 @@ export default function Login() {
     );
   }
 
-  // 빠른 로그인 처리 함수
-  const handleQuickLogin = async (testUsername: string, testPassword: string) => {
+  // 빠른 로그인 처리 함수 (역할 기반, /api/auth/quick-login 사용)
+  const handleQuickLogin = async (role: string) => {
     setIsLoading(true);
-    setUsername(testUsername);
-    setPassword(testPassword);
     
     try {
       // CSRF 토큰 먼저 가져오기
@@ -84,50 +82,40 @@ export default function Login() {
       
       const csrfData = await csrfResponse.json();
       
-      // 서버에 로그인 요청 (CSRF 토큰 포함)
-      const response = await fetch('/api/auth/login', {
+      // 역할만 전송 — 비밀번호를 클라이언트에서 노출하지 않음
+      const response = await fetch('/api/auth/quick-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-Token': csrfData.csrfToken,
         },
         credentials: 'include',
-        body: JSON.stringify({
-          username: testUsername,
-          password: testPassword,
-        }),
+        body: JSON.stringify({ role }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '로그인에 실패했습니다.');
-      }
-
       const userData = await response.json();
-      console.log('로그인 응답 데이터:', userData);
-      console.log('조건 체크 - userData.success:', userData.success);
-      console.log('조건 체크 - userData.data:', userData.data);
-      console.log('조건 체크 - userData.data?.user:', userData.data?.user);
+
+      if (!response.ok || !userData.success) {
+        throw new Error(userData.message || '로그인에 실패했습니다.');
+      }
       
       if (userData.success && userData.data?.user) {
         const user = userData.data.user;
-        console.log('로그인 성공 - 사용자 데이터:', user);
         
+        // 이전 인증 상태 초기화 후 새 역할로 전환
+        auth.logout();
+
         // 로그인 성공 시 인증 이벤트 발행
-        const loginEvent = new CustomEvent('login', {
+        window.dispatchEvent(new CustomEvent('login', {
           detail: {
             role: user.role,
             name: user.name,
             userRole: user.role,
             userName: user.name
           }
-        });
-        window.dispatchEvent(loginEvent);
+        }));
 
-        // 인증 상태 강제 업데이트 - 글로벌 상태 동기화
-        console.log('글로벌 인증 상태 업데이트 시작:', user.role, user.name);
         auth.login(user.role, user.name, false);
-        console.log('글로벌 인증 상태 업데이트 완료');
 
         toast({
           title: "로그인 성공",
@@ -141,13 +129,14 @@ export default function Login() {
                              user.role === 'institute-admin' ? '/institute/dashboard' : 
                              user.role === 'admin' ? '/admin/dashboard' : '/dashboard';
         
-        // 상태 업데이트 후 즉시 리다이렉트
         setLocation(dashboardPath);
       } else {
         throw new Error(userData.message || '로그인에 실패했습니다.');
       }
 
     } catch (error) {
+      // 실패 시 클라이언트 인증 상태 초기화하여 이전 세션과 혼동 방지
+      auth.logout();
       toast({
         title: "로그인 실패",
         description: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
@@ -364,55 +353,57 @@ export default function Login() {
                 </div>
               </div>
               
-              {/* 퀵 로그인 버튼 섹션 */}
-              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800 mb-4">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">빠른 로그인</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickLogin('testuser', 'password123')}
-                    disabled={isLoading}
-                    className="text-xs"
-                  >
-                    {isLoading ? '로그인 중...' : '테스트 계정'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickLogin('trainer01', 'trainer123')}
-                    disabled={isLoading}
-                    className="text-xs"
-                  >
-                    {isLoading ? '로그인 중...' : '훈련사 계정'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickLogin('admin', 'admin123')}
-                    disabled={isLoading}
-                    className="text-xs"
-                  >
-                    {isLoading ? '로그인 중...' : '관리자 계정'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickLogin('institute01', 'institute123')}
-                    disabled={isLoading}
-                    className="text-xs"
-                  >
-                    {isLoading ? '로그인 중...' : '기관 계정'}
-                  </Button>
+              {/* 퀵 로그인 버튼 섹션 — 개발 환경 전용 */}
+              {import.meta.env.DEV && (
+                <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800 mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">빠른 로그인 (개발용)</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickLogin('pet-owner')}
+                      disabled={isLoading}
+                      className="text-xs"
+                    >
+                      {isLoading ? '로그인 중...' : '테스트 계정'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickLogin('trainer')}
+                      disabled={isLoading}
+                      className="text-xs"
+                    >
+                      {isLoading ? '로그인 중...' : '훈련사 계정'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickLogin('admin')}
+                      disabled={isLoading}
+                      className="text-xs"
+                    >
+                      {isLoading ? '로그인 중...' : '관리자 계정'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickLogin('institute-admin')}
+                      disabled={isLoading}
+                      className="text-xs"
+                    >
+                      {isLoading ? '로그인 중...' : '기관 계정'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    버튼을 클릭하면 바로 로그인됩니다.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  버튼을 클릭하면 바로 로그인됩니다.
-                </p>
-              </div>
+              )}
               
               <Button 
                 type="submit" 

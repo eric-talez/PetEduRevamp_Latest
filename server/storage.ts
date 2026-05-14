@@ -273,6 +273,7 @@ class Storage {
       {
         id: 2,
         name: '강동훈',
+        username: 'trainer',
         email: 'donghoong@wangzzang.com',
         role: 'trainer',
         password: 'trainer123',
@@ -288,10 +289,21 @@ class Storage {
         email: 'test@talez.com',
         username: 'testuser',
         password: 'test123',
-        role: 'user',
+        role: 'pet-owner',
         verified: true,
         createdAt: new Date('2025-01-10').toISOString(),
         lastLoginAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2일 전
+      },
+      {
+        id: 5,
+        name: '테스트 기관',
+        email: 'institute@talez.com',
+        username: 'institute',
+        password: 'institute123',
+        role: 'institute-admin',
+        verified: true,
+        createdAt: new Date('2025-01-15').toISOString(),
+        lastLoginAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
       }
     ];
 

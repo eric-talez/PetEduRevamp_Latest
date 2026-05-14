@@ -6,7 +6,7 @@ import { Express, Router, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import session from 'express-session';
 import jwt from 'jsonwebtoken';
-import { hashPassword, setupLocalAuth } from './local-auth';
+import { hashPassword, setupLocalAuth, getTestAccounts } from './local-auth';
 import { setupSocialAuth } from './social-auth';
 import { setupPhoneVerificationRoutes } from './phone-verification';
 import { storage } from '../storage';
@@ -404,8 +404,17 @@ function setupAuthRoutes(app: Express) {
     return res.success({ ok: true }, '세션이 갱신되었습니다.');
   });
   
-  // 퀵로그인 API (테스트/데모 용도) - CSRF 보호 적용
+  // 퀵로그인 API (개발/데모 전용) - CSRF 보호 적용
   router.post('/quick-login', csrfProtection, async (req, res) => {
+    // 개발/스테이징 환경에서만 허용
+    const allowedEnvs = ['development', 'staging'];
+    if (!allowedEnvs.includes(process.env.NODE_ENV || '')) {
+      return res.error(
+        ApiErrorCode.VALIDATION_ERROR,
+        '퀵로그인은 개발/스테이징 환경에서만 사용 가능합니다.'
+      );
+    }
+
     try {
       const { role } = req.body;
       
@@ -419,25 +428,33 @@ function setupAuthRoutes(app: Express) {
         );
       }
       
-      // 역할별 테스트 사용자 매핑
-      const testUsernames: Record<string, string> = {
-        'pet-owner': 'test_owner',
-        'trainer': 'test_trainer',
-        'institute-admin': 'institute01',
-        'admin': 'admin'
+      // 역할 → storage username 결정적 매핑 (단일 소스: getTestAccounts 키를 기준으로 정의)
+      // 'test' 키는 storage seed의 username 'testuser'와 일치시킴 (getTestAccounts id=3 동일)
+      const testAccounts = getTestAccounts();
+      const roleToStorageUsername: Record<string, string> = {
+        'pet-owner':      'testuser',   // getTestAccounts['test'], storage id=3
+        'trainer':        'trainer',    // getTestAccounts['trainer'], storage id=2
+        'institute-admin':'institute',  // getTestAccounts['institute'], storage id=5
+        'admin':          'admin',      // getTestAccounts['admin'], storage id=1
       };
-      
-      const username = testUsernames[role];
-      const user = await storage.getUserByUsername(username);
-      
+      const storageUsername = roleToStorageUsername[role];
+      // getTestAccounts에 해당 role이 존재하는지 재확인 (미래 계정 추가/삭제 대비)
+      const hasTestAccount = Object.values(testAccounts).some(a => a.role === role);
+      if (!storageUsername || !hasTestAccount) {
+        return res.error(
+          ApiErrorCode.RESOURCE_NOT_FOUND,
+          `해당 역할의 테스트 계정 설정을 찾을 수 없습니다: ${role}`
+        );
+      }
+      const user = await storage.getUserByUsername(storageUsername);
+
       if (!user) {
         return res.error(
           ApiErrorCode.RESOURCE_NOT_FOUND,
-          `테스트 사용자를 찾을 수 없습니다: ${username}`,
-          { role, username }
+          `해당 역할의 테스트 계정을 찾을 수 없습니다: ${role} (username: ${storageUsername})`
         );
       }
-      
+
       // 세션 생성
       req.login(user, (loginErr) => {
         if (loginErr) {
@@ -448,7 +465,7 @@ function setupAuthRoutes(app: Express) {
           );
         }
         
-        // 세션에 사용자 정보 저장 (req.session.user로 접근 가능하도록)
+        // 세션에 사용자 정보 저장
         req.session.user = {
           id: user.id,
           username: user.username,
@@ -470,7 +487,6 @@ function setupAuthRoutes(app: Express) {
           
           await registerLoginSession(req, user.id, { revokeConcurrent: false });
           console.log(`[QuickLogin] 퀵로그인 성공: ${user.username} (${user.role})`);
-          console.log('[QuickLogin] 세션 저장 완료 - SessionID:', req.sessionID);
           
           // JWT 토큰 생성
           const token = generateJwtToken(user);

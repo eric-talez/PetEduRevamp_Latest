@@ -81,7 +81,7 @@ export function setupLocalAuth() {
 }
 
 // 환경 변수 기반 테스트 계정 정보
-function getTestAccounts() {
+export function getTestAccounts(): Record<string, { password: string; role: string; name: string; email: string; id: number }> {
   return {
     'admin': { 
       password: process.env.TEST_ADMIN_PASSWORD || 'admin123', 
@@ -98,25 +98,32 @@ function getTestAccounts() {
       id: 1
     },
     'trainer': { 
-      password: process.env.TEST_TRAINER_PASSWORD || 'change-this-password-in-production', 
+      password: process.env.TEST_TRAINER_PASSWORD || 'trainer123', 
       role: 'trainer', 
       name: '강동훈',
       email: 'kang@talez.com',
       id: 4
     },
     '강동훈': { 
-      password: process.env.TEST_TRAINER_PASSWORD || 'change-this-password-in-production', 
+      password: process.env.TEST_TRAINER_PASSWORD || 'trainer123', 
       role: 'trainer', 
       name: '강동훈',
       email: 'kang@talez.com',
       id: 4
     },
     'test': { 
-      password: process.env.TEST_USER_PASSWORD || 'change-this-password-in-production', 
+      password: process.env.TEST_USER_PASSWORD || 'test123', 
       role: 'pet-owner', 
       name: '테스트 사용자',
       email: 'test@test.com',
       id: 3
+    },
+    'institute': {
+      password: process.env.TEST_INSTITUTE_PASSWORD || 'institute123',
+      role: 'institute-admin',
+      name: '테스트 기관',
+      email: 'institute@talez.com',
+      id: 5
     }
   };
 }
