@@ -42,10 +42,14 @@ export function PetPassportCard({ petId, petName, petUid }: Props) {
 
   const handleCopyUid = async () => {
     if (!petUid) return;
-    await navigator.clipboard.writeText(petUid);
-    setUidCopied(true);
-    toast({ title: "펫 ID가 복사되었습니다", description: petUid });
-    setTimeout(() => setUidCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(petUid);
+      setUidCopied(true);
+      toast({ title: "펫 ID가 복사되었습니다", description: petUid });
+      setTimeout(() => setUidCopied(false), 2000);
+    } catch {
+      toast({ title: "복사 실패", description: "브라우저 권한을 확인해주세요", variant: "destructive" });
+    }
   };
 
   const { data, isLoading } = useQuery<PassportResponse>({

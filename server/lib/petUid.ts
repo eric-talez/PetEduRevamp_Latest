@@ -18,7 +18,7 @@ export function isValidPetUid(uid: unknown): uid is string {
   if (typeof uid !== 'string') return false;
   if (!uid.startsWith(PREFIX)) return false;
   const body = uid.slice(PREFIX.length);
-  if (body.length < 5 || body.length > 8) return false;
+  if (body.length < 5 || body.length > 6) return false;
   for (const c of body) {
     if (!ALPHABET.includes(c)) return false;
   }
