@@ -24719,6 +24719,11 @@ export function registerTrainerCertificationRoutes(app: Express) {
       if (!parsed.success) {
         return res.status(400).json({ error: '잘못된 입력입니다.' });
       }
+      const hasContent = !!(parsed.data.locationText?.trim() || parsed.data.memo?.trim() ||
+        (parsed.data.lat != null && parsed.data.lng != null));
+      if (!hasContent) {
+        return res.status(400).json({ error: '발견 장소·메모·GPS 위치 중 최소 1개 이상을 입력해주세요.' });
+      }
       const [passport] = await db.select().from(petVaccinationPassports)
         .where(eq(petVaccinationPassports.token, token)).limit(1);
       if (!passport) return res.status(404).json({ error: '여권을 찾을 수 없습니다.' });

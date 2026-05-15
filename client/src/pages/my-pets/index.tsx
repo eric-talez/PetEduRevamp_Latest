@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit, Trash2, Heart, Calendar, Weight, Upload, X, User, BookOpen, AlertCircle, Phone, Hospital, Copy } from 'lucide-react';
+import { Plus, Edit, Trash2, Heart, Calendar, Weight, Upload, X, User, BookOpen, AlertCircle, Phone, Hospital, Copy, Siren } from 'lucide-react';
+import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/ImageUpload';
 import { PetPassportCard } from '@/components/PetPassportCard';
@@ -501,6 +502,13 @@ export default function MyPetsPage() {
           <p className="text-gray-600 dark:text-gray-400 mt-2">소중한 반려동물들의 정보를 관리하세요</p>
         </div>
         
+        <div className="flex items-center gap-2">
+          <Link href="/my-pets/lost-reports">
+            <Button variant="outline" className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700" data-testid="button-lost-reports">
+              <Siren className="w-4 h-4" />
+              분실 제보 이력
+            </Button>
+          </Link>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openNewPetDialog} variant="outline" className="flex items-center gap-2 text-success border-success/40 hover:bg-success/10 hover:text-success/90 hover:border-success/40 transition-all duration-200">
@@ -813,6 +821,7 @@ export default function MyPetsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {pets.length === 0 ? (
