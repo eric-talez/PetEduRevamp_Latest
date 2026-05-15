@@ -71,6 +71,9 @@ function GoogleMapViewInner({
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
+  const hoverInfoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const clickedInfoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const hoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCustomControls, setShowCustomControls] = useState<boolean>(
@@ -221,6 +224,20 @@ function GoogleMapViewInner({
     markers.forEach(marker => marker.setMap(null));
     setMarkers([]);
 
+    // 호버/클릭 팝업 상태 초기화
+    if (hoverCloseTimerRef.current) {
+      clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+    if (hoverInfoWindowRef.current) {
+      hoverInfoWindowRef.current.close();
+      hoverInfoWindowRef.current = null;
+    }
+    if (clickedInfoWindowRef.current) {
+      clickedInfoWindowRef.current.close();
+      clickedInfoWindowRef.current = null;
+    }
+
     // 새 마커 생성 (클러스터 대상)
     const clusterMarkers = locations
       .filter(loc => loc.coordinates)
@@ -263,6 +280,18 @@ function GoogleMapViewInner({
 
         // 마커 클릭 이벤트
         marker.addListener('click', () => {
+          if (hoverCloseTimerRef.current) {
+            clearTimeout(hoverCloseTimerRef.current);
+            hoverCloseTimerRef.current = null;
+          }
+          if (hoverInfoWindowRef.current) {
+            hoverInfoWindowRef.current.close();
+            hoverInfoWindowRef.current = null;
+          }
+          if (clickedInfoWindowRef.current && clickedInfoWindowRef.current !== infoWindow) {
+            clickedInfoWindowRef.current.close();
+          }
+          clickedInfoWindowRef.current = infoWindow;
           infoWindow.open(map, marker);
           if (onLocationSelect) {
             onLocationSelect(location);
@@ -272,11 +301,45 @@ function GoogleMapViewInner({
         // 마커 호버 효과
         marker.addListener('mouseover', () => {
           marker.setAnimation(google.maps.Animation.BOUNCE);
+          if (hoverCloseTimerRef.current) {
+            clearTimeout(hoverCloseTimerRef.current);
+            hoverCloseTimerRef.current = null;
+          }
+          // 다른 마커의 클릭 팝업이 열려 있으면 닫기
+          if (clickedInfoWindowRef.current && clickedInfoWindowRef.current !== infoWindow) {
+            clickedInfoWindowRef.current.close();
+            clickedInfoWindowRef.current = null;
+          }
+          // 이미 클릭으로 열린 팝업이면 중복 열기 생략
+          if (clickedInfoWindowRef.current === infoWindow) return;
+          if (hoverInfoWindowRef.current && hoverInfoWindowRef.current !== infoWindow) {
+            hoverInfoWindowRef.current.close();
+          }
+          hoverInfoWindowRef.current = infoWindow;
           infoWindow.open(map, marker);
+        });
+
+        // X 버튼으로 닫을 때 stale ref 초기화
+        infoWindow.addListener('closeclick', () => {
+          if (clickedInfoWindowRef.current === infoWindow) {
+            clickedInfoWindowRef.current = null;
+          }
+          if (hoverInfoWindowRef.current === infoWindow) {
+            hoverInfoWindowRef.current = null;
+          }
         });
 
         marker.addListener('mouseout', () => {
           marker.setAnimation(null);
+          if (hoverInfoWindowRef.current === infoWindow) {
+            hoverCloseTimerRef.current = setTimeout(() => {
+              if (hoverInfoWindowRef.current === infoWindow) {
+                infoWindow.close();
+                hoverInfoWindowRef.current = null;
+              }
+              hoverCloseTimerRef.current = null;
+            }, 150);
+          }
         });
 
         return marker;
