@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit, Trash2, Heart, Calendar, Weight, Upload, X, User, BookOpen, AlertCircle, Phone, Hospital } from 'lucide-react';
+import { Plus, Edit, Trash2, Heart, Calendar, Weight, Upload, X, User, BookOpen, AlertCircle, Phone, Hospital, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/ImageUpload';
 import { PetPassportCard } from '@/components/PetPassportCard';
@@ -868,10 +868,24 @@ export default function MyPetsPage() {
                     {pet.species === 'dog' ? '🐶' : pet.species === 'cat' ? '🐱' : '🐾'} {pet.breed}
                   </CardDescription>
                   {pet.petUid && (
-                    <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(pet.petUid as string);
+                          toast({ title: '펫 ID가 복사되었습니다', description: pet.petUid });
+                        } catch {
+                          toast({ title: '복사 실패', description: '브라우저 권한을 확인해주세요', variant: 'destructive' });
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/10 border border-primary/30 hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-pointer"
+                      data-testid={`button-copy-pet-uid-${pet.id}`}
+                      aria-label="펫 ID 복사"
+                    >
                       <span className="text-[10px] uppercase tracking-wider text-gray-500">펫 ID</span>
                       <span className="font-mono font-bold text-sm tracking-wider text-primary" data-testid={`text-pet-uid-${pet.id}`}>{pet.petUid}</span>
-                    </div>
+                      <Copy className="w-3.5 h-3.5 text-primary/70" />
+                    </button>
                   )}
                 </div>
               </CardHeader>
