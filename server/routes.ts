@@ -24654,16 +24654,20 @@ export function registerTrainerCertificationRoutes(app: Express) {
 
       const wasOn = !!active.lostMode;
       const turningOn = parsed.data.enabled && !wasOn;
-      const update: Record<string, unknown> = {
-        lostMode: parsed.data.enabled,
-        lostMessage: parsed.data.message ?? null,
-        lostContactPhone: parsed.data.contactPhone ?? null,
-        lostContactWindow: parsed.data.contactWindow ?? null,
-        lostLastSeenAt: parsed.data.lastSeenAt ?? null,
-        lostLastSeenLocation: parsed.data.lastSeenLocation ?? null,
-        lostLastSeenLat: parsed.data.lastSeenLat ?? null,
-        lostLastSeenLng: parsed.data.lastSeenLng ?? null,
+      // OFF 전환 시 메타데이터(메시지/연락처/목격정보)는 보존해 재활성화 UX를 매끄럽게 유지.
+      // 명시적으로 갱신을 원하면 본문에 필드를 포함해 PATCH 호출 (undefined 키는 보존, null은 비움).
+      const body = parsed.data;
+      const update: Record<string, unknown> = { lostMode: body.enabled };
+      const setIfProvided = (key: keyof typeof body, col: string) => {
+        if (key in (req.body || {})) update[col] = body[key] ?? null;
       };
+      setIfProvided('message', 'lostMessage');
+      setIfProvided('contactPhone', 'lostContactPhone');
+      setIfProvided('contactWindow', 'lostContactWindow');
+      setIfProvided('lastSeenAt', 'lostLastSeenAt');
+      setIfProvided('lastSeenLocation', 'lostLastSeenLocation');
+      setIfProvided('lastSeenLat', 'lostLastSeenLat');
+      setIfProvided('lastSeenLng', 'lostLastSeenLng');
       if (turningOn) update.lostActivatedAt = new Date();
 
       const [updated] = await db.update(petVaccinationPassports)
