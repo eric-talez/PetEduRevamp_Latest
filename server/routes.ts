@@ -24814,13 +24814,18 @@ export function registerTrainerCertificationRoutes(app: Express) {
       if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
       const summary = await buildVaccineSummary(passport.petId);
 
-      // 분실모드 상태 (보호자 PII는 마스킹)
+      // 분실모드 상태 (보호자 PII는 마스킹) — 연락처가 비어있으면 보호자 프로필 휴대폰으로 폴백
       let ownerName: string | null = null;
+      let fallbackPhone: string | null = null;
       if (passport.lostMode) {
         try {
-          const [owner] = await db.select({ name: users.name }).from(users)
-            .where(eq(users.id, passport.ownerId)).limit(1);
+          const [owner] = await db.select({
+            name: users.name,
+            phoneNumber: users.phoneNumber,
+            phone: users.phone,
+          }).from(users).where(eq(users.id, passport.ownerId)).limit(1);
           ownerName = owner?.name ?? null;
+          fallbackPhone = (owner?.phoneNumber || owner?.phone || null) as string | null;
         } catch {}
       }
 
@@ -24859,7 +24864,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         lostMode: passport.lostMode ? {
           active: true,
           message: passport.lostMessage || null,
-          contactPhone: passport.lostContactPhone || null,
+          contactPhone: passport.lostContactPhone || fallbackPhone || null,
           contactWindow: passport.lostContactWindow || null,
           lastSeenAt: passport.lostLastSeenAt || null,
           lastSeenLocation: passport.lostLastSeenLocation || null,
