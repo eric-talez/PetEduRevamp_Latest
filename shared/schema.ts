@@ -354,6 +354,10 @@ export const petVaccinationPassports = pgTable("pet_vaccination_passports", {
   lostLastSeenLocation: text("lost_last_seen_location"),
   lostLastSeenLat: doublePrecision("lost_last_seen_lat"),
   lostLastSeenLng: doublePrecision("lost_last_seen_lng"),
+  // 위조 방지 서명 QR (Task #224)
+  signedPayload: text("signed_payload"),
+  signature: varchar("signature", { length: 200 }),
+  kid: varchar("kid", { length: 16 }),
   lostActivatedAt: timestamp("lost_activated_at"),
   lostReportCount: integer("lost_report_count").default(0).notNull(),
 });

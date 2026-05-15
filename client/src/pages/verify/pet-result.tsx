@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, ArrowLeft, Camera, Siren, MapPin, Phone, Send, Check } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, ArrowLeft, Camera, Siren, MapPin, Phone, Send, Check, BadgeCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,13 @@ interface VerifyResponse {
   overallStatus: "all_ok" | "has_expiring" | "has_expired" | "no_records";
   verifiedAt: string;
   verifyCount: number;
+  signature?: {
+    signedPayload: string;
+    signature: string;
+    kid: string;
+    algorithm: string;
+    verified: boolean;
+  } | null;
   lostMode?: {
     active: boolean;
     message?: string | null;
@@ -161,6 +168,29 @@ export default function PetVerifyResult() {
 
   if (!data) return null;
 
+  // Task #224 — 응답 무결성 검증: 서명 페이로드 안의 petUid·만료가 응답 본문과 일치하는지 클라이언트단 확인
+  function verifyResponseIntegrity(d: VerifyResponse): { ok: boolean; reason?: string; expiresAt?: string; kid?: string } {
+    if (!d.signature) return { ok: false, reason: 'no-signature' };
+    try {
+      // base64url → base64 디코드
+      const b64 = d.signature.signedPayload.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+      const json = JSON.parse(atob(padded));
+      if (json.v !== 1) return { ok: false, reason: 'version-mismatch' };
+      if (json.kid !== d.signature.kid) return { ok: false, reason: 'kid-mismatch' };
+      if (!d.pet.petUid || json.petUid !== d.pet.petUid) return { ok: false, reason: 'petuid-mismatch' };
+      // petHash 자체 재계산 비교는 SubtleCrypto 비동기 → 동기적 핵심 필드 일치만 확인
+      // expiresAt 파싱 가능 + 미래 시점 체크
+      const exp = new Date(json.expiresAt);
+      if (Number.isNaN(exp.getTime())) return { ok: false, reason: 'expires-invalid' };
+      if (exp.getTime() < Date.now()) return { ok: false, reason: 'expired' };
+      return { ok: true, expiresAt: json.expiresAt, kid: json.kid };
+    } catch {
+      return { ok: false, reason: 'decode-failed' };
+    }
+  }
+  const integrity = verifyResponseIntegrity(data);
+
   const status = data.overallStatus;
   const overall = {
     all_ok: { icon: ShieldCheck, label: "모든 예방접종이 유효합니다", cls: "text-green-600", bg: "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-900" },
@@ -180,7 +210,19 @@ export default function PetVerifyResult() {
               스캔으로 돌아가기
             </Button>
           </Link>
-          <Badge variant="secondary">검증 #{data.verifyCount}</Badge>
+          <div className="flex items-center gap-2">
+            {integrity.ok && (
+              <Badge
+                className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300 dark:border-green-700 flex items-center gap-1"
+                data-testid="badge-signature-verified"
+                title={`서명 키 ${integrity.kid} · ${data.signature?.algorithm}`}
+              >
+                <BadgeCheck className="w-3.5 h-3.5" />
+                서명 확인됨
+              </Badge>
+            )}
+            <Badge variant="secondary">검증 #{data.verifyCount}</Badge>
+          </div>
         </div>
 
         {data.lostMode?.active && (

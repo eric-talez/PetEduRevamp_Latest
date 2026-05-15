@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
-import { randomBytes } from "crypto";
+import { randomBytes, createHmac, createHash, timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, desc, or, ilike, inArray } from "drizzle-orm";
@@ -884,6 +884,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       created_at timestamp DEFAULT now() NOT NULL
     )`);
     await db.execute(sql`ALTER TABLE pet_lost_reports ADD COLUMN IF NOT EXISTS finder_contact_window varchar(100)`);
+    // Task #224 — 위조 방지 서명 컬럼
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS signed_payload text`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS signature varchar(200)`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS kid varchar(16)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_lost_reports_owner_idx ON pet_lost_reports(owner_id, created_at DESC)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_lost_reports_pet_idx ON pet_lost_reports(pet_id, created_at DESC)`);
     console.log('✅ 펫스포트 분실모드 컬럼/테이블 보장 완료');
@@ -24290,6 +24294,74 @@ export function registerTrainerCertificationRoutes(app: Express) {
   const PASSPORT_RATE_WINDOW_MS = 60_000;
   const PASSPORT_TTL_MS = 365 * 24 * 60 * 60 * 1000; // 1 year
 
+  // ====== Task #224 — 위조 방지 서명 QR ======
+  // 다중 키 회전 지원: 우선순위 1) PET_PASSPORT_SIGNING_KEYS (json: {kid:secret,...})
+  // 2) PET_PASSPORT_SIGNING_SECRET (단일 키, kid="v1")
+  function loadPassportSigningKeys(): { active: { kid: string; secret: string } | null; keys: Record<string, string> } {
+    const keys: Record<string, string> = {};
+    let activeKid: string | null = null;
+    const multi = process.env.PET_PASSPORT_SIGNING_KEYS;
+    if (multi) {
+      try {
+        const parsed = JSON.parse(multi) as Record<string, string>;
+        for (const [k, v] of Object.entries(parsed)) {
+          if (typeof v === 'string' && v.length >= 16) keys[k] = v;
+        }
+        const activeFromEnv = process.env.PET_PASSPORT_SIGNING_ACTIVE_KID;
+        if (activeFromEnv && keys[activeFromEnv]) activeKid = activeFromEnv;
+        else activeKid = Object.keys(keys)[0] || null;
+      } catch (e) {
+        console.warn('[Pet Passport] PET_PASSPORT_SIGNING_KEYS JSON 파싱 실패, 단일 키로 폴백');
+      }
+    }
+    const single = process.env.PET_PASSPORT_SIGNING_SECRET;
+    if (single && single.length >= 16 && !keys['v1']) {
+      keys['v1'] = single;
+      if (!activeKid) activeKid = 'v1';
+    }
+    return { active: activeKid ? { kid: activeKid, secret: keys[activeKid] } : null, keys };
+  }
+  const PASSPORT_KEYS = loadPassportSigningKeys();
+  if (!PASSPORT_KEYS.active) {
+    console.warn('⚠️ [Pet Passport] PET_PASSPORT_SIGNING_SECRET 미설정 — 서명 없이 동작합니다 (위조 방지 배지 미노출).');
+  } else {
+    console.log(`✅ [Pet Passport] 서명 키 로드 완료 (active kid=${PASSPORT_KEYS.active.kid}, total keys=${Object.keys(PASSPORT_KEYS.keys).length})`);
+  }
+  const b64url = (buf: Buffer | string) => Buffer.from(buf).toString('base64url');
+  function computePetHash(petUid: string, expiresAtIso: string): string {
+    return createHash('sha256').update(`${petUid}:${expiresAtIso}`).digest('base64url');
+  }
+  function signPassportPayload(petUid: string, issuedAt: Date, expiresAt: Date): { signedQr: string; signedPayload: string; signature: string; kid: string } | null {
+    if (!PASSPORT_KEYS.active) return null;
+    const { kid, secret } = PASSPORT_KEYS.active;
+    const expIso = expiresAt.toISOString();
+    const payload = {
+      v: 1,
+      kid,
+      petUid,
+      issuedAt: issuedAt.toISOString(),
+      expiresAt: expIso,
+      petHash: computePetHash(petUid, expIso),
+    };
+    const signedPayload = b64url(JSON.stringify(payload));
+    const signature = createHmac('sha256', secret).update(signedPayload).digest('base64url');
+    return { signedQr: `pts.v1.${signedPayload}.${signature}`, signedPayload, signature, kid };
+  }
+  function verifyPassportSignature(signedPayload: string | null | undefined, signature: string | null | undefined, kid: string | null | undefined): boolean {
+    if (!signedPayload || !signature || !kid) return false;
+    const secret = PASSPORT_KEYS.keys[kid];
+    if (!secret) return false;
+    const expected = createHmac('sha256', secret).update(signedPayload).digest('base64url');
+    try {
+      const a = Buffer.from(expected);
+      const b = Buffer.from(signature);
+      if (a.length !== b.length) return false;
+      return timingSafeEqual(a, b);
+    } catch {
+      return false;
+    }
+  }
+
   function checkPassportRateLimit(ip: string): boolean {
     const now = Date.now();
     const entry = passportRateBucket.get(ip);
@@ -24484,7 +24556,9 @@ export function registerTrainerCertificationRoutes(app: Express) {
       }
 
       const token = randomBytes(32).toString('base64url');
-      const expiresAt = new Date(Date.now() + PASSPORT_TTL_MS);
+      const issuedAt = new Date();
+      const expiresAt = new Date(issuedAt.getTime() + PASSPORT_TTL_MS);
+      const signed = pet.petUid ? signPassportPayload(pet.petUid, issuedAt, expiresAt) : null;
 
       // 기존 활성 토큰 회수 + 신규 발급 (원자성 보장)
       const created = await db.transaction(async (tx) => {
@@ -24499,7 +24573,11 @@ export function registerTrainerCertificationRoutes(app: Express) {
           ownerId: pet.ownerId,
           token,
           isActive: true,
+          issuedAt,
           expiresAt,
+          signedPayload: signed?.signedPayload || null,
+          signature: signed?.signature || null,
+          kid: signed?.kid || null,
         }).returning();
         return row;
       });
@@ -24818,6 +24896,15 @@ export function registerTrainerCertificationRoutes(app: Express) {
         return res.status(410).json({ error: '만료된 여권입니다.', code: 'EXPIRED' });
       }
 
+      // Task #224 — 저장된 서명이 있으면 변조 여부 검증 (실패 시 410)
+      const hasStoredSignature = !!(passport.signedPayload && passport.signature && passport.kid);
+      const signatureValid = hasStoredSignature
+        ? verifyPassportSignature(passport.signedPayload, passport.signature, passport.kid)
+        : false;
+      if (hasStoredSignature && !signatureValid) {
+        return res.status(410).json({ error: '여권 서명이 변조되었습니다.', code: 'SIGNATURE_INVALID' });
+      }
+
       const pet = await loadPetForPassport(passport.petId);
       if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
       const summary = await buildVaccineSummary(passport.petId);
@@ -24864,6 +24951,13 @@ export function registerTrainerCertificationRoutes(app: Express) {
         overallStatus: summary.overallStatus,
         verifiedAt: new Date().toISOString(),
         verifyCount: nextCount,
+        signature: signatureValid ? {
+          signedPayload: passport.signedPayload,
+          signature: passport.signature,
+          kid: passport.kid,
+          algorithm: 'HMAC-SHA256',
+          verified: true,
+        } : null,
         lostMode: passport.lostMode ? {
           active: true,
           message: passport.lostMessage || null,
