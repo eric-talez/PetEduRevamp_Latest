@@ -113,23 +113,31 @@ function GoogleMapViewInner({
     }
   }, []);
 
+  // 구글 맵 인증 오류(워터마크/경고 모달) 감지
+  // Google Maps는 인증 실패 시 window.gm_authFailure 전역 콜백을 호출한다.
+  // 이 콜백을 미리 등록해 두면 구글이 직접 띄우는 에러 모달을 차단하고
+  // 앱 내 에러 UI로 대체할 수 있다.
+  useEffect(() => {
+    const prev = window.gm_authFailure;
+    window.gm_authFailure = () => {
+      setError('auth_failure');
+      setIsLoading(false);
+      if (typeof prev === 'function') prev();
+    };
+    return () => {
+      window.gm_authFailure = prev;
+    };
+  }, []);
+
   // 구글 맵 스크립트 로드
   useEffect(() => {
-    // 환경 변수에서 API 키 가져오기 (여러 소스 확인)
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 
-                   (window as any).__GOOGLE_MAPS_API_KEY__ ||
-                   import.meta.env.GOOGLE_MAPS_API_KEY ||
-                   'AIzaSyARFSKm3o7O4vn7RMjCkqYD4YuVfFF14Fo'; // 폴백 키
-    
-    console.log('[GoogleMapView] 환경 변수 MODE:', import.meta.env.MODE);
-    console.log('[GoogleMapView] 환경 변수 DEV:', import.meta.env.DEV);
-    console.log('[GoogleMapView] 환경 변수 PROD:', import.meta.env.PROD);
-    console.log('[GoogleMapView] API Key 확인:', apiKey ? `설정됨 (${apiKey.substring(0, 10)}...)` : '누락');
-    
+    // 빌드 타임 환경 변수 우선, 런타임 주입(배포 환경) 차선
+    const apiKey =
+      (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ||
+      window.__GOOGLE_MAPS_API_KEY__;
+
     if (!apiKey) {
-      console.error('[GoogleMapView] VITE_GOOGLE_MAPS_API_KEY 환경 변수가 설정되지 않았습니다.');
-      console.error('[GoogleMapView] Replit Secrets에서 VITE_GOOGLE_MAPS_API_KEY를 설정하고 서버를 재시작하세요.');
-      setError('Google Maps API 키가 설정되지 않았습니다. Replit Secrets에서 VITE_GOOGLE_MAPS_API_KEY를 설정해주세요.');
+      setError('Google Maps API 키가 설정되지 않았습니다. VITE_GOOGLE_MAPS_API_KEY 환경 변수를 확인해주세요.');
       setIsLoading(false);
       return;
     }
@@ -145,14 +153,14 @@ function GoogleMapViewInner({
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
-    
+
     script.onload = () => {
       setIsLoading(false);
       setError(null);
     };
-    
+
     script.onerror = () => {
-      setError('Google Maps를 불러오는데 실패했습니다.');
+      setError('Google Maps 스크립트를 불러오는데 실패했습니다. 네트워크 연결이나 API 키 설정을 확인해주세요.');
       setIsLoading(false);
     };
 
@@ -366,14 +374,23 @@ function GoogleMapViewInner({
     return (
       <Card className="w-full" style={{ height }}>
         <div className="flex items-center justify-center h-full">
-          <div className="text-center text-red-500">
-            <p className="font-semibold">{error}</p>
-            <p className="text-sm mt-2">
-              {error.includes('API 키') 
-                ? 'VITE_GOOGLE_MAPS_API_KEY 환경 변수를 설정해주세요.'
-                : 'Google Maps API 키를 확인해주세요.'
-              }
-            </p>
+          <div className="text-center text-red-500 px-4">
+            <p className="font-semibold text-base">지도를 불러오지 못했습니다</p>
+            {error === 'auth_failure' ? (
+              <>
+                <p className="text-sm mt-2 text-red-600">
+                  Google Maps API 인증 오류가 발생했습니다.
+                </p>
+                <ul className="text-xs mt-3 text-left text-gray-600 space-y-1 list-disc list-inside">
+                  <li>Google Cloud Console → Maps JavaScript API 활성화</li>
+                  <li>결제(Billing) 계정 연결 확인</li>
+                  <li>API 키 HTTP 리퍼러 제한에 현재 도메인 추가</li>
+                  <li>Replit Secrets에서 VITE_GOOGLE_MAPS_API_KEY 업데이트</li>
+                </ul>
+              </>
+            ) : (
+              <p className="text-sm mt-2 text-red-600">{error}</p>
+            )}
           </div>
         </div>
       </Card>
@@ -448,5 +465,7 @@ export function GoogleMapView(props: GoogleMapViewProps) {
 declare global {
   interface Window {
     google: typeof google;
+    gm_authFailure?: () => void;
+    __GOOGLE_MAPS_API_KEY__?: string;
   }
 }
