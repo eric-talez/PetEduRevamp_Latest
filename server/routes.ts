@@ -25394,8 +25394,8 @@ export function registerTrainerCertificationRoutes(app: Express) {
       if (!pet) {
         return res.status(404).json({ success: false, error: '반려동물을 찾을 수 없습니다.' });
       }
-      // 중복 방지: 동일 정의의 활성(미회수) 배지가 이미 있으면 차단
-      const [existingActive] = await db.select({ id: petTrainingBadges.id })
+      // 중복 방지: 동일 정의의 활성(미회수, 미만료) 배지가 이미 있으면 차단
+      const [existingActive] = await db.select({ id: petTrainingBadges.id, expiresAt: petTrainingBadges.expiresAt })
         .from(petTrainingBadges)
         .where(and(
           eq(petTrainingBadges.petId, petId),
@@ -25403,7 +25403,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
           isNull(petTrainingBadges.revokedAt),
         ))
         .limit(1);
-      if (existingActive) {
+      if (existingActive && (!existingActive.expiresAt || new Date(existingActive.expiresAt).getTime() > Date.now())) {
         return res.status(409).json({ success: false, error: '동일한 배지가 이미 발급되어 있습니다.' });
       }
       const [inserted] = await db.insert(petTrainingBadges).values({

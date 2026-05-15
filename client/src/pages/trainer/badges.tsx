@@ -64,7 +64,7 @@ export default function TrainerBadgesPage() {
   const queryClient = useQueryClient();
   const [searchPetId, setSearchPetId] = useState<string>("");
   const [issueOpen, setIssueOpen] = useState(false);
-  const [issueForm, setIssueForm] = useState({ petId: "", badgeDefinitionId: "", comment: "" });
+  const [issueForm, setIssueForm] = useState({ petId: "", badgeDefinitionId: "", comment: "", expiresAt: "", sourceJournalId: "" });
   const [revokeTarget, setRevokeTarget] = useState<IssuedBadge | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
 
@@ -108,10 +108,25 @@ export default function TrainerBadgesPage() {
       const badgeDefinitionId = Number(issueForm.badgeDefinitionId);
       if (!Number.isFinite(petId) || petId <= 0) throw new Error("반려동물을 선택해주세요");
       if (!Number.isFinite(badgeDefinitionId) || badgeDefinitionId <= 0) throw new Error("배지를 선택해주세요");
+      let expiresAtIso: string | null = null;
+      if (issueForm.expiresAt) {
+        const d = new Date(issueForm.expiresAt);
+        if (Number.isNaN(d.getTime())) throw new Error("만료일 형식이 올바르지 않습니다");
+        if (d.getTime() <= Date.now()) throw new Error("만료일은 오늘 이후여야 합니다");
+        expiresAtIso = d.toISOString();
+      }
+      const sourceJournalId = issueForm.sourceJournalId.trim()
+        ? Number(issueForm.sourceJournalId)
+        : null;
+      if (sourceJournalId !== null && (!Number.isFinite(sourceJournalId) || sourceJournalId <= 0)) {
+        throw new Error("근거 일지 ID는 양의 정수여야 합니다");
+      }
       const res = await apiRequest("POST", "/api/trainer/badges", {
         petId,
         badgeDefinitionId,
         comment: issueForm.comment || null,
+        expiresAt: expiresAtIso,
+        sourceJournalId,
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "발급 실패");
@@ -120,7 +135,7 @@ export default function TrainerBadgesPage() {
     onSuccess: () => {
       toast({ title: "배지가 발급되었습니다", description: "보호자에게 알림이 전송됩니다." });
       setIssueOpen(false);
-      setIssueForm({ petId: "", badgeDefinitionId: "", comment: "" });
+      setIssueForm({ petId: "", badgeDefinitionId: "", comment: "", expiresAt: "", sourceJournalId: "" });
       queryClient.invalidateQueries({ queryKey: ["/api/trainer/badges"] });
     },
     onError: (e: Error) => toast({ title: "발급 실패", description: e.message, variant: "destructive" }),
@@ -222,6 +237,28 @@ export default function TrainerBadgesPage() {
                   placeholder="보호자에게 전달할 평가 메모"
                   data-testid="input-issue-comment"
                 />
+                <p className="text-xs text-gray-400 mt-1 text-right">{issueForm.comment.length}/500</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-sm">만료일 (선택)</Label>
+                  <Input
+                    type="date"
+                    value={issueForm.expiresAt}
+                    onChange={(e) => setIssueForm((p) => ({ ...p, expiresAt: e.target.value }))}
+                    data-testid="input-issue-expires"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">근거 일지 ID (선택)</Label>
+                  <Input
+                    type="number"
+                    placeholder="예: 123"
+                    value={issueForm.sourceJournalId}
+                    onChange={(e) => setIssueForm((p) => ({ ...p, sourceJournalId: e.target.value }))}
+                    data-testid="input-issue-source-journal"
+                  />
+                </div>
               </div>
             </div>
             <DialogFooter>

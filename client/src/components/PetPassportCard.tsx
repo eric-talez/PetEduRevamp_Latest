@@ -61,6 +61,7 @@ interface ActiveBadge {
 }
 
 function PetBadgesSection({ petId }: { petId: number }) {
+  const [selected, setSelected] = useState<ActiveBadge | null>(null);
   const { data, isLoading } = useQuery<{ success: boolean; badges: ActiveBadge[] }>({
     queryKey: ["/api/pets", petId, "badges"],
     queryFn: async () => {
@@ -79,18 +80,57 @@ function PetBadgesSection({ petId }: { petId: number }) {
       </div>
       <div className="flex flex-wrap gap-1.5">
         {badges.map((b) => (
-          <Badge
+          <button
+            type="button"
             key={b.id}
-            variant="outline"
-            className="bg-white dark:bg-gray-900 border-primary/40 text-primary text-xs"
-            title={`${b.issuerTrainerName ? `${b.issuerTrainerName} 발급 · ` : ""}${new Date(b.issuedAt).toLocaleDateString()}${b.comment ? ` · ${b.comment}` : ""}`}
+            onClick={() => setSelected(b)}
+            className="focus:outline-none focus:ring-2 focus:ring-primary rounded"
             data-testid={`badge-cert-${b.id}`}
           >
-            <Award className="w-3 h-3 mr-1" />
-            {b.label}
-          </Badge>
+            <Badge
+              variant="outline"
+              className="bg-white dark:bg-gray-900 border-primary/40 text-primary text-xs cursor-pointer hover:bg-primary/10"
+            >
+              <Award className="w-3 h-3 mr-1" />
+              {b.label}
+            </Badge>
+          </button>
         ))}
       </div>
+      <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Award className="w-5 h-5" /> {selected?.label}
+            </DialogTitle>
+          </DialogHeader>
+          {selected && (
+            <div className="space-y-2 text-sm">
+              {selected.description && (
+                <p className="text-gray-700 dark:text-gray-300">{selected.description}</p>
+              )}
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <span className="text-gray-500">발급자</span>
+                <span className="col-span-2 font-medium">{selected.issuerTrainerName || "—"}</span>
+                <span className="text-gray-500">발급일</span>
+                <span className="col-span-2">{new Date(selected.issuedAt).toLocaleDateString()}</span>
+                {selected.expiresAt && (
+                  <>
+                    <span className="text-gray-500">유효기간</span>
+                    <span className="col-span-2">{new Date(selected.expiresAt).toLocaleDateString()}까지</span>
+                  </>
+                )}
+                {selected.comment && (
+                  <>
+                    <span className="text-gray-500">코멘트</span>
+                    <span className="col-span-2 whitespace-pre-wrap">{selected.comment}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
