@@ -241,6 +241,95 @@ function calculateFallbackPrice(curriculum: AICurriculum): number {
 
 export { CurriculumModuleSchema, AICurriculumSchema, PricingSuggestionSchema };
 
+// 동물등록증 OCR 결과 스키마 (한국 동물보호관리시스템 등록증)
+const RegistrationCardOcrSchema = z.object({
+  registrationNumber: z.string().nullable(),
+  petName: z.string().nullable(),
+  breed: z.string().nullable(),
+  birthDate: z.string().nullable(),
+  gender: z.string().nullable(),
+  ownerName: z.string().nullable(),
+  confidence: z.number().min(0).max(1),
+  rawText: z.string().optional().default(''),
+});
+
+export type RegistrationCardOcrResult = z.infer<typeof RegistrationCardOcrSchema>;
+
+/**
+ * 동물등록증/외장칩 등록증 사진에서 동물등록번호 등을 OCR로 추출합니다.
+ * 한국 동물보호관리시스템(animal.go.kr) 발급 등록증 형식 기준.
+ */
+export async function extractRegistrationCardInfo(
+  imageBase64: string,
+  mimeType: string = 'image/jpeg'
+): Promise<RegistrationCardOcrResult> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [
+        {
+          role: "system",
+          content: "당신은 한국 동물보호관리시스템(animal.go.kr) 동물등록증을 정확히 판독하는 OCR 전문가입니다. 반드시 JSON 형식으로만 응답하세요."
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `이 이미지는 한국 농림축산식품부 동물보호관리시스템에서 발급한 동물등록증(또는 외장칩 등록 영수증/등록증)입니다.
+다음 항목을 추출해 JSON으로 응답하세요. 보이지 않는 값은 null로 두세요.
+
+{
+  "registrationNumber": "동물등록번호 (보통 15자리 숫자, 410으로 시작. 하이픈/공백 제거하고 숫자만)",
+  "petName": "반려동물 이름",
+  "breed": "품종",
+  "birthDate": "생년월일 (YYYY-MM-DD)",
+  "gender": "성별 (수컷/암컷/중성화/미상 중 하나)",
+  "ownerName": "보호자 이름 (있으면)",
+  "confidence": 0.0~1.0 (등록번호 추출 신뢰도),
+  "rawText": "이미지에서 읽어낸 주요 텍스트 요약 (디버그용, 200자 이내)"
+}
+
+주의:
+- registrationNumber는 반드시 숫자만, 보통 15자리. 410으로 시작하지 않거나 자릿수가 크게 다르면 confidence를 0.5 미만으로.
+- 등록증이 아니거나 번호가 전혀 안 보이면 registrationNumber를 null, confidence 0.`
+            },
+            {
+              type: "image_url",
+              image_url: { url: `data:${mimeType};base64,${imageBase64}` }
+            }
+          ]
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 600
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const parsed = RegistrationCardOcrSchema.parse({
+      registrationNumber: result.registrationNumber ?? null,
+      petName: result.petName ?? null,
+      breed: result.breed ?? null,
+      birthDate: result.birthDate ?? null,
+      gender: result.gender ?? null,
+      ownerName: result.ownerName ?? null,
+      confidence: typeof result.confidence === 'number' ? result.confidence : 0,
+      rawText: result.rawText ?? '',
+    });
+
+    // 등록번호 후처리: 숫자만 남기고 형식 검증
+    if (parsed.registrationNumber) {
+      const digits = parsed.registrationNumber.replace(/\D/g, '');
+      parsed.registrationNumber = digits || null;
+    }
+
+    return parsed;
+  } catch (error) {
+    logServerError('[등록증 OCR] 분석 실패:', error);
+    throw new Error(`등록증 OCR 분석에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 const NoseQualitySchema = z.object({
   overallScore: z.number().min(0).max(100),
   isNoseVisible: z.boolean(),

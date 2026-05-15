@@ -24314,6 +24314,66 @@ export function registerTrainerCertificationRoutes(app: Express) {
     return n.slice(0, 4) + '*'.repeat(n.length - 4);
   }
 
+  // 동물등록증 사진 OCR — 등록번호 자동 추출
+  // 한국 동물보호관리시스템(animal.go.kr) 등록증을 OpenAI Vision으로 판독
+  const registrationCardUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024 }, // 8MB
+    fileFilter: (_req, file, cb) => {
+      if (!file.mimetype.startsWith('image/')) {
+        return cb(new Error('이미지 파일만 업로드 가능합니다.'));
+      }
+      cb(null, true);
+    },
+  });
+  app.post(
+    '/api/pets/registration-card/ocr',
+    requireAuth(),
+    csrfProtection,
+    (req, res, next) => {
+      registrationCardUpload.single('image')(req, res, (err: any) => {
+        if (err) {
+          return res.status(400).json({ error: err.message || '이미지 업로드 실패' });
+        }
+        next();
+      });
+    },
+    async (req, res) => {
+      try {
+        const file = (req as Request & { file?: Express.Multer.File }).file;
+        if (!file) return res.status(400).json({ error: '이미지 파일이 필요합니다.' });
+
+        const { extractRegistrationCardInfo } = await import('./ai/openai');
+        const base64 = file.buffer.toString('base64');
+        const result = await extractRegistrationCardInfo(base64, file.mimetype || 'image/jpeg');
+
+        // 한국 동물등록번호 형식 힌트: 보통 15자리 숫자, 410으로 시작
+        const reg = result.registrationNumber || '';
+        const isKoreanFormat = /^410\d{12}$/.test(reg);
+        const isPlausibleDigits = /^\d{9,20}$/.test(reg);
+
+        res.json({
+          success: true,
+          ...result,
+          formatValid: isKoreanFormat || isPlausibleDigits,
+          formatStrict: isKoreanFormat,
+          formatHint: isKoreanFormat
+            ? '한국 동물등록번호 형식(410으로 시작 · 15자리)과 일치합니다.'
+            : isPlausibleDigits
+            ? '숫자 형식은 맞지만 표준(410으로 시작 · 15자리)과 다릅니다. 확인해주세요.'
+            : '등록번호를 자동 인식하지 못했습니다. 사진을 더 선명하게 다시 촬영해주세요.',
+        });
+      } catch (error) {
+        logServerError('[등록증 OCR] 처리 실패:', error, req);
+        const isDev = process.env.NODE_ENV !== 'production';
+        res.status(500).json({
+          error: '등록증 분석에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          ...(isDev ? { detail: error instanceof Error ? error.message : String(error) } : {}),
+        });
+      }
+    }
+  );
+
   // 발급 조건 체크 + 발급 (기존 활성 토큰은 회수)
   app.post('/api/pets/:petId/passport/issue', requireAuth(), csrfProtection, async (req, res) => {
     try {

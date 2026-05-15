@@ -12,6 +12,124 @@ import { Plus, Edit, Trash2, Heart, Calendar, Weight, Upload, X, User, BookOpen,
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/ImageUpload';
 import { PetPassportCard } from '@/components/PetPassportCard';
+import { getCSRFToken } from '@/lib/csrf';
+import { Loader2, ScanLine } from 'lucide-react';
+
+interface RegistrationCardOcrInfo {
+  registrationNumber: string | null;
+  petName: string | null;
+  breed: string | null;
+  birthDate: string | null;
+  gender: string | null;
+  ownerName: string | null;
+  confidence: number;
+  formatValid: boolean;
+  formatStrict: boolean;
+  formatHint: string;
+}
+
+function RegistrationCardOcrUploader({
+  onExtracted,
+}: {
+  onExtracted: (info: RegistrationCardOcrInfo) => void;
+}) {
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+  const [lastResult, setLastResult] = useState<RegistrationCardOcrInfo | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({ title: '이미지 파일만 가능합니다', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast({ title: '파일이 너무 큽니다 (최대 8MB)', variant: 'destructive' });
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const csrf = await getCSRFToken();
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await fetch('/api/pets/registration-card/ocr', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRF-Token': csrf },
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || '등록증 분석에 실패했습니다');
+      }
+      setLastResult(data);
+      onExtracted(data);
+      if (data.registrationNumber) {
+        toast({
+          title: '등록번호를 자동 입력했습니다',
+          description: data.formatHint,
+        });
+      } else {
+        toast({
+          title: '등록번호를 인식하지 못했습니다',
+          description: data.formatHint,
+          variant: 'destructive',
+        });
+      }
+    } catch (e: any) {
+      toast({ title: '오류', description: e?.message || '분석 실패', variant: 'destructive' });
+    } finally {
+      setIsUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="mb-2">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleFile(f);
+        }}
+        data-testid="input-registration-card-photo"
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={isUploading}
+        onClick={() => inputRef.current?.click()}
+        data-testid="button-ocr-registration-card"
+      >
+        {isUploading ? (
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 등록증 분석 중…</>
+        ) : (
+          <><ScanLine className="w-4 h-4 mr-2" /> 등록증 사진으로 자동 입력</>
+        )}
+      </Button>
+      <p className="text-xs text-gray-500 mt-1">
+        동물보호관리시스템 발급 등록증을 촬영하면 등록번호를 자동 추출합니다.
+      </p>
+      {lastResult && (
+        <div className="mt-2 text-xs rounded border bg-gray-50 p-2 space-y-0.5">
+          <div>인식 신뢰도: <strong>{Math.round((lastResult.confidence || 0) * 100)}%</strong></div>
+          {lastResult.registrationNumber && (
+            <div className="font-mono">번호: {lastResult.registrationNumber}</div>
+          )}
+          {lastResult.breed && <div>품종: {lastResult.breed}</div>}
+          <div className={lastResult.formatStrict ? 'text-green-700' : 'text-amber-700'}>
+            {lastResult.formatHint}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const TEMPERAMENT_BADGE: Record<string, { label: string; color: string }> = {
   A: { label: 'A - 사회성 양호', color: 'bg-success/10 text-success' },
@@ -560,16 +678,30 @@ export default function MyPetsPage() {
                 </div>
                 
                 <div className="col-span-2">
-                  <Label htmlFor="registrationNumber">강아지 등록번호 <span className="text-xs text-gray-500">(예방접종 QR 여권 발급 시 필요)</span></Label>
+                  <Label htmlFor="registrationNumber">
+                    강아지 등록번호 <span className="text-xs text-gray-500">(예방접종 QR 여권 발급 시 필요)</span>
+                  </Label>
+                  <RegistrationCardOcrUploader
+                    onExtracted={(info) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        registrationNumber: info.registrationNumber || prev.registrationNumber,
+                        breed: !prev.breed && info.breed ? info.breed : prev.breed,
+                      }));
+                    }}
+                  />
                   <Input
                     id="registrationNumber"
                     value={formData.registrationNumber || ''}
                     onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value.toUpperCase() })}
-                    placeholder="예: 410123456789012"
+                    placeholder="예: 410123456789012 (등록증 사진을 올리면 자동 입력)"
                     maxLength={30}
+                    className="mt-2"
                     data-testid="input-registration-number"
                   />
-                  <p className="text-xs text-gray-500 mt-1">영문/숫자/하이픈만 입력 가능 (최대 30자)</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    한국 동물보호관리시스템(animal.go.kr) 발급 등록번호 — 보통 410으로 시작하는 15자리 숫자
+                  </p>
                 </div>
 
                 <div className="col-span-2">
