@@ -5,7 +5,7 @@
 import { toast } from '@/hooks/use-toast';
 
 // 사용자 역할 타입 정의
-export type UserRole = 'user' | 'pet-owner' | 'trainer' | 'institute-admin' | 'admin';
+export type UserRole = 'user' | 'pet-owner' | 'trainer' | 'institute-admin' | 'admin' | 'hospital';
 
 // 각 역할별 권한 레벨 (숫자가 클수록 더 높은 권한)
 export const ROLE_LEVELS: Record<UserRole, number> = {
@@ -13,6 +13,7 @@ export const ROLE_LEVELS: Record<UserRole, number> = {
   'pet-owner': 2,
   'trainer': 3,
   'institute-admin': 4,
+  'hospital': 4,
   'admin': 5
 };
 

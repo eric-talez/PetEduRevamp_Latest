@@ -334,6 +334,8 @@ export const vaccinations = pgTable("vaccinations", {
   hospitalDisplayName: varchar("hospital_display_name", { length: 200 }), // 인증한 병원 이름 (코드 발급 시 자동)
   hospitalVerifiedAt: timestamp("hospital_verified_at"),
   verifiedByCode: varchar("verified_by_code", { length: 32 }),
+  hospitalIssuerName: varchar("hospital_issuer_name", { length: 200 }),
+  hospitalUserId: integer("hospital_user_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2753,6 +2755,8 @@ export const insertVaccinationSchema = createInsertSchema(vaccinations, {
   hospitalDisplayName: true,
   hospitalVerifiedAt: true,
   verifiedByCode: true,
+  hospitalIssuerName: true,
+  hospitalUserId: true,
 });
 
 // 예방접종 수정 스키마

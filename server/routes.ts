@@ -895,6 +895,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS hospital_display_name varchar(200)`);
     await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS hospital_verified_at timestamp`);
     await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS verified_by_code varchar(32)`);
+    await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS hospital_issuer_name varchar(200)`);
+    await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS hospital_user_id integer`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS vaccine_verification_codes (
       id serial PRIMARY KEY,
       code varchar(32) NOT NULL UNIQUE,
@@ -21971,10 +21973,16 @@ export function registerTrainerCertificationRoutes(app: Express) {
         if (pre.revokedAt) throw new Error('CODE_REVOKED');
         if (pre.usedAt) throw new Error('CODE_USED');
         if (pre.expiresAt && new Date(pre.expiresAt).getTime() < Date.now()) throw new Error('CODE_EXPIRED');
-        if (pre.targetVaccineType && pre.targetVaccineType.toLowerCase() !== String(existing.vaccineName || '').toLowerCase()) {
+        if (pre.targetVaccineType && pre.targetVaccineType.toLowerCase() !== String(existing.vaccineType || '').toLowerCase()) {
           throw new Error('CODE_TYPE_MISMATCH');
         }
         const verifiedAt = new Date();
+        // 검증자(코드 발급자) 식별 — 인증 메타에 발급자 사용자명 함께 기록
+        let issuerDisplayName: string | null = null;
+        try {
+          const [issuer] = await tx.select().from(users).where(eq(users.id, pre.issuerUserId)).limit(1);
+          issuerDisplayName = (issuer as any)?.displayName || (issuer as any)?.username || (issuer as any)?.email || null;
+        } catch { /* best-effort */ }
         // 2) 원자적 사용 처리 — 동시성에서 1회만 성공 보장
         const claimed = await tx.update(codesTable).set({
           usedAt: verifiedAt,
@@ -21996,6 +22004,8 @@ export function registerTrainerCertificationRoutes(app: Express) {
           hospitalDisplayName: pre.hospitalName,
           hospitalVerifiedAt: verifiedAt,
           verifiedByCode: codeRaw,
+          hospitalIssuerName: issuerDisplayName,
+          hospitalUserId: pre.issuerUserId,
           updatedAt: verifiedAt,
         }).where(eq(vaccinations.id, id)).returning();
         // 메모리 폴백 동기화 (best-effort, 실패해도 DB가 진실)
@@ -22005,15 +22015,19 @@ export function registerTrainerCertificationRoutes(app: Express) {
             hospitalDisplayName: pre.hospitalName,
             hospitalVerifiedAt: verifiedAt,
             verifiedByCode: codeRaw,
-          });
+            hospitalIssuerName: issuerDisplayName,
+            hospitalUserId: pre.issuerUserId,
+          } as any);
         } catch { /* ignore mem-store sync errors */ }
-        return { code: claimed[0], updated: updatedRow || existing };
+        return { code: claimed[0], updated: updatedRow || existing, issuerDisplayName };
       });
 
       res.json({
         success: true,
         vaccination: result.updated,
         hospitalDisplayName: result.code.hospitalName,
+        hospitalIssuerName: result.issuerDisplayName,
+        hospitalIssuerUserId: result.code.issuerUserId,
       });
     } catch (error: any) {
       const msg = error?.message;
@@ -24637,6 +24651,9 @@ export function registerTrainerCertificationRoutes(app: Express) {
     verificationStatus?: string | null;
     hospitalDisplayName?: string | null;
     hospitalVerifiedAt?: Date | string | null;
+    hospitalIssuerName?: string | null;
+    hospitalUserId?: number | null;
+    vaccineType?: string | null;
   };
 
   async function loadPetForPassport(petId: number): Promise<PetLike | null> {
@@ -24694,6 +24711,8 @@ export function registerTrainerCertificationRoutes(app: Express) {
         hospitalVerifiedAt: v.hospitalVerifiedAt
           ? (v.hospitalVerifiedAt instanceof Date ? v.hospitalVerifiedAt.toISOString() : String(v.hospitalVerifiedAt))
           : null,
+        hospitalIssuerName: v.hospitalIssuerName || null,
+        hospitalIssuerUserId: v.hospitalUserId || null,
       };
     });
 
