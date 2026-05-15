@@ -1792,7 +1792,7 @@ function AuthenticatedRoutes() {
               <Suspense fallback={<div className="p-8 flex justify-center items-center">
                 <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>}>
-                <ProtectedAdminRoute component={AdminHospitalVaccineCodes} />
+                <ProtectedRoute component={AdminHospitalVaccineCodes} requiredRoles={['admin', 'hospital'] as any} />
               </Suspense>
             );
           }}

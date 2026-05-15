@@ -61,6 +61,7 @@ export default function VaccinationSchedulePage() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [verifyDialog, setVerifyDialog] = useState<{ open: boolean; vaccinationId: number | null }>({ open: false, vaccinationId: null });
   const [verifyCode, setVerifyCode] = useState('');
+  const [createCode, setCreateCode] = useState(''); // 등록 폼의 병원 인증 코드 (선택)
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -119,17 +120,30 @@ export default function VaccinationSchedulePage() {
   // 예방접종 스케줄 생성
   const createVaccinationMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('/api/vaccinations', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      const res = await apiRequest('POST', '/api/vaccinations', data);
+      try { return await res.json(); } catch { return res; }
     },
-    onSuccess: () => {
+    onSuccess: async (resp: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/vaccinations/user'] });
       queryClient.invalidateQueries({ queryKey: ['/api/vaccinations/upcoming'] });
       setIsVaccinationDialogOpen(false);
       setSelectedHospital(null);
       toast({ title: "예방접종 스케줄이 등록되었습니다" });
+      // 코드가 입력된 경우 즉시 병원 인증 호출
+      const trimmed = (createCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const newId = resp?.vaccination?.id ?? resp?.data?.id ?? resp?.id;
+      if (trimmed.length >= 6 && trimmed.length <= 8 && newId) {
+        try {
+          const vres = await apiRequest('PATCH', `/api/vaccinations/${newId}/verify`, { code: trimmed });
+          const vjson = await vres.json();
+          toast({ title: '병원 인증 완료', description: vjson?.hospitalDisplayName });
+          queryClient.invalidateQueries({ queryKey: ['/api/vaccinations/user'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/vaccinations/upcoming'] });
+        } catch (e: any) {
+          toast({ title: '병원 인증 실패', description: e?.message || '코드를 확인해주세요.', variant: 'destructive' });
+        }
+      }
+      setCreateCode('');
     },
     onError: (error: any) => {
       toast({ 
@@ -143,10 +157,7 @@ export default function VaccinationSchedulePage() {
   // 예방접종 스케줄 수정
   const updateVaccinationMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: any }) => {
-      return await apiRequest(`/api/vaccinations/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data)
-      });
+      return await apiRequest('PATCH', `/api/vaccinations/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vaccinations/user'] });
@@ -158,9 +169,7 @@ export default function VaccinationSchedulePage() {
   // 예방접종 스케줄 삭제
   const deleteVaccinationMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/vaccinations/${id}`, {
-        method: 'DELETE'
-      });
+      return await apiRequest('DELETE', `/api/vaccinations/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vaccinations/user'] });
@@ -476,6 +485,30 @@ export default function VaccinationSchedulePage() {
                             placeholder="특이사항이나 주의할 점을 메모하세요"
                             data-testid="input-notes"
                           />
+                        </div>
+
+                        <div className="space-y-2 p-3 rounded-md border border-blue-200 bg-blue-50/40 dark:bg-blue-950/20">
+                          <Label htmlFor="hospital-verify-code" className="flex items-center gap-1 text-sm">
+                            <BadgeCheck className="w-4 h-4 text-blue-600" /> 병원 인증 코드 (선택)
+                          </Label>
+                          <Input
+                            id="hospital-verify-code"
+                            value={createCode}
+                            maxLength={8}
+                            placeholder="병원에서 받은 6~8자 코드 (예: A3K7XB29)"
+                            className="font-mono tracking-widest uppercase"
+                            onChange={(e) => setCreateCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                            data-testid="input-create-verify-code"
+                          />
+                          <p className="text-xs text-gray-500">
+                            코드를 입력하면 등록 직후 자동으로 병원 인증 처리됩니다.
+                            {createCode.length > 0 && createCode.length < 6 && (
+                              <span className="text-amber-600"> ({6 - createCode.length}자 더 필요)</span>
+                            )}
+                            {createCode.length >= 6 && (
+                              <span className="text-blue-600"> · 등록 시 자동 인증됩니다</span>
+                            )}
+                          </p>
                         </div>
 
                         <Button 

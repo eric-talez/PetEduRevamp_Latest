@@ -2747,7 +2747,12 @@ export const insertVaccinationSchema = createInsertSchema(vaccinations, {
 }).omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+  // Task #225 — 병원 인증 메타데이터는 서버 전용 (PATCH /verify에서만 갱신)
+  verificationStatus: true,
+  hospitalDisplayName: true,
+  hospitalVerifiedAt: true,
+  verifiedByCode: true,
 });
 
 // 예방접종 수정 스키마
