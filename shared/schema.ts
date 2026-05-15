@@ -361,6 +361,47 @@ export const insertVaccineVerificationCodeSchema = createInsertSchema(vaccineVer
 });
 export type VaccineVerificationCode = typeof vaccineVerificationCodes.$inferSelect;
 
+// Task #226 — 훈련 인증 배지 정의 (시스템 시드 + 기관 커스텀)
+export const trainingBadgeDefinitions = pgTable("training_badge_definitions", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 60 }).notNull().unique(),
+  label: varchar("label", { length: 100 }).notNull(),
+  category: varchar("category", { length: 40 }).notNull(),
+  level: integer("level"),
+  description: text("description"),
+  iconKey: varchar("icon_key", { length: 40 }),
+  issuerScope: varchar("issuer_scope", { length: 20 }).default("system").notNull(),
+  instituteId: integer("institute_id"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export const insertTrainingBadgeDefinitionSchema = createInsertSchema(trainingBadgeDefinitions).omit({
+  id: true, createdAt: true, isActive: true,
+});
+export type TrainingBadgeDefinition = typeof trainingBadgeDefinitions.$inferSelect;
+export type InsertTrainingBadgeDefinition = z.infer<typeof insertTrainingBadgeDefinitionSchema>;
+
+// Task #226 — 펫에게 발급된 훈련 인증 배지
+export const petTrainingBadges = pgTable("pet_training_badges", {
+  id: serial("id").primaryKey(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  badgeDefinitionId: integer("badge_definition_id").references(() => trainingBadgeDefinitions.id).notNull(),
+  issuerTrainerUserId: integer("issuer_trainer_user_id").references(() => users.id).notNull(),
+  issuerInstituteId: integer("issuer_institute_id"),
+  comment: text("comment"),
+  sourceJournalId: integer("source_journal_id"),
+  issuedAt: timestamp("issued_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+  revokedAt: timestamp("revoked_at"),
+  revokeReason: text("revoke_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export const insertPetTrainingBadgeSchema = createInsertSchema(petTrainingBadges).omit({
+  id: true, issuedAt: true, revokedAt: true, revokeReason: true, createdAt: true,
+});
+export type PetTrainingBadge = typeof petTrainingBadges.$inferSelect;
+export type InsertPetTrainingBadge = z.infer<typeof insertPetTrainingBadgeSchema>;
+
 // 반려동물 예방접종 QR 여권 토큰 테이블
 export const petVaccinationPassports = pgTable("pet_vaccination_passports", {
   id: serial("id").primaryKey(),

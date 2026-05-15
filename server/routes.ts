@@ -5,7 +5,7 @@ import { randomBytes, createHmac, createHash, timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, isNull, gt, desc, or, ilike, inArray } from "drizzle-orm";
-import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports, petLostReports, vaccineVerificationCodes, reservations as reservationsTable } from "../shared/schema";
+import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports, petLostReports, vaccineVerificationCodes, trainingBadgeDefinitions, petTrainingBadges, insertPetTrainingBadgeSchema, reservations as reservationsTable } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
 import { registerDashboardRoutes } from "./routes/dashboard";
@@ -912,7 +912,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       created_at timestamp DEFAULT now() NOT NULL
     )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS vaccine_verification_codes_issuer_idx ON vaccine_verification_codes(issuer_user_id, created_at DESC)`);
-    console.log('✅ 펫스포트 분실모드/병원인증 컬럼·테이블 보장 완료');
+
+    // Task #226 — 훈련 인증 배지
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS training_badge_definitions (
+      id serial PRIMARY KEY,
+      code varchar(60) NOT NULL UNIQUE,
+      label varchar(100) NOT NULL,
+      category varchar(40) NOT NULL,
+      level integer,
+      description text,
+      icon_key varchar(40),
+      issuer_scope varchar(20) DEFAULT 'system' NOT NULL,
+      institute_id integer,
+      is_active boolean DEFAULT true NOT NULL,
+      created_at timestamp DEFAULT now() NOT NULL
+    )`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS pet_training_badges (
+      id serial PRIMARY KEY,
+      pet_id integer NOT NULL REFERENCES pets(id),
+      badge_definition_id integer NOT NULL REFERENCES training_badge_definitions(id),
+      issuer_trainer_user_id integer NOT NULL REFERENCES users(id),
+      issuer_institute_id integer,
+      comment text,
+      source_journal_id integer,
+      issued_at timestamp DEFAULT now() NOT NULL,
+      expires_at timestamp,
+      revoked_at timestamp,
+      revoke_reason text,
+      created_at timestamp DEFAULT now() NOT NULL
+    )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_training_badges_pet_idx ON pet_training_badges(pet_id, issued_at DESC)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_training_badges_trainer_idx ON pet_training_badges(issuer_trainer_user_id, issued_at DESC)`);
+
+    // 시스템 시드 배지 (10개) — code unique 기준 ON CONFLICT 무시
+    const seedBadges: Array<{ code: string; label: string; category: string; level: number | null; description: string; iconKey: string }> = [
+      { code: 'social_lv1', label: '사회성 Lv1', category: 'social', level: 1, description: '낯선 사람·강아지에게 안정적으로 반응', iconKey: 'users' },
+      { code: 'social_lv2', label: '사회성 Lv2', category: 'social', level: 2, description: '다견 환경에서 자가 진정 가능', iconKey: 'users' },
+      { code: 'social_lv3', label: '사회성 Lv3', category: 'social', level: 3, description: '복합 자극 상황에서도 사회적 행동 유지', iconKey: 'users' },
+      { code: 'cafe_manner', label: '카페매너', category: 'manner', level: null, description: '실내 공공 공간에서 30분 이상 안정 유지', iconKey: 'coffee' },
+      { code: 'leash_walk_lv1', label: '리드워크 Lv1', category: 'leash', level: 1, description: '직선 산책 동안 줄 당김 없음', iconKey: 'route' },
+      { code: 'leash_walk_lv2', label: '리드워크 Lv2', category: 'leash', level: 2, description: '복잡한 도심 환경 산책 통과', iconKey: 'route' },
+      { code: 'large_dog_control', label: '대형견 컨트롤', category: 'control', level: null, description: '20kg 이상 대형견 핸들링 통과', iconKey: 'shield' },
+      { code: 'separation_anxiety_pass', label: '분리불안 통과', category: 'behavior', level: null, description: '단계적 부재 훈련 4주 완료', iconKey: 'home' },
+      { code: 'nosework_intro', label: '노즈워크 입문', category: 'enrichment', level: null, description: '기초 후각 게임 5종 완수', iconKey: 'sparkles' },
+      { code: 'recall_basic', label: '기본 호출 응답', category: 'obedience', level: null, description: '5m 거리 호출 90% 성공', iconKey: 'megaphone' },
+    ];
+    for (const b of seedBadges) {
+      await db.execute(sql`
+        INSERT INTO training_badge_definitions (code, label, category, level, description, icon_key, issuer_scope)
+        VALUES (${b.code}, ${b.label}, ${b.category}, ${b.level}, ${b.description}, ${b.iconKey}, 'system')
+        ON CONFLICT (code) DO NOTHING
+      `);
+    }
+    console.log('✅ 펫스포트 분실모드/병원인증/훈련배지 컬럼·테이블 보장 완료');
   } catch (e) {
     logServerError('⚠️ 분실모드 마이그레이션 실패(무시):', e);
   }
@@ -25186,6 +25238,300 @@ export function registerTrainerCertificationRoutes(app: Express) {
   });
 
   // 공개 검증 (rate-limited)
+  // =============================================================================
+  // Task #226 — 훈련 인증 배지
+  // =============================================================================
+
+  async function loadActiveBadgesForPet(petId: number): Promise<Array<{
+    id: number; code: string; label: string; category: string; level: number | null;
+    description: string | null; iconKey: string | null; comment: string | null;
+    issuerTrainerName: string | null; issuedAt: string; expiresAt: string | null;
+  }>> {
+    const rows = await db
+      .select({
+        id: petTrainingBadges.id,
+        comment: petTrainingBadges.comment,
+        issuedAt: petTrainingBadges.issuedAt,
+        expiresAt: petTrainingBadges.expiresAt,
+        issuerTrainerUserId: petTrainingBadges.issuerTrainerUserId,
+        code: trainingBadgeDefinitions.code,
+        label: trainingBadgeDefinitions.label,
+        category: trainingBadgeDefinitions.category,
+        level: trainingBadgeDefinitions.level,
+        description: trainingBadgeDefinitions.description,
+        iconKey: trainingBadgeDefinitions.iconKey,
+        trainerName: users.name,
+      })
+      .from(petTrainingBadges)
+      .innerJoin(trainingBadgeDefinitions, eq(petTrainingBadges.badgeDefinitionId, trainingBadgeDefinitions.id))
+      .leftJoin(users, eq(petTrainingBadges.issuerTrainerUserId, users.id))
+      .where(and(
+        eq(petTrainingBadges.petId, petId),
+        isNull(petTrainingBadges.revokedAt),
+      ))
+      .orderBy(desc(petTrainingBadges.issuedAt));
+    const now = Date.now();
+    return rows
+      .filter(r => !r.expiresAt || new Date(r.expiresAt).getTime() > now)
+      .map(r => ({
+        id: r.id,
+        code: r.code,
+        label: r.label,
+        category: r.category,
+        level: r.level,
+        description: r.description,
+        iconKey: r.iconKey,
+        comment: r.comment,
+        issuerTrainerName: r.trainerName,
+        issuedAt: new Date(r.issuedAt).toISOString(),
+        expiresAt: r.expiresAt ? new Date(r.expiresAt).toISOString() : null,
+      }));
+  }
+
+  async function trainerCanIssueForPet(trainerUserId: number, petId: number): Promise<boolean> {
+    const [pet] = await db.select({ assignedTrainerId: pets.assignedTrainerId, ownerId: pets.ownerId })
+      .from(pets).where(eq(pets.id, petId)).limit(1);
+    if (!pet) return false;
+    if (pet.assignedTrainerId === trainerUserId) return true;
+    const [assignment] = await db.select({ id: trainerClientAssignments.id })
+      .from(trainerClientAssignments)
+      .where(and(
+        eq(trainerClientAssignments.trainerId, trainerUserId),
+        eq(trainerClientAssignments.petId, petId),
+      ))
+      .limit(1);
+    return !!assignment;
+  }
+
+  // 사용 가능한 배지 정의 목록 (system + 트레이너 소속 기관 커스텀)
+  app.get('/api/badge-definitions', requireAuth(), async (_req, res) => {
+    try {
+      const defs = await db.select().from(trainingBadgeDefinitions)
+        .where(eq(trainingBadgeDefinitions.isActive, true))
+        .orderBy(trainingBadgeDefinitions.category, trainingBadgeDefinitions.level);
+      res.json({ success: true, definitions: defs });
+    } catch (e) {
+      logServerError('[Badge] 정의 목록 조회 실패:', e, _req);
+      res.status(500).json({ success: false, error: '배지 정의를 불러올 수 없습니다.' });
+    }
+  });
+
+  // 트레이너가 발급한 배지 목록
+  app.get('/api/trainer/badges', requireAuth('trainer'), async (req, res) => {
+    try {
+      const trainerId = (req.user as { id: number }).id;
+      const petIdParam = req.query.petId ? Number(req.query.petId) : null;
+      const conditions = [eq(petTrainingBadges.issuerTrainerUserId, trainerId)];
+      if (petIdParam && Number.isFinite(petIdParam)) {
+        conditions.push(eq(petTrainingBadges.petId, petIdParam));
+      }
+      const rows = await db
+        .select({
+          id: petTrainingBadges.id,
+          petId: petTrainingBadges.petId,
+          comment: petTrainingBadges.comment,
+          issuedAt: petTrainingBadges.issuedAt,
+          revokedAt: petTrainingBadges.revokedAt,
+          revokeReason: petTrainingBadges.revokeReason,
+          expiresAt: petTrainingBadges.expiresAt,
+          code: trainingBadgeDefinitions.code,
+          label: trainingBadgeDefinitions.label,
+          category: trainingBadgeDefinitions.category,
+          level: trainingBadgeDefinitions.level,
+          iconKey: trainingBadgeDefinitions.iconKey,
+          petName: pets.name,
+          petUid: pets.petUid,
+        })
+        .from(petTrainingBadges)
+        .innerJoin(trainingBadgeDefinitions, eq(petTrainingBadges.badgeDefinitionId, trainingBadgeDefinitions.id))
+        .leftJoin(pets, eq(petTrainingBadges.petId, pets.id))
+        .where(and(...conditions))
+        .orderBy(desc(petTrainingBadges.issuedAt));
+      res.json({ success: true, badges: rows });
+    } catch (e) {
+      logServerError('[Badge] 트레이너 배지 목록 조회 실패:', e, req);
+      res.status(500).json({ success: false, error: '배지 목록을 불러올 수 없습니다.' });
+    }
+  });
+
+  // 트레이너 배지 발급
+  const issueBadgeBodySchema = z.object({
+    petId: z.number().int().positive(),
+    badgeDefinitionId: z.number().int().positive(),
+    comment: z.string().max(500).optional().nullable(),
+    expiresAt: z.string().datetime().optional().nullable(),
+    sourceJournalId: z.number().int().positive().optional().nullable(),
+  });
+  app.post('/api/trainer/badges', requireAuth('trainer'), csrfProtection, async (req, res) => {
+    try {
+      const parsed = issueBadgeBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ success: false, error: '입력값이 올바르지 않습니다.', details: parsed.error.errors });
+      }
+      const trainerId = (req.user as { id: number }).id;
+      const { petId, badgeDefinitionId, comment, expiresAt, sourceJournalId } = parsed.data;
+
+      const allowed = await trainerCanIssueForPet(trainerId, petId);
+      if (!allowed) {
+        return res.status(403).json({ success: false, error: '해당 반려동물의 담당 트레이너가 아닙니다.' });
+      }
+      const [def] = await db.select().from(trainingBadgeDefinitions)
+        .where(and(eq(trainingBadgeDefinitions.id, badgeDefinitionId), eq(trainingBadgeDefinitions.isActive, true)))
+        .limit(1);
+      if (!def) {
+        return res.status(404).json({ success: false, error: '배지 정의를 찾을 수 없습니다.' });
+      }
+      // 배지 발급 권한: system 스코프는 누구나, institute 스코프는 같은 기관 트레이너만
+      if (def.issuerScope !== 'system') {
+        const [trainerRow] = await db.select({ instituteId: users.instituteId })
+          .from(users).where(eq(users.id, trainerId)).limit(1);
+        if (!trainerRow || !def.instituteId || trainerRow.instituteId !== def.instituteId) {
+          return res.status(403).json({ success: false, error: '해당 배지를 발급할 권한이 없습니다.' });
+        }
+      }
+      const [pet] = await db.select({ id: pets.id, name: pets.name, ownerId: pets.ownerId })
+        .from(pets).where(eq(pets.id, petId)).limit(1);
+      if (!pet) {
+        return res.status(404).json({ success: false, error: '반려동물을 찾을 수 없습니다.' });
+      }
+      // 중복 방지: 동일 정의의 활성(미회수) 배지가 이미 있으면 차단
+      const [existingActive] = await db.select({ id: petTrainingBadges.id })
+        .from(petTrainingBadges)
+        .where(and(
+          eq(petTrainingBadges.petId, petId),
+          eq(petTrainingBadges.badgeDefinitionId, badgeDefinitionId),
+          isNull(petTrainingBadges.revokedAt),
+        ))
+        .limit(1);
+      if (existingActive) {
+        return res.status(409).json({ success: false, error: '동일한 배지가 이미 발급되어 있습니다.' });
+      }
+      const [inserted] = await db.insert(petTrainingBadges).values({
+        petId,
+        badgeDefinitionId,
+        issuerTrainerUserId: trainerId,
+        issuerInstituteId: null,
+        comment: comment || null,
+        sourceJournalId: sourceJournalId || null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      }).returning();
+
+      try {
+        await notificationService.sendNotification({
+          userId: pet.ownerId,
+          type: 'training',
+          title: '훈련 인증 배지를 받았어요',
+          message: `${pet.name}이(가) "${def.label}" 배지를 받았습니다.`,
+          actionUrl: '/my-pets',
+          data: { badgeId: inserted.id, badgeCode: def.code, petId },
+        });
+      } catch (notifyErr) {
+        logServerError('[Badge] 발급 알림 실패:', notifyErr, req);
+      }
+
+      try {
+        await recordAuditLog(req, {
+          action: 'badge.issue',
+          targetType: 'pet',
+          targetId: petId,
+          payload: { badgeId: inserted.id, badgeCode: def.code },
+        });
+      } catch {}
+
+      res.json({ success: true, badge: inserted });
+    } catch (e) {
+      logServerError('[Badge] 발급 실패:', e, req);
+      res.status(500).json({ success: false, error: '배지 발급 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 트레이너 배지 회수 (자기 발급분만)
+  const revokeBadgeBodySchema = z.object({ reason: z.string().min(1).max(500) });
+  app.delete('/api/trainer/badges/:id', requireAuth('trainer'), csrfProtection, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id <= 0) {
+        return res.status(400).json({ success: false, error: '잘못된 배지 ID' });
+      }
+      const parsed = revokeBadgeBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ success: false, error: '회수 사유를 입력해주세요.' });
+      }
+      const trainerId = (req.user as { id: number }).id;
+      const [existing] = await db.select().from(petTrainingBadges)
+        .where(eq(petTrainingBadges.id, id)).limit(1);
+      if (!existing) return res.status(404).json({ success: false, error: '배지를 찾을 수 없습니다.' });
+      if (existing.issuerTrainerUserId !== trainerId) {
+        return res.status(403).json({ success: false, error: '본인이 발급한 배지만 회수할 수 있습니다.' });
+      }
+      if (existing.revokedAt) {
+        return res.status(409).json({ success: false, error: '이미 회수된 배지입니다.' });
+      }
+      await db.update(petTrainingBadges)
+        .set({ revokedAt: new Date(), revokeReason: parsed.data.reason })
+        .where(eq(petTrainingBadges.id, id));
+
+      const [def] = await db.select({ label: trainingBadgeDefinitions.label, code: trainingBadgeDefinitions.code })
+        .from(trainingBadgeDefinitions).where(eq(trainingBadgeDefinitions.id, existing.badgeDefinitionId)).limit(1);
+      const [pet] = await db.select({ name: pets.name, ownerId: pets.ownerId })
+        .from(pets).where(eq(pets.id, existing.petId)).limit(1);
+      if (pet && def) {
+        try {
+          await notificationService.sendNotification({
+            userId: pet.ownerId,
+            type: 'training',
+            title: '훈련 인증 배지가 회수되었습니다',
+            message: `${pet.name}의 "${def.label}" 배지가 회수되었습니다. 사유: ${parsed.data.reason}`,
+            actionUrl: '/my-pets',
+            data: { badgeId: id, badgeCode: def.code, petId: existing.petId, reason: parsed.data.reason },
+          });
+        } catch (notifyErr) {
+          logServerError('[Badge] 회수 알림 실패:', notifyErr, req);
+        }
+      }
+
+      try {
+        await recordAuditLog(req, {
+          action: 'badge.revoke',
+          targetType: 'pet_training_badge',
+          targetId: id,
+          payload: { reason: parsed.data.reason },
+        });
+      } catch {}
+
+      res.json({ success: true });
+    } catch (e) {
+      logServerError('[Badge] 회수 실패:', e, req);
+      res.status(500).json({ success: false, error: '배지 회수 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 펫의 활성 배지 조회 (보호자 + 담당 트레이너)
+  app.get('/api/pets/:id/badges', requireAuth(), async (req, res) => {
+    try {
+      const petId = Number(req.params.id);
+      if (!Number.isFinite(petId) || petId <= 0) {
+        return res.status(400).json({ success: false, error: '잘못된 반려동물 ID' });
+      }
+      const userId = (req.user as { id: number; role?: string }).id;
+      const role = (req.user as { role?: string }).role;
+      const [pet] = await db.select({ ownerId: pets.ownerId }).from(pets)
+        .where(eq(pets.id, petId)).limit(1);
+      if (!pet) return res.status(404).json({ success: false, error: '반려동물을 찾을 수 없습니다.' });
+      const isOwner = pet.ownerId === userId;
+      const isTrainer = role === 'trainer' && await trainerCanIssueForPet(userId, petId);
+      const isAdmin = role === 'admin' || role === 'institute-admin';
+      if (!isOwner && !isTrainer && !isAdmin) {
+        return res.status(403).json({ success: false, error: '권한이 없습니다.' });
+      }
+      const badges = await loadActiveBadgesForPet(petId);
+      res.json({ success: true, badges });
+    } catch (e) {
+      logServerError('[Badge] 펫 배지 조회 실패:', e, req);
+      res.status(500).json({ success: false, error: '배지를 불러올 수 없습니다.' });
+    }
+  });
+
   app.get('/api/pet-passport/verify/:token', async (req, res) => {
     try {
       const ip = (req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown').toString();
@@ -25219,6 +25565,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const pet = await loadPetForPassport(passport.petId);
       if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
       const summary = await buildVaccineSummary(passport.petId);
+      const activeBadges = await loadActiveBadgesForPet(passport.petId);
 
       // 분실모드 상태 (보호자 PII는 마스킹). 연락처는 보호자가 분실모드에서 명시한 값만 노출.
       let ownerName: string | null = null;
@@ -25260,6 +25607,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         },
         vaccinations: summary.items,
         overallStatus: summary.overallStatus,
+        activeBadges,
         verifiedAt: new Date().toISOString(),
         verifyCount: nextCount,
         signature: signatureValid ? {

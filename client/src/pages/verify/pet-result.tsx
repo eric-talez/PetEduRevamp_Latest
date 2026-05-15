@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, ArrowLeft, Camera, Siren, MapPin, Phone, Send, Check, BadgeCheck } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, ArrowLeft, Camera, Siren, MapPin, Phone, Send, Check, BadgeCheck, Award } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,19 @@ interface VerifyResponse {
     hospitalIssuerUserId?: number | null;
   }>;
   overallStatus: "all_ok" | "has_expiring" | "has_expired" | "no_records";
+  activeBadges?: Array<{
+    id: number;
+    code: string;
+    label: string;
+    category: string;
+    level: number | null;
+    description: string | null;
+    iconKey: string | null;
+    comment: string | null;
+    issuerTrainerName: string | null;
+    issuedAt: string;
+    expiresAt: string | null;
+  }>;
   verifiedAt: string;
   verifyCount: number;
   signature?: {
@@ -491,6 +504,45 @@ export default function PetVerifyResult() {
             )}
           </CardContent>
         </Card>
+
+        {data.activeBadges && data.activeBadges.length > 0 && (
+          <Card data-testid="card-verify-badges" className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-primary">
+                <Award className="w-5 h-5" />
+                훈련 인증 ({data.activeBadges.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {data.activeBadges.map((b) => (
+                  <div
+                    key={b.id}
+                    className="flex items-start justify-between p-3 rounded-lg border border-primary/20 bg-primary/5"
+                    data-testid={`row-verify-badge-${b.id}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge className="bg-primary/15 text-primary border-primary/40">
+                          <Award className="w-3 h-3 mr-1" />
+                          {b.label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        {b.issuerTrainerName && <>발급: {b.issuerTrainerName} · </>}
+                        {new Date(b.issuedAt).toLocaleDateString()}
+                        {b.expiresAt && <> · 유효기간 {new Date(b.expiresAt).toLocaleDateString()}까지</>}
+                      </p>
+                      {b.comment && (
+                        <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{b.comment}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <p className="text-xs text-center text-gray-500">
           본 정보는 보호자가 등록한 데이터에 기반합니다. TALEZ는 정보의 정확성을 보장하지 않습니다.

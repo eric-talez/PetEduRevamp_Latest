@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { QRCodeCanvas } from "qrcode.react";
-import { ShieldCheck, ShieldAlert, RefreshCw, Loader2, Download, Copy, Check, Siren, MapPin } from "lucide-react";
+import { ShieldCheck, ShieldAlert, RefreshCw, Loader2, Download, Copy, Check, Siren, MapPin, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,55 @@ interface PassportResponse {
     totalCount: number;
     overallStatus: "all_ok" | "has_expiring" | "has_expired" | "no_records";
   };
+}
+
+interface ActiveBadge {
+  id: number;
+  code: string;
+  label: string;
+  category: string;
+  level: number | null;
+  description: string | null;
+  iconKey: string | null;
+  comment: string | null;
+  issuerTrainerName: string | null;
+  issuedAt: string;
+  expiresAt: string | null;
+}
+
+function PetBadgesSection({ petId }: { petId: number }) {
+  const { data, isLoading } = useQuery<{ success: boolean; badges: ActiveBadge[] }>({
+    queryKey: ["/api/pets", petId, "badges"],
+    queryFn: async () => {
+      const res = await fetch(`/api/pets/${petId}/badges`, { credentials: "include" });
+      if (!res.ok) throw new Error("배지 조회 실패");
+      return res.json();
+    },
+  });
+  if (isLoading) return null;
+  const badges = data?.badges || [];
+  if (badges.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2" data-testid={`section-badges-${petId}`}>
+      <div className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+        <Award className="w-4 h-4" /> 훈련 인증 ({badges.length})
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {badges.map((b) => (
+          <Badge
+            key={b.id}
+            variant="outline"
+            className="bg-white dark:bg-gray-900 border-primary/40 text-primary text-xs"
+            title={`${b.issuerTrainerName ? `${b.issuerTrainerName} 발급 · ` : ""}${new Date(b.issuedAt).toLocaleDateString()}${b.comment ? ` · ${b.comment}` : ""}`}
+            data-testid={`badge-cert-${b.id}`}
+          >
+            <Award className="w-3 h-3 mr-1" />
+            {b.label}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function PetPassportCard({ petId, petName, petUid }: Props) {
@@ -378,6 +427,7 @@ export function PetPassportCard({ petId, petName, petUid }: Props) {
             QR 여권 발급하기
           </Button>
         )}
+        <PetBadgesSection petId={petId} />
       </CardContent>
 
       <Dialog open={lostDialogOpen} onOpenChange={setLostDialogOpen}>

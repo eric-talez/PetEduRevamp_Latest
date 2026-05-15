@@ -915,6 +915,17 @@ function AuthenticatedRoutes() {
           }}
         </Route>
 
+        <Route path="/trainer/badges">
+          {() => {
+            const TrainerBadgesPage = lazy(() => import('./pages/trainer/badges'));
+            return (
+              <Suspense fallback={<SimpleLoading />}>
+                <ProtectedTrainerRoute component={TrainerBadgesPage} />
+              </Suspense>
+            );
+          }}
+        </Route>
+
         <Route path="/trainer/notebook/templates">
           {() => {
             const TemplatesPage = lazy(() => import('./pages/trainer/notebook/templates'));
