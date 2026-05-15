@@ -58,6 +58,7 @@ export default function PetVerifyResult() {
   const [reportForm, setReportForm] = useState({
     finderName: "",
     finderPhone: "",
+    finderContactWindow: "",
     locationText: "",
     memo: "",
     lat: null as number | null,
@@ -277,6 +278,16 @@ export default function PetVerifyResult() {
                         data-testid="input-finder-phone"
                       />
                     </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="finder-window" className="text-sm">연락 가능 시간 (선택)</Label>
+                    <Input
+                      id="finder-window"
+                      placeholder="예: 평일 18시 이후, 언제든"
+                      value={reportForm.finderContactWindow}
+                      onChange={(e) => setReportForm((p) => ({ ...p, finderContactWindow: e.target.value.slice(0, 100) }))}
+                      data-testid="input-finder-window"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="finder-loc" className="text-sm flex items-center gap-1">

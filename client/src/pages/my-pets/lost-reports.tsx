@@ -12,6 +12,7 @@ interface LostReport {
   passportId: number;
   finderName: string | null;
   finderPhone: string | null;
+  finderContactWindow: string | null;
   lat: number | null;
   lng: number | null;
   locationText: string | null;
@@ -127,6 +128,11 @@ export default function LostReportsPage() {
                             >
                               <Phone className="w-3.5 h-3.5" /> {r.finderPhone}
                             </a>
+                          )}
+                          {r.finderContactWindow && (
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              연락 가능: {r.finderContactWindow}
+                            </span>
                           )}
                         </div>
                       )}

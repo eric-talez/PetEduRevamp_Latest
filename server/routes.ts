@@ -873,6 +873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       owner_id integer NOT NULL REFERENCES users(id),
       finder_name varchar(100),
       finder_phone varchar(30),
+      finder_contact_window varchar(100),
       lat double precision,
       lng double precision,
       location_text text,
@@ -882,6 +883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       owner_notified_at timestamp,
       created_at timestamp DEFAULT now() NOT NULL
     )`);
+    await db.execute(sql`ALTER TABLE pet_lost_reports ADD COLUMN IF NOT EXISTS finder_contact_window varchar(100)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_lost_reports_owner_idx ON pet_lost_reports(owner_id, created_at DESC)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_lost_reports_pet_idx ON pet_lost_reports(pet_id, created_at DESC)`);
     console.log('✅ 펫스포트 분실모드 컬럼/테이블 보장 완료');
@@ -24704,6 +24706,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
   const reportFoundSchema = z.object({
     finderName: z.string().max(100).optional().nullable(),
     finderPhone: z.string().max(30).optional().nullable(),
+    finderContactWindow: z.string().max(100).optional().nullable(),
     lat: z.number().min(-90).max(90).optional().nullable(),
     lng: z.number().min(-180).max(180).optional().nullable(),
     locationText: z.string().max(500).optional().nullable(),
@@ -24750,6 +24753,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
           ownerId: passport.ownerId,
           finderName: parsed.data.finderName ?? null,
           finderPhone: parsed.data.finderPhone ?? null,
+          finderContactWindow: parsed.data.finderContactWindow ?? null,
           lat: parsed.data.lat ?? null,
           lng: parsed.data.lng ?? null,
           locationText: parsed.data.locationText ?? null,

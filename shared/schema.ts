@@ -375,6 +375,7 @@ export const petLostReports = pgTable("pet_lost_reports", {
   ownerId: integer("owner_id").references(() => users.id).notNull(),
   finderName: varchar("finder_name", { length: 100 }),
   finderPhone: varchar("finder_phone", { length: 30 }),
+  finderContactWindow: varchar("finder_contact_window", { length: 100 }),
   lat: doublePrecision("lat"),
   lng: doublePrecision("lng"),
   locationText: text("location_text"),
