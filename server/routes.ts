@@ -25246,6 +25246,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
     id: number; code: string; label: string; category: string; level: number | null;
     description: string | null; iconKey: string | null; comment: string | null;
     issuerTrainerName: string | null; issuedAt: string; expiresAt: string | null;
+    sourceJournalId: number | null;
   }>> {
     const rows = await db
       .select({
@@ -25253,6 +25254,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         comment: petTrainingBadges.comment,
         issuedAt: petTrainingBadges.issuedAt,
         expiresAt: petTrainingBadges.expiresAt,
+        sourceJournalId: petTrainingBadges.sourceJournalId,
         issuerTrainerUserId: petTrainingBadges.issuerTrainerUserId,
         code: trainingBadgeDefinitions.code,
         label: trainingBadgeDefinitions.label,
@@ -25285,6 +25287,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         issuerTrainerName: r.trainerName,
         issuedAt: new Date(r.issuedAt).toISOString(),
         expiresAt: r.expiresAt ? new Date(r.expiresAt).toISOString() : null,
+        sourceJournalId: r.sourceJournalId ?? null,
       }));
   }
 
@@ -25303,15 +25306,28 @@ export function registerTrainerCertificationRoutes(app: Express) {
     return !!assignment;
   }
 
-  // 사용 가능한 배지 정의 목록 (system + 트레이너 소속 기관 커스텀)
-  app.get('/api/badge-definitions', requireAuth(), async (_req, res) => {
+  // 사용 가능한 배지 정의 목록 (system + 요청자 소속 기관 커스텀만)
+  app.get('/api/badge-definitions', requireAuth(), async (req, res) => {
     try {
+      const userId = (req.user as { id: number }).id;
+      const [me] = await db.select({ instituteId: users.instituteId }).from(users)
+        .where(eq(users.id, userId)).limit(1);
+      const myInstituteId = me?.instituteId ?? null;
+      const scopeFilter = myInstituteId
+        ? or(
+            eq(trainingBadgeDefinitions.issuerScope, 'system'),
+            and(
+              eq(trainingBadgeDefinitions.issuerScope, 'institute'),
+              eq(trainingBadgeDefinitions.instituteId, myInstituteId),
+            ),
+          )
+        : eq(trainingBadgeDefinitions.issuerScope, 'system');
       const defs = await db.select().from(trainingBadgeDefinitions)
-        .where(eq(trainingBadgeDefinitions.isActive, true))
+        .where(and(eq(trainingBadgeDefinitions.isActive, true), scopeFilter))
         .orderBy(trainingBadgeDefinitions.category, trainingBadgeDefinitions.level);
       res.json({ success: true, definitions: defs });
     } catch (e) {
-      logServerError('[Badge] 정의 목록 조회 실패:', e, _req);
+      logServerError('[Badge] 정의 목록 조회 실패:', e, req);
       res.status(500).json({ success: false, error: '배지 정의를 불러올 수 없습니다.' });
     }
   });
@@ -25395,15 +25411,19 @@ export function registerTrainerCertificationRoutes(app: Express) {
         return res.status(404).json({ success: false, error: '반려동물을 찾을 수 없습니다.' });
       }
       // 중복 방지: 동일 정의의 활성(미회수, 미만료) 배지가 이미 있으면 차단
-      const [existingActive] = await db.select({ id: petTrainingBadges.id, expiresAt: petTrainingBadges.expiresAt })
+      const [existingActive] = await db.select({ id: petTrainingBadges.id })
         .from(petTrainingBadges)
         .where(and(
           eq(petTrainingBadges.petId, petId),
           eq(petTrainingBadges.badgeDefinitionId, badgeDefinitionId),
           isNull(petTrainingBadges.revokedAt),
+          or(
+            isNull(petTrainingBadges.expiresAt),
+            gt(petTrainingBadges.expiresAt, new Date()),
+          ),
         ))
         .limit(1);
-      if (existingActive && (!existingActive.expiresAt || new Date(existingActive.expiresAt).getTime() > Date.now())) {
+      if (existingActive) {
         return res.status(409).json({ success: false, error: '동일한 배지가 이미 발급되어 있습니다.' });
       }
       const [inserted] = await db.insert(petTrainingBadges).values({

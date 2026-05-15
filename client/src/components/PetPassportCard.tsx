@@ -58,6 +58,7 @@ interface ActiveBadge {
   issuerTrainerName: string | null;
   issuedAt: string;
   expiresAt: string | null;
+  sourceJournalId: number | null;
 }
 
 function PetBadgesSection({ petId }: { petId: number }) {
@@ -124,6 +125,20 @@ function PetBadgesSection({ petId }: { petId: number }) {
                   <>
                     <span className="text-gray-500">코멘트</span>
                     <span className="col-span-2 whitespace-pre-wrap">{selected.comment}</span>
+                  </>
+                )}
+                {selected.sourceJournalId && (
+                  <>
+                    <span className="text-gray-500">근거 일지</span>
+                    <span className="col-span-2">
+                      <a
+                        href={`/notebook/${selected.sourceJournalId}`}
+                        className="text-primary underline hover:no-underline"
+                        data-testid={`link-source-journal-${selected.sourceJournalId}`}
+                      >
+                        일지 #{selected.sourceJournalId} 보기
+                      </a>
+                    </span>
                   </>
                 )}
               </div>

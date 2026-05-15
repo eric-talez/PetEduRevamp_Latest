@@ -47,6 +47,7 @@ interface VerifyResponse {
     issuerTrainerName: string | null;
     issuedAt: string;
     expiresAt: string | null;
+    sourceJournalId: number | null;
   }>;
   verifiedAt: string;
   verifyCount: number;
