@@ -5,7 +5,7 @@ import { randomBytes, createHmac, createHash, timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, isNull, gt, desc, or, ilike, inArray } from "drizzle-orm";
-import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports, petLostReports, reservations as reservationsTable } from "../shared/schema";
+import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports, petLostReports, vaccineVerificationCodes, reservations as reservationsTable } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
 import { registerDashboardRoutes } from "./routes/dashboard";
@@ -21830,9 +21830,8 @@ export function registerTrainerCertificationRoutes(app: Express) {
     return s;
   }
 
-  async function loadCodesTable(): Promise<any> {
-    const mod = await import('../shared/schema');
-    return mod.vaccineVerificationCodes;
+  async function loadCodesTable(): Promise<typeof vaccineVerificationCodes> {
+    return vaccineVerificationCodes;
   }
 
   // 코드 발급 — admin 또는 hospital 역할
@@ -21939,6 +21938,47 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  // 보호자: 코드 미리 확인 (소비하지 않음) — 6~8자 입력 즉시 인증/병원명 자동 표시용
+  app.get('/api/vaccinations/code/preview/:code', requireAuth(), async (req, res) => {
+    try {
+      const codeRaw = String(req.params.code || '').trim().toUpperCase();
+      if (!/^[A-Z0-9]{6,8}$/.test(codeRaw)) {
+        return res.status(400).json({ valid: false, error: '코드 형식이 올바르지 않습니다.' });
+      }
+      const codesTable = await loadCodesTable();
+      const [pre] = await db.select({
+        hospitalName: codesTable.hospitalName,
+        targetVaccineType: codesTable.targetVaccineType,
+        usedAt: codesTable.usedAt,
+        revokedAt: codesTable.revokedAt,
+        expiresAt: codesTable.expiresAt,
+        issuerUserId: codesTable.issuerUserId,
+      }).from(codesTable).where(eq(codesTable.code, codeRaw)).limit(1);
+      if (!pre) return res.status(404).json({ valid: false, error: '존재하지 않는 코드입니다.' });
+      if (pre.revokedAt) return res.status(410).json({ valid: false, error: '회수된 코드입니다.' });
+      if (pre.usedAt) return res.status(409).json({ valid: false, error: '이미 사용된 코드입니다.' });
+      if (pre.expiresAt && new Date(pre.expiresAt).getTime() < Date.now()) {
+        return res.status(410).json({ valid: false, error: '만료된 코드입니다.' });
+      }
+      const [issuer] = await db.select({
+        displayName: users.displayName,
+        username: users.username,
+        email: users.email,
+      }).from(users).where(eq(users.id, pre.issuerUserId)).limit(1);
+      const issuerName = issuer?.displayName || issuer?.username || issuer?.email || null;
+      res.json({
+        valid: true,
+        hospitalName: pre.hospitalName,
+        targetVaccineType: pre.targetVaccineType,
+        expiresAt: pre.expiresAt,
+        issuerDisplayName: issuerName,
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'unknown';
+      res.status(500).json({ valid: false, error: msg });
+    }
+  });
+
   // 보호자: 코드로 백신 기록 인증
   app.patch('/api/vaccinations/:id/verify', requireAuth(), csrfProtection, async (req, res) => {
     try {
@@ -21979,10 +22019,14 @@ export function registerTrainerCertificationRoutes(app: Express) {
         const verifiedAt = new Date();
         // 검증자(코드 발급자) 식별 — 인증 메타에 발급자 사용자명 함께 기록
         let issuerDisplayName: string | null = null;
-        try {
-          const [issuer] = await tx.select().from(users).where(eq(users.id, pre.issuerUserId)).limit(1);
-          issuerDisplayName = (issuer as any)?.displayName || (issuer as any)?.username || (issuer as any)?.email || null;
-        } catch { /* best-effort */ }
+        const [issuer] = await tx.select({
+          displayName: users.displayName,
+          username: users.username,
+          email: users.email,
+        }).from(users).where(eq(users.id, pre.issuerUserId)).limit(1);
+        if (issuer) {
+          issuerDisplayName = issuer.displayName || issuer.username || issuer.email || null;
+        }
         // 2) 원자적 사용 처리 — 동시성에서 1회만 성공 보장
         const claimed = await tx.update(codesTable).set({
           usedAt: verifiedAt,
@@ -22017,7 +22061,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
             verifiedByCode: codeRaw,
             hospitalIssuerName: issuerDisplayName,
             hospitalUserId: pre.issuerUserId,
-          } as any);
+          });
         } catch { /* ignore mem-store sync errors */ }
         return { code: claimed[0], updated: updatedRow || existing, issuerDisplayName };
       });

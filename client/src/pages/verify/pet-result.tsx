@@ -31,6 +31,8 @@ interface VerifyResponse {
     verificationStatus?: "self" | "hospital_verified";
     hospitalDisplayName?: string | null;
     hospitalVerifiedAt?: string | null;
+    hospitalIssuerName?: string | null;
+    hospitalIssuerUserId?: number | null;
   }>;
   overallStatus: "all_ok" | "has_expiring" | "has_expired" | "no_records";
   verifiedAt: string;
@@ -473,7 +475,12 @@ export default function PetVerifyResult() {
                           {v.nextDueDate && `다음: ${v.nextDueDate}`}
                         </p>
                         {isHospital && v.hospitalDisplayName && (
-                          <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5 truncate">{v.hospitalDisplayName}</p>
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5 truncate">
+                            {v.hospitalDisplayName}
+                            {v.hospitalIssuerName && (
+                              <span className="text-blue-600/80"> · 검증자 {v.hospitalIssuerName}</span>
+                            )}
+                          </p>
                         )}
                       </div>
                       <Badge className={`${s.cls} flex-shrink-0`}>{s.label}</Badge>

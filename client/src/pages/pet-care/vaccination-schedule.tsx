@@ -62,6 +62,13 @@ export default function VaccinationSchedulePage() {
   const [verifyDialog, setVerifyDialog] = useState<{ open: boolean; vaccinationId: number | null }>({ open: false, vaccinationId: null });
   const [verifyCode, setVerifyCode] = useState('');
   const [createCode, setCreateCode] = useState(''); // 등록 폼의 병원 인증 코드 (선택)
+  const [codePreview, setCodePreview] = useState<{
+    state: 'idle' | 'checking' | 'valid' | 'invalid';
+    hospitalName?: string;
+    issuerDisplayName?: string | null;
+    targetVaccineType?: string | null;
+    error?: string;
+  }>({ state: 'idle' });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -177,6 +184,36 @@ export default function VaccinationSchedulePage() {
       toast({ title: "예방접종 스케줄이 삭제되었습니다" });
     }
   });
+
+  // 코드 6~8자 입력 즉시 미리 확인 (디바운스 350ms, 소비하지 않음)
+  useEffect(() => {
+    if (createCode.length < 6 || createCode.length > 8) {
+      setCodePreview({ state: 'idle' });
+      return;
+    }
+    let cancelled = false;
+    setCodePreview({ state: 'checking' });
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/vaccinations/code/preview/${encodeURIComponent(createCode)}`, { credentials: 'include' });
+        const data = await res.json();
+        if (cancelled) return;
+        if (res.ok && data.valid) {
+          setCodePreview({
+            state: 'valid',
+            hospitalName: data.hospitalName,
+            issuerDisplayName: data.issuerDisplayName,
+            targetVaccineType: data.targetVaccineType,
+          });
+        } else {
+          setCodePreview({ state: 'invalid', error: data.error || '유효하지 않은 코드입니다.' });
+        }
+      } catch (e) {
+        if (!cancelled) setCodePreview({ state: 'invalid', error: '코드 확인 중 오류가 발생했습니다.' });
+      }
+    }, 350);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [createCode]);
 
   // 사용자 위치 가져오기
   useEffect(() => {
@@ -497,18 +534,39 @@ export default function VaccinationSchedulePage() {
                             maxLength={8}
                             placeholder="병원에서 받은 6~8자 코드 (예: A3K7XB29)"
                             className="font-mono tracking-widest uppercase"
-                            onChange={(e) => setCreateCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                            onChange={(e) => {
+                              const next = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                              setCreateCode(next);
+                              setCodePreview({ state: 'idle' });
+                            }}
                             data-testid="input-create-verify-code"
                           />
-                          <p className="text-xs text-gray-500">
-                            코드를 입력하면 등록 직후 자동으로 병원 인증 처리됩니다.
-                            {createCode.length > 0 && createCode.length < 6 && (
-                              <span className="text-amber-600"> ({6 - createCode.length}자 더 필요)</span>
-                            )}
-                            {createCode.length >= 6 && (
-                              <span className="text-blue-600"> · 등록 시 자동 인증됩니다</span>
-                            )}
-                          </p>
+                          {codePreview.state === 'checking' && (
+                            <p className="text-xs text-gray-500">코드 확인 중...</p>
+                          )}
+                          {codePreview.state === 'valid' && (
+                            <div className="text-xs text-blue-700 dark:text-blue-300 space-y-0.5">
+                              <p className="font-medium">사용 가능 코드 · 병원: {codePreview.hospitalName}</p>
+                              {codePreview.issuerDisplayName && (
+                                <p>검증자: {codePreview.issuerDisplayName}</p>
+                              )}
+                              {codePreview.targetVaccineType && (
+                                <p>대상 백신: {codePreview.targetVaccineType}</p>
+                              )}
+                              <p className="text-[11px] text-blue-600">등록 직후 자동 인증됩니다.</p>
+                            </div>
+                          )}
+                          {codePreview.state === 'invalid' && (
+                            <p className="text-xs text-red-600">{codePreview.error}</p>
+                          )}
+                          {codePreview.state === 'idle' && (
+                            <p className="text-xs text-gray-500">
+                              코드를 입력하면 즉시 확인되고 등록과 동시에 병원 인증됩니다.
+                              {createCode.length > 0 && createCode.length < 6 && (
+                                <span className="text-amber-600"> ({6 - createCode.length}자 더 필요)</span>
+                              )}
+                            </p>
+                          )}
                         </div>
 
                         <Button 
