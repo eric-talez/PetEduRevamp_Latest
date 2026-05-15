@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
 import { sql, eq, and, isNotNull, desc, or, ilike, inArray } from "drizzle-orm";
-import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports, reservations as reservationsTable } from "../shared/schema";
+import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports, petLostReports, reservations as reservationsTable } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
 import { registerDashboardRoutes } from "./routes/dashboard";
@@ -852,6 +852,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`✅ 펫 UID 컬럼/백필 완료 (대상 ${rows.length}건, 성공 ${assigned}건${failed.length ? `, 실패 ${failed.length}건: [${failed.join(',')}]` : ''})`);
   } catch (e) {
     logServerError('⚠️ 펫 UID 백필 실패(무시):', e);
+  }
+
+  // 펫스포트 분실모드 (Task #223) — 컬럼/테이블 보장
+  try {
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_mode boolean DEFAULT false NOT NULL`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_message text`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_contact_phone varchar(30)`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_contact_window varchar(100)`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_last_seen_at varchar(50)`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_last_seen_location text`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_last_seen_lat double precision`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_last_seen_lng double precision`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_activated_at timestamp`);
+    await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS lost_report_count integer DEFAULT 0 NOT NULL`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS pet_lost_reports (
+      id serial PRIMARY KEY,
+      passport_id integer NOT NULL REFERENCES pet_vaccination_passports(id),
+      pet_id integer NOT NULL REFERENCES pets(id),
+      owner_id integer NOT NULL REFERENCES users(id),
+      finder_name varchar(100),
+      finder_phone varchar(30),
+      lat double precision,
+      lng double precision,
+      location_text text,
+      memo text,
+      finder_ip varchar(64),
+      finder_ua varchar(255),
+      owner_notified_at timestamp,
+      created_at timestamp DEFAULT now() NOT NULL
+    )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_lost_reports_owner_idx ON pet_lost_reports(owner_id, created_at DESC)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_lost_reports_pet_idx ON pet_lost_reports(pet_id, created_at DESC)`);
+    console.log('✅ 펫스포트 분실모드 컬럼/테이블 보장 완료');
+  } catch (e) {
+    logServerError('⚠️ 분실모드 마이그레이션 실패(무시):', e);
   }
 
   // 인증 관련 라우트는 setupAuth()에서 처리됩니다 (/api/auth/* 경로)
@@ -24554,6 +24589,200 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  // ==== Task #223 펫스포트 분실모드 ====
+  const lostReportRateBucket = new Map<string, { count: number; resetAt: number }>();
+  const LOST_REPORT_LIMIT = 5;
+  const LOST_REPORT_WINDOW_MS = 60_000;
+  function checkLostReportRate(ip: string): boolean {
+    const now = Date.now();
+    const e = lostReportRateBucket.get(ip);
+    if (!e || e.resetAt < now) {
+      lostReportRateBucket.set(ip, { count: 1, resetAt: now + LOST_REPORT_WINDOW_MS });
+      return true;
+    }
+    if (e.count >= LOST_REPORT_LIMIT) return false;
+    e.count += 1;
+    return true;
+  }
+  function maskOwnerName(raw: string | null | undefined): string | null {
+    if (!raw) return null;
+    const s = String(raw).trim();
+    if (s.length <= 1) return s;
+    if (s.length === 2) return s[0] + '*';
+    return s[0] + '*'.repeat(s.length - 2) + s[s.length - 1];
+  }
+  const lostModeUpdateSchema = z.object({
+    enabled: z.boolean(),
+    message: z.string().max(500).optional().nullable(),
+    contactPhone: z.string().max(30).optional().nullable(),
+    contactWindow: z.string().max(100).optional().nullable(),
+    lastSeenAt: z.string().max(50).optional().nullable(),
+    lastSeenLocation: z.string().max(500).optional().nullable(),
+    lastSeenLat: z.number().min(-90).max(90).optional().nullable(),
+    lastSeenLng: z.number().min(-180).max(180).optional().nullable(),
+  });
+
+  // 보호자 — 분실모드 ON/OFF + 정보 갱신
+  app.patch('/api/pets/:petId/passport/lost-mode', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const petId = parseInt(req.params.petId, 10);
+      if (isNaN(petId)) return res.status(400).json({ error: '잘못된 반려동물 ID' });
+      const sessionUser = ((req as Request & { user?: { id?: number; role?: string } }).user
+        || (req.session as { user?: { id?: number; role?: string } } | undefined)?.user) as
+        | { id?: number; role?: string }
+        | undefined;
+      const userId = sessionUser?.id;
+      if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
+
+      const pet = await loadPetForPassport(petId);
+      if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
+      const isAdmin = sessionUser?.role === 'admin';
+      if (pet.ownerId !== userId && !isAdmin) {
+        return res.status(403).json({ error: '본인의 반려동물만 변경할 수 있습니다.' });
+      }
+
+      const parsed = lostModeUpdateSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: '잘못된 입력입니다.', details: parsed.error.flatten() });
+      }
+
+      const [active] = await db.select().from(petVaccinationPassports)
+        .where(and(eq(petVaccinationPassports.petId, petId), eq(petVaccinationPassports.isActive, true)))
+        .orderBy(desc(petVaccinationPassports.issuedAt))
+        .limit(1);
+      if (!active) return res.status(400).json({ error: '활성 여권이 없습니다. 먼저 QR 여권을 발급해주세요.' });
+
+      const wasOn = !!active.lostMode;
+      const turningOn = parsed.data.enabled && !wasOn;
+      const update: Record<string, unknown> = {
+        lostMode: parsed.data.enabled,
+        lostMessage: parsed.data.message ?? null,
+        lostContactPhone: parsed.data.contactPhone ?? null,
+        lostContactWindow: parsed.data.contactWindow ?? null,
+        lostLastSeenAt: parsed.data.lastSeenAt ?? null,
+        lostLastSeenLocation: parsed.data.lastSeenLocation ?? null,
+        lostLastSeenLat: parsed.data.lastSeenLat ?? null,
+        lostLastSeenLng: parsed.data.lastSeenLng ?? null,
+      };
+      if (turningOn) update.lostActivatedAt = new Date();
+
+      const [updated] = await db.update(petVaccinationPassports)
+        .set(update)
+        .where(eq(petVaccinationPassports.id, active.id))
+        .returning();
+
+      res.json({ success: true, passport: updated });
+    } catch (error) {
+      logServerError('분실모드 변경 오류:', error, req);
+      res.status(500).json({ error: '분실모드 변경 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 보호자 — 발견 제보 이력 (특정 펫 또는 전체)
+  app.get('/api/pets/lost-reports', requireAuth(), async (req, res) => {
+    try {
+      const sessionUser = ((req as Request & { user?: { id?: number } }).user
+        || (req.session as { user?: { id?: number } } | undefined)?.user) as { id?: number } | undefined;
+      const userId = sessionUser?.id;
+      if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
+      const reports = await db.select().from(petLostReports)
+        .where(eq(petLostReports.ownerId, userId))
+        .orderBy(desc(petLostReports.createdAt))
+        .limit(200);
+      res.json({ success: true, reports });
+    } catch (error) {
+      logServerError('분실견 발견 제보 조회 오류:', error, req);
+      res.status(500).json({ error: '제보 이력 조회 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 공개 — 발견 제보 (분당 5회/IP)
+  const reportFoundSchema = z.object({
+    finderName: z.string().max(100).optional().nullable(),
+    finderPhone: z.string().max(30).optional().nullable(),
+    lat: z.number().min(-90).max(90).optional().nullable(),
+    lng: z.number().min(-180).max(180).optional().nullable(),
+    locationText: z.string().max(500).optional().nullable(),
+    memo: z.string().max(1000).optional().nullable(),
+  });
+  app.post('/api/pet-passport/report-found/:token', async (req, res) => {
+    try {
+      const ip = (req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown').toString().slice(0, 64);
+      if (!checkLostReportRate(ip)) {
+        return res.status(429).json({ error: '잠시 후 다시 시도해주세요.' });
+      }
+      const token = String(req.params.token || '').trim();
+      if (token.length < 32 || token.length > 128) {
+        return res.status(400).json({ error: '잘못된 토큰입니다.' });
+      }
+      const parsed = reportFoundSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: '잘못된 입력입니다.' });
+      }
+      const [passport] = await db.select().from(petVaccinationPassports)
+        .where(eq(petVaccinationPassports.token, token)).limit(1);
+      if (!passport) return res.status(404).json({ error: '여권을 찾을 수 없습니다.' });
+      if (!passport.isActive || passport.revokedAt) {
+        return res.status(410).json({ error: '회수된 여권입니다.' });
+      }
+      if (passport.expiresAt && new Date(passport.expiresAt).getTime() < Date.now()) {
+        return res.status(410).json({ error: '만료된 여권입니다.' });
+      }
+      if (!passport.lostMode) {
+        return res.status(400).json({ error: '분실모드가 활성화된 여권이 아닙니다.' });
+      }
+      const ua = String(req.headers['user-agent'] || '').slice(0, 255);
+
+      // 트랜잭션: 제보 INSERT + 카운트 INCREMENT 원자성 보장
+      const created = await db.transaction(async (tx) => {
+        const [row] = await tx.insert(petLostReports).values({
+          passportId: passport.id,
+          petId: passport.petId,
+          ownerId: passport.ownerId,
+          finderName: parsed.data.finderName ?? null,
+          finderPhone: parsed.data.finderPhone ?? null,
+          lat: parsed.data.lat ?? null,
+          lng: parsed.data.lng ?? null,
+          locationText: parsed.data.locationText ?? null,
+          memo: parsed.data.memo ?? null,
+          finderIp: ip,
+          finderUa: ua,
+        }).returning();
+        await tx.update(petVaccinationPassports)
+          .set({ lostReportCount: sql`${petVaccinationPassports.lostReportCount} + 1` })
+          .where(eq(petVaccinationPassports.id, passport.id));
+        return row;
+      });
+
+      // 보호자 알림 (인앱 + FCM)
+      try {
+        const pet = await loadPetForPassport(passport.petId);
+        const petName = pet?.name || '반려견';
+        const { notificationService } = await import('./notifications/notification-service');
+        await notificationService.sendNotification({
+          userId: passport.ownerId,
+          type: 'system',
+          title: `[분실] ${petName} 발견 제보가 도착했습니다`,
+          message: parsed.data.locationText
+            ? `위치: ${parsed.data.locationText}${parsed.data.memo ? ' · ' + parsed.data.memo : ''}`
+            : (parsed.data.memo || '발견자가 위치/메모를 제출했습니다.'),
+          actionUrl: `/my-pets/lost-reports?reportId=${created.id}`,
+          data: { reportId: created.id, petId: passport.petId, lat: parsed.data.lat, lng: parsed.data.lng },
+        });
+        await db.update(petLostReports)
+          .set({ ownerNotifiedAt: new Date() })
+          .where(eq(petLostReports.id, created.id));
+      } catch (e) {
+        logServerError('[Lost Report] 보호자 알림 발송 실패:', e);
+      }
+
+      res.json({ success: true, reportId: created.id });
+    } catch (error) {
+      logServerError('분실견 발견 제보 처리 오류:', error, req);
+      res.status(500).json({ error: '제보 처리 중 오류가 발생했습니다.' });
+    }
+  });
+
   // 공개 검증 (rate-limited)
   app.get('/api/pet-passport/verify/:token', async (req, res) => {
     try {
@@ -24579,6 +24808,16 @@ export function registerTrainerCertificationRoutes(app: Express) {
       const pet = await loadPetForPassport(passport.petId);
       if (!pet) return res.status(404).json({ error: '반려동물을 찾을 수 없습니다.' });
       const summary = await buildVaccineSummary(passport.petId);
+
+      // 분실모드 상태 (보호자 PII는 마스킹)
+      let ownerName: string | null = null;
+      if (passport.lostMode) {
+        try {
+          const [owner] = await db.select({ name: users.name }).from(users)
+            .where(eq(users.id, passport.ownerId)).limit(1);
+          ownerName = owner?.name ?? null;
+        } catch {}
+      }
 
       // 검증 카운트 원자적 누적 (SQL increment)
       let nextCount = (passport.verifyCount || 0) + 1;
@@ -24612,6 +24851,18 @@ export function registerTrainerCertificationRoutes(app: Express) {
         overallStatus: summary.overallStatus,
         verifiedAt: new Date().toISOString(),
         verifyCount: nextCount,
+        lostMode: passport.lostMode ? {
+          active: true,
+          message: passport.lostMessage || null,
+          contactPhone: passport.lostContactPhone || null,
+          contactWindow: passport.lostContactWindow || null,
+          lastSeenAt: passport.lostLastSeenAt || null,
+          lastSeenLocation: passport.lostLastSeenLocation || null,
+          lastSeenLat: passport.lostLastSeenLat ?? null,
+          lastSeenLng: passport.lostLastSeenLng ?? null,
+          ownerNameMasked: maskOwnerName(ownerName),
+          activatedAt: passport.lostActivatedAt ? new Date(passport.lostActivatedAt).toISOString() : null,
+        } : { active: false },
       });
     } catch (error) {
       logServerError('예방접종 여권 검증 오류:', error, req);

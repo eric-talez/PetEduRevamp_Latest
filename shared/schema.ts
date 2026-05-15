@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, serial, decimal, jsonb, json, varchar, date, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, serial, decimal, jsonb, json, varchar, date, uniqueIndex, index, doublePrecision } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
@@ -345,6 +345,17 @@ export const petVaccinationPassports = pgTable("pet_vaccination_passports", {
   revokedAt: timestamp("revoked_at"),
   lastVerifiedAt: timestamp("last_verified_at"),
   verifyCount: integer("verify_count").default(0).notNull(),
+  // 분실모드 (Task #223)
+  lostMode: boolean("lost_mode").default(false).notNull(),
+  lostMessage: text("lost_message"),
+  lostContactPhone: varchar("lost_contact_phone", { length: 30 }),
+  lostContactWindow: varchar("lost_contact_window", { length: 100 }),
+  lostLastSeenAt: varchar("lost_last_seen_at", { length: 50 }),
+  lostLastSeenLocation: text("lost_last_seen_location"),
+  lostLastSeenLat: doublePrecision("lost_last_seen_lat"),
+  lostLastSeenLng: doublePrecision("lost_last_seen_lng"),
+  lostActivatedAt: timestamp("lost_activated_at"),
+  lostReportCount: integer("lost_report_count").default(0).notNull(),
 });
 export const insertPetVaccinationPassportSchema = createInsertSchema(petVaccinationPassports).omit({
   id: true,
@@ -355,6 +366,31 @@ export const insertPetVaccinationPassportSchema = createInsertSchema(petVaccinat
 });
 export type InsertPetVaccinationPassport = z.infer<typeof insertPetVaccinationPassportSchema>;
 export type PetVaccinationPassport = typeof petVaccinationPassports.$inferSelect;
+
+// 분실견 발견 제보 테이블 (Task #223)
+export const petLostReports = pgTable("pet_lost_reports", {
+  id: serial("id").primaryKey(),
+  passportId: integer("passport_id").references(() => petVaccinationPassports.id).notNull(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  ownerId: integer("owner_id").references(() => users.id).notNull(),
+  finderName: varchar("finder_name", { length: 100 }),
+  finderPhone: varchar("finder_phone", { length: 30 }),
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  locationText: text("location_text"),
+  memo: text("memo"),
+  finderIp: varchar("finder_ip", { length: 64 }),
+  finderUa: varchar("finder_ua", { length: 255 }),
+  ownerNotifiedAt: timestamp("owner_notified_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export const insertPetLostReportSchema = createInsertSchema(petLostReports).omit({
+  id: true,
+  createdAt: true,
+  ownerNotifiedAt: true,
+});
+export type InsertPetLostReport = z.infer<typeof insertPetLostReportSchema>;
+export type PetLostReport = typeof petLostReports.$inferSelect;
 
 // 커뮤니티 게시글 테이블 - 실제 데이터베이스 스키마에 맞춤
 export const posts = pgTable("posts", {

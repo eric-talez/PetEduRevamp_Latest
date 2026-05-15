@@ -24,6 +24,7 @@ import Community from "@/pages/community/CommunityFixed";
 import CommunityPostDetail from "@/pages/community/post/[id]";
 import MyCourses from "@/pages/my-courses";
 import MyPets from "@/pages/my-pets";
+import LostReportsPage from "@/pages/my-pets/lost-reports";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
 import PasswordResetPage from "@/pages/auth/PasswordResetPage";
@@ -637,6 +638,7 @@ function AuthenticatedRoutes() {
           }}
         </Route>
 
+        <Route path="/my-pets/lost-reports" component={() => <ProtectedRoute component={LostReportsPage} />} />
         <Route path="/my-pets" component={MyPets} />
         <Route path="/pet-events-map" component={PetEventsMapPage} />
 

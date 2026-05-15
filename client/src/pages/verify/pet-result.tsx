@@ -1,9 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, ArrowLeft, Camera } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, ArrowLeft, Camera, Siren, MapPin, Phone, Send, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface VerifyResponse {
   success: boolean;
@@ -27,6 +32,16 @@ interface VerifyResponse {
   overallStatus: "all_ok" | "has_expiring" | "has_expired" | "no_records";
   verifiedAt: string;
   verifyCount: number;
+  lostMode?: {
+    active: boolean;
+    message?: string | null;
+    contactPhone?: string | null;
+    contactWindow?: string | null;
+    lastSeenAt?: string | null;
+    lastSeenLocation?: string | null;
+    ownerNameMasked?: string | null;
+    activatedAt?: string | null;
+  };
 }
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
@@ -39,6 +54,58 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
 export default function PetVerifyResult() {
   const params = useParams<{ token: string }>();
   const token = params.token;
+  const { toast } = useToast();
+  const [reportForm, setReportForm] = useState({
+    finderName: "",
+    finderPhone: "",
+    locationText: "",
+    memo: "",
+    lat: null as number | null,
+    lng: null as number | null,
+  });
+  const [reportSent, setReportSent] = useState(false);
+  const [gettingLoc, setGettingLoc] = useState(false);
+
+  const reportMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/pet-passport/report-found/${token}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reportForm),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "제보 실패");
+      return json;
+    },
+    onSuccess: () => {
+      setReportSent(true);
+      toast({ title: "보호자에게 제보가 전달되었습니다", description: "감사합니다." });
+    },
+    onError: (e: Error) => {
+      toast({ title: "제보 실패", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ title: "위치 사용 불가", description: "이 브라우저는 위치를 지원하지 않습니다.", variant: "destructive" });
+      return;
+    }
+    setGettingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setReportForm((p) => ({ ...p, lat: pos.coords.latitude, lng: pos.coords.longitude }));
+        setGettingLoc(false);
+        toast({ title: "현재 위치가 첨부되었습니다" });
+      },
+      () => {
+        setGettingLoc(false);
+        toast({ title: "위치를 가져오지 못했습니다", description: "권한을 확인해주세요.", variant: "destructive" });
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const { data, isLoading, error } = useQuery<VerifyResponse>({
     queryKey: ["/api/pet-passport/verify", token],
@@ -114,6 +181,153 @@ export default function PetVerifyResult() {
           </Link>
           <Badge variant="secondary">검증 #{data.verifyCount}</Badge>
         </div>
+
+        {data.lostMode?.active && (
+          <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-950" data-testid="card-lost-banner">
+            <CardContent className="py-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center animate-pulse">
+                  <Siren className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-red-700 dark:text-red-200">분실견 입니다</h2>
+                  <p className="text-sm text-red-700 dark:text-red-300">발견해주셔서 감사합니다. 보호자에게 즉시 알림이 전송됩니다.</p>
+                </div>
+              </div>
+              {data.lostMode.message && (
+                <div className="rounded-md bg-white/70 dark:bg-black/30 p-3 text-sm">
+                  <div className="text-xs text-gray-500 mb-1">보호자 메시지</div>
+                  <div className="whitespace-pre-wrap">{data.lostMode.message}</div>
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                {data.lostMode.ownerNameMasked && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">보호자</span>
+                    <span className="font-medium">{data.lostMode.ownerNameMasked}</span>
+                  </div>
+                )}
+                {data.lostMode.contactPhone && (
+                  <a
+                    href={`tel:${data.lostMode.contactPhone}`}
+                    className="flex items-center gap-2 text-red-700 dark:text-red-300 font-semibold underline"
+                    data-testid="link-lost-call"
+                  >
+                    <Phone className="w-4 h-4" /> {data.lostMode.contactPhone}
+                  </a>
+                )}
+                {data.lostMode.contactWindow && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">연락 가능</span>
+                    <span>{data.lostMode.contactWindow}</span>
+                  </div>
+                )}
+                {data.lostMode.lastSeenAt && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">목격 시각</span>
+                    <span>{data.lostMode.lastSeenAt}</span>
+                  </div>
+                )}
+                {data.lostMode.lastSeenLocation && (
+                  <div className="flex items-center gap-2 col-span-full">
+                    <span className="text-gray-500">목격 장소</span>
+                    <span>{data.lostMode.lastSeenLocation}</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {data.lostMode?.active && (
+          <Card className="border-red-200" data-testid="card-finder-report">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Send className="w-4 h-4 text-red-600" />
+                발견 제보 보내기
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {reportSent ? (
+                <div className="text-center py-6 text-sm text-gray-700 dark:text-gray-300">
+                  <Check className="w-10 h-10 text-green-600 mx-auto mb-2" />
+                  보호자에게 제보가 전달되었습니다. 감사합니다.
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    위치/연락처는 분실 보호자에게만 전달되며, 보호자가 직접 연락드립니다.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="finder-name" className="text-sm">이름 (선택)</Label>
+                      <Input
+                        id="finder-name"
+                        value={reportForm.finderName}
+                        onChange={(e) => setReportForm((p) => ({ ...p, finderName: e.target.value.slice(0, 100) }))}
+                        data-testid="input-finder-name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="finder-phone" className="text-sm">연락처 (선택)</Label>
+                      <Input
+                        id="finder-phone"
+                        value={reportForm.finderPhone}
+                        onChange={(e) => setReportForm((p) => ({ ...p, finderPhone: e.target.value.slice(0, 30) }))}
+                        data-testid="input-finder-phone"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="finder-loc" className="text-sm flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5" /> 발견 장소
+                    </Label>
+                    <Input
+                      id="finder-loc"
+                      placeholder="예: 강남구 역삼동 OO편의점 앞"
+                      value={reportForm.locationText}
+                      onChange={(e) => setReportForm((p) => ({ ...p, locationText: e.target.value.slice(0, 500) }))}
+                      data-testid="input-finder-location"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGetLocation}
+                    disabled={gettingLoc}
+                    className="w-full"
+                    data-testid="button-finder-geo"
+                  >
+                    {gettingLoc ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <MapPin className="w-3.5 h-3.5 mr-1" />}
+                    {reportForm.lat != null ? `현재 위치 첨부됨 (${reportForm.lat.toFixed(4)}, ${reportForm.lng?.toFixed(4)})` : "현재 위치 첨부 (GPS)"}
+                  </Button>
+                  <div>
+                    <Label htmlFor="finder-memo" className="text-sm">메모 (선택)</Label>
+                    <Textarea
+                      id="finder-memo"
+                      placeholder="강아지 상태, 주변 상황 등"
+                      rows={3}
+                      value={reportForm.memo}
+                      onChange={(e) => setReportForm((p) => ({ ...p, memo: e.target.value.slice(0, 1000) }))}
+                      data-testid="input-finder-memo"
+                    />
+                  </div>
+                  <Button
+                    className="w-full bg-red-600 hover:bg-red-700"
+                    onClick={() => reportMutation.mutate()}
+                    disabled={reportMutation.isPending || (!reportForm.locationText && !reportForm.memo && reportForm.lat == null)}
+                    data-testid="button-finder-submit"
+                  >
+                    {reportMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    <Send className="w-4 h-4 mr-2" />
+                    보호자에게 제보 전송
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className={`border-2 ${overall.bg}`} data-testid="card-verify-overall">
           <CardContent className="py-6 flex items-center gap-4">

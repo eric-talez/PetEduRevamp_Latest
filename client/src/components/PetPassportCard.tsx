@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { QRCodeCanvas } from "qrcode.react";
-import { ShieldCheck, ShieldAlert, RefreshCw, Loader2, Download, Copy, Check } from "lucide-react";
+import { ShieldCheck, ShieldAlert, RefreshCw, Loader2, Download, Copy, Check, Siren, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -25,6 +30,13 @@ interface PassportResponse {
     expiresAt: string | null;
     verifyCount: number;
     lastVerifiedAt: string | null;
+    lostMode?: boolean;
+    lostMessage?: string | null;
+    lostContactPhone?: string | null;
+    lostContactWindow?: string | null;
+    lostLastSeenAt?: string | null;
+    lostLastSeenLocation?: string | null;
+    lostReportCount?: number;
   } | null;
   eligible: boolean;
   missing: string[];
@@ -72,6 +84,33 @@ export function PetPassportCard({ petId, petName, petUid }: Props) {
     },
     onError: (e: Error) => {
       toast({ title: "발급 실패", description: e.message || "다시 시도해주세요", variant: "destructive" });
+    },
+  });
+
+  const [lostDialogOpen, setLostDialogOpen] = useState(false);
+  const [lostForm, setLostForm] = useState({
+    message: "",
+    contactPhone: "",
+    contactWindow: "",
+    lastSeenAt: "",
+    lastSeenLocation: "",
+  });
+
+  const lostMutation = useMutation({
+    mutationFn: async (payload: { enabled: boolean } & Partial<typeof lostForm>) => {
+      const res = await apiRequest("PATCH", `/api/pets/${petId}/passport/lost-mode`, payload);
+      return res.json();
+    },
+    onSuccess: (_, vars) => {
+      toast({
+        title: vars.enabled ? "분실모드가 활성화되었습니다" : "분실모드가 해제되었습니다",
+        description: vars.enabled ? "QR 스캔 시 발견 제보 폼이 표시됩니다." : undefined,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/pets", petId, "passport"] });
+      setLostDialogOpen(false);
+    },
+    onError: (e: Error) => {
+      toast({ title: "변경 실패", description: e.message || "다시 시도해주세요", variant: "destructive" });
     },
   });
 
@@ -185,6 +224,21 @@ export function PetPassportCard({ petId, petName, petUid }: Props) {
           </Alert>
         )}
 
+        {data?.passport?.lostMode && (
+          <Alert variant="destructive" className="border-red-300 bg-red-50 dark:bg-red-950">
+            <Siren className="w-4 h-4" />
+            <AlertDescription className="text-sm">
+              <div className="font-semibold mb-1">분실모드 활성화 중</div>
+              <div className="text-xs">
+                QR 스캔 시 발견자에게 빨간 배너와 제보 폼이 표시됩니다.
+                {(data.passport.lostReportCount ?? 0) > 0 && (
+                  <> 지금까지 <b>{data.passport.lostReportCount}건</b>의 제보가 들어왔습니다.</>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {data?.passport ? (
           <>
             <div className="flex justify-center bg-white p-4 rounded-lg border">
@@ -255,6 +309,59 @@ export function PetPassportCard({ petId, petName, petUid }: Props) {
                 회수
               </Button>
             </div>
+
+            <div className="rounded-lg border border-red-200 dark:border-red-900 p-3 space-y-2 bg-red-50/50 dark:bg-red-950/30">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2 text-sm font-semibold text-red-700 dark:text-red-300">
+                  <Siren className="w-4 h-4" />
+                  분실모드
+                </Label>
+                <Switch
+                  checked={!!data.passport.lostMode}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setLostForm({
+                        message: data.passport?.lostMessage || "",
+                        contactPhone: data.passport?.lostContactPhone || "",
+                        contactWindow: data.passport?.lostContactWindow || "",
+                        lastSeenAt: data.passport?.lostLastSeenAt || "",
+                        lastSeenLocation: data.passport?.lostLastSeenLocation || "",
+                      });
+                      setLostDialogOpen(true);
+                    } else {
+                      lostMutation.mutate({ enabled: false });
+                    }
+                  }}
+                  disabled={lostMutation.isPending}
+                  data-testid={`switch-lost-mode-${petId}`}
+                />
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                활성화 시 QR을 스캔한 사람이 위치/메모를 제보할 수 있고, 즉시 푸시 알림이 도착합니다.
+              </p>
+              {data.passport.lostMode && (
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setLostForm({
+                        message: data.passport?.lostMessage || "",
+                        contactPhone: data.passport?.lostContactPhone || "",
+                        contactWindow: data.passport?.lostContactWindow || "",
+                        lastSeenAt: data.passport?.lostLastSeenAt || "",
+                        lastSeenLocation: data.passport?.lostLastSeenLocation || "",
+                      });
+                      setLostDialogOpen(true);
+                    }}
+                    data-testid={`button-edit-lost-${petId}`}
+                  >
+                    정보 수정
+                  </Button>
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <Button
@@ -272,6 +379,88 @@ export function PetPassportCard({ petId, petName, petUid }: Props) {
           </Button>
         )}
       </CardContent>
+
+      <Dialog open={lostDialogOpen} onOpenChange={setLostDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Siren className="w-5 h-5" />
+              분실모드 정보
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="lost-message" className="text-sm">발견자에게 전할 메시지</Label>
+              <Textarea
+                id="lost-message"
+                placeholder="예: 겁이 많은 아이입니다. 천천히 다가와주세요."
+                value={lostForm.message}
+                onChange={(e) => setLostForm((p) => ({ ...p, message: e.target.value.slice(0, 500) }))}
+                rows={3}
+                data-testid="input-lost-message"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="lost-phone" className="text-sm">연락처</Label>
+                <Input
+                  id="lost-phone"
+                  placeholder="010-1234-5678"
+                  value={lostForm.contactPhone}
+                  onChange={(e) => setLostForm((p) => ({ ...p, contactPhone: e.target.value }))}
+                  data-testid="input-lost-phone"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lost-window" className="text-sm">연락 가능 시간</Label>
+                <Input
+                  id="lost-window"
+                  placeholder="예: 09-22시"
+                  value={lostForm.contactWindow}
+                  onChange={(e) => setLostForm((p) => ({ ...p, contactWindow: e.target.value }))}
+                  data-testid="input-lost-window"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="lost-seen-at" className="text-sm">마지막 목격 시각</Label>
+              <Input
+                id="lost-seen-at"
+                placeholder="예: 5월 15일 18시"
+                value={lostForm.lastSeenAt}
+                onChange={(e) => setLostForm((p) => ({ ...p, lastSeenAt: e.target.value }))}
+                data-testid="input-lost-seen-at"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lost-seen-loc" className="text-sm flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5" /> 마지막 목격 장소
+              </Label>
+              <Input
+                id="lost-seen-loc"
+                placeholder="예: 서울 강남구 역삼동 OO공원 인근"
+                value={lostForm.lastSeenLocation}
+                onChange={(e) => setLostForm((p) => ({ ...p, lastSeenLocation: e.target.value.slice(0, 500) }))}
+                data-testid="input-lost-seen-loc"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setLostDialogOpen(false)} data-testid="button-lost-cancel">
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => lostMutation.mutate({ enabled: true, ...lostForm })}
+              disabled={lostMutation.isPending}
+              data-testid="button-lost-save"
+            >
+              {lostMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {data?.passport?.lostMode ? "정보 저장" : "분실모드 활성화"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
