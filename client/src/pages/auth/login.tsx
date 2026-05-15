@@ -342,10 +342,12 @@ export default function Login() {
                 </div>
               </div>
               
-              {/* 퀵 로그인 버튼 섹션 — 개발 환경 전용 */}
-              {import.meta.env.DEV && (
+              {/* 퀵 로그인 버튼 섹션 — 개발 환경 또는 VITE_SHOW_QUICK_LOGIN=true 시 노출 */}
+              {(import.meta.env.DEV || import.meta.env.VITE_SHOW_QUICK_LOGIN === 'true') && (
                 <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800 mb-4">
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">빠른 로그인 (개발용)</h3>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    {import.meta.env.DEV ? '빠른 로그인 (개발용)' : '빠른 로그인 (데모용)'}
+                  </h3>
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       type="button"
