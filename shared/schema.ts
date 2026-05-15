@@ -329,9 +329,35 @@ export const vaccinations = pgTable("vaccinations", {
   notes: text("notes"), // 메모
   nextDueDate: date("next_due_date"), // 다음 접종 예정일
   reminderEnabled: boolean("reminder_enabled").default(true), // 알림 활성화 여부
+  // Task #225 — 병원 서명 백신 기록
+  verificationStatus: varchar("verification_status", { length: 20 }).default("self").notNull(), // self | hospital_verified
+  hospitalDisplayName: varchar("hospital_display_name", { length: 200 }), // 인증한 병원 이름 (코드 발급 시 자동)
+  hospitalVerifiedAt: timestamp("hospital_verified_at"),
+  verifiedByCode: varchar("verified_by_code", { length: 32 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Task #225 — 병원 백신 인증 코드 (1회용, 7일 만료)
+export const vaccineVerificationCodes = pgTable("vaccine_verification_codes", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 32 }).notNull().unique(),
+  issuerUserId: integer("issuer_user_id").references(() => users.id).notNull(),
+  hospitalName: varchar("hospital_name", { length: 200 }).notNull(),
+  targetVaccineType: varchar("target_vaccine_type", { length: 100 }), // null = 모든 백신 허용
+  notes: text("notes"),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  usedByVaccinationId: integer("used_by_vaccination_id").references(() => vaccinations.id),
+  usedByUserId: integer("used_by_user_id").references(() => users.id),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export const insertVaccineVerificationCodeSchema = createInsertSchema(vaccineVerificationCodes).omit({
+  id: true, code: true, issuerUserId: true, expiresAt: true,
+  usedAt: true, usedByVaccinationId: true, usedByUserId: true, revokedAt: true, createdAt: true,
+});
+export type VaccineVerificationCode = typeof vaccineVerificationCodes.$inferSelect;
 
 // 반려동물 예방접종 QR 여권 토큰 테이블
 export const petVaccinationPassports = pgTable("pet_vaccination_passports", {

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Syringe, Calendar, MapPin, Phone, Clock, CheckCircle, AlertCircle, Ban } from 'lucide-react';
+import { Plus, Syringe, Calendar, MapPin, Phone, Clock, CheckCircle, AlertCircle, Ban, BadgeCheck, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -39,6 +39,9 @@ interface Vaccination {
   nextDueDate?: string;
   createdAt?: string;
   updatedAt?: string;
+  verificationStatus?: 'self' | 'hospital_verified';
+  hospitalDisplayName?: string | null;
+  hospitalVerifiedAt?: string | null;
 }
 
 interface Hospital {
@@ -56,8 +59,27 @@ export default function VaccinationSchedulePage() {
   const [isHospitalMapOpen, setIsHospitalMapOpen] = useState(false);
   const [nearbyHospitals, setNearbyHospitals] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [verifyDialog, setVerifyDialog] = useState<{ open: boolean; vaccinationId: number | null }>({ open: false, vaccinationId: null });
+  const [verifyCode, setVerifyCode] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const verifyMutation = useMutation({
+    mutationFn: async ({ id, code }: { id: number; code: string }) => {
+      const res = await apiRequest('PATCH', `/api/vaccinations/${id}/verify`, { code });
+      return res.json();
+    },
+    onSuccess: (resp: any) => {
+      toast({ title: '병원 인증 완료', description: resp?.hospitalDisplayName ? `${resp.hospitalDisplayName} 인증` : undefined });
+      queryClient.invalidateQueries({ queryKey: ['/api/vaccinations/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/vaccinations/upcoming'] });
+      setVerifyDialog({ open: false, vaccinationId: null });
+      setVerifyCode('');
+    },
+    onError: (e: any) => {
+      toast({ title: '인증 실패', description: e?.message || '코드를 확인해주세요.', variant: 'destructive' });
+    },
+  });
 
   // 현재 사용자 정보 조회
   const { data: userData } = useQuery({
@@ -483,9 +505,22 @@ export default function VaccinationSchedulePage() {
                             {getStatusIcon(vaccination.status)}
                             <h3 className="font-semibold text-lg">{vaccination.vaccineName}</h3>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             {getStatusBadge(vaccination.status)}
                             <Badge variant="outline">{vaccination.vaccineType}</Badge>
+                            {vaccination.verificationStatus === 'hospital_verified' ? (
+                              <Badge
+                                className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 flex items-center gap-1"
+                                title={vaccination.hospitalDisplayName || ''}
+                                data-testid={`badge-hospital-verified-${vaccination.id}`}
+                              >
+                                <BadgeCheck className="w-3 h-3" /> 병원 인증
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-gray-500" data-testid={`badge-self-${vaccination.id}`}>
+                                보호자 입력
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         
@@ -545,6 +580,16 @@ export default function VaccinationSchedulePage() {
                             </SelectContent>
                           </Select>
                           
+                          {vaccination.verificationStatus !== 'hospital_verified' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setVerifyCode(''); setVerifyDialog({ open: true, vaccinationId: vaccination.id }); }}
+                              data-testid={`button-verify-${vaccination.id}`}
+                            >
+                              <BadgeCheck className="w-4 h-4 mr-1" /> 병원 코드로 인증
+                            </Button>
+                          )}
                           <Button 
                             variant="destructive" 
                             size="sm"
@@ -558,6 +603,12 @@ export default function VaccinationSchedulePage() {
                             삭제
                           </Button>
                         </div>
+                        {vaccination.verificationStatus === 'hospital_verified' && vaccination.hospitalDisplayName && (
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                            인증 병원: {vaccination.hospitalDisplayName}
+                            {vaccination.hospitalVerifiedAt && ` · ${new Date(vaccination.hospitalVerifiedAt).toLocaleDateString('ko-KR')}`}
+                          </p>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -634,6 +685,42 @@ export default function VaccinationSchedulePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* 병원 인증 코드 입력 다이얼로그 */}
+      <Dialog open={verifyDialog.open} onOpenChange={(o) => setVerifyDialog({ open: o, vaccinationId: o ? verifyDialog.vaccinationId : null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BadgeCheck className="w-5 h-5 text-blue-600" /> 병원 인증 코드 입력
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              병원에서 발급받은 6~8자 코드를 입력하면 이 백신 기록이 병원 인증으로 표시됩니다. 코드는 1회만 사용 가능합니다.
+            </p>
+            <Input
+              autoFocus
+              placeholder="예: A3K7XB29"
+              value={verifyCode}
+              maxLength={8}
+              onChange={(e) => setVerifyCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+              className="font-mono tracking-widest text-center text-lg uppercase"
+              data-testid="input-verify-code"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" onClick={() => setVerifyDialog({ open: false, vaccinationId: null })}>취소</Button>
+              <Button
+                onClick={() => verifyDialog.vaccinationId && verifyMutation.mutate({ id: verifyDialog.vaccinationId, code: verifyCode })}
+                disabled={verifyMutation.isPending || verifyCode.length < 6}
+                data-testid="button-submit-verify"
+              >
+                {verifyMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                인증하기
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 병원 선택 지도 다이얼로그 */}
       <Dialog open={isHospitalMapOpen} onOpenChange={setIsHospitalMapOpen}>

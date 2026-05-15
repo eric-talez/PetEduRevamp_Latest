@@ -28,6 +28,9 @@ interface VerifyResponse {
     status: "ok" | "expiring" | "expired" | "missing";
     vaccineDate: string | null;
     nextDueDate: string | null;
+    verificationStatus?: "self" | "hospital_verified";
+    hospitalDisplayName?: string | null;
+    hospitalVerifiedAt?: string | null;
   }>;
   overallStatus: "all_ok" | "has_expiring" | "has_expired" | "no_records";
   verifiedAt: string;
@@ -440,15 +443,38 @@ export default function PetVerifyResult() {
               <div className="space-y-2">
                 {data.vaccinations.map((v, i) => {
                   const s = STATUS_LABEL[v.status];
+                  const isHospital = v.verificationStatus === "hospital_verified";
                   return (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-lg border bg-white dark:bg-gray-900">
+                    <div
+                      key={i}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${isHospital ? "border-blue-300 bg-blue-50/50 dark:bg-blue-950/30" : "bg-white dark:bg-gray-900"}`}
+                      data-testid={`row-vaccine-${i}`}
+                    >
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{v.vaccineName}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-medium truncate">{v.vaccineName}</p>
+                          {isHospital ? (
+                            <Badge
+                              className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300 text-[10px] px-1.5 py-0 flex items-center gap-0.5"
+                              title={`병원 인증: ${v.hospitalDisplayName || ""}${v.hospitalVerifiedAt ? ` · ${new Date(v.hospitalVerifiedAt).toLocaleDateString()}` : ""}`}
+                              data-testid={`badge-hospital-verified-${i}`}
+                            >
+                              <BadgeCheck className="w-3 h-3" /> 병원 인증
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-gray-600 dark:text-gray-400" data-testid={`badge-self-reported-${i}`}>
+                              보호자 입력
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 mt-0.5">
                           {v.vaccineDate && `접종일: ${v.vaccineDate}`}
                           {v.vaccineDate && v.nextDueDate && " · "}
                           {v.nextDueDate && `다음: ${v.nextDueDate}`}
                         </p>
+                        {isHospital && v.hospitalDisplayName && (
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5 truncate">{v.hospitalDisplayName}</p>
+                        )}
                       </div>
                       <Badge className={`${s.cls} flex-shrink-0`}>{s.label}</Badge>
                     </div>

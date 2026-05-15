@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { randomBytes, createHmac, createHash, timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { db } from "./db";
-import { sql, eq, and, isNotNull, desc, or, ilike, inArray } from "drizzle-orm";
+import { sql, eq, and, isNotNull, isNull, gt, desc, or, ilike, inArray } from "drizzle-orm";
 import { products, productCommissions, referralProfiles, referralEarnings, settlements, trainers, trainerApplications, instituteApplications, systemSettings, orders, orderItems, events, users, coursePurchases, courseProgress, courses, trainerInstitutes, trainerInstituteApplications, trainerClientAssignments, consultationRecords, pets, institutes, instituteQrCodes, checkinRecords, emergencyContacts, storePolicies, consentRecords, incidentProtocols, instituteZones, petVisitSessions, vaccinations, petNoseProfiles, userUiPreferences, petVaccinationPassports, petLostReports, reservations as reservationsTable } from "../shared/schema";
 import { validateRequest, createSubstitutePostSchema, updateSubstitutePostSchema, createPaymentIntentSchema } from './middleware/validation';
 import { registerMessagingRoutes } from "./routes/messaging";
@@ -890,7 +890,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await db.execute(sql`ALTER TABLE pet_vaccination_passports ADD COLUMN IF NOT EXISTS kid varchar(16)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_lost_reports_owner_idx ON pet_lost_reports(owner_id, created_at DESC)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS pet_lost_reports_pet_idx ON pet_lost_reports(pet_id, created_at DESC)`);
-    console.log('✅ 펫스포트 분실모드 컬럼/테이블 보장 완료');
+    // Task #225 — 병원 서명 백신 기록
+    await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS verification_status varchar(20) DEFAULT 'self' NOT NULL`);
+    await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS hospital_display_name varchar(200)`);
+    await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS hospital_verified_at timestamp`);
+    await db.execute(sql`ALTER TABLE vaccinations ADD COLUMN IF NOT EXISTS verified_by_code varchar(32)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS vaccine_verification_codes (
+      id serial PRIMARY KEY,
+      code varchar(32) NOT NULL UNIQUE,
+      issuer_user_id integer NOT NULL,
+      hospital_name varchar(200) NOT NULL,
+      target_vaccine_type varchar(100),
+      notes text,
+      expires_at timestamp NOT NULL,
+      used_at timestamp,
+      used_by_vaccination_id integer,
+      used_by_user_id integer,
+      revoked_at timestamp,
+      created_at timestamp DEFAULT now() NOT NULL
+    )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS vaccine_verification_codes_issuer_idx ON vaccine_verification_codes(issuer_user_id, created_at DESC)`);
+    console.log('✅ 펫스포트 분실모드/병원인증 컬럼·테이블 보장 완료');
   } catch (e) {
     logServerError('⚠️ 분실모드 마이그레이션 실패(무시):', e);
   }
@@ -21795,6 +21815,226 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  // ========================================================================
+  // Task #225 — 병원 백신 인증 코드 (admin/hospital 발급) + 보호자 코드 사용
+  // ========================================================================
+  const VACCINE_CODE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+  function generateVaccineCode(): string {
+    // 영숫자 8자리 (혼동 문자 제외: 0/O/I/1)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = randomBytes(8);
+    let s = '';
+    for (let i = 0; i < 8; i++) s += chars[bytes[i] % chars.length];
+    return s;
+  }
+
+  async function loadCodesTable(): Promise<any> {
+    const mod = await import('../shared/schema');
+    return mod.vaccineVerificationCodes;
+  }
+
+  // 코드 발급 — admin 또는 hospital 역할
+  app.post('/api/admin/hospital-vaccine-codes', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const sessionUser = ((req as Request & { user?: { id?: number; role?: string } }).user
+        || (req.session as { user?: { id?: number; role?: string } } | undefined)?.user) as
+        | { id?: number; role?: string } | undefined;
+      const role = sessionUser?.role;
+      if (role !== 'admin' && role !== 'hospital') {
+        return res.status(403).json({ error: '병원 또는 관리자 권한이 필요합니다.' });
+      }
+      const userId = sessionUser?.id;
+      if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
+      const { hospitalName, targetVaccineType, notes, count } = req.body || {};
+      if (!hospitalName || typeof hospitalName !== 'string' || hospitalName.trim().length < 2) {
+        return res.status(400).json({ error: '병원명을 입력해주세요.' });
+      }
+      const want = Math.max(1, Math.min(50, parseInt(String(count ?? 1), 10) || 1));
+      const codesTable = await loadCodesTable();
+      const expiresAt = new Date(Date.now() + VACCINE_CODE_TTL_MS);
+      const created: any[] = [];
+      for (let i = 0; i < want; i++) {
+        let attempts = 0;
+        while (attempts < 5) {
+          const code = generateVaccineCode();
+          try {
+            const [row] = await db.insert(codesTable).values({
+              code,
+              issuerUserId: userId,
+              hospitalName: String(hospitalName).trim().slice(0, 200),
+              targetVaccineType: targetVaccineType ? String(targetVaccineType).trim().slice(0, 100) : null,
+              notes: notes ? String(notes).slice(0, 1000) : null,
+              expiresAt,
+            }).returning();
+            created.push(row);
+            break;
+          } catch (e) {
+            attempts++;
+            if (attempts >= 5) throw e;
+          }
+        }
+      }
+      res.json({ success: true, codes: created });
+    } catch (error) {
+      logServerError('[Vaccine Code] 발급 오류:', error, req);
+      res.status(500).json({ error: '코드 발급 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 코드 목록 — admin은 전체, hospital은 본인 발급분
+  app.get('/api/admin/hospital-vaccine-codes', requireAuth(), async (req, res) => {
+    try {
+      const sessionUser = ((req as Request & { user?: { id?: number; role?: string } }).user
+        || (req.session as { user?: { id?: number; role?: string } } | undefined)?.user) as
+        | { id?: number; role?: string } | undefined;
+      const role = sessionUser?.role;
+      if (role !== 'admin' && role !== 'hospital') {
+        return res.status(403).json({ error: '병원 또는 관리자 권한이 필요합니다.' });
+      }
+      const codesTable = await loadCodesTable();
+      const rows = role === 'admin'
+        ? await db.select().from(codesTable).orderBy(desc(codesTable.createdAt)).limit(500)
+        : await db.select().from(codesTable).where(eq(codesTable.issuerUserId, sessionUser!.id!)).orderBy(desc(codesTable.createdAt)).limit(500);
+      const now = Date.now();
+      const items = rows.map((r: any) => {
+        let status: 'active' | 'used' | 'expired' | 'revoked' = 'active';
+        if (r.revokedAt) status = 'revoked';
+        else if (r.usedAt) status = 'used';
+        else if (r.expiresAt && new Date(r.expiresAt).getTime() < now) status = 'expired';
+        return { ...r, status };
+      });
+      res.json({ success: true, codes: items });
+    } catch (error) {
+      logServerError('[Vaccine Code] 조회 오류:', error, req);
+      res.status(500).json({ error: '코드 조회 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 코드 회수 (사용 전만 가능)
+  app.delete('/api/admin/hospital-vaccine-codes/:id', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const sessionUser = ((req as Request & { user?: { id?: number; role?: string } }).user
+        || (req.session as { user?: { id?: number; role?: string } } | undefined)?.user) as
+        | { id?: number; role?: string } | undefined;
+      const role = sessionUser?.role;
+      if (role !== 'admin' && role !== 'hospital') {
+        return res.status(403).json({ error: '병원 또는 관리자 권한이 필요합니다.' });
+      }
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID' });
+      const codesTable = await loadCodesTable();
+      const [existing] = await db.select().from(codesTable).where(eq(codesTable.id, id)).limit(1);
+      if (!existing) return res.status(404).json({ error: '코드를 찾을 수 없습니다.' });
+      if (role !== 'admin' && existing.issuerUserId !== sessionUser?.id) {
+        return res.status(403).json({ error: '본인이 발급한 코드만 회수할 수 있습니다.' });
+      }
+      if (existing.usedAt) return res.status(400).json({ error: '이미 사용된 코드는 회수할 수 없습니다.' });
+      await db.update(codesTable).set({ revokedAt: new Date() }).where(eq(codesTable.id, id));
+      res.json({ success: true });
+    } catch (error) {
+      logServerError('[Vaccine Code] 회수 오류:', error, req);
+      res.status(500).json({ error: '코드 회수 중 오류가 발생했습니다.' });
+    }
+  });
+
+  // 보호자: 코드로 백신 기록 인증
+  app.patch('/api/vaccinations/:id/verify', requireAuth(), csrfProtection, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: '잘못된 ID' });
+      const sessionUser = ((req as Request & { user?: { id?: number; role?: string } }).user
+        || (req.session as { user?: { id?: number; role?: string } } | undefined)?.user) as
+        | { id?: number; role?: string } | undefined;
+      const userId = sessionUser?.id;
+      if (!userId) return res.status(401).json({ error: '로그인이 필요합니다.' });
+      const codeRaw = String(req.body?.code || '').trim().toUpperCase();
+      if (!/^[A-Z0-9]{6,8}$/.test(codeRaw)) {
+        return res.status(400).json({ error: '코드 형식이 올바르지 않습니다 (6~8자 영숫자).' });
+      }
+
+      const existing = await storage.getVaccinationById(id);
+      if (!existing) return res.status(404).json({ error: '예방접종 기록을 찾을 수 없습니다.' });
+      const access = await requireDiaryAccess(req, res, existing.petId);
+      if (!access) return;
+      if (!access.isOwner && !access.isAdmin) {
+        return res.status(403).json({ error: '보호자만 인증할 수 있습니다.' });
+      }
+      if (existing.verificationStatus === 'hospital_verified') {
+        return res.status(400).json({ error: '이미 병원 인증된 기록입니다.' });
+      }
+
+      const codesTable = await loadCodesTable();
+      const result = await db.transaction(async (tx) => {
+        // 1) 코드 사전 조회 (타입 미스매치/만료/회수/사용 진단용 메시지 분기)
+        const [pre] = await tx.select().from(codesTable).where(eq(codesTable.code, codeRaw)).limit(1);
+        if (!pre) throw new Error('CODE_NOT_FOUND');
+        if (pre.revokedAt) throw new Error('CODE_REVOKED');
+        if (pre.usedAt) throw new Error('CODE_USED');
+        if (pre.expiresAt && new Date(pre.expiresAt).getTime() < Date.now()) throw new Error('CODE_EXPIRED');
+        if (pre.targetVaccineType && pre.targetVaccineType.toLowerCase() !== String(existing.vaccineName || '').toLowerCase()) {
+          throw new Error('CODE_TYPE_MISMATCH');
+        }
+        const verifiedAt = new Date();
+        // 2) 원자적 사용 처리 — 동시성에서 1회만 성공 보장
+        const claimed = await tx.update(codesTable).set({
+          usedAt: verifiedAt,
+          usedByVaccinationId: id,
+          usedByUserId: userId,
+        }).where(and(
+          eq(codesTable.id, pre.id),
+          isNull(codesTable.usedAt),
+          isNull(codesTable.revokedAt),
+          gt(codesTable.expiresAt, verifiedAt),
+        )).returning();
+        if (!claimed || claimed.length === 0) {
+          // 다른 요청이 먼저 소비함
+          throw new Error('CODE_USED');
+        }
+        // 3) 같은 트랜잭션에서 백신 기록 업데이트
+        const [updatedRow] = await tx.update(vaccinations).set({
+          verificationStatus: 'hospital_verified',
+          hospitalDisplayName: pre.hospitalName,
+          hospitalVerifiedAt: verifiedAt,
+          verifiedByCode: codeRaw,
+          updatedAt: verifiedAt,
+        }).where(eq(vaccinations.id, id)).returning();
+        // 메모리 폴백 동기화 (best-effort, 실패해도 DB가 진실)
+        try {
+          await storage.updateVaccination(id, {
+            verificationStatus: 'hospital_verified',
+            hospitalDisplayName: pre.hospitalName,
+            hospitalVerifiedAt: verifiedAt,
+            verifiedByCode: codeRaw,
+          });
+        } catch { /* ignore mem-store sync errors */ }
+        return { code: claimed[0], updated: updatedRow || existing };
+      });
+
+      res.json({
+        success: true,
+        vaccination: result.updated,
+        hospitalDisplayName: result.code.hospitalName,
+      });
+    } catch (error: any) {
+      const msg = error?.message;
+      const map: Record<string, { status: number; error: string; code: string }> = {
+        CODE_NOT_FOUND: { status: 404, error: '존재하지 않는 코드입니다.', code: 'CODE_NOT_FOUND' },
+        CODE_REVOKED: { status: 410, error: '회수된 코드입니다.', code: 'CODE_REVOKED' },
+        CODE_USED: { status: 410, error: '이미 사용된 코드입니다.', code: 'CODE_USED' },
+        CODE_EXPIRED: { status: 410, error: '만료된 코드입니다.', code: 'CODE_EXPIRED' },
+        CODE_TYPE_MISMATCH: { status: 400, error: '코드 발급 대상 백신 종류와 일치하지 않습니다.', code: 'CODE_TYPE_MISMATCH' },
+      };
+      if (msg && map[msg]) {
+        const m = map[msg];
+        return res.status(m.status).json({ error: m.error, code: m.code });
+      }
+      logServerError('[Vaccine Code] 검증 오류:', error, req);
+      res.status(500).json({ error: '인증 처리 중 오류가 발생했습니다.' });
+    }
+  });
+
+  console.log('[Vaccine Verify] 병원 인증 코드 라우트가 등록되었습니다.');
+
   console.log('[Vaccinations] 예방접종 스케줄 관리 API 엔드포인트가 등록되었습니다.');
   console.log('  - GET /api/vaccinations/user/:userId (사용자의 모든 예방접종)');
   console.log('  - GET /api/vaccinations/pet/:petId (반려동물의 예방접종)');
@@ -24394,6 +24634,9 @@ export function registerTrainerCertificationRoutes(app: Express) {
     status: string | null;
     vaccineDate: string | null;
     nextDueDate: string | null;
+    verificationStatus?: string | null;
+    hospitalDisplayName?: string | null;
+    hospitalVerifiedAt?: Date | string | null;
   };
 
   async function loadPetForPassport(petId: number): Promise<PetLike | null> {
@@ -24446,6 +24689,11 @@ export function registerTrainerCertificationRoutes(app: Express) {
         status,
         vaccineDate: v.vaccineDate,
         nextDueDate: next,
+        verificationStatus: (v.verificationStatus === 'hospital_verified' ? 'hospital_verified' : 'self') as 'self' | 'hospital_verified',
+        hospitalDisplayName: v.hospitalDisplayName || null,
+        hospitalVerifiedAt: v.hospitalVerifiedAt
+          ? (v.hospitalVerifiedAt instanceof Date ? v.hospitalVerifiedAt.toISOString() : String(v.hospitalVerifiedAt))
+          : null,
       };
     });
 
