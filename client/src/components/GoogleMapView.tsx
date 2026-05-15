@@ -278,6 +278,57 @@ function GoogleMapViewInner({
           `
         });
 
+        // 팝업 위로 마우스가 이동하면 닫히지 않도록 처리
+        let iwHoverCleanup: (() => void) | null = null;
+        infoWindow.addListener('domready', () => {
+          if (iwHoverCleanup) {
+            iwHoverCleanup();
+            iwHoverCleanup = null;
+          }
+          if (hoverInfoWindowRef.current !== infoWindow) return;
+          // InfoWindow 내부 컨텐츠에서 가장 가까운 .gm-style-iw 컨테이너만 선택
+          const contentNode = infoWindow.getContent();
+          let iwContainer: HTMLElement | null = null;
+          if (contentNode instanceof HTMLElement) {
+            iwContainer = contentNode.closest('.gm-style-iw') as HTMLElement | null;
+          }
+          if (!iwContainer) {
+            // content가 string인 경우: 마지막으로 추가된 .gm-style-iw를 사용
+            const all = document.querySelectorAll<HTMLElement>('.gm-style-iw');
+            iwContainer = all.length > 0 ? all[all.length - 1] : null;
+          }
+          if (!iwContainer) return;
+          const handleEnter = () => {
+            if (hoverCloseTimerRef.current) {
+              clearTimeout(hoverCloseTimerRef.current);
+              hoverCloseTimerRef.current = null;
+            }
+          };
+          const handleLeave = () => {
+            if (hoverInfoWindowRef.current === infoWindow) {
+              hoverCloseTimerRef.current = setTimeout(() => {
+                if (hoverInfoWindowRef.current === infoWindow) {
+                  infoWindow.close();
+                  hoverInfoWindowRef.current = null;
+                }
+                hoverCloseTimerRef.current = null;
+              }, 150);
+            }
+          };
+          iwContainer.addEventListener('mouseenter', handleEnter);
+          iwContainer.addEventListener('mouseleave', handleLeave);
+          iwHoverCleanup = () => {
+            iwContainer!.removeEventListener('mouseenter', handleEnter);
+            iwContainer!.removeEventListener('mouseleave', handleLeave);
+          };
+        });
+        infoWindow.addListener('closeclick', () => {
+          if (iwHoverCleanup) {
+            iwHoverCleanup();
+            iwHoverCleanup = null;
+          }
+        });
+
         // 마커 클릭 이벤트
         marker.addListener('click', () => {
           if (hoverCloseTimerRef.current) {
