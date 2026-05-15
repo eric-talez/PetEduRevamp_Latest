@@ -821,12 +821,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS pets_pet_uid_unique ON pets(pet_uid) WHERE pet_uid IS NOT NULL`);
     const { generatePetUid } = await import('./lib/petUid');
     const missing = await db.execute(sql`SELECT id FROM pets WHERE pet_uid IS NULL OR pet_uid = ''`);
-    const rows = (missing as any).rows || (missing as any) || [];
+    const rawRows = (missing as { rows?: unknown } | unknown[]);
+    const rows: { id?: number }[] = Array.isArray(rawRows)
+      ? (rawRows as { id?: number }[])
+      : (((rawRows as { rows?: unknown }).rows ?? []) as { id?: number }[]);
     let assigned = 0;
     let failed: number[] = [];
     for (const r of rows) {
-      const id = (r as any).id;
-      if (!id) continue;
+      const id = typeof r.id === 'number' ? r.id : Number(r.id);
+      if (!id || Number.isNaN(id)) continue;
       let success = false;
       let lastErr: unknown = null;
       for (let attempt = 0; attempt < 50; attempt++) {
@@ -24464,7 +24467,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         return row;
       });
 
-      res.json({ success: true, passport: created });
+      res.json({ success: true, passport: created, petUid: pet.petUid ?? null });
     } catch (error) {
       logServerError('예방접종 여권 발급 오류:', error, req);
       res.status(500).json({ error: '여권 발급 중 오류가 발생했습니다.' });
@@ -24511,6 +24514,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
         eligible,
         missing,
         summary,
+        petUid: pet.petUid ?? null,
       });
     } catch (error) {
       logServerError('예방접종 여권 조회 오류:', error, req);
