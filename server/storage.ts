@@ -47,6 +47,7 @@ import {
   type InsertPetEventImportFailureResolution,
 } from "../shared/schema";
 import { logServerError } from './middleware/audit-logger';
+import { generatePetUid } from './lib/petUid';
 
 class Storage {
   users: any[] = [];
@@ -260,6 +261,7 @@ class Storage {
     this.initializeData();
     this.initializeSubstituteTrainerData();
     this.initializeLogoSettings();
+    try { this.backfillPetUids(); } catch (e) { console.warn('펫 UID 백필 실패(무시):', (e as Error).message); }
   }
 
   private initializeData() {
@@ -1609,14 +1611,51 @@ class Storage {
   }
 
   createPet(petData: any) {
+    // 사람이 읽기 좋은 공개 UID 자동 생성 (PTS-XXXXXX, 혼동 문자 제외)
+    let petUid = petData?.petUid;
+    if (!petUid || typeof petUid !== 'string') {
+      const used = new Set(this.pets.map(p => p.petUid).filter(Boolean));
+      for (let i = 0; i < 50; i++) {
+        const candidate = generatePetUid();
+        if (!used.has(candidate)) { petUid = candidate; break; }
+      }
+      if (!petUid) {
+        throw new Error('펫 UID 생성 실패: 충돌 한도 초과');
+      }
+    }
     const newPet = {
       id: this.pets.length ? Math.max(...this.pets.map(p => p.id)) + 1 : 1,
       ...petData,
+      petUid,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     this.pets.push(newPet);
     return newPet;
+  }
+
+  // 인메모리 시드 펫에 petUid 가 없으면 1회 백필
+  backfillPetUids() {
+    const used = new Set(this.pets.map(p => p.petUid).filter(Boolean));
+    let failed = 0;
+    for (const pet of this.pets) {
+      if (pet.petUid) continue;
+      let next: string | null = null;
+      for (let i = 0; i < 50; i++) {
+        const c = generatePetUid();
+        if (!used.has(c)) { next = c; break; }
+      }
+      if (next) {
+        pet.petUid = next;
+        used.add(next);
+      } else {
+        failed += 1;
+        console.warn(`[Pet UID] 인메모리 펫(id=${pet.id}) UID 생성 실패`);
+      }
+    }
+    if (failed > 0) {
+      console.warn(`[Pet UID] 인메모리 백필 미완료 ${failed}건 (다음 부팅에서 재시도)`);
+    }
   }
 
   updatePet(id: number, updates: any) {

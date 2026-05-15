@@ -200,6 +200,7 @@ export type SubscriptionInvoice = typeof subscriptionInvoices.$inferSelect;
 // 반려동물 테이블
 export const pets = pgTable("pets", {
   id: serial("id").primaryKey(),
+  petUid: varchar("pet_uid", { length: 12 }).unique(), // 사람이 읽기 좋은 공개 ID (예: PTS-AB7K3M)
   name: varchar("name", { length: 100 }).notNull(),
   species: varchar("species", { length: 50 }).notNull(),
   breed: varchar("breed", { length: 100 }),

@@ -166,6 +166,7 @@ interface Pet {
   trainingType?: string | null;
   trainingStartDate?: string | null;
   registrationNumber?: string | null;
+  petUid?: string | null;
 }
 
 interface PetFormData {
@@ -861,11 +862,17 @@ export default function MyPetsPage() {
               </div>
               
               <CardHeader className="pb-3">
-                <div>
+                <div className="space-y-2">
                   <CardTitle className="text-xl text-gray-900 dark:text-white">{pet.name}</CardTitle>
                   <CardDescription className="text-gray-600 dark:text-gray-400">
                     {pet.species === 'dog' ? '🐶' : pet.species === 'cat' ? '🐱' : '🐾'} {pet.breed}
                   </CardDescription>
+                  {pet.petUid && (
+                    <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
+                      <span className="text-[10px] uppercase tracking-wider text-gray-500">펫 ID</span>
+                      <span className="font-mono font-bold text-sm tracking-wider text-primary" data-testid={`text-pet-uid-${pet.id}`}>{pet.petUid}</span>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               
@@ -974,7 +981,7 @@ export default function MyPetsPage() {
                 )}
 
                 <div className="pt-2">
-                  <PetPassportCard petId={pet.id} petName={pet.name} />
+                  <PetPassportCard petId={pet.id} petName={pet.name} petUid={pet.petUid} />
                 </div>
 
                 <div className="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t">

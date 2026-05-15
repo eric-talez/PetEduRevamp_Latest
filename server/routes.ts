@@ -815,6 +815,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     logServerError('⚠️ 결제 멱등성 컬럼 마이그레이션 실패:', migrationError);
   }
 
+  // 펫 UID(공개 ID) 컬럼 보장 + 빈 값 백필
+  try {
+    await db.execute(sql`ALTER TABLE pets ADD COLUMN IF NOT EXISTS pet_uid varchar(12)`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS pets_pet_uid_unique ON pets(pet_uid) WHERE pet_uid IS NOT NULL`);
+    const { generatePetUid } = await import('./lib/petUid');
+    const missing = await db.execute(sql`SELECT id FROM pets WHERE pet_uid IS NULL OR pet_uid = ''`);
+    const rows = (missing as any).rows || (missing as any) || [];
+    let assigned = 0;
+    let failed: number[] = [];
+    for (const r of rows) {
+      const id = (r as any).id;
+      if (!id) continue;
+      let success = false;
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < 50; attempt++) {
+        const candidate = generatePetUid();
+        try {
+          await db.execute(sql`UPDATE pets SET pet_uid = ${candidate} WHERE id = ${id} AND (pet_uid IS NULL OR pet_uid = '')`);
+          success = true;
+          assigned += 1;
+          break;
+        } catch (e) {
+          lastErr = e;
+          // unique 충돌 시 재시도
+        }
+      }
+      if (!success) {
+        failed.push(id);
+        logServerError(`[Pet UID] DB 펫(id=${id}) UID 백필 실패`, lastErr);
+      }
+    }
+    console.log(`✅ 펫 UID 컬럼/백필 완료 (대상 ${rows.length}건, 성공 ${assigned}건${failed.length ? `, 실패 ${failed.length}건: [${failed.join(',')}]` : ''})`);
+  } catch (e) {
+    logServerError('⚠️ 펫 UID 백필 실패(무시):', e);
+  }
+
   // 인증 관련 라우트는 setupAuth()에서 처리됩니다 (/api/auth/* 경로)
 
   // 인증 API들 (로그인, 회원가입, 로그아웃)은 setupAuth()에서 처리됩니다
@@ -24229,6 +24265,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
   type PetLike = {
     id: number;
     ownerId: number;
+    petUid?: string | null;
     name: string;
     species: string;
     breed: string;
@@ -24557,6 +24594,7 @@ export function registerTrainerCertificationRoutes(app: Express) {
       res.json({
         success: true,
         pet: {
+          petUid: pet.petUid || null,
           name: pet.name,
           species: pet.species,
           breed: pet.breed,

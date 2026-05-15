@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 interface VerifyResponse {
   success: boolean;
   pet: {
+    petUid: string | null;
     name: string;
     species: string;
     breed: string;
@@ -141,6 +142,12 @@ export default function PetVerifyResult() {
               </div>
               <div className="flex-1 space-y-1.5">
                 <h3 className="text-2xl font-bold">{data.pet.name}</h3>
+                {data.pet.petUid && (
+                  <p className="text-sm">
+                    <span className="text-gray-500 mr-2">펫 ID</span>
+                    <span className="font-mono font-bold tracking-wider text-primary" data-testid="text-verify-pet-uid">{data.pet.petUid}</span>
+                  </p>
+                )}
                 <p className="text-sm text-gray-600 dark:text-gray-400">{data.pet.breed} · {data.pet.age}세 · {data.pet.gender === "male" ? "수컷" : "암컷"}</p>
                 {data.pet.color && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">색상: {data.pet.color}</p>

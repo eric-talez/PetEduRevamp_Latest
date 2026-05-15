@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 interface Props {
   petId: number;
   petName: string;
+  petUid?: string | null;
 }
 
 interface PassportResponse {
@@ -33,10 +34,19 @@ interface PassportResponse {
   };
 }
 
-export function PetPassportCard({ petId, petName }: Props) {
+export function PetPassportCard({ petId, petName, petUid }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [uidCopied, setUidCopied] = useState(false);
+
+  const handleCopyUid = async () => {
+    if (!petUid) return;
+    await navigator.clipboard.writeText(petUid);
+    setUidCopied(true);
+    toast({ title: "펫 ID가 복사되었습니다", description: petUid });
+    setTimeout(() => setUidCopied(false), 2000);
+  };
 
   const { data, isLoading } = useQuery<PassportResponse>({
     queryKey: ["/api/pets", petId, "passport"],
@@ -96,9 +106,38 @@ export function PetPassportCard({ petId, petName }: Props) {
   const handleDownload = () => {
     const canvas = document.querySelector<HTMLCanvasElement>(`#pet-passport-qr-${petId}`);
     if (!canvas) return;
+    // 캡션(펫 UID + 이름)을 포함한 새 캔버스로 합성
+    const padding = 20;
+    const captionH = petUid ? 70 : 40;
+    const out = document.createElement("canvas");
+    out.width = canvas.width + padding * 2;
+    out.height = canvas.height + padding * 2 + captionH;
+    const ctx = out.getContext("2d");
+    if (!ctx) {
+      const link = document.createElement("a");
+      link.download = `${petName}_예방접종QR.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      return;
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(canvas, padding, padding);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#111111";
+    if (petUid) {
+      ctx.font = "bold 28px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.fillText(petUid, out.width / 2, canvas.height + padding + 36);
+      ctx.font = "16px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = "#555555";
+      ctx.fillText(petName, out.width / 2, canvas.height + padding + 60);
+    } else {
+      ctx.font = "bold 18px system-ui, -apple-system, sans-serif";
+      ctx.fillText(petName, out.width / 2, canvas.height + padding + 28);
+    }
     const link = document.createElement("a");
     link.download = `${petName}_예방접종QR.png`;
-    link.href = canvas.toDataURL("image/png");
+    link.href = out.toDataURL("image/png");
     link.click();
   };
 
@@ -111,6 +150,20 @@ export function PetPassportCard({ petId, petName }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {petUid && (
+          <button
+            type="button"
+            onClick={handleCopyUid}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-primary/5 hover:bg-primary/10 transition-colors"
+            data-testid={`button-copy-pet-uid-${petId}`}
+          >
+            <div className="text-left">
+              <div className="text-[11px] text-gray-500">펫 ID (탭하여 복사)</div>
+              <div className="font-mono font-bold text-lg tracking-wider text-primary">{petUid}</div>
+            </div>
+            {uidCopied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-gray-400" />}
+          </button>
+        )}
         {!data?.eligible && !data?.passport && (
           <Alert>
             <ShieldAlert className="w-4 h-4" />
