@@ -1079,16 +1079,19 @@ export default function AdminPetEventsPage() {
                   </div>
                 );
               })}
-              <div className="flex flex-col gap-1.5 border border-stone-100 rounded px-2 py-1.5 sm:col-span-2">
+              <div className="flex flex-col gap-1.5 border border-amber-100 rounded px-2 py-1.5 sm:col-span-2 bg-amber-50/30" data-testid="card-vertex-secondary">
                 <div className="flex items-center gap-2 text-xs">
                   {providers.vertex.enabled ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                   ) : providers.vertex.reason === "permission_denied" ? (
                     <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
                   ) : (
-                    <AlertCircle className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   )}
-                  <span className="font-medium text-stone-700 w-24 shrink-0">Vertex AI Search</span>
+                  <span className="font-medium text-stone-700 shrink-0">Vertex AI Search</span>
+                  <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                    보조 검색(Secondary search)
+                  </Badge>
                   <Badge
                     variant="outline"
                     className={`text-[10px] ${
@@ -1118,6 +1121,20 @@ export default function AdminPetEventsPage() {
                     </span>
                   )}
                 </div>
+                <div className="pl-5 space-y-0.5 text-[11px] text-amber-800" data-testid="vertex-warning-block">
+                  <div className="flex items-start gap-1">
+                    <AlertCircle className="w-3 h-3 shrink-0 mt-0.5 text-amber-500" />
+                    <span>Advanced website indexing는 <b>소유 도메인 인증</b>이 필요합니다 — 타겟 사이트가 미인증 상태입니다.</span>
+                  </div>
+                  <div className="flex items-start gap-1">
+                    <AlertCircle className="w-3 h-3 shrink-0 mt-0.5 text-amber-500" />
+                    <span>외부 도메인(k-pet.co.kr, megazoo.co.kr 등)은 <b>색인할 수 없습니다</b> — 소유권 인증 없이는 데이터스토어가 빈 상태로 남습니다.</span>
+                  </div>
+                  <div className="flex items-start gap-1">
+                    <AlertCircle className="w-3 h-3 shrink-0 mt-0.5 text-amber-500" />
+                    <span>크롤러 폴백(Naver/Daum/Google 검색)을 <b>주 수집 소스</b>로 계속 사용하세요. Vertex는 자동 수집(runImport)에서 제외됩니다.</span>
+                  </div>
+                </div>
                 {providers.vertex.reason !== "missing_credentials" && (
                   <div className="flex items-center gap-2 pl-5">
                     <Input
@@ -1136,7 +1153,7 @@ export default function AdminPetEventsPage() {
                       data-testid="button-vertex-test"
                     >
                       {vertexTest.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <FlaskConical className="w-3 h-3 mr-1" />}
-                      단건 테스트
+                      보조 검색 테스트
                     </Button>
                   </div>
                 )}
@@ -1891,7 +1908,7 @@ export default function AdminPetEventsPage() {
         <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto" data-testid="dialog-vertex-test">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FlaskConical className="w-4 h-4" /> Vertex AI Search 단건 테스트
+              <FlaskConical className="w-4 h-4" /> Vertex AI Search 보조 검색 테스트
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
@@ -1927,6 +1944,10 @@ export default function AdminPetEventsPage() {
                     className={`text-[11px] ${
                       vertexTestResult.status === "ok"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : vertexTestResult.status === "iam_permission_denied"
+                        ? "bg-red-50 text-red-700 border-red-200"
+                        : vertexTestResult.status === "unverified_indexing"
+                        ? "bg-amber-50 text-amber-800 border-amber-300"
                         : vertexTestResult.status === "permission_denied"
                         ? "bg-red-50 text-red-700 border-red-200"
                         : vertexTestResult.status === "auth_failed"
@@ -1939,6 +1960,10 @@ export default function AdminPetEventsPage() {
                   >
                     {vertexTestResult.status === "ok"
                       ? "✓ 정상 응답"
+                      : vertexTestResult.status === "iam_permission_denied"
+                      ? "✗ IAM 권한 없음"
+                      : vertexTestResult.status === "unverified_indexing"
+                      ? "⚠ 소유권 미인증 (Advanced website indexing)"
                       : vertexTestResult.status === "permission_denied"
                       ? "✗ permission denied"
                       : vertexTestResult.status === "auth_failed"
@@ -1952,6 +1977,19 @@ export default function AdminPetEventsPage() {
                   )}
                   <span className="text-stone-500">키워드: <b>"{vertexTestResult.keyword}"</b></span>
                 </div>
+                {vertexTestResult.status === "iam_permission_denied" && (
+                  <div className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded p-2 space-y-1" data-testid="vertex-iam-hint">
+                    <div className="font-medium">IAM 권한 부족</div>
+                    <div>서비스 계정에 <code className="bg-red-100 px-0.5 rounded">roles/discoveryengine.viewer</code> 역할을 부여하세요.</div>
+                  </div>
+                )}
+                {vertexTestResult.status === "unverified_indexing" && (
+                  <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2 space-y-1" data-testid="vertex-unverified-hint">
+                    <div className="font-medium">Advanced website indexing — 소유권 미인증</div>
+                    <div>타겟 사이트(k-pet.co.kr 등 외부 도메인)의 소유권 인증 없이는 Advanced website indexing으로 색인할 수 없습니다.</div>
+                    <div className="text-amber-700">→ Naver/Daum/Google 크롤러 폴백이 주 수집 소스로 계속 동작합니다.</div>
+                  </div>
+                )}
                 {vertexTestResult.error && (
                   <div className="text-xs text-red-600 bg-red-50 rounded p-2">{vertexTestResult.error}</div>
                 )}
@@ -2111,6 +2149,9 @@ export default function AdminPetEventsPage() {
                                   <TableRow key={s.source} data-testid={`row-source-${idx}-${s.source}`}>
                                     <TableCell className="text-xs font-medium">
                                       {s.source}
+                                      {s.source === "Vertex AI Search" && (
+                                        <Badge variant="outline" className="ml-1 text-[10px] py-0 bg-amber-50 text-amber-700 border-amber-200">보조검색</Badge>
+                                      )}
                                       {isEmpty && s.source !== "Vertex AI Search" && (
                                         <Badge variant="outline" className="ml-2 text-[10px] py-0">키 미설정/0건</Badge>
                                       )}

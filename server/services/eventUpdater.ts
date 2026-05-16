@@ -618,6 +618,161 @@ function buildSearchKeywordPool(): string[] {
 
 const SEARCH_KEYWORD_POOL: string[] = buildSearchKeywordPool();
 
+// ── Source Catalog ────────────────────────────────────────────────────────────
+// 수집 전략과 메타 정보를 선언적으로 기술한 카탈로그.
+// 각 항목은 실제 수집 함수와 독립적으로 존재하므로, 함수 없이도 소스를 문서화할 수 있다.
+
+export type SourceStrategy =
+  | 'rss'
+  | 'sitemap'
+  | 'html_list_page'
+  | 'html_detail_page'
+  | 'api'
+  | 'ai_search'; // secondary only
+
+export interface SourceCatalogEntry {
+  /** 소스 식별자 (영문 snake_case). */
+  key: string;
+  /** 관리자 UI·로그에 표시되는 이름. */
+  displayName: string;
+  strategy: SourceStrategy;
+  baseUrl?: string;
+  endpoint?: string;
+  /** 'national' 또는 시·도 코드 ('서울', '부산' 등). */
+  region?: string;
+  /** false → runImport 에서 실행하지 않음. */
+  enabled: boolean;
+  /** 필수 환경 변수 목록. 모두 설정되어 있어야 active. */
+  envKeys?: string[];
+  /** 제약 사항, 색인 조건, 알려진 이슈 등 메모. */
+  notes?: string;
+  /**
+   * true → 주수집(runImport) 경로에서 실행.
+   * false → 보조/온디맨드 전용 (secondary).
+   */
+  primary: boolean;
+}
+
+export const SOURCE_CATALOG: readonly SourceCatalogEntry[] = [
+  {
+    key: 'visitkorea_festival',
+    displayName: 'VisitKorea(축제)',
+    strategy: 'api',
+    endpoint: 'https://apis.data.go.kr/B551011/KorService2/searchFestival2',
+    region: 'national',
+    enabled: true,
+    envKeys: ['VISITKOREA_API_KEY'],
+    primary: true,
+    notes: '한국관광공사 TourAPI 4.0 — 반려/펫 키워드 필터',
+  },
+  {
+    key: 'visitkorea_keyword',
+    displayName: 'VisitKorea(키워드)',
+    strategy: 'api',
+    endpoint: 'https://apis.data.go.kr/B551011/KorService2/searchKeyword2',
+    region: 'national',
+    enabled: true,
+    envKeys: ['VISITKOREA_API_KEY'],
+    primary: true,
+    notes: '한국관광공사 TourAPI 4.0 — 반려 키워드 행사/공연/축제',
+  },
+  {
+    key: 'kpetfair',
+    displayName: '케이펫페어 공식',
+    strategy: 'html_list_page',
+    baseUrl: 'https://www.kpetfair.co.kr/',
+    region: 'national',
+    enabled: true,
+    primary: true,
+    notes: 'K-Pet Fair 공식 사이트 HTML 파싱 (JSON-LD + 일정 휴리스틱)',
+  },
+  {
+    key: 'animal_protect',
+    displayName: '동물보호관리시스템',
+    strategy: 'api',
+    endpoint: 'https://apis.data.go.kr/1543061/abandonmentPublicEventSrvc/eventInfo',
+    region: 'national',
+    enabled: true,
+    envKeys: ['ANIMAL_PROTECT_API_KEY'],
+    primary: true,
+    notes: '농림축산검역본부 동물보호관리시스템 행사정보',
+  },
+  {
+    key: 'seoul_cultural',
+    displayName: '서울 열린데이터광장(문화행사)',
+    strategy: 'api',
+    endpoint: 'http://openapi.seoul.go.kr:8088/json/culturalEventInfo',
+    region: '서울',
+    enabled: true,
+    envKeys: ['SEOUL_OPENAPI_KEY'],
+    primary: true,
+    notes: '서울시 문화행사정보 — 반려/펫 키워드 필터',
+  },
+  {
+    key: 'naver_search',
+    displayName: 'Naver 검색',
+    strategy: 'api',
+    endpoint: 'https://openapi.naver.com/v1/search',
+    region: 'national',
+    enabled: true,
+    envKeys: ['NAVER_SEARCH_CLIENT_ID', 'NAVER_SEARCH_CLIENT_SECRET'],
+    primary: true,
+    notes: '네이버 검색 API (news + webkr 엔드포인트, 지역×키워드 풀)',
+  },
+  {
+    key: 'daum_search',
+    displayName: 'Daum 검색',
+    strategy: 'api',
+    endpoint: 'https://dapi.kakao.com/v2/search',
+    region: 'national',
+    enabled: true,
+    envKeys: ['KAKAO_REST_API_KEY'],
+    primary: true,
+    notes: '카카오/다음 검색 API (web + blog 엔드포인트)',
+  },
+  {
+    key: 'google_cse',
+    displayName: 'Google 검색',
+    strategy: 'api',
+    endpoint: 'https://www.googleapis.com/customsearch/v1',
+    region: 'national',
+    enabled: true,
+    envKeys: ['GOOGLE_CUSTOM_SEARCH_API_KEY', 'GOOGLE_CUSTOM_SEARCH_CX'],
+    primary: true,
+    notes: 'Google Custom Search JSON API',
+  },
+  {
+    key: 'megazoo',
+    displayName: '메가펫페어',
+    strategy: 'html_list_page',
+    baseUrl: 'https://www.megazoo.co.kr/',
+    region: 'national',
+    enabled: false,
+    primary: false,
+    notes:
+      '메가펫(megazoo.co.kr) 행사 페이지. 외부 도메인이므로 Vertex AI Advanced website indexing 색인 불가 (소유권 인증 필요). 자체 HTML 크롤러 구현 필요.',
+  },
+  {
+    key: 'vertex_ai_search',
+    displayName: 'Vertex AI Search',
+    strategy: 'ai_search',
+    endpoint: 'https://discoveryengine.googleapis.com/v1',
+    region: 'national',
+    enabled: false,
+    envKeys: [
+      'VERTEX_AI_SEARCH_PROJECT',
+      'VERTEX_AI_SEARCH_DATASTORE',
+      'GOOGLE_APPLICATION_CREDENTIALS_JSON',
+    ],
+    primary: false,
+    notes:
+      '보조 검색(Secondary search) 전용. Advanced website indexing은 소유 도메인 인증을 요구하므로 ' +
+      '외부 도메인(k-pet.co.kr, megazoo.co.kr 등)을 색인할 수 없다. ' +
+      'Basic website search(VERTEX_AI_SEARCH_BASIC_DATASTORE) 사용 시 저신뢰도 후보 풀로만 활용. ' +
+      '주수집 경로(runImport) 에서 제외됨.',
+  },
+] as const;
+
 /**
  * Default per-provider, per-run request cap.
  * Override globally with `PET_EVENT_SEARCH_DAILY_CAP` or per provider with
@@ -1555,7 +1710,16 @@ function logProviderStatuses(): void {
   console.log(`[eventUpdater] Google: ${labelOf(google, 'disabled')}`);
   console.log(`[eventUpdater] Naver: ${labelOf(naver)}`);
   console.log(`[eventUpdater] Kakao: ${labelOf(kakao)}`);
-  console.log(`[eventUpdater] Vertex AI Search: ${labelOf(vertex)}`);
+  // Vertex AI Search는 주수집 경로에서 제외됨 — 보조 검색(Secondary search) 전용.
+  // Advanced website indexing은 소유 도메인 인증 필요, 외부 도메인 색인 불가.
+  console.log(`[eventUpdater] Vertex AI Search (보조검색·secondary only): ${labelOf(vertex)}`);
+  if (vertex.enabled) {
+    console.log(`[eventUpdater] Vertex AI Search: active (보조검색만 — runImport에 포함되지 않음)`);
+  }
+  const basicDs = process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE;
+  if (basicDs) {
+    console.log(`[eventUpdater] Vertex AI Search Basic datastore: ${basicDs} (저신뢰도 후보 풀 전용)`);
+  }
 }
 
 // ── Search provider implementations ──────────────────────────────────────────
@@ -2021,12 +2185,17 @@ const SIMPLE_SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }>
 /**
  * Search-engine sources: Naver (primary), Kakao (secondary), Google (optional/last).
  * Each provider is isolated — one failure never aborts the others.
+ *
+ * NOTE: Vertex AI Search has been removed from primary crawl sources.
+ * It is now a secondary search/ranking interface only (see searchEventRecords).
+ * The reason is that Advanced website indexing requires domain ownership verification
+ * for external domains (k-pet.co.kr, megazoo.co.kr etc.) which cannot be completed,
+ * leaving the data store in an "unverified" state where indexing cannot start.
  */
 const SEARCH_SOURCES: Array<{ name: string; fn: () => Promise<SearchFetchResult> }> = [
   { name: 'Naver 검색', fn: fetchNaverSearchEvents },
   { name: 'Daum 검색', fn: fetchDaumSearchEvents },
   { name: 'Google 검색', fn: fetchGoogleSearchEvents },
-  { name: 'Vertex AI Search', fn: fetchVertexAiSearchEvents },
 ];
 
 // ── Vertex AI Search 상태 변경 알림 ──────────────────────────────────────────
@@ -2144,9 +2313,14 @@ export async function fetchVertexIndexMeta(): Promise<VertexIndexMeta> {
 /**
  * Vertex AI Search 단건 진단 테스트.
  * 모듈 플래그(vertexPermissionDenied)에 영향을 주지 않는다.
+ *
+ * 403 오류를 두 가지로 구분한다:
+ *  - 'iam_permission_denied': 서비스 계정에 discoveryengine.viewer 권한이 없음.
+ *  - 'unverified_indexing': Advanced website indexing 소유권 인증 미완료
+ *    (외부 도메인은 색인 불가). 크롤러 폴백을 주 수집 소스로 유지해야 함.
  */
 export async function testVertexAiSearchOnce(keyword: string): Promise<{
-  status: 'ok' | 'permission_denied' | 'auth_failed' | 'http_error' | 'no_credentials';
+  status: 'ok' | 'iam_permission_denied' | 'unverified_indexing' | 'permission_denied' | 'auth_failed' | 'http_error' | 'no_credentials';
   httpStatus: number | null;
   rawCount: number;
   normalizedOk: number;
@@ -2180,16 +2354,40 @@ export async function testVertexAiSearchOnce(keyword: string): Promise<{
       SOURCE_TIMEOUT_MS,
       'vertex-ai-search-test',
     );
-    if (res.status === 403) {
-      return { status: 'permission_denied', httpStatus: 403, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null };
-    }
-    if (!res.ok) {
+    if (res.status === 403 || !res.ok) {
       let body = '';
       try { body = await res.text(); } catch { /* ignore */ }
-      if (body.includes('PERMISSION_DENIED')) {
-        return { status: 'permission_denied', httpStatus: res.status, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null };
+      // Unverified website indexing: GCP Discovery Engine rejects queries when the
+      // target site has not been verified (Search Console / meta tag) — distinct from
+      // an IAM role issue.
+      const isUnverified =
+        body.includes('website_not_verified') ||
+        body.includes('WEBSITE_NOT_VERIFIED') ||
+        body.includes('target site') ||
+        body.includes('not been verified') ||
+        body.includes('unverified') ||
+        body.includes('ownership has not') ||
+        body.includes('Advanced website indexing');
+      const isIamDenied =
+        body.includes('PERMISSION_DENIED') ||
+        body.includes('IAM_PERMISSION_DENIED') ||
+        body.includes('roles/discoveryengine');
+      if (res.status === 403) {
+        if (isUnverified) {
+          return { status: 'unverified_indexing', httpStatus: 403, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null,
+            error: 'Advanced website indexing: 타겟 사이트 소유권 미인증. 외부 도메인은 색인할 수 없습니다. 크롤러 폴백을 기본 수집 소스로 유지하세요.' };
+        }
+        return { status: 'iam_permission_denied', httpStatus: 403, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null,
+          error: body.slice(0, 300) || 'IAM 권한 없음 — 서비스 계정에 roles/discoveryengine.viewer 를 부여하세요.' };
       }
-      return { status: 'http_error', httpStatus: res.status, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null, error: `HTTP ${res.status}` };
+      if (isUnverified) {
+        return { status: 'unverified_indexing', httpStatus: res.status, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null,
+          error: 'Advanced website indexing: 타겟 사이트 소유권 미인증.' };
+      }
+      if (isIamDenied) {
+        return { status: 'iam_permission_denied', httpStatus: res.status, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null };
+      }
+      return { status: 'http_error', httpStatus: res.status, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null, error: `HTTP ${res.status}: ${body.slice(0, 200)}` };
     }
     const json = (await res.json()) as { results?: VertexSearchResult[] };
     const results = json.results ?? [];
@@ -2231,6 +2429,94 @@ export async function testVertexAiSearchOnce(keyword: string): Promise<{
       firstResult: null,
       error: e instanceof Error ? e.message : String(e),
     };
+  }
+}
+
+/**
+ * 보조 검색(Secondary search) — 이벤트 레코드를 키워드로 조회.
+ *
+ * Vertex AI Search 자격증명이 있고 권한 오류가 없으면 Vertex로 검색하고,
+ * 그렇지 않으면 DB 전문검색(LIKE 폴백)으로 대체한다.
+ *
+ * 이 함수는 자동 수집 스케줄러(runImport)의 primary 소스 목록에서 완전히 제외된다.
+ * 온디맨드 검색이나 관리자 미리보기 용도로만 사용한다.
+ *
+ * @param query 검색 키워드
+ * @param opts.limit 반환할 최대 항목 수 (기본 10)
+ * @param opts.basicDatastore Vertex AI Search Basic 데이터스토어 ID (설정 시 저신뢰도 후보 풀로 전환)
+ */
+export async function searchEventRecords(
+  query: string,
+  opts?: { limit?: number; basicDatastore?: string },
+): Promise<Array<{ title: string; link: string | null; snippet: string; source: 'vertex' | 'vertex_basic' | 'db_fallback' }>> {
+  const limit = Math.max(1, opts?.limit ?? 10);
+  const basicDs = opts?.basicDatastore ?? process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE;
+
+  // ① Vertex AI Search (Advanced — 소유 도메인 only)
+  if (hasVertexAiSearchCredentials() && !vertexPermissionDenied) {
+    try {
+      const result = await testVertexAiSearchOnce(query);
+      if (result.status === 'ok' && result.firstResult) {
+        return [{ ...result.firstResult, source: 'vertex' as const }];
+      }
+    } catch { /* fallthrough */ }
+  }
+
+  // ② Vertex AI Search Basic datastore (저신뢰도 후보 풀 — 소유권 인증 불필요)
+  if (basicDs) {
+    try {
+      const project = process.env.VERTEX_AI_SEARCH_PROJECT;
+      const location = process.env.VERTEX_AI_SEARCH_LOCATION || 'global';
+      if (project) {
+        const token = await getVertexAccessToken();
+        if (token) {
+          const url =
+            `https://discoveryengine.googleapis.com/v1/projects/${encodeURIComponent(project)}` +
+            `/locations/${encodeURIComponent(location)}` +
+            `/collections/default_collection/dataStores/${encodeURIComponent(basicDs)}` +
+            `/servingConfigs/default_search:search`;
+          const res = await withTimeout(
+            fetch(url, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({ query, pageSize: limit, contentSearchSpec: { snippetSpec: { returnSnippet: true } } }),
+            }),
+            SOURCE_TIMEOUT_MS,
+            'vertex-basic-search',
+          );
+          if (res.ok) {
+            const json = (await res.json()) as { results?: VertexSearchResult[] };
+            const results = json.results ?? [];
+            const out: Array<{ title: string; link: string | null; snippet: string; source: 'vertex_basic' }> = [];
+            for (const r of results.slice(0, limit)) {
+              const dsd = r.document?.derivedStructData;
+              const sd = r.document?.structData;
+              const title = (sd?.title || dsd?.title || dsd?.htmlTitle || '').trim();
+              const snippet =
+                sd?.description ||
+                (dsd?.snippets ?? []).map((s: { snippet?: string; htmlSnippet?: string }) => s.snippet ?? s.htmlSnippet ?? '').filter(Boolean).join(' ') ||
+                '';
+              const link = sd?.link || sd?.url || dsd?.link || null;
+              if (title) out.push({ title, link, snippet: snippet.slice(0, 200), source: 'vertex_basic' });
+            }
+            if (out.length > 0) return out;
+          }
+        }
+      }
+    } catch { /* fallthrough to DB */ }
+  }
+
+  // ③ DB LIKE 폴백
+  try {
+    const rows = await storage.listPetEvents({ q: query });
+    return rows.slice(0, limit).map((r) => ({
+      title: r.title,
+      link: r.websiteUrl ?? null,
+      snippet: r.description?.slice(0, 200) ?? '',
+      source: 'db_fallback' as const,
+    }));
+  } catch {
+    return [];
   }
 }
 
