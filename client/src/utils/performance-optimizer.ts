@@ -87,7 +87,7 @@ export class CodeSplitting {
     try {
       switch (pageName) {
         case 'admin':
-          return await import('../pages/admin/dashboard');
+          return await import('../pages/admin/AdminHome');
         case 'shop':
           return await import('../pages/shop/index');
         case 'courses':

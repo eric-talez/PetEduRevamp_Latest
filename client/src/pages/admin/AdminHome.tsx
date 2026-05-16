@@ -205,7 +205,7 @@ export default function AdminHome() {
   };
 
   const handleGenerateReport = () => {
-    setLocation('/admin/reports');
+    setLocation('/admin/analytics');
   };
 
   return (
@@ -344,7 +344,7 @@ export default function AdminHome() {
           </div>
 
           <DialogFooter className="flex justify-between items-center mt-6">
-            <Button variant="outline" onClick={() => setLocation('/admin/reports/analytics')}>
+            <Button variant="outline" onClick={() => setLocation('/admin/analytics')}>
               <FileText className="h-4 w-4 mr-2" />
               전체 분석 보고서
             </Button>

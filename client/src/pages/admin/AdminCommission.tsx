@@ -830,6 +830,9 @@ export default function AdminCommission() {
               <GraduationCap className="h-4 w-4 mr-2" />
               커리큘럼 수익
             </TabsTrigger>
+            <TabsTrigger value="payment-integration">
+              결제 연동
+            </TabsTrigger>
           </TabsList>
         </div>
         
@@ -1624,6 +1627,90 @@ export default function AdminCommission() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* 결제 연동 탭 */}
+        <TabsContent value="payment-integration">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-semibold">결제 연동 관리</h3>
+              <p className="text-muted-foreground">결제 게이트웨이 연동 현황 및 설정을 관리합니다.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <CreditCard className="h-5 w-5" />
+                    토스페이먼츠
+                  </CardTitle>
+                  <CardDescription>국내 주요 결제 게이트웨이</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">연동 상태</span>
+                    <Badge variant="default">
+                      연동됨
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">지원 결제 수단</span>
+                    <span className="text-sm">카드, 계좌이체, 가상계좌, 간편결제</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">환경</span>
+                    <Badge variant="outline">운영(키 설정됨)</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Landmark className="h-5 w-5" />
+                    Stripe
+                  </CardTitle>
+                  <CardDescription>해외 결제 및 구독 처리</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">연동 상태</span>
+                    <Badge variant="default">연동됨</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">지원 결제 수단</span>
+                    <span className="text-sm">카드, 구독, 웹훅</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">환경</span>
+                    <Badge variant="outline">운영(키 설정됨)</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">결제 웹훅 설정</CardTitle>
+                <CardDescription>결제 이벤트 수신 엔드포인트 현황</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-muted-foreground">토스페이먼츠 웹훅</span>
+                    <code className="text-xs bg-muted px-1 rounded">/api/webhooks/toss</code>
+                  </div>
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-muted-foreground">Stripe 웹훅</span>
+                    <code className="text-xs bg-muted px-1 rounded">/api/webhooks/stripe</code>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">결제 취소/환불</span>
+                    <code className="text-xs bg-muted px-1 rounded">/api/payments/cancel</code>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

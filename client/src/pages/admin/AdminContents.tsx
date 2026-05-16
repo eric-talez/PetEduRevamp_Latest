@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '@/lib/auth-compat';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -66,6 +66,10 @@ import {
   Calendar
 } from 'lucide-react';
 
+const AdminBannersSection = lazy(() => import('./AdminBanners'));
+const ContentCrawlerSection = lazy(() => import('./ContentCrawler'));
+const AdminContentModerationSection = lazy(() => import('./AdminContentModeration'));
+
 // 콘텐츠 타입 정의
 interface Content {
   id: number;
@@ -85,6 +89,7 @@ export default function AdminContents() {
   const { userName } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [section, setSection] = useState('contents');
   const [contents, setContents] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
@@ -476,7 +481,44 @@ export default function AdminContents() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">콘텐츠 관리</h1>
-        <div className="flex items-center space-x-2">
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {[
+          { key: 'contents', label: '콘텐츠' },
+          { key: 'banners', label: '배너 관리' },
+          { key: 'crawler', label: '자동 수집' },
+          { key: 'moderation', label: '신고·모더레이션' },
+        ].map(({ key, label }) => (
+          <Button
+            key={key}
+            variant={section === key ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSection(key)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+
+      {section === 'banners' && (
+        <Suspense fallback={<div className="p-8 flex justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
+          <AdminBannersSection />
+        </Suspense>
+      )}
+      {section === 'crawler' && (
+        <Suspense fallback={<div className="p-8 flex justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
+          <ContentCrawlerSection />
+        </Suspense>
+      )}
+      {section === 'moderation' && (
+        <Suspense fallback={<div className="p-8 flex justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
+          <AdminContentModerationSection />
+        </Suspense>
+      )}
+
+      {section === 'contents' && <>
+      <div className="flex items-center space-x-2">
           <Button onClick={() => setShowBannerDialog(true)} variant="default">
             <Layout className="mr-2 h-4 w-4" />
             배너 등록
@@ -486,7 +528,6 @@ export default function AdminContents() {
             콘텐츠 추가
           </Button>
         </div>
-      </div>
       
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex justify-between items-center">
@@ -917,6 +958,7 @@ export default function AdminContents() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>}
     </div>
   );
 }

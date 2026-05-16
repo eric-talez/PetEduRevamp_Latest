@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,11 @@ import {
   Activity,
   AlertTriangle,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Flag,
+  CheckCircle,
+  XCircle,
+  Clock
 } from 'lucide-react';
 
 interface AdminDashboardBreakdowns {
@@ -72,6 +76,181 @@ interface AdminDashboardStats {
   totalMessages: number;
   activeUsers: number;
   pendingApprovals: number;
+}
+
+interface ContentReport {
+  id: number;
+  status: 'pending' | 'investigating' | 'resolved' | 'dismissed';
+  reason: string | null;
+  targetType: string;
+  targetId: number;
+  createdAt: string;
+  resolutionComment?: string | null;
+  resolverId?: number | null;
+}
+
+interface ContentReportStats {
+  total: number;
+  pending: number;
+  investigating: number;
+  resolved: number;
+  dismissed: number;
+}
+
+interface ReportsApiResponse {
+  success: boolean;
+  data: {
+    reports: ContentReport[];
+    stats: ContentReportStats;
+  };
+}
+
+function ReportsTab() {
+  const { toast } = useToast();
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedReport, setSelectedReport] = useState<ContentReport | null>(null);
+  const [resolution, setResolution] = useState('');
+
+  const { data: reportsData, isLoading, refetch } = useQuery<ReportsApiResponse>({
+    queryKey: ['/api/admin/reports', statusFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      const res = await fetch(`/api/admin/reports?${params}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('신고 목록 조회 실패');
+      return res.json();
+    },
+    staleTime: 30_000,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status, resolutionComment }: { id: number; status: string; resolutionComment?: string }) => {
+      return apiRequest('PATCH', `/api/admin/reports/${id}`, { status, resolutionComment });
+    },
+    onSuccess: () => {
+      toast({ title: '신고 상태가 업데이트되었습니다.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/reports'] });
+      setSelectedReport(null);
+      setResolution('');
+    },
+    onError: () => {
+      toast({ title: '업데이트 실패', variant: 'destructive' });
+    },
+  });
+
+  const reports: ContentReport[] = reportsData?.data?.reports ?? [];
+  const stats: Partial<ContentReportStats> = reportsData?.data?.stats ?? {};
+
+  const statusBadge = (status: string) => {
+    const map: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+      pending: { label: '대기 중', variant: 'destructive' },
+      investigating: { label: '조사 중', variant: 'secondary' },
+      resolved: { label: '처리됨', variant: 'default' },
+      dismissed: { label: '기각됨', variant: 'outline' },
+    };
+    const m = map[status] || { label: status, variant: 'outline' as const };
+    return <Badge variant={m.variant}>{m.label}</Badge>;
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 통계 요약 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <Flag className="h-5 w-5 text-destructive" />
+          <div><p className="text-sm text-muted-foreground">총 신고</p><p className="text-xl font-bold">{stats.total ?? 0}</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <Clock className="h-5 w-5 text-warning" />
+          <div><p className="text-sm text-muted-foreground">대기 중</p><p className="text-xl font-bold">{stats.pending ?? 0}</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <CheckCircle className="h-5 w-5 text-success" />
+          <div><p className="text-sm text-muted-foreground">처리됨</p><p className="text-xl font-bold">{stats.resolved ?? 0}</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <XCircle className="h-5 w-5 text-muted-foreground" />
+          <div><p className="text-sm text-muted-foreground">기각됨</p><p className="text-xl font-bold">{stats.dismissed ?? 0}</p></div>
+        </CardContent></Card>
+      </div>
+
+      {/* 필터 + 목록 */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2"><Flag className="h-5 w-5" />신고 목록</CardTitle>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="pending">대기 중</SelectItem>
+                  <SelectItem value="investigating">조사 중</SelectItem>
+                  <SelectItem value="resolved">처리됨</SelectItem>
+                  <SelectItem value="dismissed">기각됨</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={() => refetch()}><RefreshCw className="h-4 w-4" /></Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          ) : reports.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              <Flag className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p>해당 조건의 신고가 없습니다</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {reports.map((r: ContentReport) => (
+                <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      {statusBadge(r.status)}
+                      <span className="text-sm font-medium truncate">{r.reason || '신고 사유 없음'}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      대상: {r.targetType} #{r.targetId} · {new Date(r.createdAt).toLocaleDateString('ko-KR')}
+                    </p>
+                  </div>
+                  {(r.status === 'pending' || r.status === 'investigating') && (
+                    <div className="flex gap-1 ml-2 shrink-0">
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedReport(r); setResolution(''); }}>처리</Button>
+                      <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: r.id, status: 'dismissed' })}>기각</Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 처리 다이얼로그 */}
+      {selectedReport && (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle>신고 처리 — #{selectedReport.id}</CardTitle>
+            <CardDescription>{selectedReport.reason}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <textarea
+              className="w-full border rounded-md p-2 text-sm min-h-[80px]"
+              placeholder="처리 코멘트 (선택)"
+              value={resolution}
+              onChange={e => setResolution(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button onClick={() => updateMutation.mutate({ id: selectedReport.id, status: 'resolved', resolutionComment: resolution })} disabled={updateMutation.isPending}>처리 완료</Button>
+              <Button variant="outline" onClick={() => setSelectedReport(null)}>취소</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 }
 
 export default function AdminAnalytics() {
@@ -320,12 +499,13 @@ export default function AdminAnalytics() {
 
       {/* 상세 분석 탭 */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">개요</TabsTrigger>
           <TabsTrigger value="users">사용자</TabsTrigger>
           <TabsTrigger value="revenue">수익</TabsTrigger>
           <TabsTrigger value="training">훈련</TabsTrigger>
           <TabsTrigger value="geography">지역</TabsTrigger>
+          <TabsTrigger value="reports">신고 관리</TabsTrigger>
         </TabsList>
 
         {/* 개요 탭 */}
@@ -638,6 +818,11 @@ export default function AdminAnalytics() {
               </BreakdownState>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* 신고 관리 탭 */}
+        <TabsContent value="reports" className="space-y-4">
+          <ReportsTab />
         </TabsContent>
       </Tabs>
     </div>

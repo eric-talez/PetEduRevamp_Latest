@@ -40,7 +40,6 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Refund from "./pages/Refund";
 import CertifiedPartner from "./pages/CertifiedPartner";
-import AdminMenuConfigPage from "./pages/admin/menu-config";
 import CustomerOrderPage from "./pages/customer/order";
 import AdminStoreOrdersPage from "./pages/admin/store-orders";
 import AdminStoreMenuPage from "./pages/admin/store-menu";
@@ -56,7 +55,6 @@ import AiAnalysisPage from "./pages/ai-analysis";
 import TalezExperiencePage from "./pages/TalezExperience";
 import CurriculumManager from "./pages/courses/CurriculumManager";
 import AdminCurriculum from "./pages/admin/AdminCurriculum";
-import AdminRegistrations from "./pages/admin/AdminRegistrations";
 import TrainerRegistration from "./pages/registration/TrainerRegistration";
 import InstituteRegistration from "./pages/registration/InstituteRegistration";
 import PaymentSuccess from "./pages/payment-success";
@@ -69,23 +67,13 @@ import AdminInstitutes from "./pages/admin/AdminInstitutes";
 import AdminTrainers from "./pages/admin/AdminTrainers";
 import AdminCourses from "./pages/admin/AdminCourses";
 import AdminMenuManagement from "./pages/admin/menu-management";
-import AdminApprovals from './pages/admin/AdminApprovals';
-import PaymentIntegration from './pages/admin/PaymentIntegration';
-import AdminReports from './pages/admin/AdminReports';
 import NotebookMonitorPage from "./pages/admin/notebook-monitor";
 import AdminShop from './pages/admin/AdminShop';
 import AdminSettings from './pages/admin/AdminSettings';
 import LocationManagement from './pages/admin/LocationManagement';
 import SpringBootTestPage from "./pages/SpringBootTest";
 import AdminContents from "./pages/admin/AdminContents";
-import AdminMembersStatus from "./pages/admin/AdminMembersStatus";
-import TrainerCertificationManagement from "./pages/admin/TrainerCertificationManagement";
-import MessagingSettings from "./pages/admin/MessagingSettings";
-import PushNotificationManagement from "./pages/admin/PushNotificationManagement";
-import AdminEmailNotifications from "./pages/admin/AdminEmailNotifications";
 import AdminProductPricing from "./pages/admin/AdminProductPricing";
-import AdminSettlementPage from "./pages/admin/settlement";
-import ContentCrawler from "./pages/admin/ContentCrawler";
 import AdminCommunityManagement from "./pages/admin/AdminCommunityManagement";
 import InstituteNotebookMonitorPage from "./pages/institute-admin/NotebookMonitor";
 import TrainerActivityLogs from "./pages/admin/TrainerActivityLogs";
@@ -98,12 +86,7 @@ import InstituteRestManagement from "./pages/institute/RestManagement";
 import SubstituteClassBoard from "./pages/trainer/SubstituteClassBoard";
 import SubstituteTrainerManagement from "./pages/institute/SubstituteTrainerManagement";
 import SubstituteTrainerOverview from "./pages/admin/SubstituteTrainerOverview";
-import AdminContentModeration from "./pages/admin/AdminContentModeration";
-import ContentModerationTest from "./pages/admin/ContentModerationTest";
-import ApiManagement from "./pages/admin/ApiManagement";
 import AIApiManagement from "./pages/admin/AIApiManagement";
-import AIOptimizationDashboard from "./pages/admin/AIOptimizationDashboard";
-import MenuVisibilityControl from "./pages/admin/MenuVisibilityControl";
 import NavigationProgress from "./components/NavigationProgress";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { SimpleLoading, SimpleLoadingInline } from "./components/ui/simple-loading";
@@ -479,6 +462,7 @@ function ProtectedAdminRoute({ component: Component, fallback = <div className="
  */
 function AuthenticatedRoutes() {
   const { userRole } = useAuth();
+  const [, setLocation] = useLocation();
 
   // 역할에 따라 홈 컴포넌트 다르게 처리
   const getHomeComponent = () => {
@@ -1475,15 +1459,7 @@ function AuthenticatedRoutes() {
         </Route>
 
         <Route path="/admin/members-status">
-          {() => {
-            return (
-              <Suspense fallback={<div className="p-8 flex justify-center items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>}>
-                <ProtectedAdminRoute component={AdminMembersStatus} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/users'); return null; }}
         </Route>
 
         <Route path="/admin/analytics">
@@ -1549,31 +1525,21 @@ function AuthenticatedRoutes() {
           }}
         </Route>
 
+        <Route path="/admin/courses">
+          {() => (
+            <Suspense fallback={<SimpleLoading />}>
+              <ProtectedAdminRoute component={AdminCourses} />
+            </Suspense>
+          )}
+        </Route>
+
         <Route path="/admin/reports">
-          {() => {
-            const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
-            return (
-              <Suspense fallback={<div className="p-8 flex justify-center items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>}>
-                <ProtectedAdminRoute component={AdminReports} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/analytics'); return null; }}
         </Route>
 
 
         <Route path="/admin/reports/analytics">
-          {() => {
-            const AnalyticsReportPage = lazy(() => import('./pages/admin/reports/analytics'));
-            return (
-              <Suspense fallback={<div className="p-8 flex justify-center items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>}>
-                <ProtectedAdminRoute component={AnalyticsReportPage} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/analytics'); return null; }}
         </Route>
 
         <Route path="/admin/audit-logs">
@@ -1588,16 +1554,7 @@ function AuthenticatedRoutes() {
         </Route>
 
         <Route path="/admin/approvals">
-          {() => {
-            const AdminApprovals = lazy(() => import('./pages/admin/AdminApprovals'));
-            return (
-              <Suspense fallback={<div className="p-8 flex justify-center items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>}>
-                <ProtectedAdminRoute component={AdminApprovals} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/users'); return null; }}
         </Route>
 
         <Route path="/admin/matching">
@@ -1623,14 +1580,7 @@ function AuthenticatedRoutes() {
         </Route>
 
         <Route path="/admin/info-correction-requests">
-          {() => {
-            const InfoCorrectionRequests = lazy(() => import('./pages/admin/InfoCorrectionRequests'));
-            return (
-              <Suspense fallback={<SimpleLoading />}>
-                <ProtectedAdminRoute component={InfoCorrectionRequests} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/institutes'); return null; }}
         </Route>
 
         <Route path="/admin/review-management">
@@ -1660,40 +1610,25 @@ function AuthenticatedRoutes() {
 
 
 
-        {/* /admin/notifications를 /admin/alerts로 리디렉션 */}
+        {/* /admin/notifications — 카노니컬 알림 관리 페이지 (푸시/이메일/발송/채널 탭 포함) */}
         <Route path="/admin/notifications">
-          {() => {
-            console.log("관리자 알림 페이지 리디렉션: /admin/notifications → /admin/alerts");
-            window.location.href = '/admin/alerts';
-            return null;
-          }}
-        </Route>
-        <Route path="/admin/alerts">
           {() => {
             const AdminNotifications = lazy(() => import('./pages/admin/AdminNotifications'));
             return (
               <Suspense fallback={<div className="p-8 flex justify-center items-center">
                 <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                <span className="ml-2">관리자 알림딩 중...</span>
               </div>}>
                 <ProtectedAdminRoute component={AdminNotifications} />
               </Suspense>
             );
           }}
         </Route>
-        <Route path="/admin/notifications/send">
-          {() => {
-            const AdminSendNotification = lazy(() => import('./pages/admin/notifications/SendNotification'));
-            return (
-              <Suspense fallback={<div className="p-8 flex justify-center items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                <span className="ml-2">알림 발송 페이지 로딩 중...</span>
-              </div>}>
-                <ProtectedAdminRoute component={AdminSendNotification} />
-              </Suspense>
-            );
-          }}
-        </Route>
+        {/* 구 경로 → 카노니컬 리다이렉트 */}
+        <Route path="/admin/alerts">{() => { setLocation('/admin/notifications'); return null; }}</Route>
+        <Route path="/admin/notifications/send">{() => { setLocation('/admin/notifications'); return null; }}</Route>
+        <Route path="/admin/push-notifications">{() => { setLocation('/admin/notifications'); return null; }}</Route>
+        <Route path="/admin/email-notifications">{() => { setLocation('/admin/notifications'); return null; }}</Route>
+        <Route path="/admin/messaging-settings">{() => { setLocation('/admin/notifications'); return null; }}</Route>
         <Route path="/admin/settings">
           {() => {
             const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
@@ -1747,16 +1682,7 @@ function AuthenticatedRoutes() {
           }}
         </Route>
         <Route path="/admin/payment-integration">
-          {() => {
-            const PaymentIntegration = lazy(() => import('./pages/admin/PaymentIntegration'));
-            return (
-              <Suspense fallback={<div className="p-8 flex justify-center items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>}>
-                <ProtectedAdminRoute component={PaymentIntegration} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/commission'); return null; }}
         </Route>
 
         <Route path="/admin/commission">
@@ -1772,29 +1698,11 @@ function AuthenticatedRoutes() {
           }}
         </Route>
         <Route path="/admin/commission-settings">
-          {() => {
-            const CommissionSettings = lazy(() => import('./pages/admin/commission-settings'));
-            return (
-              <Suspense fallback={<div className="p-8 flex justify-center items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>}>
-                <ProtectedAdminRoute component={CommissionSettings} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/commission'); return null; }}
         </Route>
 
         <Route path="/admin/banners">
-          {() => {
-            const AdminBanners = lazy(() => import('./pages/admin/AdminBanners'));
-            return (
-              <Suspense fallback={<div className="p-8 flex justify-center items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>}>
-                <ProtectedAdminRoute component={AdminBanners} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/contents'); return null; }}
         </Route>
         <Route path="/admin/hospital-vaccine-codes">
           {() => {
@@ -1821,11 +1729,7 @@ function AuthenticatedRoutes() {
           }}
         </Route>
         <Route path="/admin/menu-config">
-          {() => (
-            <ProtectedAdminRoute 
-              component={AdminMenuConfigPage}
-            />
-          )}
+          {() => { setLocation('/admin/menu-management'); return null; }}
         </Route>
         <Route path="/admin/menu-management">
           {() => {
@@ -1842,21 +1746,10 @@ function AuthenticatedRoutes() {
           }}
         </Route>
         <Route path="/admin/settlement">
-          {() => (
-            <ProtectedAdminRoute 
-              component={AdminSettlementPage}
-            />
-          )}
+          {() => { setLocation('/admin/commission'); return null; }}
         </Route>
         <Route path="/admin/trainer-settlements">
-          {() => {
-            const AdminTrainerSettlements = lazy(() => import('./pages/admin/trainer-settlements'));
-            return (
-              <Suspense fallback={<SimpleLoading />}>
-                <ProtectedAdminRoute component={AdminTrainerSettlements} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/commission'); return null; }}
         </Route>
         <Route path="/admin/service-inspection">
           {() => {
@@ -1871,26 +1764,15 @@ function AuthenticatedRoutes() {
           }}
         </Route>
 
-        {/* 누락된 관리자 라우트 */}
+        {/* 통합된 페이지로 리디렉션 */}
         <Route path="/admin/registrations">
-          {() => (
-            <ProtectedAdminRoute component={AdminRegistrations} />
-          )}
+          {() => { setLocation('/admin/users'); return null; }}
         </Route>
         <Route path="/admin/trainer-certification">
-          {() => (
-            <ProtectedAdminRoute component={TrainerCertificationManagement} />
-          )}
+          {() => { setLocation('/admin/trainers'); return null; }}
         </Route>
         <Route path="/admin/business-registration">
-          {() => {
-            const BusinessRegistration = lazy(() => import('./pages/admin/BusinessRegistration'));
-            return (
-              <Suspense fallback={<SimpleLoading />}>
-                <ProtectedAdminRoute component={BusinessRegistration} />
-              </Suspense>
-            );
-          }}
+          {() => { setLocation('/admin/institutes'); return null; }}
         </Route>
         <Route path="/admin/community">
           {() => (
@@ -1898,53 +1780,22 @@ function AuthenticatedRoutes() {
           )}
         </Route>
         <Route path="/admin/content-crawler">
-          {() => (
-            <ProtectedAdminRoute component={ContentCrawler} />
-          )}
+          {() => { setLocation('/admin/contents'); return null; }}
         </Route>
         <Route path="/admin/content-moderation">
-          {() => (
-            <ProtectedAdminRoute component={AdminContentModeration} />
-          )}
+          {() => { setLocation('/admin/contents'); return null; }}
         </Route>
         <Route path="/admin/points">
           {() => (
             <ProtectedAdminRoute component={PointManagement} />
           )}
         </Route>
-        <Route path="/admin/api-management">
-          {() => (
-            <ProtectedAdminRoute component={ApiManagement} />
-          )}
-        </Route>
+        <Route path="/admin/api-management">{() => { setLocation('/admin/ai-api-management'); return null; }}</Route>
+        <Route path="/admin/ai-optimization">{() => { setLocation('/admin/ai-api-management'); return null; }}</Route>
+        <Route path="/admin/menu-visibility">{() => { setLocation('/admin/menu-management'); return null; }}</Route>
         <Route path="/admin/ai-api-management">
           {() => (
             <ProtectedAdminRoute component={AIApiManagement} />
-          )}
-        </Route>
-        <Route path="/admin/ai-optimization">
-          {() => (
-            <ProtectedAdminRoute component={AIOptimizationDashboard} />
-          )}
-        </Route>
-        <Route path="/admin/menu-visibility">
-          {() => (
-            <ProtectedAdminRoute component={MenuVisibilityControl} />
-          )}
-        </Route>
-        <Route path="/admin/messaging-settings">
-          {() => (
-            <ProtectedAdminRoute component={MessagingSettings} />
-          )}
-        </Route>
-        <Route path="/admin/push-notifications">
-          {() => (
-            <ProtectedAdminRoute component={PushNotificationManagement} />
-          )}
-        </Route>
-        <Route path="/admin/email-notifications">
-          {() => (
-            <ProtectedAdminRoute component={AdminEmailNotifications} />
           )}
         </Route>
         <Route path="/admin/notebook-monitor">

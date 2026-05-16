@@ -64,13 +64,23 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
   { id: 'messages', title: '메시지', path: '/messages', icon: 'MessageSquare', type: 'internal', category: 'tools', roles: ['pet-owner', 'trainer', 'institute-admin', 'admin'], orderIndex: 3, isActive: true, isPublic: false },
   { id: 'alerts', title: '알림', path: '/alerts', icon: 'Bell', type: 'internal', category: 'tools', roles: ['pet-owner', 'trainer', 'institute-admin', 'admin'], orderIndex: 4, isActive: true, isPublic: false },
 
-  // 관리자 전용 (핵심만)
-  { id: 'admin-dashboard', title: '관리자 대시보드', path: '/admin/dashboard', icon: 'BarChart3', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 0, isActive: true, isPublic: false },
-  { id: 'user-mgmt', title: '사용자 관리', path: '/admin/users', icon: 'Users', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 1, isActive: true, isPublic: false },
-  { id: 'institute-mgmt', title: '기관 관리', path: '/admin/institutes', icon: 'Building', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 2, isActive: true, isPublic: false },
-  { id: 'content-mgmt', title: '콘텐츠 관리', path: '/admin/contents', icon: 'FileText', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 3, isActive: true, isPublic: false },
-  { id: 'commission-mgmt', title: '가격 관리', path: '/admin/commissions', icon: 'Percent', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 4, isActive: true, isPublic: false },
-  { id: 'system-settings', title: '시스템 설정', path: '/admin/settings', icon: 'Settings', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 5, isActive: true, isPublic: false },
+  // 관리자 전용 — 8-category canonical paths (대시보드/사용자·기관/강의·훈련사/콘텐츠/상거래·매장/정산·결제/알림·메시지/시스템·도구)
+  { id: 'admin-dashboard', title: '대시보드', path: '/admin/dashboard', icon: 'BarChart3', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 0, isActive: true, isPublic: false },
+  { id: 'admin-analytics', title: '심층 분석·리포트', path: '/admin/analytics', icon: 'Activity', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 1, isActive: true, isPublic: false },
+  { id: 'admin-revenue', title: '수익 현황', path: '/admin/revenue', icon: 'DollarSign', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 2, isActive: true, isPublic: false },
+  { id: 'admin-users', title: '사용자 관리', path: '/admin/users', icon: 'Users', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 10, isActive: true, isPublic: false },
+  { id: 'admin-institutes', title: '기관·업체 관리', path: '/admin/institutes', icon: 'Building', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 11, isActive: true, isPublic: false },
+  { id: 'admin-trainers', title: '훈련사·인증', path: '/admin/trainers', icon: 'UserRoundCheck', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 12, isActive: true, isPublic: false },
+  { id: 'admin-curriculum', title: '커리큘럼', path: '/admin/curriculum', icon: 'BookOpen', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 20, isActive: true, isPublic: false },
+  { id: 'admin-courses', title: '강의 관리', path: '/admin/courses', icon: 'Presentation', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 21, isActive: true, isPublic: false },
+  { id: 'admin-contents', title: '콘텐츠 관리', path: '/admin/contents', icon: 'Image', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 30, isActive: true, isPublic: false },
+  { id: 'admin-shop', title: '쇼핑몰', path: '/admin/shop', icon: 'ShoppingBag', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 40, isActive: true, isPublic: false },
+  { id: 'admin-store-orders', title: '매장 주문', path: '/admin/store-orders', icon: 'Package', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 41, isActive: true, isPublic: false },
+  { id: 'admin-commission', title: '정산·수수료', path: '/admin/commission', icon: 'Percent', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 50, isActive: true, isPublic: false },
+  { id: 'admin-notifications', title: '알림·채널 관리', path: '/admin/notifications', icon: 'Bell', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 60, isActive: true, isPublic: false },
+  { id: 'admin-settings', title: '시스템 설정', path: '/admin/settings', icon: 'Settings', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 70, isActive: true, isPublic: false },
+  { id: 'admin-menu-management', title: '메뉴 관리', path: '/admin/menu-management', icon: 'Eye', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 71, isActive: true, isPublic: false },
+  { id: 'admin-ai-api', title: 'AI·API 관리', path: '/admin/ai-api-management', icon: 'Bot', type: 'internal', category: 'admin', roles: ['admin'], orderIndex: 72, isActive: true, isPublic: false },
 ];
 
 // 간소화된 메뉴 그룹
