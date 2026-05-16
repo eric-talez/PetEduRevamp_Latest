@@ -58,6 +58,8 @@ TALEZ is built for modularity, scalability, and performance, leveraging modern w
 
 - **휴대폰 SMS 인증 (Twilio Verify)**: 이메일/비밀번호 회원가입 및 비밀번호 재설정 시 한국 휴대폰 번호 SMS 인증 (Twilio Verify Service). 소셜 로그인(Kakao/Naver/Google)은 영향 없음. E.164 정규화(+82), 60초 재발송 쿨다운, 휴대폰당 5회/일·IP당 20회/일 발송 제한, 10분간 5회 검증 시도 제한, 가입 시 중복 휴대폰 차단. Tables: `users.phone_verified_at`. Routes: `POST /api/auth/phone/send-code` · `/phone/verify-code` (가입용, 10분 JWT 발급) · `/api/auth/password-reset/send-code` · `/password-reset/verify-code` · `/password-reset/confirm` (account enumeration 방지를 위해 항상 동일 응답). 환경변수: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`, `PHONE_VERIFY_JWT_SECRET`(미설정 시 `JWT_SECRET` 폴백). 클라이언트: `/auth/register` 휴대폰+인증코드 UI, `/auth/forgot-password` & `/auth/reset-password`(SMS 코드 → 새 비밀번호) 페이지.
 
+- **Vertex AI Search 펫 이벤트 수집 (Task #231, May 16, 2026)**: 한국 펫페어/지자체 행사 페이지를 GCP Discovery Engine website-search 데이터 스토어로 색인해 `fetchVertexAiSearchEvents`(server/services/eventUpdater.ts)를 통해 후보 풀로 합류시킨다. 필요한 시크릿: `VERTEX_AI_SEARCH_PROJECT`, `VERTEX_AI_SEARCH_DATASTORE`, `VERTEX_AI_SEARCH_LOCATION`(기본 `global`), `GOOGLE_APPLICATION_CREDENTIALS_JSON`(roles/discoveryengine.viewer 권한 서비스 계정 키 JSON 전체). 검증: 서버 시작 로그에 `[eventUpdater] Vertex AI Search: active` 가 떠야 하고, `/admin/pet-events` "수집 공급자 상태"에서 active 표시, 수동 수집 후 bySource 표에 Vertex AI Search 행이 추가됨(색인 완료 전에는 fetched 0이 정상이며 보통 수 시간~1일 소요).
+
 ## External Dependencies
 - **Database**: PostgreSQL (Neon serverless)
 - **Email**: SendGrid
