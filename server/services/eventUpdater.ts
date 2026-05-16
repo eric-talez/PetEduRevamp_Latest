@@ -1336,17 +1336,32 @@ export interface ProviderStatus {
 
 /** Module-level flag: set to true when Google returns 403/PERMISSION_DENIED. */
 let googlePermissionDenied = false;
+/** Module-level flag: set to true when Vertex AI Search returns 403/PERMISSION_DENIED. */
+let vertexPermissionDenied = false;
 
 /** Reset at the start of each import run so the flag reflects only the current run. */
 function resetRunFlags(): void {
   googlePermissionDenied = false;
+  vertexPermissionDenied = false;
   resetBodyFetchState();
+}
+
+function hasVertexAiSearchCredentials(): boolean {
+  const hasProject = !!process.env.VERTEX_AI_SEARCH_PROJECT;
+  const hasDataStore = !!process.env.VERTEX_AI_SEARCH_DATASTORE;
+  const hasCreds = !!(
+    process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON ||
+    process.env.GCP_SERVICE_ACCOUNT_KEY ||
+    process.env.GOOGLE_APPLICATION_CREDENTIALS
+  );
+  return hasProject && hasDataStore && hasCreds;
 }
 
 export function getProviderStatuses(): {
   google: ProviderStatus;
   naver: ProviderStatus;
   kakao: ProviderStatus;
+  vertex: ProviderStatus;
 } {
   const hasGoogleKey = !!(
     process.env.GOOGLE_CUSTOM_SEARCH_API_KEY && process.env.GOOGLE_CUSTOM_SEARCH_CX
@@ -1355,6 +1370,7 @@ export function getProviderStatuses(): {
     process.env.NAVER_SEARCH_CLIENT_ID && process.env.NAVER_SEARCH_CLIENT_SECRET
   );
   const hasKakaoKey = !!process.env.KAKAO_REST_API_KEY;
+  const hasVertexKey = hasVertexAiSearchCredentials();
 
   const google: ProviderStatus = googlePermissionDenied
     ? { enabled: false, reason: 'permission_denied' }
@@ -1370,22 +1386,23 @@ export function getProviderStatuses(): {
     ? { enabled: true, reason: 'ok' }
     : { enabled: false, reason: 'missing_credentials' };
 
-  return { google, naver, kakao };
+  const vertex: ProviderStatus = vertexPermissionDenied
+    ? { enabled: false, reason: 'permission_denied' }
+    : hasVertexKey
+      ? { enabled: true, reason: 'ok' }
+      : { enabled: false, reason: 'missing_credentials' };
+
+  return { google, naver, kakao, vertex };
 }
 
 function logProviderStatuses(): void {
-  const { google, naver, kakao } = getProviderStatuses();
-  const googleLabel =
-    google.reason === 'permission_denied'
-      ? 'permission denied'
-      : google.enabled
-        ? 'active'
-        : 'disabled';
-  const naverLabel = naver.enabled ? 'active' : 'missing credentials';
-  const kakaoLabel = kakao.enabled ? 'active' : 'missing credentials';
-  console.log(`[eventUpdater] Google: ${googleLabel}`);
-  console.log(`[eventUpdater] Naver: ${naverLabel}`);
-  console.log(`[eventUpdater] Kakao: ${kakaoLabel}`);
+  const { google, naver, kakao, vertex } = getProviderStatuses();
+  const labelOf = (s: ProviderStatus, missing = 'missing credentials') =>
+    s.reason === 'permission_denied' ? 'permission denied' : s.enabled ? 'active' : missing;
+  console.log(`[eventUpdater] Google: ${labelOf(google, 'disabled')}`);
+  console.log(`[eventUpdater] Naver: ${labelOf(naver)}`);
+  console.log(`[eventUpdater] Kakao: ${labelOf(kakao)}`);
+  console.log(`[eventUpdater] Vertex AI Search: ${labelOf(vertex)}`);
 }
 
 // ── Search provider implementations ──────────────────────────────────────────
@@ -1624,6 +1641,188 @@ async function fetchGoogleSearchEvents(): Promise<SearchFetchResult> {
   return { events, failures };
 }
 
+/**
+ * Source I (additional): Vertex AI Search (Discovery Engine).
+ * Requires a configured data store + service-account credentials.
+ *   - VERTEX_AI_SEARCH_PROJECT  : GCP project ID hosting the Discovery Engine data store
+ *   - VERTEX_AI_SEARCH_DATASTORE: data store ID (typically a website search data store
+ *                                 indexing Korean pet-event sources)
+ *   - VERTEX_AI_SEARCH_LOCATION : data store location (default 'global')
+ *   - GOOGLE_APPLICATION_CREDENTIALS_JSON | GCP_SERVICE_ACCOUNT_KEY |
+ *     GOOGLE_APPLICATION_CREDENTIALS: service account credentials with the
+ *     `roles/discoveryengine.viewer` permission.
+ *
+ * Missing credentials → returns empty (disabled). 403/PERMISSION_DENIED sets the
+ * module-level flag and skips the rest of the run, mirroring Google CSE behaviour.
+ *
+ * Vertex AI Search returns ranked results; we feed each result's title/snippet/link
+ * through the same `normalizeSearchResult()` pipeline used for Naver/Daum/Google CSE
+ * so date/location extraction and the body-fetch fallback all work identically.
+ */
+let vertexAuthClientPromise: Promise<{ getAccessToken(): Promise<{ token?: string | null } | string | null> } | null> | null = null;
+
+async function getVertexAccessToken(): Promise<string | null> {
+  if (!vertexAuthClientPromise) {
+    vertexAuthClientPromise = (async () => {
+      try {
+        const { GoogleAuth } = await import('google-auth-library');
+        const credsJson =
+          process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || process.env.GCP_SERVICE_ACCOUNT_KEY;
+        const opts: { scopes: string[]; credentials?: Record<string, unknown> } = {
+          scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        };
+        if (credsJson) {
+          try {
+            opts.credentials = JSON.parse(credsJson);
+          } catch (e) {
+            logServerError('[eventUpdater] Vertex AI Search: 서비스계정 JSON 파싱 실패', e);
+            return null;
+          }
+        }
+        const auth = new GoogleAuth(opts);
+        return await auth.getClient();
+      } catch (e) {
+        logServerError('[eventUpdater] Vertex AI Search OAuth 클라이언트 초기화 실패:', e);
+        return null;
+      }
+    })();
+  }
+  const client = await vertexAuthClientPromise;
+  if (!client) return null;
+  try {
+    const t = await client.getAccessToken();
+    if (typeof t === 'string') return t;
+    return t?.token ?? null;
+  } catch (e) {
+    logServerError('[eventUpdater] Vertex AI Search 액세스 토큰 발급 실패:', e);
+    return null;
+  }
+}
+
+interface VertexSearchResult {
+  document?: {
+    derivedStructData?: {
+      title?: string;
+      htmlTitle?: string;
+      link?: string;
+      snippets?: Array<{ snippet?: string; htmlSnippet?: string }>;
+      displayLink?: string;
+      pagemap?: { cse_image?: Array<{ src: string }>; metatags?: Array<Record<string, string>> };
+    };
+    structData?: {
+      title?: string;
+      description?: string;
+      link?: string;
+      url?: string;
+      imageUrl?: string;
+    };
+  };
+}
+
+async function fetchVertexAiSearchEvents(): Promise<SearchFetchResult> {
+  const project = process.env.VERTEX_AI_SEARCH_PROJECT;
+  const dataStore = process.env.VERTEX_AI_SEARCH_DATASTORE;
+  const location = process.env.VERTEX_AI_SEARCH_LOCATION || 'global';
+  if (!project || !dataStore) return { events: [], failures: [] };
+  if (vertexPermissionDenied) return { events: [], failures: [] };
+
+  const token = await getVertexAccessToken();
+  if (!token) return { events: [], failures: [] };
+
+  const events: CrawledEvent[] = [];
+  const failures: ImportResult['failures'] = [];
+  const url =
+    `https://discoveryengine.googleapis.com/v1/projects/${encodeURIComponent(project)}` +
+    `/locations/${encodeURIComponent(location)}` +
+    `/collections/default_collection/dataStores/${encodeURIComponent(dataStore)}` +
+    `/servingConfigs/default_search:search`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  let requestCount = 0;
+
+  for (const keyword of SEARCH_KEYWORDS) {
+    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+    if (vertexPermissionDenied) break;
+    try {
+      const res = await withTimeout(
+        fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            query: keyword,
+            pageSize: 10,
+            contentSearchSpec: {
+              snippetSpec: { returnSnippet: true },
+            },
+          }),
+        }),
+        SOURCE_TIMEOUT_MS,
+        'vertex-ai-search',
+      );
+      requestCount++;
+      if (res.status === 403) {
+        vertexPermissionDenied = true;
+        console.log('[eventUpdater] Vertex AI Search: permission denied');
+        break;
+      }
+      if (!res.ok) {
+        let body = '';
+        try { body = await res.text(); } catch { /* ignore */ }
+        if (body.includes('PERMISSION_DENIED')) {
+          vertexPermissionDenied = true;
+          console.log('[eventUpdater] Vertex AI Search: permission denied');
+          break;
+        }
+        const msg = `HTTP ${res.status} (키워드: "${keyword}")`;
+        logServerError(`[eventUpdater] Vertex AI Search ${msg}`);
+        failures.push({ source: 'Vertex AI Search', message: msg });
+        continue;
+      }
+      const json = (await res.json()) as { results?: VertexSearchResult[] };
+      for (const r of json.results ?? []) {
+        const dsd = r.document?.derivedStructData;
+        const sd = r.document?.structData;
+        const title = (sd?.title || dsd?.title || dsd?.htmlTitle || '').trim();
+        const snippet =
+          sd?.description ||
+          (dsd?.snippets ?? [])
+            .map((s) => s.snippet ?? s.htmlSnippet ?? '')
+            .filter(Boolean)
+            .join(' ') ||
+          '';
+        const link = sd?.link || sd?.url || dsd?.link || null;
+        const image = sd?.imageUrl || dsd?.pagemap?.cse_image?.[0]?.src || null;
+        if (!title) continue;
+        const result = await normalizeSearchResult(
+          title,
+          snippet,
+          link,
+          image,
+          'Vertex AI Search',
+        );
+        if (result.ok) {
+          events.push(result.event);
+        } else {
+          failures.push({
+            source: 'Vertex AI Search',
+            message: result.reason,
+            link: result.link,
+            title: result.title,
+          });
+        }
+      }
+    } catch (e) {
+      const msg = `요청 오류 (키워드: "${keyword}"): ${e instanceof Error ? e.message : String(e)}`;
+      logServerError(`[eventUpdater] Vertex AI Search ${msg}`, e);
+      failures.push({ source: 'Vertex AI Search', message: msg });
+    }
+  }
+  return { events, failures };
+}
+
 /** Sources that return simple CrawledEvent[]; any thrown error is caught by runImport. */
 const SIMPLE_SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }> = [
   { name: 'VisitKorea(축제)', fn: fetchVisitKoreaFestivals },
@@ -1641,6 +1840,7 @@ const SEARCH_SOURCES: Array<{ name: string; fn: () => Promise<SearchFetchResult>
   { name: 'Naver 검색', fn: fetchNaverSearchEvents },
   { name: 'Daum 검색', fn: fetchDaumSearchEvents },
   { name: 'Google 검색', fn: fetchGoogleSearchEvents },
+  { name: 'Vertex AI Search', fn: fetchVertexAiSearchEvents },
 ];
 
 async function notifyAdminsOnFailure(failures: ImportResult['failures']): Promise<void> {
