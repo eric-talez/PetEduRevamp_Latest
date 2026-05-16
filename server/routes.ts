@@ -24663,6 +24663,18 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  app.get('/api/admin/pet-events/import/source-adoption', requireAuth('admin'), async (req, res) => {
+    try {
+      const rawLimit = Number(req.query.runs);
+      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 30;
+      const stats = await eventUpdater.getSourceAdoptionStats(limit);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      logServerError('소스 채택률 조회 오류:', error);
+      res.status(500).json({ error: '조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   app.get('/api/admin/event-collection/providers', requireAuth('admin'), (_req, res) => {
     const statuses = getProviderStatuses();
     res.json({ success: true, providers: statuses });

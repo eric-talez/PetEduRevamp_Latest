@@ -371,6 +371,25 @@ export default function AdminPetEventsPage() {
   const lastRun = historyData?.data?.last ?? null;
   const history = historyData?.data?.history ?? [];
 
+  const { data: adoptionData } = useQuery<{
+    success: boolean;
+    data: Array<{
+      source: string;
+      runs: number;
+      imported: number;
+      currentActive: number;
+      currentInactive: number;
+      removed: number;
+      adoptionRate: number | null;
+      windowStart: string;
+      windowEnd: string;
+    }>;
+  }>({
+    queryKey: ["/api/admin/pet-events/import/source-adoption"],
+    refetchInterval: 60_000,
+  });
+  const adoptionStats = adoptionData?.data ?? [];
+
   const { data: failuresData, isLoading: failuresLoading } = useQuery<{ success: boolean; data: FailureCandidate[] }>({
     queryKey: ["/api/admin/pet-events/import/failures"],
     refetchInterval: 60_000,
@@ -549,6 +568,7 @@ export default function AdminPetEventsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/source-adoption"] });
     },
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
@@ -570,6 +590,7 @@ export default function AdminPetEventsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/pet-events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/history"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/failures"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/source-adoption"] });
       const failMsg = r.failures.length > 0 ? ` · 실패 ${r.failures.length}건` : "";
       toast({
         title: "자동 수집 완료",
@@ -898,6 +919,74 @@ export default function AdminPetEventsPage() {
             </Button>
           </div>
         </div>
+
+        {adoptionStats.length > 0 && (
+          <Card className="p-3 mb-4" data-testid="card-source-adoption">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 소스별 채택률 (최근 수집 분)
+              </div>
+              <div className="text-[11px] text-stone-400">
+                채택률 = 관리자가 활성화한 비율 · 60초마다 갱신
+              </div>
+            </div>
+            <Table data-testid="table-source-adoption">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">소스</TableHead>
+                  <TableHead className="text-right text-xs">최근 실행</TableHead>
+                  <TableHead className="text-right text-xs">신규 수집</TableHead>
+                  <TableHead className="text-right text-xs">활성</TableHead>
+                  <TableHead className="text-right text-xs">대기</TableHead>
+                  <TableHead className="text-right text-xs">삭제</TableHead>
+                  <TableHead className="text-right text-xs">채택률</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {adoptionStats.map((s) => {
+                  const rate = s.adoptionRate;
+                  const rateLabel = rate == null ? "—" : `${Math.round(rate * 100)}%`;
+                  const rateClass =
+                    rate == null
+                      ? "text-stone-400"
+                      : rate >= 0.5
+                      ? "text-emerald-700"
+                      : rate >= 0.2
+                      ? "text-amber-700"
+                      : "text-rose-700";
+                  return (
+                    <TableRow key={s.source} data-testid={`row-adoption-${slugifySource(s.source)}`}>
+                      <TableCell className="text-xs font-medium">
+                        <Badge variant="outline" className={`mr-1 text-[10px] ${sourceBadgeClass(s.source)}`}>
+                          {s.source}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-stone-500">{s.runs}</TableCell>
+                      <TableCell className="text-right text-xs">{s.imported}</TableCell>
+                      <TableCell className="text-right text-xs font-medium text-emerald-700">{s.currentActive}</TableCell>
+                      <TableCell className="text-right text-xs text-stone-500">{s.currentInactive}</TableCell>
+                      <TableCell className="text-right text-xs text-stone-400">{s.removed}</TableCell>
+                      <TableCell
+                        className={`text-right text-xs font-semibold ${rateClass}`}
+                        data-testid={`text-adoption-rate-${slugifySource(s.source)}`}
+                        title={
+                          rate == null
+                            ? "최근 수집에 신규가 없거나 사용자 직접 등록 소스입니다."
+                            : `활성 ${s.currentActive} / 신규 수집 ${s.imported}`
+                        }
+                      >
+                        {rateLabel}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            <div className="mt-2 text-[11px] text-stone-400">
+              채택률이 낮은(▾20%) 소스는 SEARCH_KEYWORDS / 필터 차단 / 비-이벤트 휴리스틱을 조정해 튜닝하세요.
+            </div>
+          </Card>
+        )}
 
         <Card className="p-3 mb-4" data-testid="card-body-fetch-settings">
           <div className="flex flex-wrap items-end gap-3">

@@ -115,6 +115,103 @@ function matchesPetKeyword(text: string): boolean {
   return PET_KEYWORDS.some((k) => lc.includes(k.toLowerCase()));
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Non-event heuristics (Task #246)
+// ─────────────────────────────────────────────────────────────────────────────
+// 검색 엔진(Vertex AI Search/Naver/Daum/Google CSE)은 펫 행사가 아닌 페이지
+// (상품 상세, 사료 광고, 후기 블로그 등)를 자주 반환한다. 후보 단계에서 명백히
+// 이벤트가 아닌 페이지를 휴리스틱으로 걸러내면 admin 검수 부담이 크게 줄어든다.
+//
+// 1) 호스트 기반:
+//    - STRICT: 쇼핑몰/마켓플레이스 도메인 → 항상 비-이벤트로 처리.
+//    - SOFT  : 쇼핑몰 빌더/플랫폼(cafe24/imweb 등) → 행사 단서가 없을 때만 차단.
+//              (정상 펫페어·지자체 행사도 이런 플랫폼 위에 호스팅될 수 있어 오탐 방지)
+// 2) URL 경로 기반: /product/, /goods/, /item/, /shop/ 등 상품 경로.
+// 3) 텍스트 기반: 상품/광고 단서가 있고 행사 단서가 없으면 비-이벤트로 처리.
+const NON_EVENT_HOSTS_STRICT: string[] = [
+  'smartstore.naver.com',
+  'shopping.naver.com',
+  'brand.naver.com',
+  'coupang.com',
+  'gmarket.co.kr',
+  '11st.co.kr',
+  'auction.co.kr',
+  'ssg.com',
+  'lotteon.com',
+  'wemakeprice.com',
+  'tmon.co.kr',
+  'ohou.se',
+  'idus.com',
+  'ably.co.kr',
+  'aliexpress.com',
+  'amazon.com',
+  'aliexpress.kr',
+  'kakaomakers.com',
+];
+const NON_EVENT_HOSTS_SOFT: string[] = [
+  'cafe24.com',
+  'imweb.me',
+];
+const NON_EVENT_PATH_RE = /(\/product\/|\/goods\/|\/item\/|\/shop\/|\/store\/|\/p\/[A-Za-z0-9]+|\/products?\/[A-Za-z0-9]+|productNo=|productId=|goodsNo=|itemId=)/i;
+const PRODUCT_AD_KEYWORDS: string[] = [
+  '사료', '간식', '영양제', '용품', '장난감', '하네스', '리드줄',
+  '쿠폰', '할인', '특가', '무료배송', '리뷰', '후기', '베스트',
+  '구매', '주문', '판매', '브랜드', '신상',
+];
+const STRONG_EVENT_KEYWORDS: string[] = [
+  '행사', '축제', '페스티벌', 'festival', '박람회', '펫페어', 'pet fair',
+  '입양', '분양', '대회', '도그쇼', 'dog show', '경연', '컨퍼런스',
+  '세미나', '클래스', '워크숍', '워크샵', '교육', '훈련회', '체험',
+  '엑스포', 'expo', '페어', '페티벌',
+];
+
+/**
+ * 검색 결과 후보가 명백히 펫 이벤트가 아닐 때 reason 문자열을 반환한다.
+ * (행사 단서가 분명히 있으면 휴리스틱은 무시한다 — 오탐 최소화)
+ */
+function classifyNonEvent(title: string, snippet: string, link: string | null): string | null {
+  const fullText = `${title} ${snippet}`.toLowerCase();
+  const hasStrongEvent = STRONG_EVENT_KEYWORDS.some((k) => fullText.includes(k.toLowerCase()));
+
+  if (link) {
+    let host = '';
+    let path = '';
+    try {
+      const u = new URL(link);
+      host = u.hostname.toLowerCase().replace(/^www\./, '');
+      path = `${u.pathname}?${u.search}`;
+    } catch {
+      // ignore unparseable link
+    }
+    if (host) {
+      for (const blocked of NON_EVENT_HOSTS_STRICT) {
+        if (host === blocked || host.endsWith(`.${blocked}`)) {
+          return `비-이벤트 휴리스틱(상품 호스트 "${blocked}")`;
+        }
+      }
+      if (!hasStrongEvent) {
+        for (const blocked of NON_EVENT_HOSTS_SOFT) {
+          if (host === blocked || host.endsWith(`.${blocked}`)) {
+            return `비-이벤트 휴리스틱(쇼핑 플랫폼 "${blocked}")`;
+          }
+        }
+      }
+    }
+    if (path && NON_EVENT_PATH_RE.test(path) && !hasStrongEvent) {
+      return '비-이벤트 휴리스틱(상품 URL 경로)';
+    }
+  }
+
+  if (!hasStrongEvent) {
+    const adHits = PRODUCT_AD_KEYWORDS.filter((k) => fullText.includes(k.toLowerCase()));
+    // 광고성 단어가 2개 이상 누적되고 행사 단서가 전혀 없으면 비-이벤트로 처리.
+    if (adHits.length >= 2) {
+      return `비-이벤트 휴리스틱(상품/광고 키워드 "${adHits.slice(0, 3).join(',')}")`;
+    }
+  }
+  return null;
+}
+
 function parseTourApiDate(yyyyMMdd: string, endOfDay = false): Date | null {
   if (!/^\d{8}$/.test(yyyyMMdd)) return null;
   const y = yyyyMMdd.slice(0, 4);
@@ -1310,6 +1407,13 @@ async function normalizeSearchResult(
     return { ok: false, reason: `반려동물 키워드 미포함: "${title.slice(0, 60)}"${linkTail}`, link, title };
   }
 
+  // 비-이벤트 휴리스틱(상품/광고 페이지) — Vertex AI Search 같은 일반 웹 색인이
+  // 다수의 쇼핑몰/광고 페이지를 후보로 올려 admin 검수 부담을 키우는 문제를 줄임.
+  const nonEventReason = classifyNonEvent(title, snippet, link);
+  if (nonEventReason) {
+    return { ok: false, reason: `${nonEventReason}: "${title.slice(0, 60)}"${linkTail}`, link, title };
+  }
+
   let outcome = await tryResolveFromText(fullText);
   let bodyContext = '';
 
@@ -2155,9 +2259,93 @@ export class EventUpdaterService {
   }
 
   /**
-   * 최근 N개 실행에서 발생한 실패 후보를 처리 상태와 함께 반환.
-   * 'open' / 'resolved' / 'dismissed' 상태가 머지되어 클라이언트가 필터링할 수 있다.
+   * 최근 N개 실행에서 소스별 채택률(=관리자가 활성화한 비율)을 계산한다.
+   * - imported : 최근 N회 수집의 bySource.created 합계 (= 신규 저장된 후보 수)
+   * - currentActive / currentInactive : 같은 기간(가장 오래된 run 시작 ~ 현재)에
+   *   해당 source 로 저장된 펫 이벤트 중 현재 활성/비활성 개수
+   * - removed : imported - (active + inactive)  (관리자가 삭제한 후보)
+   * - adoptionRate : active / imported (imported=0 이면 null)
+   *
+   * 정확한 1:1 매핑은 어렵지만, 신규 import 는 항상 isActive=false 로 들어오고
+   * 사용자 직접 등록은 다른 source 명을 갖는 게 일반적이라 채택률 추세를
+   * 충분히 신뢰성 있게 보여준다.
    */
+  public async getSourceAdoptionStats(limit = 30): Promise<Array<{
+    source: string;
+    runs: number;
+    imported: number;
+    currentActive: number;
+    currentInactive: number;
+    removed: number;
+    adoptionRate: number | null;
+    windowStart: string;
+    windowEnd: string;
+  }>> {
+    const n = Math.max(1, Math.min(HISTORY_MAX, limit));
+    try {
+      const runs = await storage.listPetEventImportRuns(n);
+      if (runs.length === 0) return [];
+      const windowStart = runs.reduce((min, r) => (r.startedAt < min ? r.startedAt : min), runs[0].startedAt);
+      const windowEnd = new Date();
+
+      const importedBySource = new Map<string, number>();
+      const runCountBySource = new Map<string, number>();
+      for (const run of runs) {
+        const bySource = Array.isArray(run.bySourceJson) ? run.bySourceJson : [];
+        for (const s of bySource) {
+          if (!s || typeof s.source !== 'string') continue;
+          importedBySource.set(s.source, (importedBySource.get(s.source) ?? 0) + (s.created ?? 0));
+          runCountBySource.set(s.source, (runCountBySource.get(s.source) ?? 0) + 1);
+        }
+      }
+
+      // 같은 시간 윈도우 안에 들어온 (또는 현재 남아 있는) 펫 이벤트를 source/active 로 집계.
+      const all = await storage.listPetEvents({});
+      const liveBySource = new Map<string, { active: number; inactive: number }>();
+      for (const ev of all) {
+        const src = (ev.source ?? '').trim();
+        if (!src) continue;
+        const created = ev.createdAt ? new Date(ev.createdAt) : null;
+        if (!created || created < windowStart) continue;
+        const cur = liveBySource.get(src) ?? { active: 0, inactive: 0 };
+        if (ev.isActive) cur.active++; else cur.inactive++;
+        liveBySource.set(src, cur);
+      }
+
+      const sources = new Set<string>([...importedBySource.keys(), ...liveBySource.keys()]);
+      const out = Array.from(sources).map((source) => {
+        const imported = importedBySource.get(source) ?? 0;
+        const live = liveBySource.get(source) ?? { active: 0, inactive: 0 };
+        const removed = Math.max(0, imported - (live.active + live.inactive));
+        const adoptionRate = imported > 0 ? live.active / imported : null;
+        return {
+          source,
+          runs: runCountBySource.get(source) ?? 0,
+          imported,
+          currentActive: live.active,
+          currentInactive: live.inactive,
+          removed,
+          adoptionRate,
+          windowStart: windowStart.toISOString(),
+          windowEnd: windowEnd.toISOString(),
+        };
+      });
+      // 채택률이 낮은 소스를 위로 (튜닝이 필요한 소스 강조), imported=0 은 맨 아래.
+      out.sort((a, b) => {
+        if (a.imported === 0 && b.imported !== 0) return 1;
+        if (b.imported === 0 && a.imported !== 0) return -1;
+        const ar = a.adoptionRate ?? 1;
+        const br = b.adoptionRate ?? 1;
+        if (ar !== br) return ar - br;
+        return b.imported - a.imported;
+      });
+      return out;
+    } catch (e) {
+      logServerError('[eventUpdater] 소스 채택률 집계 실패:', e);
+      return [];
+    }
+  }
+
   public async getFailureCandidates(limit = 20): Promise<FailureCandidate[]> {
     const n = Math.max(1, Math.min(HISTORY_MAX, limit));
     try {
