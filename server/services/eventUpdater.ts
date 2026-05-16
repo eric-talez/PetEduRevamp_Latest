@@ -479,22 +479,69 @@ async function fetchSeoulPetCulturalEvents(): Promise<CrawledEvent[]> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CURRENT_YEAR = new Date().getFullYear();
-const SEARCH_KEYWORDS: string[] = [
-  `반려견 축제 ${CURRENT_YEAR}`,
-  `펫페어 ${CURRENT_YEAR}`,
-  `강아지 입양 행사 ${CURRENT_YEAR}`,
-  `도그쇼 ${CURRENT_YEAR}`,
-  `반려동물 행사 ${CURRENT_YEAR}`,
-  `반려견 대회 ${CURRENT_YEAR}`,
-];
-
-/** Max API calls per source per run (to protect quotas/billing). */
-const MAX_REQUESTS_PER_SEARCH_SOURCE = 6;
 
 const KR_REGIONS = [
   '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
   '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
 ];
+
+/**
+ * Core pet-event keyword stems used to build the region × keyword search pool.
+ * Each base keyword is combined with every 시·도 in KR_REGIONS plus the current
+ * year so providers can surface regional small-town events that would otherwise
+ * never crack the top results for a generic nation-wide query.
+ */
+const SEARCH_BASE_KEYWORDS: string[] = [
+  '반려견 축제',
+  '펫페어',
+  '강아지 입양 행사',
+  '도그쇼',
+  '반려동물 행사',
+  '반려견 대회',
+];
+
+/**
+ * Round-robin keyword pool: region-first ordering so the first 17 entries
+ * cover all 17 시·도 once with the leading base keyword, the next 17 cover
+ * them again with the second base keyword, and so on. Combined with the
+ * per-provider request cap, this guarantees broad regional coverage even
+ * when the cap stops the loop partway through.
+ */
+function buildSearchKeywordPool(): string[] {
+  const pool: string[] = [];
+  for (const baseKeyword of SEARCH_BASE_KEYWORDS) {
+    for (const region of KR_REGIONS) {
+      pool.push(`${region} ${baseKeyword} ${CURRENT_YEAR}`);
+    }
+  }
+  return pool;
+}
+
+const SEARCH_KEYWORD_POOL: string[] = buildSearchKeywordPool();
+
+/**
+ * Default per-provider, per-run request cap.
+ * Override globally with `PET_EVENT_SEARCH_DAILY_CAP` or per provider with
+ * `PET_EVENT_SEARCH_DAILY_CAP_NAVER` / `_DAUM` / `_GOOGLE` / `_VERTEX`.
+ *
+ * Default of 24 was chosen so:
+ *  - Google CSE / Vertex AI Search (1 request per keyword) cover all 17 시·도
+ *    in the first round and 7 of them again in the second.
+ *  - Naver / Daum (2 endpoints per keyword) cover the first 12 시·도 in the
+ *    first round, which already exceeds the "≥5 regions" goal in Task #232.
+ */
+const DEFAULT_SEARCH_DAILY_CAP = 24;
+
+type SearchProviderKey = 'NAVER' | 'DAUM' | 'GOOGLE' | 'VERTEX';
+
+function getSearchProviderCap(provider: SearchProviderKey): number {
+  const specific = process.env[`PET_EVENT_SEARCH_DAILY_CAP_${provider}`];
+  const general = process.env.PET_EVENT_SEARCH_DAILY_CAP;
+  const raw = specific ?? general;
+  if (raw == null || raw === '') return DEFAULT_SEARCH_DAILY_CAP;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_SEARCH_DAILY_CAP;
+}
 
 /**
  * Approximate city-center coordinates for the 17 Korean 시/도 regions.
@@ -1427,12 +1474,13 @@ async function fetchNaverSearchEvents(): Promise<SearchFetchResult> {
     Accept: 'application/json',
   };
   const endpoints = ['news', 'webkr'] as const;
+  const cap = getSearchProviderCap('NAVER');
   let requestCount = 0;
 
-  for (const keyword of SEARCH_KEYWORDS) {
-    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+  for (const keyword of SEARCH_KEYWORD_POOL) {
+    if (requestCount >= cap) break;
     for (const endpoint of endpoints) {
-      if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+      if (requestCount >= cap) break;
       try {
         const url =
           `https://openapi.naver.com/v1/search/${endpoint}` +
@@ -1499,12 +1547,13 @@ async function fetchDaumSearchEvents(): Promise<SearchFetchResult> {
     Accept: 'application/json',
   };
   const searchTypes = ['web', 'blog'] as const;
+  const cap = getSearchProviderCap('DAUM');
   let requestCount = 0;
 
-  for (const keyword of SEARCH_KEYWORDS) {
-    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+  for (const keyword of SEARCH_KEYWORD_POOL) {
+    if (requestCount >= cap) break;
     for (const searchType of searchTypes) {
-      if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+      if (requestCount >= cap) break;
       try {
         const url =
           `https://dapi.kakao.com/v2/search/${searchType}` +
@@ -1572,10 +1621,11 @@ async function fetchGoogleSearchEvents(): Promise<SearchFetchResult> {
 
   const events: CrawledEvent[] = [];
   const failures: ImportResult['failures'] = [];
+  const cap = getSearchProviderCap('GOOGLE');
   let requestCount = 0;
 
-  for (const keyword of SEARCH_KEYWORDS) {
-    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+  for (const keyword of SEARCH_KEYWORD_POOL) {
+    if (requestCount >= cap) break;
     if (googlePermissionDenied) break;
     try {
       const url =
@@ -1741,10 +1791,11 @@ async function fetchVertexAiSearchEvents(): Promise<SearchFetchResult> {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   };
+  const cap = getSearchProviderCap('VERTEX');
   let requestCount = 0;
 
-  for (const keyword of SEARCH_KEYWORDS) {
-    if (requestCount >= MAX_REQUESTS_PER_SEARCH_SOURCE) break;
+  for (const keyword of SEARCH_KEYWORD_POOL) {
+    if (requestCount >= cap) break;
     if (vertexPermissionDenied) break;
     try {
       const res = await withTimeout(
