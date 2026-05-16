@@ -4065,7 +4065,7 @@ export const petEventImportRuns = pgTable("pet_event_import_runs", {
     link?: string | null;
     title?: string | null;
   }>>().notNull().default([]),
-  bySourceJson: jsonb("by_source_json").$type<Array<{ source: string; fetched: number; created: number; duplicates: number; failures: number }>>().notNull().default([]),
+  bySourceJson: jsonb("by_source_json").$type<Array<{ source: string; fetched: number; created: number; duplicates: number; failures: number; emptyReason?: string }>>().notNull().default([]),
   bodyFetchJson: jsonb("body_fetch_json").$type<{
     attempted: number;
     succeeded: number;

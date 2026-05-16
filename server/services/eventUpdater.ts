@@ -23,6 +23,8 @@ export interface SourceStat {
   created: number;
   duplicates: number;
   failures: number;
+  /** Set when fetched === 0. Values: "permission_denied" | "normalize_rejected" | "no_index" */
+  emptyReason?: string;
 }
 
 export interface ImportFailure {
@@ -1796,6 +1798,33 @@ async function fetchGoogleSearchEvents(): Promise<SearchFetchResult> {
 }
 
 /**
+ * Vertex AI Search 전용 키워드 풀 — "연도+행사형" 키워드로 좁혀
+ * Discovery Engine의 이미 색인된 좁은 코퍼스(펫페어/지자체 행사 페이지)에서
+ * 효율적인 검색 결과를 얻는다.
+ * SEARCH_KEYWORD_POOL(광역 지역 × 일반 키워드)과 달리 박람회·페스티벌 중심으로 구성해
+ * 같은 페이지가 중복 매칭되어 dedupe로 탈락하는 문제를 최소화한다.
+ */
+const VERTEX_SEARCH_KEYWORD_POOL: readonly string[] = [
+  '2026 반려동물 박람회',
+  '2026 펫페어',
+  '2026 펫페스티벌',
+  '2026 반려견 박람회',
+  '2026 pet fair korea',
+  '반려동물 박람회 일정',
+  '펫페어 2026 일정',
+  '반려동물 행사 박람회',
+  '서울 펫 박람회 2026',
+  '부산 반려동물 박람회 2026',
+  '반려동물 엑스포 2026',
+  '케이펫페어 2026',
+  '코엑스 펫박람회',
+  '반려동물 페스타 2026',
+  '수원 반려동물 박람회 2026',
+  '대구 반려동물 박람회 2026',
+  '경기도 펫페어 2026',
+];
+
+/**
  * Source I (additional): Vertex AI Search (Discovery Engine).
  * Requires a configured data store + service-account credentials.
  *   - VERTEX_AI_SEARCH_PROJECT  : GCP project ID hosting the Discovery Engine data store
@@ -1812,6 +1841,8 @@ async function fetchGoogleSearchEvents(): Promise<SearchFetchResult> {
  * Vertex AI Search returns ranked results; we feed each result's title/snippet/link
  * through the same `normalizeSearchResult()` pipeline used for Naver/Daum/Google CSE
  * so date/location extraction and the body-fetch fallback all work identically.
+ *
+ * 전용 키워드 풀 사용: VERTEX_SEARCH_KEYWORD_POOL (연도+행사형 키워드 17개).
  */
 let vertexAuthClientPromise: Promise<{ getAccessToken(): Promise<{ token?: string | null } | string | null> } | null> | null = null;
 
@@ -1898,7 +1929,7 @@ async function fetchVertexAiSearchEvents(): Promise<SearchFetchResult> {
   const cap = getSearchProviderCap('VERTEX');
   let requestCount = 0;
 
-  for (const keyword of SEARCH_KEYWORD_POOL) {
+  for (const keyword of VERTEX_SEARCH_KEYWORD_POOL) {
     if (requestCount >= cap) break;
     if (vertexPermissionDenied) break;
     try {
@@ -2038,6 +2069,169 @@ function vertexReasonGuidance(reason: ProviderReason): string {
 /** 테스트/이력 정리 등에서 상태를 강제 초기화할 수 있도록 export 한다. */
 export function _resetVertexAlertStateForTest(): void {
   vertexAlertState = { lastReason: null, lastAlertAt: 0 };
+}
+
+// ── Vertex AI Search 색인 메타 조회 (5분 캐시) ────────────────────────────────
+interface VertexIndexMeta {
+  docCount: number | null;
+  lastIndexedAt: string | null;
+}
+let vertexIndexMetaCache: (VertexIndexMeta & { fetchedAt: number }) | null = null;
+const VERTEX_INDEX_META_CACHE_MS = 5 * 60 * 1000;
+
+/**
+ * Discovery Engine 데이터스토어의 색인 문서 수와 마지막 갱신 시각을 조회한다.
+ * 5분 캐시. 자격증명이 없거나 API 오류 시 { docCount: null, lastIndexedAt: null }.
+ */
+export async function fetchVertexIndexMeta(): Promise<VertexIndexMeta> {
+  const now = Date.now();
+  if (vertexIndexMetaCache && now - vertexIndexMetaCache.fetchedAt < VERTEX_INDEX_META_CACHE_MS) {
+    return { docCount: vertexIndexMetaCache.docCount, lastIndexedAt: vertexIndexMetaCache.lastIndexedAt };
+  }
+  const project = process.env.VERTEX_AI_SEARCH_PROJECT;
+  const dataStore = process.env.VERTEX_AI_SEARCH_DATASTORE;
+  const location = process.env.VERTEX_AI_SEARCH_LOCATION || 'global';
+  if (!project || !dataStore) return { docCount: null, lastIndexedAt: null };
+
+  const token = await getVertexAccessToken();
+  if (!token) return { docCount: null, lastIndexedAt: null };
+
+  try {
+    // orderBy=update_time+desc ensures the first document is the most recently indexed,
+    // making lastIndexedAt an accurate proxy for the last successful crawl time.
+    const url =
+      `https://discoveryengine.googleapis.com/v1/projects/${encodeURIComponent(project)}` +
+      `/locations/${encodeURIComponent(location)}` +
+      `/collections/default_collection/dataStores/${encodeURIComponent(dataStore)}` +
+      `/branches/0/documents?pageSize=1&orderBy=update_time+desc`;
+    const res = await withTimeout(
+      fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } }),
+      10_000,
+      'vertex-list-documents',
+    );
+    if (!res.ok) {
+      const result: VertexIndexMeta = { docCount: null, lastIndexedAt: null };
+      vertexIndexMetaCache = { ...result, fetchedAt: now };
+      return result;
+    }
+    const json = (await res.json()) as {
+      documents?: Array<{ updateTime?: string }>;
+      totalSize?: number;
+      nextPageToken?: string;
+    };
+    const docCount =
+      typeof json.totalSize === 'number'
+        ? json.totalSize
+        : json.documents !== undefined
+          ? json.documents.length > 0
+            ? json.nextPageToken
+              ? null
+              : json.documents.length
+            : 0
+          : null;
+    const lastIndexedAt = json.documents?.[0]?.updateTime ?? null;
+    const result: VertexIndexMeta = { docCount, lastIndexedAt };
+    vertexIndexMetaCache = { ...result, fetchedAt: now };
+    return result;
+  } catch (e) {
+    logServerError('[eventUpdater] Vertex 색인 메타 조회 실패:', e);
+    const result: VertexIndexMeta = { docCount: null, lastIndexedAt: null };
+    vertexIndexMetaCache = { ...result, fetchedAt: now };
+    return result;
+  }
+}
+
+/**
+ * Vertex AI Search 단건 진단 테스트.
+ * 모듈 플래그(vertexPermissionDenied)에 영향을 주지 않는다.
+ */
+export async function testVertexAiSearchOnce(keyword: string): Promise<{
+  status: 'ok' | 'permission_denied' | 'auth_failed' | 'http_error' | 'no_credentials';
+  httpStatus: number | null;
+  rawCount: number;
+  normalizedOk: number;
+  normalizedFail: number;
+  failReasons: Record<string, number>;
+  firstResult: { title: string; link: string | null; snippet: string } | null;
+  error?: string;
+}> {
+  const project = process.env.VERTEX_AI_SEARCH_PROJECT;
+  const dataStore = process.env.VERTEX_AI_SEARCH_DATASTORE;
+  const location = process.env.VERTEX_AI_SEARCH_LOCATION || 'global';
+  if (!project || !dataStore) {
+    return { status: 'no_credentials', httpStatus: null, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null };
+  }
+  const token = await getVertexAccessToken();
+  if (!token) {
+    return { status: 'auth_failed', httpStatus: null, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null, error: '액세스 토큰 발급 실패' };
+  }
+  const url =
+    `https://discoveryengine.googleapis.com/v1/projects/${encodeURIComponent(project)}` +
+    `/locations/${encodeURIComponent(location)}` +
+    `/collections/default_collection/dataStores/${encodeURIComponent(dataStore)}` +
+    `/servingConfigs/default_search:search`;
+  try {
+    const res = await withTimeout(
+      fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ query: keyword, pageSize: 10, contentSearchSpec: { snippetSpec: { returnSnippet: true } } }),
+      }),
+      SOURCE_TIMEOUT_MS,
+      'vertex-ai-search-test',
+    );
+    if (res.status === 403) {
+      return { status: 'permission_denied', httpStatus: 403, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null };
+    }
+    if (!res.ok) {
+      let body = '';
+      try { body = await res.text(); } catch { /* ignore */ }
+      if (body.includes('PERMISSION_DENIED')) {
+        return { status: 'permission_denied', httpStatus: res.status, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null };
+      }
+      return { status: 'http_error', httpStatus: res.status, rawCount: 0, normalizedOk: 0, normalizedFail: 0, failReasons: {}, firstResult: null, error: `HTTP ${res.status}` };
+    }
+    const json = (await res.json()) as { results?: VertexSearchResult[] };
+    const results = json.results ?? [];
+    let normalizedOk = 0;
+    let normalizedFail = 0;
+    const failReasons: Record<string, number> = {};
+    let firstResult: { title: string; link: string | null; snippet: string } | null = null;
+
+    for (const r of results) {
+      const dsd = r.document?.derivedStructData;
+      const sd = r.document?.structData;
+      const title = (sd?.title || dsd?.title || dsd?.htmlTitle || '').trim();
+      const snippet =
+        sd?.description ||
+        (dsd?.snippets ?? []).map((s) => s.snippet ?? s.htmlSnippet ?? '').filter(Boolean).join(' ') ||
+        '';
+      const link = sd?.link || sd?.url || dsd?.link || null;
+      const image = sd?.imageUrl || dsd?.pagemap?.cse_image?.[0]?.src || null;
+      if (!title) continue;
+      if (!firstResult) firstResult = { title, link, snippet: snippet.slice(0, 200) };
+      const norm = await normalizeSearchResult(title, snippet, link, image, 'Vertex AI Search');
+      if (norm.ok) {
+        normalizedOk++;
+      } else {
+        normalizedFail++;
+        const reasonKey = norm.reason.split(':')[0].trim().slice(0, 40);
+        failReasons[reasonKey] = (failReasons[reasonKey] ?? 0) + 1;
+      }
+    }
+    return { status: 'ok', httpStatus: res.status, rawCount: results.length, normalizedOk, normalizedFail, failReasons, firstResult };
+  } catch (e) {
+    return {
+      status: 'http_error',
+      httpStatus: null,
+      rawCount: 0,
+      normalizedOk: 0,
+      normalizedFail: 0,
+      failReasons: {},
+      firstResult: null,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
 }
 
 async function notifyAdminsOnVertexStatusChange(currentReason: ProviderReason): Promise<void> {
@@ -2218,6 +2412,60 @@ export class EventUpdaterService {
 
     console.log('✅ [eventUpdater] 행사 자동 수집 스케줄러 시작 (매일 03:00 KST)');
     logProviderStatuses();
+
+    // 부팅 시 Vertex 토큰 사전 검증 — 토큰 발급 후 실제 API 호출로
+    // active / permission denied / auth failed:<reason> 세 가지를 구분.
+    if (hasVertexAiSearchCredentials()) {
+      void (async () => {
+        try {
+          const token = await getVertexAccessToken();
+          if (!token) {
+            console.log('[eventUpdater] Vertex AI Search: auth check → auth failed: 토큰 발급 반환값 null');
+            return;
+          }
+          const project = process.env.VERTEX_AI_SEARCH_PROJECT;
+          const dataStore = process.env.VERTEX_AI_SEARCH_DATASTORE;
+          const location = process.env.VERTEX_AI_SEARCH_LOCATION || 'global';
+          if (!project || !dataStore) {
+            console.log('[eventUpdater] Vertex AI Search: auth check → active');
+            return;
+          }
+          const bootCheckUrl =
+            `https://discoveryengine.googleapis.com/v1/projects/${encodeURIComponent(project)}` +
+            `/locations/${encodeURIComponent(location)}` +
+            `/collections/default_collection/dataStores/${encodeURIComponent(dataStore)}` +
+            `/servingConfigs/default_search:search`;
+          const res = await withTimeout(
+            fetch(bootCheckUrl, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({ query: '반려동물', pageSize: 1 }),
+            }),
+            10_000,
+            'vertex-boot-check',
+          );
+          if (res.status === 403) {
+            vertexPermissionDenied = true;
+            console.log('[eventUpdater] Vertex AI Search: auth check → permission denied');
+            return;
+          }
+          if (!res.ok) {
+            const body = await res.text().catch(() => '');
+            if (body.includes('PERMISSION_DENIED')) {
+              vertexPermissionDenied = true;
+              console.log('[eventUpdater] Vertex AI Search: auth check → permission denied');
+              return;
+            }
+            console.log(`[eventUpdater] Vertex AI Search: auth check → auth failed: HTTP ${res.status}`);
+            return;
+          }
+          console.log('[eventUpdater] Vertex AI Search: auth check → active');
+        } catch (e) {
+          const reason = e instanceof Error ? e.message : String(e);
+          console.log(`[eventUpdater] Vertex AI Search: auth check → auth failed: ${reason}`);
+        }
+      })();
+    }
   }
 
   public stopScheduler(): void {
@@ -2495,7 +2743,10 @@ export class EventUpdaterService {
           ensureStat(source.name).fetched += result.events.length;
           collected.push(...result.events);
           for (const f of result.failures) {
-            recordFailure(f.source || source.name, f.message);
+            // Preserve title/link so downstream emptyReason logic can distinguish
+            // normalization rejections (title set) from HTTP/network failures (title null).
+            failures.push({ source: f.source || source.name, message: f.message, title: f.title ?? null, link: f.link ?? null });
+            ensureStat(f.source || source.name).failures++;
           }
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
@@ -2617,6 +2868,28 @@ export class EventUpdaterService {
     }
 
     const finishedAt = new Date();
+
+    // Annotate Vertex AI Search emptyReason when fetched === 0
+    const vertexStat = sourceStats.get('Vertex AI Search');
+    if (vertexStat && vertexStat.fetched === 0) {
+      if (vertexPermissionDenied) {
+        vertexStat.emptyReason = 'permission_denied';
+      } else if (vertexStat.failures > 0) {
+        // Normalize rejections have title set; HTTP/network failures do not.
+        // Both "API returned results that all failed normalization" and "API returned
+        // HTTP/network errors" reduce to fetched=0. The operator action for HTTP errors
+        // is the same as no_index (verify datastore config/indexing), so we use
+        // normalize_rejected only when there are actual normalization failures; otherwise
+        // fall through to no_index.
+        const normalizeRejections = failures.filter(
+          (f) => f.source === 'Vertex AI Search' && f.title != null,
+        );
+        vertexStat.emptyReason = normalizeRejections.length > 0 ? 'normalize_rejected' : 'no_index';
+      } else if (hasVertexAiSearchCredentials()) {
+        vertexStat.emptyReason = 'no_index';
+      }
+    }
+
     const bySource = Array.from(sourceStats.values()).sort((a, b) => a.source.localeCompare(b.source, 'ko'));
     const bodyFetch = getBodyFetchStatsSnapshot();
     const result: ImportResult = {

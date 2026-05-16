@@ -24,7 +24,7 @@ import {
   type PetEvent,
   type PetEventCategory,
 } from "@shared/schema";
-import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2, XCircle, ExternalLink, Eye, EyeOff, Undo2, Inbox, Settings2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Loader2, Locate, RefreshCw, History, AlertCircle, CheckCircle2, XCircle, ExternalLink, Eye, EyeOff, Undo2, Inbox, Settings2, FlaskConical, Database } from "lucide-react";
 
 interface ImportFailureItem {
   source: string;
@@ -39,6 +39,7 @@ interface SourceStat {
   created: number;
   duplicates: number;
   failures: number;
+  emptyReason?: string;
 }
 
 interface BodyFetchStats {
@@ -236,6 +237,19 @@ export default function AdminPetEventsPage() {
   const [showResolved, setShowResolved] = useState(false);
   const [failureClassFilter, setFailureClassFilter] = useState<"all" | "filter_blocked_all" | FailureClass>("all");
   const [pendingResolution, setPendingResolution] = useState<{ runId: number; idx: number } | null>(null);
+  const [vertexTestOpen, setVertexTestOpen] = useState(false);
+  const [vertexTestKeyword, setVertexTestKeyword] = useState("2026 반려동물 박람회");
+  const [vertexTestResult, setVertexTestResult] = useState<{
+    keyword: string;
+    status: string;
+    httpStatus: number | null;
+    rawCount: number;
+    normalizedOk: number;
+    normalizedFail: number;
+    failReasons: Record<string, number>;
+    firstResult: { title: string; link: string | null; snippet: string } | null;
+    error?: string;
+  } | null>(null);
 
   const runGeocode = async (opts?: { silentOnEmpty?: boolean; force?: boolean }) => {
     const address = form.location.trim();
@@ -724,6 +738,37 @@ export default function AdminPetEventsPage() {
 
   const selectedCount = selectedIds.size;
 
+  const { data: providerStatusData, refetch: refetchProviders } = useQuery<{
+    success: boolean;
+    providers: {
+      google: { enabled: boolean; reason: string };
+      naver: { enabled: boolean; reason: string };
+      kakao: { enabled: boolean; reason: string };
+      vertex: { enabled: boolean; reason: string; indexedDocCount: number | null; lastIndexedAt: string | null };
+    };
+  }>({
+    queryKey: ["/api/admin/event-collection/providers"],
+    refetchInterval: 60_000,
+  });
+  const providers = providerStatusData?.providers ?? null;
+
+  const vertexTest = useMutation({
+    mutationFn: async (keyword: string) => {
+      const res = await apiRequest("POST", "/api/admin/event-collection/test/vertex", { keyword });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "진단 실패");
+      return json as { success: boolean; keyword: string; data: typeof vertexTestResult extends null ? never : NonNullable<typeof vertexTestResult> };
+    },
+    onSuccess: (r) => {
+      setVertexTestResult({ keyword: r.keyword, ...r.data });
+    },
+    onError: (e: Error) => toast({ title: "진단 실패", description: e.message, variant: "destructive" }),
+  });
+
+  const handleVertexTest = () => {
+    vertexTest.mutate(vertexTestKeyword || "2026 반려동물 박람회");
+  };
+
   const { data: bodyFetchSettingsData } = useQuery<{ success: boolean; data: { perRunMax: number; perHostMax: number } }>({
     queryKey: ["/api/admin/pet-events/body-fetch-settings"],
   });
@@ -984,6 +1029,118 @@ export default function AdminPetEventsPage() {
             </Table>
             <div className="mt-2 text-[11px] text-stone-400">
               채택률이 낮은(▾20%) 소스는 SEARCH_KEYWORDS / 필터 차단 / 비-이벤트 휴리스틱을 조정해 튜닝하세요.
+            </div>
+          </Card>
+        )}
+
+        {providers && (
+          <Card className="p-3 mb-4" data-testid="card-provider-statuses">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                <Database className="w-4 h-4 text-sky-600" /> 수집 공급자 상태
+              </div>
+              <button
+                type="button"
+                onClick={() => refetchProviders()}
+                className="text-[11px] text-stone-400 hover:text-stone-600 underline-offset-2 hover:underline"
+              >
+                새로고침
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {([
+                { key: "naver", label: "Naver 검색" },
+                { key: "kakao", label: "Kakao 검색" },
+                { key: "google", label: "Google CSE" },
+              ] as const).map((p) => {
+                const st = providers[p.key];
+                return (
+                  <div key={p.key} className="flex items-center gap-2 text-xs border border-stone-100 rounded px-2 py-1.5">
+                    {st.enabled ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    ) : st.reason === "permission_denied" ? (
+                      <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    )}
+                    <span className="font-medium text-stone-700 w-24 shrink-0">{p.label}</span>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] ${
+                        st.enabled
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : st.reason === "permission_denied"
+                          ? "bg-red-50 text-red-700 border-red-200"
+                          : "bg-stone-100 text-stone-500 border-stone-200"
+                      }`}
+                    >
+                      {st.enabled ? "active" : st.reason === "permission_denied" ? "permission denied" : "missing credentials"}
+                    </Badge>
+                  </div>
+                );
+              })}
+              <div className="flex flex-col gap-1.5 border border-stone-100 rounded px-2 py-1.5 sm:col-span-2">
+                <div className="flex items-center gap-2 text-xs">
+                  {providers.vertex.enabled ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  ) : providers.vertex.reason === "permission_denied" ? (
+                    <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                  )}
+                  <span className="font-medium text-stone-700 w-24 shrink-0">Vertex AI Search</span>
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] ${
+                      providers.vertex.enabled
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : providers.vertex.reason === "permission_denied"
+                        ? "bg-red-50 text-red-700 border-red-200"
+                        : "bg-stone-100 text-stone-500 border-stone-200"
+                    }`}
+                  >
+                    {providers.vertex.enabled
+                      ? "active"
+                      : providers.vertex.reason === "permission_denied"
+                      ? "permission denied"
+                      : "missing credentials"}
+                  </Badge>
+                  {providers.vertex.enabled && (
+                    <span className="ml-auto text-stone-400 text-[11px] flex items-center gap-1.5">
+                      {providers.vertex.indexedDocCount !== null ? (
+                        <span>색인 문서 <b className="text-stone-700">{providers.vertex.indexedDocCount}</b>건</span>
+                      ) : (
+                        <span>색인 문서 수 조회 중</span>
+                      )}
+                      {providers.vertex.lastIndexedAt && (
+                        <span>· 마지막 갱신 {formatRelative(providers.vertex.lastIndexedAt)}</span>
+                      )}
+                    </span>
+                  )}
+                </div>
+                {providers.vertex.reason !== "missing_credentials" && (
+                  <div className="flex items-center gap-2 pl-5">
+                    <Input
+                      value={vertexTestKeyword}
+                      onChange={(e) => setVertexTestKeyword(e.target.value)}
+                      placeholder="테스트 키워드"
+                      className="h-7 text-xs w-52"
+                      data-testid="input-vertex-test-keyword"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => { setVertexTestResult(null); setVertexTestOpen(true); handleVertexTest(); }}
+                      disabled={vertexTest.isPending}
+                      data-testid="button-vertex-test"
+                    >
+                      {vertexTest.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <FlaskConical className="w-3 h-3 mr-1" />}
+                      단건 테스트
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
         )}
@@ -1730,6 +1887,138 @@ export default function AdminPetEventsPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={vertexTestOpen} onOpenChange={setVertexTestOpen}>
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto" data-testid="dialog-vertex-test">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FlaskConical className="w-4 h-4" /> Vertex AI Search 단건 테스트
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Input
+                value={vertexTestKeyword}
+                onChange={(e) => setVertexTestKeyword(e.target.value)}
+                placeholder="테스트 키워드"
+                className="flex-1"
+                data-testid="input-vertex-test-keyword-modal"
+                onKeyDown={(e) => { if (e.key === "Enter") { setVertexTestResult(null); handleVertexTest(); } }}
+              />
+              <Button
+                onClick={() => { setVertexTestResult(null); handleVertexTest(); }}
+                disabled={vertexTest.isPending}
+                className="bg-stone-900 hover:bg-stone-800 shrink-0"
+                data-testid="button-vertex-test-run"
+              >
+                {vertexTest.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FlaskConical className="w-4 h-4 mr-1" />}
+                테스트
+              </Button>
+            </div>
+            {vertexTest.isPending && (
+              <div className="py-6 text-center text-sm text-stone-500">
+                <Loader2 className="w-5 h-5 animate-spin inline mr-2" /> Discovery Engine 호출 중…
+              </div>
+            )}
+            {vertexTestResult && !vertexTest.isPending && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <Badge
+                    variant="outline"
+                    className={`text-[11px] ${
+                      vertexTestResult.status === "ok"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : vertexTestResult.status === "permission_denied"
+                        ? "bg-red-50 text-red-700 border-red-200"
+                        : vertexTestResult.status === "auth_failed"
+                        ? "bg-orange-50 text-orange-700 border-orange-200"
+                        : vertexTestResult.status === "no_credentials"
+                        ? "bg-stone-100 text-stone-500 border-stone-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                    data-testid="badge-vertex-test-status"
+                  >
+                    {vertexTestResult.status === "ok"
+                      ? "✓ 정상 응답"
+                      : vertexTestResult.status === "permission_denied"
+                      ? "✗ permission denied"
+                      : vertexTestResult.status === "auth_failed"
+                      ? "✗ 인증 실패"
+                      : vertexTestResult.status === "no_credentials"
+                      ? "시크릿 없음"
+                      : `✗ HTTP 오류 ${vertexTestResult.httpStatus ?? ""}`}
+                  </Badge>
+                  {vertexTestResult.httpStatus !== null && (
+                    <span className="text-stone-500">HTTP {vertexTestResult.httpStatus}</span>
+                  )}
+                  <span className="text-stone-500">키워드: <b>"{vertexTestResult.keyword}"</b></span>
+                </div>
+                {vertexTestResult.error && (
+                  <div className="text-xs text-red-600 bg-red-50 rounded p-2">{vertexTestResult.error}</div>
+                )}
+                {vertexTestResult.status === "ok" && (
+                  <>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <Badge variant="outline" className="bg-sky-50 text-sky-800 border-sky-200">
+                        원시 결과 {vertexTestResult.rawCount}건
+                      </Badge>
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-200">
+                        정규화 통과 {vertexTestResult.normalizedOk}건
+                      </Badge>
+                      {vertexTestResult.normalizedFail > 0 && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+                          탈락 {vertexTestResult.normalizedFail}건
+                        </Badge>
+                      )}
+                    </div>
+                    {Object.keys(vertexTestResult.failReasons).length > 0 && (
+                      <div className="text-xs text-stone-600">
+                        <div className="font-medium mb-1 text-stone-500">탈락 사유</div>
+                        <div className="space-y-0.5">
+                          {Object.entries(vertexTestResult.failReasons).map(([reason, count]) => (
+                            <div key={reason} className="flex items-center gap-1">
+                              <span className="text-amber-700 font-medium">{count}건</span>
+                              <span className="text-stone-500">{reason}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {vertexTestResult.firstResult && (
+                      <div className="text-xs border border-stone-100 rounded p-2 bg-stone-50">
+                        <div className="font-medium text-stone-500 mb-1">첫 결과 미리보기</div>
+                        <div className="font-medium text-stone-800 line-clamp-2">{vertexTestResult.firstResult.title}</div>
+                        {vertexTestResult.firstResult.link && (
+                          <a
+                            href={vertexTestResult.firstResult.link}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="text-sky-600 hover:underline flex items-center gap-1 mt-0.5 line-clamp-1"
+                          >
+                            <ExternalLink className="w-3 h-3 shrink-0" />
+                            {vertexTestResult.firstResult.link}
+                          </a>
+                        )}
+                        {vertexTestResult.firstResult.snippet && (
+                          <div className="text-stone-500 mt-1 line-clamp-3">{vertexTestResult.firstResult.snippet}</div>
+                        )}
+                      </div>
+                    )}
+                    {vertexTestResult.rawCount === 0 && (
+                      <div className="text-xs text-stone-500 bg-stone-50 rounded p-2">
+                        결과가 0건입니다. 데이터스토어 색인이 완료되지 않았거나 해당 키워드와 일치하는 페이지가 없습니다.
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVertexTestOpen(false)}>닫기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto" data-testid="dialog-import-history">
           <DialogHeader>
@@ -1822,8 +2111,21 @@ export default function AdminPetEventsPage() {
                                   <TableRow key={s.source} data-testid={`row-source-${idx}-${s.source}`}>
                                     <TableCell className="text-xs font-medium">
                                       {s.source}
-                                      {isEmpty && (
+                                      {isEmpty && s.source !== "Vertex AI Search" && (
                                         <Badge variant="outline" className="ml-2 text-[10px] py-0">키 미설정/0건</Badge>
+                                      )}
+                                      {s.source === "Vertex AI Search" && s.fetched === 0 && (
+                                        <>
+                                          {s.emptyReason === "permission_denied" ? (
+                                            <Badge variant="outline" className="ml-2 text-[10px] py-0 bg-red-50 text-red-700 border-red-200">permission denied</Badge>
+                                          ) : s.emptyReason === "normalize_rejected" ? (
+                                            <Badge variant="outline" className="ml-2 text-[10px] py-0 bg-sky-50 text-sky-700 border-sky-200">정규화 탈락</Badge>
+                                          ) : s.emptyReason === "no_index" ? (
+                                            <Badge variant="outline" className="ml-2 text-[10px] py-0 bg-amber-50 text-amber-700 border-amber-200">색인 미완료</Badge>
+                                          ) : (
+                                            <Badge variant="outline" className="ml-2 text-[10px] py-0">0건</Badge>
+                                          )}
+                                        </>
                                       )}
                                     </TableCell>
                                     <TableCell className="text-right text-xs">{s.fetched}</TableCell>
