@@ -1894,6 +1894,146 @@ const SEARCH_SOURCES: Array<{ name: string; fn: () => Promise<SearchFetchResult>
   { name: 'Vertex AI Search', fn: fetchVertexAiSearchEvents },
 ];
 
+// ── Vertex AI Search 상태 변경 알림 ──────────────────────────────────────────
+//   active(ok) ↔ permission_denied / missing_credentials 사이에서 상태가 바뀌면
+//   관리자에게 인앱 + 이메일 알림을 1회 발송한다. 동일한 비활성 상태가 계속되는
+//   경우엔 24시간에 1회로 throttle 한다(시크릿 만료가 며칠 동안 방치되더라도
+//   매일 1회 리마인드 → 운영자가 확실히 인지할 수 있도록).
+//
+//   상태 저장은 모듈 전역 in-memory 로 충분하다 (스케줄러는 단일 프로세스에서
+//   구동되며, 프로세스 재시작 직후 첫 회차에 한해 변화가 없어도 1회 알릴 수 있는데
+//   이는 운영 관점에서도 허용 가능한 false-positive 다).
+const VERTEX_ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+let vertexAlertState: { lastReason: ProviderReason | null; lastAlertAt: number } = {
+  lastReason: null,
+  lastAlertAt: 0,
+};
+
+function vertexReasonLabel(reason: ProviderReason): string {
+  switch (reason) {
+    case 'ok':
+      return '정상(active)';
+    case 'permission_denied':
+      return '권한 거부(permission_denied)';
+    case 'missing_credentials':
+      return '시크릿 누락(missing_credentials)';
+  }
+}
+
+function vertexReasonGuidance(reason: ProviderReason): string {
+  switch (reason) {
+    case 'ok':
+      return 'Vertex AI Search 공급자가 정상 응답으로 복구되었습니다. 추가 조치는 필요하지 않습니다.';
+    case 'permission_denied':
+      return 'GCP 서비스 계정의 roles/discoveryengine.viewer 권한이 회수되었거나 결제가 중단되었을 수 있습니다. GCP 콘솔에서 권한 / 결제 상태를 확인해주세요.';
+    case 'missing_credentials':
+      return 'VERTEX_AI_SEARCH_PROJECT / VERTEX_AI_SEARCH_DATASTORE / GOOGLE_APPLICATION_CREDENTIALS_JSON 환경 변수가 비어있거나 만료되었을 수 있습니다. Replit Secrets 에서 시크릿을 갱신해주세요.';
+  }
+}
+
+/** 테스트/이력 정리 등에서 상태를 강제 초기화할 수 있도록 export 한다. */
+export function _resetVertexAlertStateForTest(): void {
+  vertexAlertState = { lastReason: null, lastAlertAt: 0 };
+}
+
+async function notifyAdminsOnVertexStatusChange(currentReason: ProviderReason): Promise<void> {
+  const prev = vertexAlertState.lastReason;
+  const now = Date.now();
+
+  // 첫 관측: 비교 대상이 없으므로 발송하지 않고 상태만 기록.
+  if (prev === null) {
+    vertexAlertState.lastReason = currentReason;
+    return;
+  }
+
+  const changed = prev !== currentReason;
+  const isUnhealthy = currentReason !== 'ok';
+  const cooldownExpired = now - vertexAlertState.lastAlertAt > VERTEX_ALERT_COOLDOWN_MS;
+
+  // 상태 변화 없음 + (정상 상태이거나 24h 쿨다운 미만) → 발송 안 함.
+  if (!changed && (!isUnhealthy || !cooldownExpired)) {
+    vertexAlertState.lastReason = currentReason;
+    return;
+  }
+
+  try {
+    if (typeof storage.getAllUsers !== 'function') return;
+    const users = (await storage.getAllUsers()) as Array<AdminLike & { email?: string | null }>;
+    const admins = users.filter(
+      (u): u is AdminLike & { email?: string | null } =>
+        !!u && u.role === 'admin' && typeof u.id === 'number',
+    );
+    if (admins.length === 0) return;
+
+    const previousLabel = vertexReasonLabel(prev);
+    const currentLabel = vertexReasonLabel(currentReason);
+    const guidance = vertexReasonGuidance(currentReason);
+    const detectedAtKst = new Date(now + 9 * 60 * 60 * 1000)
+      .toISOString()
+      .replace('T', ' ')
+      .replace(/\.\d+Z$/, ' KST');
+    const actionUrl = '/admin/pet-events';
+
+    const inAppTitle = changed
+      ? `Vertex AI Search 상태 변경: ${previousLabel} → ${currentLabel}`
+      : `Vertex AI Search ${currentLabel} 상태 지속 (24h 리마인드)`;
+    const inAppMessage = `${guidance}`;
+
+    for (const admin of admins) {
+      // 1) 인앱 알림
+      try {
+        const payload: NotificationData = {
+          userId: admin.id,
+          type: 'system',
+          title: inAppTitle,
+          message: inAppMessage.slice(0, 300),
+          actionUrl,
+          data: {
+            source: 'vertex-ai-search',
+            previousReason: prev,
+            currentReason,
+            severity: isUnhealthy ? 'critical' : 'info',
+          },
+        };
+        await notificationService.sendNotification(payload);
+      } catch (e) {
+        logServerError(`[eventUpdater] Vertex 상태 인앱 알림 실패 (admin id=${admin.id})`, e);
+      }
+
+      // 2) 이메일 알림 (관리자 수신거부 무시 — 운영 알림)
+      if (admin.email) {
+        try {
+          const { queueEmail } = await import('./email-service');
+          await queueEmail({
+            templateKey: 'vertex_ai_search_status_alert',
+            userId: admin.id,
+            to: admin.email,
+            bypassPreference: true,
+            variables: {
+              previousLabel,
+              currentLabel,
+              detectedAtKst,
+              guidance,
+              actionUrl,
+            },
+          });
+        } catch (e) {
+          logServerError(`[eventUpdater] Vertex 상태 이메일 알림 실패 (admin id=${admin.id})`, e);
+        }
+      }
+    }
+
+    vertexAlertState.lastAlertAt = now;
+    console.log(
+      `[eventUpdater] Vertex AI Search 상태 알림 발송: ${previousLabel} → ${currentLabel} (admins=${admins.length}, changed=${changed})`,
+    );
+  } catch (e) {
+    logServerError('[eventUpdater] Vertex 상태 관리자 알림 처리 실패:', e);
+  } finally {
+    vertexAlertState.lastReason = currentReason;
+  }
+}
+
 async function notifyAdminsOnFailure(failures: ImportResult['failures']): Promise<void> {
   if (failures.length === 0) return;
   try {
@@ -2327,6 +2467,14 @@ export class EventUpdaterService {
 
     if (failures.length > 0) {
       void notifyAdminsOnFailure(failures);
+    }
+
+    // Vertex AI Search 공급자 상태가 직전 회 대비 변경됐다면 관리자에게 알림.
+    try {
+      const { vertex } = getProviderStatuses();
+      void notifyAdminsOnVertexStatusChange(vertex.reason);
+    } catch (e) {
+      logServerError('[eventUpdater] Vertex 상태 알림 트리거 실패:', e);
     }
 
     return result;

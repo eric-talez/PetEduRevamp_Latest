@@ -324,6 +324,30 @@ const DEFAULT_TEMPLATES: Array<{
     },
   },
   {
+    key: "vertex_ai_search_status_alert",
+    category: "system",
+    name: "Vertex AI Search 상태 변경 알림",
+    subject: "[TALEZ] Vertex AI Search 공급자 상태 변경: {{currentLabel}}",
+    bodyHtml:
+      "<h2>Vertex AI Search 공급자 상태가 변경되었습니다</h2>"
+      + "<p>반려견 행사 자동 수집의 Vertex AI Search 공급자 상태가 직전 회 실행과 달라졌습니다.</p>"
+      + "<ul>"
+      + "<li>이전 상태: <b>{{previousLabel}}</b></li>"
+      + "<li>현재 상태: <b>{{currentLabel}}</b></li>"
+      + "<li>감지 시각(KST): {{detectedAtKst}}</li>"
+      + "</ul>"
+      + "<p>{{guidance}}</p>"
+      + "<p><a href=\"{{actionUrl}}\">관리자 페이지에서 자세히 보기</a></p>",
+    description: "Vertex AI Search 공급자 상태가 active↔비활성으로 전이될 때 관리자에게 발송",
+    variables: {
+      previousLabel: "직전 상태",
+      currentLabel: "현재 상태",
+      detectedAtKst: "감지 시각",
+      guidance: "조치 가이드",
+      actionUrl: "관리자 페이지 링크",
+    },
+  },
+  {
     key: "settlement_deadline",
     category: "settlement_deadline",
     name: "정산 마감 안내",
