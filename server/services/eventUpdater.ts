@@ -3170,8 +3170,6 @@ export class EventUpdaterService {
       const existingKeys = new Set<string>(
         existing.map((e) => dedupeKey(e.title, new Date(e.startDate), e.location))
       );
-      const existingHashes = new Set<string>(existing.map((e) => (e as any).rawHash ?? '').filter(Boolean));
-      const existingSourceUrls = new Set<string>(existing.map((e) => (e as any).sourceUrl ?? '').filter(Boolean));
 
       // 저장 직전 필터 설정 로드 (한국 bbox / 광고성 키워드 / 호스트 블랙리스트)
       let filterSettings: ReturnType<typeof storage.getPetEventFilterSettings> = {
@@ -3231,17 +3229,10 @@ export class EventUpdaterService {
       };
 
       const batchKeys = new Set<string>();
-      const batchHashes = new Set<string>();
-      const batchSourceUrls = new Set<string>();
       for (const ev of collected) {
         const key = dedupeKey(ev.title, ev.startDate, ev.location);
         const hash = computeRawHash(ev);
-        const surl = ev.sourceUrl?.trim() ?? '';
-        if (
-          existingKeys.has(key) || batchKeys.has(key) ||
-          (hash && (existingHashes.has(hash) || batchHashes.has(hash))) ||
-          (surl && (existingSourceUrls.has(surl) || batchSourceUrls.has(surl)))
-        ) {
+        if (existingKeys.has(key) || batchKeys.has(key)) {
           duplicates++;
           ensureStat(ev.source).duplicates++;
           continue;
@@ -3273,8 +3264,6 @@ export class EventUpdaterService {
         }
 
         batchKeys.add(key);
-        if (hash) batchHashes.add(hash);
-        if (surl) batchSourceUrls.add(surl);
         try {
           const payload: InsertPetEvent & { rawHash: string; sourceUrl?: string | null } = {
             title: ev.title,

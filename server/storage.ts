@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, desc, or, and, sql, gte, lte, inArray } from "drizzle-orm";
+import { eq, desc, or, and, sql, gte, lte, inArray, ilike } from "drizzle-orm";
 import {
   logoSettings as logoSettingsTable,
   users as usersTable,
@@ -8386,17 +8386,29 @@ class HybridStorage extends Storage {
     category?: string;
     from?: Date;
     to?: Date;
+    q?: string;
   } = {}): Promise<PetEvent[]> {
     await this.ensurePetEventsTable();
-    const conds = [] as ReturnType<typeof eq>[];
+    const conds: ReturnType<typeof eq>[] = [];
     if (opts.activeOnly) conds.push(eq(petEvents.isActive, true));
     if (opts.category) conds.push(eq(petEvents.category, opts.category));
     if (opts.from) conds.push(gte(petEvents.endDate, opts.from));
     if (opts.to) conds.push(lte(petEvents.startDate, opts.to));
-    const q = conds.length
+    if (opts.q) {
+      const pattern = `%${opts.q}%`;
+      conds.push(
+        or(
+          ilike(petEvents.title, pattern),
+          ilike(petEvents.description, pattern),
+          ilike(petEvents.location, pattern),
+          ilike(petEvents.source, pattern),
+        ) as ReturnType<typeof eq>,
+      );
+    }
+    const query = conds.length
       ? db.select().from(petEvents).where(and(...conds))
       : db.select().from(petEvents);
-    return await q.orderBy(petEvents.startDate);
+    return await query.orderBy(petEvents.startDate);
   }
 
   async getPetEvent(id: number): Promise<PetEvent | null> {
