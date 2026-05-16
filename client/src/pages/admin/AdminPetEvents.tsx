@@ -74,9 +74,24 @@ interface ImportResult {
   bodyFetch?: BodyFetchStats | null;
 }
 
-type FailureClass = "body_fetched" | "robots_blocked" | "body_http" | "body_limit" | "body_other" | "no_body";
+type FailureClass =
+  | "filter_korea"
+  | "filter_keyword"
+  | "filter_host"
+  | "body_fetched"
+  | "robots_blocked"
+  | "body_http"
+  | "body_limit"
+  | "body_other"
+  | "no_body";
+
+const isFilterBlockedMessage = (msg: string): boolean => msg.startsWith("필터 차단(");
 
 const classifyFailure = (msg: string): FailureClass => {
+  // Filter block reasons recorded by eventUpdater right before save.
+  if (msg.startsWith("필터 차단(한국 외 좌표)")) return "filter_korea";
+  if (msg.startsWith("필터 차단(광고성 키워드")) return "filter_keyword";
+  if (msg.startsWith("필터 차단(호스트 블랙리스트")) return "filter_host";
   // Reasons appended by normalizeSearchResult after the body-fetch fallback runs.
   if (/\| 본문 \d+자/.test(msg)) return "body_fetched";
   if (msg.includes("robots.txt 차단")) return "robots_blocked";
@@ -87,6 +102,9 @@ const classifyFailure = (msg: string): FailureClass => {
 };
 
 const FAILURE_CLASS_LABELS: Record<FailureClass, string> = {
+  filter_korea: "필터 차단 · 한국 외 좌표",
+  filter_keyword: "필터 차단 · 광고성 키워드",
+  filter_host: "필터 차단 · 호스트 블랙리스트",
   body_fetched: "본문 페치 시도됨",
   robots_blocked: "robots 차단됨",
   body_http: "HTTP 오류",
@@ -94,6 +112,28 @@ const FAILURE_CLASS_LABELS: Record<FailureClass, string> = {
   body_other: "기타 페치 스킵",
   no_body: "본문 페치 안 됨",
 };
+
+const FILTER_BLOCK_CLASSES: ReadonlySet<FailureClass> = new Set([
+  "filter_korea",
+  "filter_keyword",
+  "filter_host",
+]);
+
+const extractFilterKeyword = (msg: string): string | null => {
+  const m = msg.match(/필터 차단\(광고성 키워드 "([^"]+)"\)/);
+  return m ? m[1] : null;
+};
+
+const extractFilterHost = (msg: string): string | null => {
+  const m = msg.match(/필터 차단\(호스트 블랙리스트 "([^"]+)"\)/);
+  return m ? m[1] : null;
+};
+
+interface PetEventFilterSettings {
+  koreaBboxEnabled: boolean;
+  adKeywords: string[];
+  blockedHosts: string[];
+}
 
 interface FailureCandidate {
   runId: number;
@@ -194,7 +234,7 @@ export default function AdminPetEventsPage() {
   const [expandedHistoryIdx, setExpandedHistoryIdx] = useState<number | null>(0);
   const [failuresOpen, setFailuresOpen] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
-  const [failureClassFilter, setFailureClassFilter] = useState<"all" | FailureClass>("all");
+  const [failureClassFilter, setFailureClassFilter] = useState<"all" | "filter_blocked_all" | FailureClass>("all");
   const [pendingResolution, setPendingResolution] = useState<{ runId: number; idx: number } | null>(null);
 
   const runGeocode = async (opts?: { silentOnEmpty?: boolean; force?: boolean }) => {
@@ -343,13 +383,23 @@ export default function AdminPetEventsPage() {
   );
   const candidateClassCounts = useMemo(() => {
     const base: Record<FailureClass, number> = {
+      filter_korea: 0, filter_keyword: 0, filter_host: 0,
       body_fetched: 0, robots_blocked: 0, body_http: 0, body_limit: 0, body_other: 0, no_body: 0,
     };
     for (const c of candidateClassPool) base[classifyFailure(c.message)]++;
     return base;
   }, [candidateClassPool]);
+  const filterBlockedTotal = useMemo(
+    () => candidateClassPool.reduce((n, c) => n + (isFilterBlockedMessage(c.message) ? 1 : 0), 0),
+    [candidateClassPool],
+  );
   const visibleCandidates = useMemo(() => {
     if (failureClassFilter === "all") return candidateClassPool;
+    if (failureClassFilter === "filter_blocked_all") {
+      // Prefix-based so any future "필터 차단(...)" reason added on the server
+      // shows up here automatically, even if not yet mapped to a FailureClass.
+      return candidateClassPool.filter((c) => isFilterBlockedMessage(c.message));
+    }
     return candidateClassPool.filter((c) => classifyFailure(c.message) === failureClassFilter);
   }, [candidateClassPool, failureClassFilter]);
 
@@ -389,6 +439,43 @@ export default function AdminPetEventsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/import/failures"] });
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
+  const { data: filterSettingsData } = useQuery<{ success: boolean; data: PetEventFilterSettings }>({
+    queryKey: ["/api/admin/pet-events/filter-settings"],
+    enabled: failuresOpen,
+  });
+  const filterSettings = filterSettingsData?.data ?? null;
+
+  const unblockFilterPattern = useMutation({
+    mutationFn: async (vars: { kind: "keyword" | "host"; value: string }) => {
+      if (!filterSettings) throw new Error("필터 설정을 불러오지 못했습니다");
+      const target = vars.value.toLowerCase();
+      const next: Partial<PetEventFilterSettings> = {};
+      if (vars.kind === "keyword") {
+        next.adKeywords = filterSettings.adKeywords.filter((k) => k.toLowerCase() !== target);
+        if (next.adKeywords.length === filterSettings.adKeywords.length) {
+          throw new Error("이미 차단 목록에 없는 키워드입니다");
+        }
+      } else {
+        next.blockedHosts = filterSettings.blockedHosts.filter((h) => h.toLowerCase() !== target);
+        if (next.blockedHosts.length === filterSettings.blockedHosts.length) {
+          throw new Error("이미 차단 목록에 없는 호스트입니다");
+        }
+      }
+      const res = await apiRequest("PATCH", "/api/admin/pet-events/filter-settings", next);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "차단 해제 실패");
+      return { kind: vars.kind, value: vars.value };
+    },
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/filter-settings"] });
+      toast({
+        title: r.kind === "keyword" ? "키워드 차단 해제됨" : "호스트 차단 해제됨",
+        description: `"${r.value}" 가 다음 수집부터 허용됩니다.`,
+      });
     },
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
@@ -1130,22 +1217,31 @@ export default function AdminPetEventsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-1.5 mb-3" data-testid="failure-class-filters">
             <span className="text-xs font-medium text-stone-500 mr-1">상태 분류</span>
-            {(["all", "body_fetched", "robots_blocked", "body_http", "body_limit", "body_other", "no_body"] as const).map((k) => {
+            {(["all", "filter_blocked_all", "filter_korea", "filter_keyword", "filter_host", "body_fetched", "robots_blocked", "body_http", "body_limit", "body_other", "no_body"] as const).map((k) => {
               const isAll = k === "all";
+              const isFilterAll = k === "filter_blocked_all";
               const count = isAll
                 ? candidateClassPool.length
-                : (candidateClassCounts[k as FailureClass] ?? 0);
+                : isFilterAll
+                  ? filterBlockedTotal
+                  : (candidateClassCounts[k as FailureClass] ?? 0);
               const active = failureClassFilter === k;
+              const label = isAll
+                ? "전체"
+                : isFilterAll
+                  ? "필터 차단 전체"
+                  : FAILURE_CLASS_LABELS[k as FailureClass];
+              const isFilterChip = isFilterAll || (k !== "all" && FILTER_BLOCK_CLASSES.has(k as FailureClass));
               return (
                 <Button
                   key={k}
                   size="sm"
                   variant={active ? "default" : "outline"}
-                  className={`h-6 rounded-full text-[11px] px-2 ${active ? "bg-stone-900 hover:bg-stone-800" : ""}`}
+                  className={`h-6 rounded-full text-[11px] px-2 ${active ? "bg-stone-900 hover:bg-stone-800" : isFilterChip ? "border-rose-200 text-rose-700" : ""}`}
                   onClick={() => setFailureClassFilter(k)}
                   data-testid={`chip-failure-class-${k}`}
                 >
-                  {isAll ? "전체" : FAILURE_CLASS_LABELS[k as FailureClass]}
+                  {label}
                   <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${active ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600"}`}>
                     {count}
                   </span>
@@ -1159,7 +1255,11 @@ export default function AdminPetEventsPage() {
             <div className="py-8 text-center text-sm text-stone-500">
               {failureCandidates.length === 0
                 ? "최근 수집 실패 후보가 없습니다."
-                : "처리·숨김 항목만 있습니다. 위 토글을 켜서 확인하세요."}
+                : candidateClassPool.length === 0
+                  ? "처리·숨김 항목만 있습니다. 위 토글을 켜서 확인하세요."
+                  : failureClassFilter === "all"
+                    ? "표시할 후보가 없습니다."
+                    : "선택한 분류에 해당하는 후보가 없습니다. 다른 칩을 눌러보세요."}
             </div>
           ) : (
             <Table data-testid="table-import-failures">
@@ -1175,6 +1275,10 @@ export default function AdminPetEventsPage() {
                 {visibleCandidates.map((c) => {
                   const isOpen = c.status === "open";
                   const cleanedTitle = (c.title ?? "").replace(/<[^>]+>/g, "").trim();
+                  const fcls = classifyFailure(c.message);
+                  const isFilterBlocked = FILTER_BLOCK_CLASSES.has(fcls);
+                  const filterKeyword = fcls === "filter_keyword" ? extractFilterKeyword(c.message) : null;
+                  const filterHost = fcls === "filter_host" ? extractFilterHost(c.message) : null;
                   return (
                     <TableRow key={`${c.runId}-${c.idx}`} data-testid={`row-failure-${c.runId}-${c.idx}`}>
                       <TableCell className="text-xs align-top">
@@ -1192,12 +1296,30 @@ export default function AdminPetEventsPage() {
                         )}
                         <Badge
                           variant="outline"
-                          className="mb-1 text-[10px] bg-stone-50 text-stone-700 border-stone-200"
+                          className={`mb-1 text-[10px] ${isFilterBlocked ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-stone-50 text-stone-700 border-stone-200"}`}
                           data-testid={`badge-failure-class-${c.runId}-${c.idx}`}
                         >
-                          {FAILURE_CLASS_LABELS[classifyFailure(c.message)]}
+                          {FAILURE_CLASS_LABELS[fcls]}
                         </Badge>
-                        <div className="text-amber-700 line-clamp-2">{c.message}</div>
+                        {filterKeyword && (
+                          <Badge
+                            variant="outline"
+                            className="ml-1 mb-1 text-[10px] bg-amber-50 text-amber-800 border-amber-200"
+                            data-testid={`badge-filter-keyword-${c.runId}-${c.idx}`}
+                          >
+                            키워드: {filterKeyword}
+                          </Badge>
+                        )}
+                        {filterHost && (
+                          <Badge
+                            variant="outline"
+                            className="ml-1 mb-1 text-[10px] bg-amber-50 text-amber-800 border-amber-200"
+                            data-testid={`badge-filter-host-${c.runId}-${c.idx}`}
+                          >
+                            호스트: {filterHost}
+                          </Badge>
+                        )}
+                        <div className={`${isFilterBlocked ? "text-rose-700" : "text-amber-700"} line-clamp-2`}>{c.message}</div>
                         {c.link && (
                           <a
                             href={c.link}
@@ -1239,6 +1361,32 @@ export default function AdminPetEventsPage() {
                             >
                               <Plus className="w-3 h-3 mr-1" /> 수동 등록
                             </Button>
+                            {filterKeyword && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs border-rose-200 text-rose-700 hover:bg-rose-50"
+                                onClick={() => unblockFilterPattern.mutate({ kind: "keyword", value: filterKeyword })}
+                                disabled={unblockFilterPattern.isPending || !filterSettings}
+                                data-testid={`button-unblock-keyword-${c.runId}-${c.idx}`}
+                                title={`광고성 키워드 "${filterKeyword}" 차단을 해제합니다`}
+                              >
+                                <Undo2 className="w-3 h-3 mr-1" /> 키워드 차단 해제
+                              </Button>
+                            )}
+                            {filterHost && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs border-rose-200 text-rose-700 hover:bg-rose-50"
+                                onClick={() => unblockFilterPattern.mutate({ kind: "host", value: filterHost })}
+                                disabled={unblockFilterPattern.isPending || !filterSettings}
+                                data-testid={`button-unblock-host-${c.runId}-${c.idx}`}
+                                title={`호스트 "${filterHost}" 차단을 해제합니다`}
+                              >
+                                <Undo2 className="w-3 h-3 mr-1" /> 호스트 화이트리스트
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="ghost"
