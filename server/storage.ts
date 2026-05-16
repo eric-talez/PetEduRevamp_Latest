@@ -5181,6 +5181,77 @@ class Storage {
     return { ...this.bodyFetchSettings };
   }
 
+  // 행사 수집 저장 직전 필터 설정 (한국 bbox/광고성 키워드/호스트 블랙리스트)
+  petEventFilterSettings: {
+    koreaBboxEnabled: boolean;
+    adKeywords: string[];
+    blockedHosts: string[];
+  } = {
+    koreaBboxEnabled: true,
+    adKeywords: [
+      '할인', '특가', '쿠폰', '스토어', '쇼핑몰', '광고', '최저가',
+      '세일', '프로모션', '구매', '판매', 'AD', 'SALE', 'COUPON',
+    ],
+    blockedHosts: [
+      'smartstore.naver.com',
+      'shopping.naver.com',
+      'brand.naver.com',
+      'coupang.com',
+      'aliexpress.com',
+      'aliexpress.us',
+      '11st.co.kr',
+      'gmarket.co.kr',
+      'auction.co.kr',
+      'tmon.co.kr',
+      'wemakeprice.com',
+      'youtube.com',
+      'youtu.be',
+      'tiktok.com',
+      'instagram.com',
+    ],
+  };
+
+  getPetEventFilterSettings() {
+    return {
+      koreaBboxEnabled: this.petEventFilterSettings.koreaBboxEnabled,
+      adKeywords: [...this.petEventFilterSettings.adKeywords],
+      blockedHosts: [...this.petEventFilterSettings.blockedHosts],
+    };
+  }
+
+  updatePetEventFilterSettings(settings: {
+    koreaBboxEnabled?: boolean;
+    adKeywords?: string[];
+    blockedHosts?: string[];
+  }) {
+    if (typeof settings.koreaBboxEnabled === 'boolean') {
+      this.petEventFilterSettings.koreaBboxEnabled = settings.koreaBboxEnabled;
+    }
+    const cleanList = (list: unknown): string[] | null => {
+      if (!Array.isArray(list)) return null;
+      const out: string[] = [];
+      const seen = new Set<string>();
+      for (const v of list) {
+        if (typeof v !== 'string') continue;
+        const t = v.trim();
+        if (!t || t.length > 200) continue;
+        const key = t.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(t);
+        if (out.length >= 200) break;
+      }
+      return out;
+    };
+    const adKw = cleanList(settings.adKeywords);
+    if (adKw) this.petEventFilterSettings.adKeywords = adKw;
+    const hosts = cleanList(settings.blockedHosts);
+    if (hosts) {
+      this.petEventFilterSettings.blockedHosts = hosts.map((h) => h.toLowerCase());
+    }
+    return this.getPetEventFilterSettings();
+  }
+
   // ===== 대체 훈련사 시스템 메서드들 =====
 
   // 대체 훈련사 게시글 조회 (PostgreSQL 데이터베이스 사용)

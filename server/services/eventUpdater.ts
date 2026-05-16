@@ -2181,6 +2181,49 @@ export class EventUpdaterService {
         existing.map((e) => dedupeKey(e.title, new Date(e.startDate), e.location))
       );
 
+      // 저장 직전 필터 설정 로드 (한국 bbox / 광고성 키워드 / 호스트 블랙리스트)
+      let filterSettings = {
+        koreaBboxEnabled: true,
+        adKeywords: [] as string[],
+        blockedHosts: [] as string[],
+      };
+      try {
+        filterSettings = storage.getPetEventFilterSettings();
+      } catch {
+        // 설정 로드 실패 시 위에서 선언한 기본값(빈 키워드/호스트, koreaBboxEnabled=true) 유지
+      }
+      const adKwLower = filterSettings.adKeywords.map((k) => k.toLowerCase());
+      const blockedHostsLower = filterSettings.blockedHosts.map((h) => h.toLowerCase());
+      const isWithinKoreaBbox = (latStr: string, lngStr: string): boolean => {
+        const lat = Number(latStr);
+        const lng = Number(lngStr);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+        return lat >= 33 && lat <= 39 && lng >= 124 && lng <= 132;
+      };
+      const matchedAdKeyword = (ev: CrawledEvent): string | null => {
+        if (adKwLower.length === 0) return null;
+        const haystack = `${ev.title} ${ev.description ?? ''}`.toLowerCase();
+        for (const k of adKwLower) {
+          if (k && haystack.includes(k)) return k;
+        }
+        return null;
+      };
+      const matchedBlockedHost = (ev: CrawledEvent): string | null => {
+        if (!ev.websiteUrl || blockedHostsLower.length === 0) return null;
+        let host = '';
+        try {
+          host = new URL(ev.websiteUrl).hostname.toLowerCase();
+        } catch {
+          return null;
+        }
+        if (!host) return null;
+        for (const h of blockedHostsLower) {
+          if (!h) continue;
+          if (host === h || host.endsWith(`.${h}`)) return h;
+        }
+        return null;
+      };
+
       const batchKeys = new Set<string>();
       for (const ev of collected) {
         const key = dedupeKey(ev.title, ev.startDate, ev.location);
@@ -2189,6 +2232,32 @@ export class EventUpdaterService {
           ensureStat(ev.source).duplicates++;
           continue;
         }
+
+        // 저장 직전 필터: 한국 bbox / 광고성 키워드 / 호스트 블랙리스트
+        if (filterSettings.koreaBboxEnabled && !isWithinKoreaBbox(ev.lat, ev.lng)) {
+          recordFailure(
+            ev.source,
+            `필터 차단(한국 외 좌표): lat=${ev.lat}, lng=${ev.lng} — "${ev.title}"`,
+          );
+          continue;
+        }
+        const adHit = matchedAdKeyword(ev);
+        if (adHit) {
+          recordFailure(
+            ev.source,
+            `필터 차단(광고성 키워드 "${adHit}"): "${ev.title}"`,
+          );
+          continue;
+        }
+        const hostHit = matchedBlockedHost(ev);
+        if (hostHit) {
+          recordFailure(
+            ev.source,
+            `필터 차단(호스트 블랙리스트 "${hostHit}"): ${ev.websiteUrl} — "${ev.title}"`,
+          );
+          continue;
+        }
+
         batchKeys.add(key);
         try {
           const payload: InsertPetEvent = {

@@ -24524,6 +24524,41 @@ export function registerTrainerCertificationRoutes(app: Express) {
     }
   });
 
+  app.get('/api/admin/pet-events/filter-settings', requireAuth('admin'), async (_req, res) => {
+    try {
+      res.json({ success: true, data: storage.getPetEventFilterSettings() });
+    } catch (error) {
+      logServerError('행사 필터 설정 조회 오류:', error);
+      res.status(500).json({ error: '조회 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  app.patch('/api/admin/pet-events/filter-settings', requireAuth('admin'), csrfProtection, async (req, res) => {
+    try {
+      const body = req.body ?? {};
+      const isStringArray = (v: unknown): v is string[] =>
+        Array.isArray(v) && v.every((x) => typeof x === 'string');
+      if (body.koreaBboxEnabled !== undefined && typeof body.koreaBboxEnabled !== 'boolean') {
+        return res.status(400).json({ error: 'koreaBboxEnabled 는 boolean 이어야 합니다.', code: 'INVALID_INPUT' });
+      }
+      if (body.adKeywords !== undefined && !isStringArray(body.adKeywords)) {
+        return res.status(400).json({ error: 'adKeywords 는 문자열 배열이어야 합니다.', code: 'INVALID_INPUT' });
+      }
+      if (body.blockedHosts !== undefined && !isStringArray(body.blockedHosts)) {
+        return res.status(400).json({ error: 'blockedHosts 는 문자열 배열이어야 합니다.', code: 'INVALID_INPUT' });
+      }
+      const updated = storage.updatePetEventFilterSettings({
+        koreaBboxEnabled: body.koreaBboxEnabled,
+        adKeywords: body.adKeywords,
+        blockedHosts: body.blockedHosts,
+      });
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      logServerError('행사 필터 설정 저장 오류:', error);
+      res.status(500).json({ error: '저장 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
   app.get('/api/admin/pet-events/import/last', requireAuth('admin'), async (_req, res) => {
     try {
       res.json({ success: true, data: eventUpdater.getLastResult() });
