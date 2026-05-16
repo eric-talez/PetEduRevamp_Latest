@@ -24725,9 +24725,10 @@ export function registerTrainerCertificationRoutes(app: Express) {
         return res.status(400).json({ error: '검색어는 200자 이내로 입력해주세요.', code: 'INVALID_INPUT' });
       }
       const settings = storage.getPetEventFilterSettings();
-      const basicDatastore = settings.vertexBasicSearchEnabled
-        ? process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE
-        : undefined;
+      // Pass null when toggle is OFF so searchEventRecords cannot fall back to env var.
+      const basicDatastore: string | null = settings.vertexBasicSearchEnabled
+        ? (process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE ?? null)
+        : null;
       const results = await searchEventRecords(q, { limit: 20, basicDatastore });
       res.json({ success: true, query: q, data: results });
     } catch (error) {

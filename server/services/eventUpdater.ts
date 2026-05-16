@@ -2558,14 +2558,20 @@ async function runVertexBasicDiscovery(): Promise<CrawledEvent[]> {
  *
  * @param query 검색 키워드
  * @param opts.limit 반환할 최대 항목 수 (기본 10)
- * @param opts.basicDatastore Vertex AI Search Basic 데이터스토어 ID (설정 시 저신뢰도 후보 풀로 전환)
+ * @param opts.basicDatastore Vertex AI Search Basic 데이터스토어 ID。
+ *   - string: use this specific datastore.
+ *   - null: explicitly disabled (toggle OFF); env var is NOT used as fallback.
+ *   - undefined: unset — fall back to VERTEX_AI_SEARCH_BASIC_DATASTORE env var.
  */
 export async function searchEventRecords(
   query: string,
-  opts?: { limit?: number; basicDatastore?: string },
+  opts?: { limit?: number; basicDatastore?: string | null },
 ): Promise<Array<{ title: string; link: string | null; snippet: string; source: 'vertex' | 'vertex_basic' | 'db_fallback' }>> {
   const limit = Math.max(1, opts?.limit ?? 10);
-  const basicDs = opts?.basicDatastore ?? process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE;
+  // null = explicitly disabled via toggle; undefined = fall back to env var
+  const basicDs = opts?.basicDatastore === null
+    ? null
+    : (opts?.basicDatastore ?? process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE);
 
   // ① Vertex AI Search (Advanced — 소유 도메인 only) — 최대 limit 개 결과 반환
   if (hasVertexAiSearchCredentials() && !vertexPermissionDenied) {
