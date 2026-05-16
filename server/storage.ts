@@ -8304,6 +8304,54 @@ class HybridStorage extends Storage {
     envKeys?: string[];
   }>): void {
     this.sourceCatalogEntries = entries;
+    this.persistSourceCatalogToDb(entries).catch((e) =>
+      logServerError('[Storage] Source Catalog DB seed 실패:', e),
+    );
+  }
+
+  private async persistSourceCatalogToDb(entries: ReadonlyArray<{
+    key: string;
+    displayName: string;
+    strategy: string;
+    region?: string;
+    enabled: boolean;
+    primary: boolean;
+    notes?: string;
+    envKeys?: string[];
+  }>): Promise<void> {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS source_catalog (
+        key VARCHAR(100) PRIMARY KEY,
+        display_name VARCHAR(200) NOT NULL,
+        strategy VARCHAR(50) NOT NULL,
+        region VARCHAR(50),
+        enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        primary_source BOOLEAN NOT NULL DEFAULT TRUE,
+        env_keys TEXT[],
+        notes TEXT,
+        seeded_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    for (const e of entries) {
+      await db.execute(sql`
+        INSERT INTO source_catalog (key, display_name, strategy, region, enabled, primary_source, env_keys, notes, updated_at)
+        VALUES (
+          ${e.key}, ${e.displayName}, ${e.strategy},
+          ${e.region ?? null}, ${e.enabled}, ${e.primary},
+          ${e.envKeys ?? null}, ${e.notes ?? null}, NOW()
+        )
+        ON CONFLICT (key) DO UPDATE SET
+          display_name = EXCLUDED.display_name,
+          strategy = EXCLUDED.strategy,
+          region = EXCLUDED.region,
+          enabled = EXCLUDED.enabled,
+          primary_source = EXCLUDED.primary_source,
+          env_keys = EXCLUDED.env_keys,
+          notes = EXCLUDED.notes,
+          updated_at = NOW()
+      `);
+    }
   }
 
   getSourceCatalog() {

@@ -2188,7 +2188,7 @@ async function fetchVertexAiSearchEvents(): Promise<SearchFetchResult> {
 }
 
 /**
- * Strategy adapter map — maps SOURCE_CATALOG `key` → simple crawl fetcher (returns CrawledEvent[]).
+ * Key-level adapter map — maps SOURCE_CATALOG `key` → simple crawl fetcher (returns CrawledEvent[]).
  * Only sources that don't use the search-engine pipeline belong here.
  */
 const SIMPLE_ADAPTER_MAP: Readonly<Record<string, () => Promise<CrawledEvent[]>>> = {
@@ -2200,7 +2200,7 @@ const SIMPLE_ADAPTER_MAP: Readonly<Record<string, () => Promise<CrawledEvent[]>>
 };
 
 /**
- * Strategy adapter map — maps SOURCE_CATALOG `key` → search-engine fetcher (returns SearchFetchResult).
+ * Key-level adapter map — maps SOURCE_CATALOG `key` → search-engine fetcher (returns SearchFetchResult).
  * NOTE: Vertex AI Search is intentionally absent — it is secondary/auxiliary only (see searchEventRecords).
  */
 const SEARCH_ADAPTER_MAP: Readonly<Record<string, () => Promise<SearchFetchResult>>> = {
@@ -2210,14 +2210,41 @@ const SEARCH_ADAPTER_MAP: Readonly<Record<string, () => Promise<SearchFetchResul
 };
 
 /**
- * Primary simple sources — derived from SOURCE_CATALOG.
- * Only entries with primary=true AND enabled=true AND a registered simple adapter are included.
+ * Strategy-level adapter map — maps SOURCE_CATALOG `strategy` field → fetcher factory.
+ * Receives the full SourceCatalogEntry so adapters can read baseUrl/endpoint/envKeys.
+ *
+ * This is the dispatch layer that runImport uses to iterate over SOURCE_CATALOG by strategy.
+ * - api / html_list_page: delegates to key-level SIMPLE_ADAPTER_MAP (source-specific fetchers).
+ * - rss / sitemap / html_detail_page: stub adapters — placeholders for future crawlers.
+ * - ai_search: secondary only; handled by searchEventRecords(), never called from runImport.
+ */
+const STRATEGY_ADAPTER_MAP: Readonly<Partial<Record<SourceStrategy, (entry: SourceCatalogEntry) => Promise<CrawledEvent[]>>>> = {
+  api: async (entry) => {
+    const fn = SIMPLE_ADAPTER_MAP[entry.key];
+    return fn ? fn() : [];
+  },
+  html_list_page: async (entry) => {
+    const fn = SIMPLE_ADAPTER_MAP[entry.key];
+    return fn ? fn() : [];
+  },
+  html_detail_page: async (_entry) => [], // reserved: detail-page crawlers (future)
+  rss: async (_entry) => [], // reserved: RSS feed crawlers (future)
+  sitemap: async (_entry) => [], // reserved: sitemap crawlers (future)
+  // ai_search is intentionally absent — secondary/auxiliary only
+};
+
+/**
+ * Primary simple sources — derived from SOURCE_CATALOG via STRATEGY_ADAPTER_MAP.
+ * Only entries with primary=true, enabled=true, and a registered strategy adapter are included.
  * To add, remove, or disable a source, update SOURCE_CATALOG; do not edit this array directly.
  */
 const SIMPLE_SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }> =
   (SOURCE_CATALOG as readonly SourceCatalogEntry[])
-    .filter((e) => e.primary && e.enabled && e.key in SIMPLE_ADAPTER_MAP)
-    .map((e) => ({ name: e.displayName, fn: SIMPLE_ADAPTER_MAP[e.key] as () => Promise<CrawledEvent[]> }));
+    .filter((e) => e.primary && e.enabled && e.strategy in STRATEGY_ADAPTER_MAP)
+    .map((e) => ({
+      name: e.displayName,
+      fn: () => STRATEGY_ADAPTER_MAP[e.strategy]!(e),
+    }));
 
 /**
  * Primary search-engine sources — derived from SOURCE_CATALOG.
@@ -3232,7 +3259,9 @@ export class EventUpdaterService {
       for (const ev of collected) {
         const key = dedupeKey(ev.title, ev.startDate, ev.location);
         const hash = computeRawHash(ev);
-        if (existingKeys.has(key) || batchKeys.has(key)) {
+        // Only skip same-batch duplicates here; DB-existing records go through
+        // upsertPetEventByRawHash so their last_seen_at is always refreshed.
+        if (batchKeys.has(key)) {
           duplicates++;
           ensureStat(ev.source).duplicates++;
           continue;

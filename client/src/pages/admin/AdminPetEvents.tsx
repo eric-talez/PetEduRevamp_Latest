@@ -1155,15 +1155,15 @@ export default function AdminPetEventsPage() {
                 <div className="pl-5 space-y-0.5 text-[11px] text-amber-800" data-testid="vertex-warning-block">
                   <div className="flex items-start gap-1">
                     <AlertCircle className="w-3 h-3 shrink-0 mt-0.5 text-amber-500" />
-                    <span>Advanced website indexing는 <b>소유 도메인 인증</b>이 필요합니다 — 타겟 사이트가 미인증 상태입니다.</span>
+                    <span>Advanced website indexing target site unverified</span>
                   </div>
                   <div className="flex items-start gap-1">
                     <AlertCircle className="w-3 h-3 shrink-0 mt-0.5 text-amber-500" />
-                    <span>외부 도메인(k-pet.co.kr, megazoo.co.kr 등)은 <b>색인할 수 없습니다</b> — 소유권 인증 없이는 데이터스토어가 빈 상태로 남습니다.</span>
+                    <span>External domains cannot be indexed unless domain ownership is verified</span>
                   </div>
                   <div className="flex items-start gap-1">
                     <AlertCircle className="w-3 h-3 shrink-0 mt-0.5 text-amber-500" />
-                    <span>크롤러 폴백(Naver/Daum/Google 검색)을 <b>주 수집 소스</b>로 계속 사용하세요. Vertex는 자동 수집(runImport)에서 제외됩니다.</span>
+                    <span>Use crawler fallback as primary event source</span>
                   </div>
                 </div>
                 <div className="pl-5 flex items-center gap-2.5 text-[11px]" data-testid="vertex-basic-toggle">
