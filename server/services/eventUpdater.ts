@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { storage } from '../storage';
 import { logServerError } from '../middleware/audit-logger';
 import { notificationService, type NotificationData } from '../notifications/notification-service';
@@ -15,6 +16,8 @@ interface CrawledEvent {
   imageUrl: string | null;
   websiteUrl: string | null;
   source: string;
+  sourceUrl?: string | null;
+  confidenceScore?: number;
 }
 
 export interface SourceStat {
@@ -103,6 +106,17 @@ function dedupeKey(title: string, startDate: Date, location: string): string {
   const day = new Date(startDate);
   const ymd = `${day.getUTCFullYear()}-${String(day.getUTCMonth() + 1).padStart(2, '0')}-${String(day.getUTCDate()).padStart(2, '0')}`;
   return `${title.trim().toLowerCase()}|${ymd}|${location.trim().toLowerCase()}`;
+}
+
+function computeRawHash(ev: CrawledEvent): string {
+  const raw = JSON.stringify({
+    title: ev.title?.trim().toLowerCase() ?? '',
+    startDate: ev.startDate instanceof Date ? ev.startDate.toISOString().slice(0, 10) : '',
+    location: ev.location?.trim().toLowerCase() ?? '',
+    source: ev.source ?? '',
+    websiteUrl: ev.websiteUrl?.trim() ?? '',
+  });
+  return createHash('sha256').update(raw).digest('hex');
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
@@ -2456,6 +2470,57 @@ export async function testVertexAiSearchOnce(keyword: string): Promise<{
 }
 
 /**
+ * Basic Vertex datastore를 사용하는 low-confidence discovery fallback.
+ * runImport 에서 vertexBasicSearchEnabled=true 일 때만 호출된다.
+ * 결과는 항상 confidenceScore=0.3으로 태그되어 검수 대상으로만 합류한다.
+ */
+async function runVertexBasicDiscovery(): Promise<CrawledEvent[]> {
+  const project = process.env.VERTEX_AI_SEARCH_PROJECT;
+  const basicDs = process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE;
+  const location = process.env.VERTEX_AI_SEARCH_LOCATION || 'global';
+  if (!project || !basicDs) return [];
+  const token = await getVertexAccessToken();
+  if (!token) return [];
+  const url =
+    `https://discoveryengine.googleapis.com/v1/projects/${encodeURIComponent(project)}` +
+    `/locations/${encodeURIComponent(location)}` +
+    `/collections/default_collection/dataStores/${encodeURIComponent(basicDs)}` +
+    `/servingConfigs/default_search:search`;
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' };
+  const events: CrawledEvent[] = [];
+  const keywords = VERTEX_SEARCH_KEYWORD_POOL.slice(0, 4);
+  for (const keyword of keywords) {
+    try {
+      const res = await withTimeout(
+        fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ query: keyword, pageSize: 8, contentSearchSpec: { snippetSpec: { returnSnippet: true } } }),
+        }),
+        SOURCE_TIMEOUT_MS,
+        'vertex-basic-discovery',
+      );
+      if (!res.ok) continue;
+      const json = (await res.json()) as { results?: VertexSearchResult[] };
+      for (const r of (json.results ?? [])) {
+        const dsd = r.document?.derivedStructData;
+        const sd = r.document?.structData;
+        const title = (sd?.title || dsd?.title || dsd?.htmlTitle || '').replace(/<[^>]+>/g, '').trim();
+        const snippet = sd?.description ||
+          (dsd?.snippets ?? []).map((s: { snippet?: string; htmlSnippet?: string }) => s.snippet ?? s.htmlSnippet ?? '').filter(Boolean).join(' ') || '';
+        const link: string | null = sd?.link || sd?.url || dsd?.link || null;
+        const image: string | null = sd?.image || dsd?.pagemap?.cse_image?.[0]?.src || null;
+        if (!title) continue;
+        const norm = await normalizeSearchResult(title, snippet, link, image, 'Vertex Basic');
+        if (!norm.ok || !norm.event) continue;
+        events.push({ ...norm.event, sourceUrl: link, confidenceScore: 0.3 });
+      }
+    } catch { /* ignore per-keyword failures */ }
+  }
+  return events;
+}
+
+/**
  * 보조 검색(Secondary search) — 이벤트 레코드를 키워드로 조회.
  *
  * Vertex AI Search 자격증명이 있고 권한 오류가 없으면 Vertex로 검색하고,
@@ -2475,12 +2540,48 @@ export async function searchEventRecords(
   const limit = Math.max(1, opts?.limit ?? 10);
   const basicDs = opts?.basicDatastore ?? process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE;
 
-  // ① Vertex AI Search (Advanced — 소유 도메인 only)
+  // ① Vertex AI Search (Advanced — 소유 도메인 only) — 최대 limit 개 결과 반환
   if (hasVertexAiSearchCredentials() && !vertexPermissionDenied) {
     try {
-      const result = await testVertexAiSearchOnce(query);
-      if (result.status === 'ok' && result.firstResult) {
-        return [{ ...result.firstResult, source: 'vertex' as const }];
+      const token = await getVertexAccessToken();
+      if (token) {
+        const project = process.env.VERTEX_AI_SEARCH_PROJECT;
+        const datastore = process.env.VERTEX_AI_SEARCH_DATASTORE;
+        const location = process.env.VERTEX_AI_SEARCH_LOCATION || 'global';
+        if (project && datastore) {
+          const url =
+            `https://discoveryengine.googleapis.com/v1/projects/${encodeURIComponent(project)}` +
+            `/locations/${encodeURIComponent(location)}` +
+            `/collections/default_collection/dataStores/${encodeURIComponent(datastore)}` +
+            `/servingConfigs/default_search:search`;
+          const res = await withTimeout(
+            fetch(url, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({ query, pageSize: limit, contentSearchSpec: { snippetSpec: { returnSnippet: true } } }),
+            }),
+            SOURCE_TIMEOUT_MS,
+            'vertex-ai-secondary-search',
+          );
+          if (res.ok) {
+            const json = (await res.json()) as { results?: VertexSearchResult[] };
+            const out: Array<{ title: string; link: string | null; snippet: string; source: 'vertex' }> = [];
+            for (const r of (json.results ?? []).slice(0, limit)) {
+              const dsd = r.document?.derivedStructData;
+              const sd = r.document?.structData;
+              const title = (sd?.title || dsd?.title || dsd?.htmlTitle || '').replace(/<[^>]+>/g, '').trim();
+              const snippet =
+                sd?.description ||
+                (dsd?.snippets ?? []).map((s: { snippet?: string; htmlSnippet?: string }) => s.snippet ?? s.htmlSnippet ?? '').filter(Boolean).join(' ') ||
+                '';
+              const link: string | null = sd?.link || sd?.url || dsd?.link || null;
+              if (title) out.push({ title, link, snippet: snippet.slice(0, 200), source: 'vertex' });
+            }
+            if (out.length > 0) return out;
+          } else if (res.status === 403) {
+            vertexPermissionDenied = true;
+          }
+        }
       }
     } catch { /* fallthrough */ }
   }
@@ -2688,6 +2789,7 @@ export class EventUpdaterService {
   public startScheduler(): void {
     if (this.started) return;
     this.started = true;
+    storage.setSourceCatalog(SOURCE_CATALOG);
 
     const scheduleNext = () => {
       const now = new Date();
@@ -3068,17 +3170,33 @@ export class EventUpdaterService {
       const existingKeys = new Set<string>(
         existing.map((e) => dedupeKey(e.title, new Date(e.startDate), e.location))
       );
+      const existingHashes = new Set<string>(existing.map((e) => (e as any).rawHash ?? '').filter(Boolean));
+      const existingSourceUrls = new Set<string>(existing.map((e) => (e as any).sourceUrl ?? '').filter(Boolean));
 
       // 저장 직전 필터 설정 로드 (한국 bbox / 광고성 키워드 / 호스트 블랙리스트)
-      let filterSettings = {
+      let filterSettings: ReturnType<typeof storage.getPetEventFilterSettings> = {
         koreaBboxEnabled: true,
         adKeywords: [] as string[],
         blockedHosts: [] as string[],
+        vertexBasicSearchEnabled: false,
       };
       try {
         filterSettings = storage.getPetEventFilterSettings();
       } catch {
         // 설정 로드 실패 시 위에서 선언한 기본값(빈 키워드/호스트, koreaBboxEnabled=true) 유지
+      }
+
+      // Basic Vertex discovery fallback — vertexBasicSearchEnabled=true 일 때만
+      if (filterSettings.vertexBasicSearchEnabled) {
+        try {
+          const basicCandidates = await runVertexBasicDiscovery();
+          if (basicCandidates.length > 0) {
+            collected.push(...basicCandidates);
+            console.log(`[eventUpdater] Basic Vertex discovery: ${basicCandidates.length}개 저신뢰도 후보 추가`);
+          }
+        } catch (e) {
+          logServerError('[eventUpdater] Basic Vertex discovery 실패 (무시):', e);
+        }
       }
       const adKwLower = filterSettings.adKeywords.map((k) => k.toLowerCase());
       const blockedHostsLower = filterSettings.blockedHosts.map((h) => h.toLowerCase());
@@ -3113,9 +3231,17 @@ export class EventUpdaterService {
       };
 
       const batchKeys = new Set<string>();
+      const batchHashes = new Set<string>();
+      const batchSourceUrls = new Set<string>();
       for (const ev of collected) {
         const key = dedupeKey(ev.title, ev.startDate, ev.location);
-        if (existingKeys.has(key) || batchKeys.has(key)) {
+        const hash = computeRawHash(ev);
+        const surl = ev.sourceUrl?.trim() ?? '';
+        if (
+          existingKeys.has(key) || batchKeys.has(key) ||
+          (hash && (existingHashes.has(hash) || batchHashes.has(hash))) ||
+          (surl && (existingSourceUrls.has(surl) || batchSourceUrls.has(surl)))
+        ) {
           duplicates++;
           ensureStat(ev.source).duplicates++;
           continue;
@@ -3147,8 +3273,10 @@ export class EventUpdaterService {
         }
 
         batchKeys.add(key);
+        if (hash) batchHashes.add(hash);
+        if (surl) batchSourceUrls.add(surl);
         try {
-          const payload: InsertPetEvent = {
+          const payload: InsertPetEvent & { rawHash: string; sourceUrl?: string | null } = {
             title: ev.title,
             description: ev.description,
             startDate: ev.startDate,
@@ -3160,12 +3288,21 @@ export class EventUpdaterService {
             imageUrl: ev.imageUrl,
             websiteUrl: ev.websiteUrl,
             source: ev.source,
+            sourceUrl: ev.sourceUrl ?? null,
+            confidenceScore: ev.confidenceScore != null ? String(ev.confidenceScore) : null,
+            rawHash: hash,
+            lastSeenAt: new Date(),
             // 검수 전이므로 비활성으로 저장 → 관리자가 토글로 공개
             isActive: false,
           };
-          await storage.createPetEvent(payload);
-          created++;
-          ensureStat(ev.source).created++;
+          const result = await storage.upsertPetEventByRawHash(payload);
+          if (result.created) {
+            created++;
+            ensureStat(ev.source).created++;
+          } else {
+            duplicates++;
+            ensureStat(ev.source).duplicates++;
+          }
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
           recordFailure(ev.source, `저장 실패: ${message}`);

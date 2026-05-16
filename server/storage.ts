@@ -8280,6 +8280,37 @@ class HybridStorage extends Storage {
   }
 
   // =============================================================================
+  // Source Catalog (메모리 캐시 — eventUpdater 초기화 시 SOURCE_CATALOG로 시드)
+  // =============================================================================
+  private sourceCatalogEntries: ReadonlyArray<{
+    key: string;
+    displayName: string;
+    strategy: string;
+    region?: string;
+    enabled: boolean;
+    primary: boolean;
+    notes?: string;
+    envKeys?: string[];
+  }> = [];
+
+  setSourceCatalog(entries: ReadonlyArray<{
+    key: string;
+    displayName: string;
+    strategy: string;
+    region?: string;
+    enabled: boolean;
+    primary: boolean;
+    notes?: string;
+    envKeys?: string[];
+  }>): void {
+    this.sourceCatalogEntries = entries;
+  }
+
+  getSourceCatalog() {
+    return this.sourceCatalogEntries;
+  }
+
+  // =============================================================================
   // 전국 반려견 행사 (Pet Events)
   // =============================================================================
   private petEventsReady: Promise<void> | null = null;
@@ -8309,6 +8340,11 @@ class HybridStorage extends Storage {
         await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_events_category ON pet_events(category)`);
         await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_events_active ON pet_events(is_active)`);
         await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_events_start_date ON pet_events(start_date)`);
+        await db.execute(sql`ALTER TABLE pet_events ADD COLUMN IF NOT EXISTS source_url TEXT`);
+        await db.execute(sql`ALTER TABLE pet_events ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP`);
+        await db.execute(sql`ALTER TABLE pet_events ADD COLUMN IF NOT EXISTS confidence_score NUMERIC(4,3)`);
+        await db.execute(sql`ALTER TABLE pet_events ADD COLUMN IF NOT EXISTS raw_hash VARCHAR(64)`);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_pet_events_raw_hash ON pet_events(raw_hash) WHERE raw_hash IS NOT NULL`);
         await this.seedPetEventsIfEmpty();
       } catch (err) {
         logServerError('[DB] pet_events 테이블 마이그레이션 실패:', err);
@@ -8376,6 +8412,47 @@ class HybridStorage extends Storage {
       isActive: data.isActive ?? true,
     }).returning();
     return row;
+  }
+
+  async upsertPetEventByRawHash(
+    data: InsertPetEvent & { rawHash: string; sourceUrl?: string | null },
+  ): Promise<{ created: boolean; event: PetEvent }> {
+    await this.ensurePetEventsTable();
+    const { rawHash, sourceUrl } = data;
+    const byHash = await db
+      .select()
+      .from(petEvents)
+      .where(eq(petEvents.rawHash, rawHash))
+      .limit(1);
+    if (byHash.length > 0) {
+      const [row] = await db
+        .update(petEvents)
+        .set({ lastSeenAt: new Date(), updatedAt: new Date() })
+        .where(eq(petEvents.id, byHash[0].id))
+        .returning();
+      return { created: false, event: row };
+    }
+    if (sourceUrl) {
+      const byUrl = await db
+        .select()
+        .from(petEvents)
+        .where(eq(petEvents.sourceUrl, sourceUrl))
+        .limit(1);
+      if (byUrl.length > 0) {
+        const [row] = await db
+          .update(petEvents)
+          .set({ lastSeenAt: new Date(), updatedAt: new Date() })
+          .where(eq(petEvents.id, byUrl[0].id))
+          .returning();
+        return { created: false, event: row };
+      }
+    }
+    const now = new Date();
+    const [row] = await db
+      .insert(petEvents)
+      .values({ ...data, isActive: data.isActive ?? false, lastSeenAt: now })
+      .returning();
+    return { created: true, event: row };
   }
 
   async updatePetEvent(id: number, patch: Partial<InsertPetEvent>): Promise<PetEvent | null> {

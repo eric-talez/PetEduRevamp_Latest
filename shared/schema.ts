@@ -4024,10 +4024,15 @@ export const petEvents = pgTable("pet_events", {
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  sourceUrl: text("source_url"),
+  lastSeenAt: timestamp("last_seen_at"),
+  confidenceScore: decimal("confidence_score", { precision: 4, scale: 3 }),
+  rawHash: varchar("raw_hash", { length: 64 }),
 }, (t) => ({
   byCategory: index("idx_pet_events_category").on(t.category),
   byActive: index("idx_pet_events_active").on(t.isActive),
   byStartDate: index("idx_pet_events_start_date").on(t.startDate),
+  byRawHash: index("idx_pet_events_raw_hash").on(t.rawHash),
 }));
 
 export const insertPetEventSchema = createInsertSchema(petEvents, {
@@ -4043,6 +4048,10 @@ export const insertPetEventSchema = createInsertSchema(petEvents, {
   websiteUrl: z.string().url().optional().nullable().or(z.literal('').transform(() => null)),
   source: z.string().max(100).optional().nullable(),
   isActive: z.boolean().optional(),
+  sourceUrl: z.string().optional().nullable(),
+  lastSeenAt: z.union([z.string(), z.date()]).transform(v => new Date(v)).optional().nullable(),
+  confidenceScore: z.union([z.string(), z.number()]).transform(v => String(v)).optional().nullable(),
+  rawHash: z.string().max(64).optional().nullable(),
 }).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type PetEvent = typeof petEvents.$inferSelect;
