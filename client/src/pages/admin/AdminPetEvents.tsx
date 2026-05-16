@@ -445,7 +445,6 @@ export default function AdminPetEventsPage() {
 
   const { data: filterSettingsData } = useQuery<{ success: boolean; data: PetEventFilterSettings }>({
     queryKey: ["/api/admin/pet-events/filter-settings"],
-    enabled: failuresOpen,
   });
   const filterSettings = filterSettingsData?.data ?? null;
 
@@ -750,6 +749,85 @@ export default function AdminPetEventsPage() {
         String(bodyFetchSettingsData.data.perHostMax) !== perHostDraft
       : false;
 
+  const [koreaBboxDraft, setKoreaBboxDraft] = useState<boolean>(true);
+  const [adKeywordsDraft, setAdKeywordsDraft] = useState<string[]>([]);
+  const [blockedHostsDraft, setBlockedHostsDraft] = useState<string[]>([]);
+  const [adKeywordInput, setAdKeywordInput] = useState<string>("");
+  const [blockedHostInput, setBlockedHostInput] = useState<string>("");
+  useEffect(() => {
+    if (filterSettings) {
+      setKoreaBboxDraft(filterSettings.koreaBboxEnabled);
+      setAdKeywordsDraft(filterSettings.adKeywords ?? []);
+      setBlockedHostsDraft(filterSettings.blockedHosts ?? []);
+    }
+  }, [filterSettings]);
+
+  const saveFilterSettings = useMutation({
+    mutationFn: async (vars: { koreaBboxEnabled: boolean; adKeywords: string[]; blockedHosts: string[] }) => {
+      const res = await apiRequest("PATCH", "/api/admin/pet-events/filter-settings", vars);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "저장 실패");
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pet-events/filter-settings"] });
+      toast({ title: "수집 필터가 저장되었습니다", description: "다음 자동 수집 실행부터 적용됩니다." });
+    },
+    onError: (e: Error) => toast({ title: "저장 실패", description: e.message, variant: "destructive" }),
+  });
+
+  const normalizeKeyword = (s: string) => s.trim();
+  const normalizeHost = (s: string) => {
+    let v = s.trim().toLowerCase();
+    if (!v) return "";
+    v = v.replace(/^https?:\/\//, "");
+    v = v.split("/")[0];
+    v = v.split("?")[0];
+    v = v.split("#")[0];
+    v = v.split(":")[0];
+    v = v.replace(/^www\./, "");
+    return v;
+  };
+
+  const addAdKeyword = () => {
+    const v = normalizeKeyword(adKeywordInput);
+    if (!v) return;
+    const lower = v.toLowerCase();
+    if (adKeywordsDraft.some((k) => k.toLowerCase() === lower)) {
+      setAdKeywordInput("");
+      return;
+    }
+    setAdKeywordsDraft([...adKeywordsDraft, v]);
+    setAdKeywordInput("");
+  };
+  const removeAdKeyword = (v: string) => setAdKeywordsDraft(adKeywordsDraft.filter((x) => x !== v));
+
+  const addBlockedHost = () => {
+    const v = normalizeHost(blockedHostInput);
+    if (!v) return;
+    if (blockedHostsDraft.some((h) => h.toLowerCase() === v)) {
+      setBlockedHostInput("");
+      return;
+    }
+    setBlockedHostsDraft([...blockedHostsDraft, v]);
+    setBlockedHostInput("");
+  };
+  const removeBlockedHost = (v: string) => setBlockedHostsDraft(blockedHostsDraft.filter((x) => x !== v));
+
+  const filterSettingsDirty = filterSettings
+    ? filterSettings.koreaBboxEnabled !== koreaBboxDraft ||
+      JSON.stringify(filterSettings.adKeywords ?? []) !== JSON.stringify(adKeywordsDraft) ||
+      JSON.stringify(filterSettings.blockedHosts ?? []) !== JSON.stringify(blockedHostsDraft)
+    : false;
+
+  const onSaveFilterSettings = () => {
+    saveFilterSettings.mutate({
+      koreaBboxEnabled: koreaBboxDraft,
+      adKeywords: adKeywordsDraft,
+      blockedHosts: blockedHostsDraft,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
@@ -866,6 +944,146 @@ export default function AdminPetEventsPage() {
             <span className="text-[11px] text-stone-500 ml-auto">
               저장 시 다음 자동 수집 실행부터 즉시 반영됩니다.
             </span>
+          </div>
+        </Card>
+
+        <Card className="p-3 mb-4" data-testid="card-filter-settings">
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+              <Settings2 className="w-4 h-4" /> 수집 필터
+            </div>
+            <div className="flex items-center gap-2 ml-2">
+              <Switch
+                id="koreaBboxEnabled"
+                checked={koreaBboxDraft}
+                onCheckedChange={setKoreaBboxDraft}
+                data-testid="switch-korea-bbox"
+              />
+              <label htmlFor="koreaBboxEnabled" className="text-sm text-stone-700">
+                한국 영역만 수집 (해외 행사 차단)
+              </label>
+            </div>
+            <Button
+              size="sm"
+              onClick={onSaveFilterSettings}
+              disabled={!filterSettingsDirty || saveFilterSettings.isPending}
+              className="h-8 bg-stone-900 hover:bg-stone-800 ml-auto"
+              data-testid="button-save-filter-settings"
+            >
+              {saveFilterSettings.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "저장"}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="text-[12px] font-medium text-stone-700 mb-1">광고성 키워드</div>
+              <p className="text-[11px] text-stone-500 mb-2">제목·요약에 포함되면 자동으로 검수 대기로 분류됩니다. 예: 할인, 쿠폰, 무료배송</p>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  value={adKeywordInput}
+                  onChange={(e) => setAdKeywordInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addAdKeyword();
+                    }
+                  }}
+                  placeholder="키워드 입력 후 Enter"
+                  className="h-8"
+                  data-testid="input-ad-keyword"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addAdKeyword}
+                  className="h-8"
+                  data-testid="button-add-ad-keyword"
+                >
+                  추가
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5 min-h-[28px]" data-testid="list-ad-keywords">
+                {adKeywordsDraft.length === 0 ? (
+                  <span className="text-[11px] text-stone-400">등록된 키워드 없음</span>
+                ) : (
+                  adKeywordsDraft.map((kw) => (
+                    <Badge
+                      key={kw}
+                      variant="secondary"
+                      className="text-xs gap-1 pr-1"
+                      data-testid={`chip-ad-keyword-${kw}`}
+                    >
+                      {kw}
+                      <button
+                        type="button"
+                        onClick={() => removeAdKeyword(kw)}
+                        className="ml-0.5 hover:text-rose-600"
+                        aria-label={`${kw} 삭제`}
+                        data-testid={`button-remove-ad-keyword-${kw}`}
+                      >
+                        <XCircle className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-[12px] font-medium text-stone-700 mb-1">호스트 블랙리스트</div>
+              <p className="text-[11px] text-stone-500 mb-2">해당 도메인 결과는 수집에서 제외됩니다. 예: example-shop.com</p>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  value={blockedHostInput}
+                  onChange={(e) => setBlockedHostInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addBlockedHost();
+                    }
+                  }}
+                  placeholder="도메인 입력 후 Enter (예: example.com)"
+                  className="h-8"
+                  data-testid="input-blocked-host"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addBlockedHost}
+                  className="h-8"
+                  data-testid="button-add-blocked-host"
+                >
+                  추가
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5 min-h-[28px]" data-testid="list-blocked-hosts">
+                {blockedHostsDraft.length === 0 ? (
+                  <span className="text-[11px] text-stone-400">등록된 도메인 없음</span>
+                ) : (
+                  blockedHostsDraft.map((h) => (
+                    <Badge
+                      key={h}
+                      variant="secondary"
+                      className="text-xs gap-1 pr-1"
+                      data-testid={`chip-blocked-host-${h}`}
+                    >
+                      {h}
+                      <button
+                        type="button"
+                        onClick={() => removeBlockedHost(h)}
+                        className="ml-0.5 hover:text-rose-600"
+                        aria-label={`${h} 삭제`}
+                        data-testid={`button-remove-blocked-host-${h}`}
+                      >
+                        <XCircle className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </Card>
 
