@@ -5186,8 +5186,10 @@ class Storage {
     koreaBboxEnabled: boolean;
     adKeywords: string[];
     blockedHosts: string[];
+    vertexBasicSearchEnabled: boolean;
   } = {
     koreaBboxEnabled: true,
+    vertexBasicSearchEnabled: false,
     adKeywords: [
       '할인', '특가', '쿠폰', '스토어', '쇼핑몰', '광고', '최저가',
       '세일', '프로모션', '구매', '판매', 'AD', 'SALE', 'COUPON',
@@ -5216,6 +5218,7 @@ class Storage {
       koreaBboxEnabled: this.petEventFilterSettings.koreaBboxEnabled,
       adKeywords: [...this.petEventFilterSettings.adKeywords],
       blockedHosts: [...this.petEventFilterSettings.blockedHosts],
+      vertexBasicSearchEnabled: this.petEventFilterSettings.vertexBasicSearchEnabled,
     };
   }
 
@@ -5223,9 +5226,13 @@ class Storage {
     koreaBboxEnabled?: boolean;
     adKeywords?: string[];
     blockedHosts?: string[];
+    vertexBasicSearchEnabled?: boolean;
   }) {
     if (typeof settings.koreaBboxEnabled === 'boolean') {
       this.petEventFilterSettings.koreaBboxEnabled = settings.koreaBboxEnabled;
+    }
+    if (typeof settings.vertexBasicSearchEnabled === 'boolean') {
+      this.petEventFilterSettings.vertexBasicSearchEnabled = settings.vertexBasicSearchEnabled;
     }
     const cleanList = (list: unknown): string[] | null => {
       if (!Array.isArray(list)) return null;

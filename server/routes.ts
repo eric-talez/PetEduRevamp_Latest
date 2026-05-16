@@ -293,7 +293,7 @@ import Stripe from "stripe";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { eventRoutes } from "./routes/events";
-import { eventUpdater, getProviderStatuses, fetchVertexIndexMeta, testVertexAiSearchOnce } from "./services/eventUpdater";
+import { eventUpdater, getProviderStatuses, fetchVertexIndexMeta, testVertexAiSearchOnce, searchEventRecords } from "./services/eventUpdater";
 import { parsePaymentIntentForPersistence, assertPaymentOwnership, isUniqueViolation } from "./services/payment-validation";
 import { 
   createPetSchema, 
@@ -24547,10 +24547,14 @@ export function registerTrainerCertificationRoutes(app: Express) {
       if (body.blockedHosts !== undefined && !isStringArray(body.blockedHosts)) {
         return res.status(400).json({ error: 'blockedHosts 는 문자열 배열이어야 합니다.', code: 'INVALID_INPUT' });
       }
+      if (body.vertexBasicSearchEnabled !== undefined && typeof body.vertexBasicSearchEnabled !== 'boolean') {
+        return res.status(400).json({ error: 'vertexBasicSearchEnabled 는 boolean 이어야 합니다.', code: 'INVALID_INPUT' });
+      }
       const updated = storage.updatePetEventFilterSettings({
         koreaBboxEnabled: body.koreaBboxEnabled,
         adKeywords: body.adKeywords,
         blockedHosts: body.blockedHosts,
+        vertexBasicSearchEnabled: body.vertexBasicSearchEnabled,
       });
       res.json({ success: true, data: updated });
     } catch (error) {
@@ -24707,6 +24711,28 @@ export function registerTrainerCertificationRoutes(app: Express) {
     } catch (error) {
       logServerError('Vertex AI Search 진단 오류:', error);
       res.status(500).json({ error: '진단 실패', code: 'INTERNAL_SERVER_ERROR' });
+    }
+  });
+
+  // 이벤트 보조 검색 — searchEventRecords() 헬퍼를 관리자 UI에 노출
+  app.get('/api/admin/pet-events/search', requireAuth('admin'), async (req, res) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      if (!q) {
+        return res.status(400).json({ error: '검색어(q)를 입력해주세요.', code: 'INVALID_INPUT' });
+      }
+      if (q.length > 200) {
+        return res.status(400).json({ error: '검색어는 200자 이내로 입력해주세요.', code: 'INVALID_INPUT' });
+      }
+      const settings = storage.getPetEventFilterSettings();
+      const basicDatastore = settings.vertexBasicSearchEnabled
+        ? process.env.VERTEX_AI_SEARCH_BASIC_DATASTORE
+        : undefined;
+      const results = await searchEventRecords(q, { limit: 20, basicDatastore });
+      res.json({ success: true, query: q, data: results });
+    } catch (error) {
+      logServerError('이벤트 보조 검색 오류:', error);
+      res.status(500).json({ error: '검색 실패', code: 'INTERNAL_SERVER_ERROR' });
     }
   });
 

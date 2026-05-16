@@ -2173,30 +2173,53 @@ async function fetchVertexAiSearchEvents(): Promise<SearchFetchResult> {
   return { events, failures };
 }
 
-/** Sources that return simple CrawledEvent[]; any thrown error is caught by runImport. */
-const SIMPLE_SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }> = [
-  { name: 'VisitKorea(축제)', fn: fetchVisitKoreaFestivals },
-  { name: 'VisitKorea(키워드)', fn: fetchVisitKoreaPetKeyword },
-  { name: '케이펫페어 공식', fn: fetchKpetfairOfficial },
-  { name: '동물보호관리시스템', fn: fetchAnimalProtectEvents },
-  { name: '서울 열린데이터광장(문화행사)', fn: fetchSeoulPetCulturalEvents },
-];
+/**
+ * Strategy adapter map — maps SOURCE_CATALOG `key` → simple crawl fetcher (returns CrawledEvent[]).
+ * Only sources that don't use the search-engine pipeline belong here.
+ */
+const SIMPLE_ADAPTER_MAP: Readonly<Record<string, () => Promise<CrawledEvent[]>>> = {
+  visitkorea_festival: fetchVisitKoreaFestivals,
+  visitkorea_keyword: fetchVisitKoreaPetKeyword,
+  kpetfair: fetchKpetfairOfficial,
+  animal_protect: fetchAnimalProtectEvents,
+  seoul_cultural: fetchSeoulPetCulturalEvents,
+};
 
 /**
- * Search-engine sources: Naver (primary), Kakao (secondary), Google (optional/last).
- * Each provider is isolated — one failure never aborts the others.
+ * Strategy adapter map — maps SOURCE_CATALOG `key` → search-engine fetcher (returns SearchFetchResult).
+ * NOTE: Vertex AI Search is intentionally absent — it is secondary/auxiliary only (see searchEventRecords).
+ */
+const SEARCH_ADAPTER_MAP: Readonly<Record<string, () => Promise<SearchFetchResult>>> = {
+  naver_search: fetchNaverSearchEvents,
+  daum_search: fetchDaumSearchEvents,
+  google_cse: fetchGoogleSearchEvents,
+};
+
+/**
+ * Primary simple sources — derived from SOURCE_CATALOG.
+ * Only entries with primary=true AND enabled=true AND a registered simple adapter are included.
+ * To add, remove, or disable a source, update SOURCE_CATALOG; do not edit this array directly.
+ */
+const SIMPLE_SOURCES: Array<{ name: string; fn: () => Promise<CrawledEvent[]> }> =
+  (SOURCE_CATALOG as readonly SourceCatalogEntry[])
+    .filter((e) => e.primary && e.enabled && e.key in SIMPLE_ADAPTER_MAP)
+    .map((e) => ({ name: e.displayName, fn: SIMPLE_ADAPTER_MAP[e.key] as () => Promise<CrawledEvent[]> }));
+
+/**
+ * Primary search-engine sources — derived from SOURCE_CATALOG.
+ * Only entries with primary=true AND enabled=true AND a registered search adapter are included.
+ * To add, remove, or disable a source, update SOURCE_CATALOG; do not edit this array directly.
  *
  * NOTE: Vertex AI Search has been removed from primary crawl sources.
  * It is now a secondary search/ranking interface only (see searchEventRecords).
- * The reason is that Advanced website indexing requires domain ownership verification
- * for external domains (k-pet.co.kr, megazoo.co.kr etc.) which cannot be completed,
- * leaving the data store in an "unverified" state where indexing cannot start.
+ * Advanced website indexing requires domain ownership verification for external domains
+ * (k-pet.co.kr, megazoo.co.kr etc.) which cannot be completed, leaving the datastore
+ * in an "unverified" state where indexing cannot start.
  */
-const SEARCH_SOURCES: Array<{ name: string; fn: () => Promise<SearchFetchResult> }> = [
-  { name: 'Naver 검색', fn: fetchNaverSearchEvents },
-  { name: 'Daum 검색', fn: fetchDaumSearchEvents },
-  { name: 'Google 검색', fn: fetchGoogleSearchEvents },
-];
+const SEARCH_SOURCES: Array<{ name: string; fn: () => Promise<SearchFetchResult> }> =
+  (SOURCE_CATALOG as readonly SourceCatalogEntry[])
+    .filter((e) => e.primary && e.enabled && e.key in SEARCH_ADAPTER_MAP)
+    .map((e) => ({ name: e.displayName, fn: SEARCH_ADAPTER_MAP[e.key] as () => Promise<SearchFetchResult> }));
 
 // ── Vertex AI Search 상태 변경 알림 ──────────────────────────────────────────
 //   active(ok) ↔ permission_denied / missing_credentials 사이에서 상태가 바뀌면

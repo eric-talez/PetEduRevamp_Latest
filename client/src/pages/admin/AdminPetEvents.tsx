@@ -134,6 +134,14 @@ interface PetEventFilterSettings {
   koreaBboxEnabled: boolean;
   adKeywords: string[];
   blockedHosts: string[];
+  vertexBasicSearchEnabled: boolean;
+}
+
+interface SecondarySearchResult {
+  title: string;
+  link: string | null;
+  snippet: string;
+  source: "vertex" | "vertex_basic" | "db_fallback";
 }
 
 interface FailureCandidate {
@@ -820,16 +828,18 @@ export default function AdminPetEventsPage() {
   const [blockedHostsDraft, setBlockedHostsDraft] = useState<string[]>([]);
   const [adKeywordInput, setAdKeywordInput] = useState<string>("");
   const [blockedHostInput, setBlockedHostInput] = useState<string>("");
+  const [vertexBasicDraft, setVertexBasicDraft] = useState<boolean>(false);
   useEffect(() => {
     if (filterSettings) {
       setKoreaBboxDraft(filterSettings.koreaBboxEnabled);
       setAdKeywordsDraft(filterSettings.adKeywords ?? []);
       setBlockedHostsDraft(filterSettings.blockedHosts ?? []);
+      setVertexBasicDraft(filterSettings.vertexBasicSearchEnabled ?? false);
     }
   }, [filterSettings]);
 
   const saveFilterSettings = useMutation({
-    mutationFn: async (vars: { koreaBboxEnabled: boolean; adKeywords: string[]; blockedHosts: string[] }) => {
+    mutationFn: async (vars: { koreaBboxEnabled: boolean; adKeywords: string[]; blockedHosts: string[]; vertexBasicSearchEnabled: boolean }) => {
       const res = await apiRequest("PATCH", "/api/admin/pet-events/filter-settings", vars);
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "저장 실패");
@@ -840,6 +850,26 @@ export default function AdminPetEventsPage() {
       toast({ title: "수집 필터가 저장되었습니다", description: "다음 자동 수집 실행부터 적용됩니다." });
     },
     onError: (e: Error) => toast({ title: "저장 실패", description: e.message, variant: "destructive" }),
+  });
+
+  const [secondarySearchQuery, setSecondarySearchQuery] = useState<string>("");
+  const [secondarySearchResults, setSecondarySearchResults] = useState<SecondarySearchResult[] | null>(null);
+  const [secondarySearchRanQuery, setSecondarySearchRanQuery] = useState<string>("");
+
+  const runSecondarySearch = useMutation({
+    mutationFn: async (q: string) => {
+      const res = await fetch(`/api/admin/pet-events/search?q=${encodeURIComponent(q)}`, {
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "검색 실패");
+      return json as { success: boolean; query: string; data: SecondarySearchResult[] };
+    },
+    onSuccess: (r) => {
+      setSecondarySearchResults(r.data);
+      setSecondarySearchRanQuery(r.query);
+    },
+    onError: (e: Error) => toast({ title: "보조 검색 실패", description: e.message, variant: "destructive" }),
   });
 
   const normalizeKeyword = (s: string) => s.trim();
@@ -891,6 +921,7 @@ export default function AdminPetEventsPage() {
       koreaBboxEnabled: koreaBboxDraft,
       adKeywords: adKeywordsDraft,
       blockedHosts: blockedHostsDraft,
+      vertexBasicSearchEnabled: vertexBasicDraft,
     });
   };
 
@@ -1135,6 +1166,30 @@ export default function AdminPetEventsPage() {
                     <span>크롤러 폴백(Naver/Daum/Google 검색)을 <b>주 수집 소스</b>로 계속 사용하세요. Vertex는 자동 수집(runImport)에서 제외됩니다.</span>
                   </div>
                 </div>
+                <div className="pl-5 flex items-center gap-2.5 text-[11px]" data-testid="vertex-basic-toggle">
+                  <Switch
+                    id="vertex-basic-toggle"
+                    checked={vertexBasicDraft}
+                    onCheckedChange={(v) => {
+                      setVertexBasicDraft(v);
+                      saveFilterSettings.mutate({
+                        koreaBboxEnabled: koreaBboxDraft,
+                        adKeywords: adKeywordsDraft,
+                        blockedHosts: blockedHostsDraft,
+                        vertexBasicSearchEnabled: v,
+                      });
+                    }}
+                  />
+                  <label htmlFor="vertex-basic-toggle" className="cursor-pointer select-none text-stone-600">
+                    Basic website search 데이터 스토어를 <b>discovery fallback</b>으로 사용
+                    {vertexBasicDraft && (
+                      <span className="ml-1 text-amber-600">(켜짐 — 결과는 저신뢰도 후보 풀로만 합류)</span>
+                    )}
+                  </label>
+                  {vertexBasicDraft && (
+                    <span className="text-amber-700 text-[10px]">켜짐 — VERTEX_AI_SEARCH_BASIC_DATASTORE 서버 환경변수도 설정해야 작동합니다</span>
+                  )}
+                </div>
                 {providers.vertex.reason !== "missing_credentials" && (
                   <div className="flex items-center gap-2 pl-5">
                     <Input
@@ -1161,6 +1216,98 @@ export default function AdminPetEventsPage() {
             </div>
           </Card>
         )}
+
+        <Card className="p-3 mb-4" data-testid="card-secondary-search">
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-700 mb-2">
+            <FlaskConical className="w-4 h-4 text-amber-500" /> 이벤트 보조 검색
+            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 ml-1">Secondary search</Badge>
+          </div>
+          <p className="text-[11px] text-stone-500 mb-2">
+            키워드로 정제된 이벤트 레코드를 검색합니다. Vertex AI 자격증명이 있으면 Vertex로, 없으면 DB 텍스트 폴백으로 처리됩니다.
+          </p>
+          <div className="flex items-center gap-2 mb-3">
+            <Input
+              value={secondarySearchQuery}
+              onChange={(e) => setSecondarySearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && secondarySearchQuery.trim()) {
+                  runSecondarySearch.mutate(secondarySearchQuery.trim());
+                }
+              }}
+              placeholder="예: 2026 반려동물 박람회"
+              className="h-8 text-xs max-w-xs"
+              data-testid="input-secondary-search"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              onClick={() => {
+                if (secondarySearchQuery.trim()) runSecondarySearch.mutate(secondarySearchQuery.trim());
+              }}
+              disabled={runSecondarySearch.isPending || !secondarySearchQuery.trim()}
+              data-testid="button-secondary-search-run"
+            >
+              {runSecondarySearch.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Database className="w-3 h-3 mr-1" />}
+              검색
+            </Button>
+            {secondarySearchResults !== null && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 text-xs text-stone-400"
+                onClick={() => { setSecondarySearchResults(null); setSecondarySearchRanQuery(""); }}
+              >
+                초기화
+              </Button>
+            )}
+          </div>
+          {secondarySearchResults !== null && (
+            <div data-testid="secondary-search-results">
+              {secondarySearchResults.length === 0 ? (
+                <p className="text-[11px] text-stone-400">
+                  "{secondarySearchRanQuery}" 에 대한 결과가 없습니다.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-stone-500">
+                    "{secondarySearchRanQuery}" 검색 결과 {secondarySearchResults.length}건
+                  </p>
+                  {secondarySearchResults.map((r, i) => (
+                    <div key={i} className="border border-stone-100 rounded px-2.5 py-2 text-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-medium text-stone-800 leading-tight">{r.title}</span>
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] shrink-0 ${
+                            r.source === "vertex"
+                              ? "bg-sky-50 text-sky-700 border-sky-200"
+                              : r.source === "vertex_basic"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-stone-100 text-stone-500 border-stone-200"
+                          }`}
+                        >
+                          {r.source === "vertex" ? "Vertex" : r.source === "vertex_basic" ? "Vertex Basic" : "DB 폴백"}
+                        </Badge>
+                      </div>
+                      {r.snippet && <p className="text-stone-500 mt-0.5 text-[11px] line-clamp-2">{r.snippet}</p>}
+                      {r.link && (
+                        <a
+                          href={r.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sky-600 hover:underline text-[11px] flex items-center gap-0.5 mt-0.5"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" /> {r.link}
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
 
         <Card className="p-3 mb-4" data-testid="card-body-fetch-settings">
           <div className="flex flex-wrap items-end gap-3">
