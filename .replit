@@ -95,6 +95,8 @@ integrations = [
 GOOGLE_CSE_ID = "f343e762f44de42db"
 GOOGLE_CUSTOM_SEARCH_ENGINE_ID = "f343e762f44de42db"
 VITE_SHOP_URL = "https://store.funnytalez.com/"
+VERTEX_AI_SEARCH_PROJECT = "pet-events-search_1778912673631"
+VERTEX_AI_SEARCH_DATASTORE = "korean-pet-events_1778914387348"
 
 [postMerge]
 path = "scripts/post-merge.sh"
