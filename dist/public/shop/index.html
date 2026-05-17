@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetEdu - 쇼핑</title>
+    <script>
+        // 메인 앱으로 리디렉션
+        window.onload = function() {
+            // 현재 페이지의 URL이 실제로 /shop 경로인지 확인
+            if (window.location.pathname.includes('/shop')) {
+                console.log('쇼핑 페이지 정적 HTML에서 메인 앱으로 리디렉션');
+                
+                // 홈 페이지로 이동 후 쇼핑 라우트로 내부 이동
+                const homeUrl = window.location.origin;
+                window.location.href = homeUrl + '/#/shop';
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f4f8;
+            color: #333;
+            text-align: center;
+        }
+        .redirect-container {
+            max-width: 500px;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #4f46e5;
+            margin-bottom: 1rem;
+        }
+        p {
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        .loader {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(79, 70, 229, 0.2);
+            border-radius: 50%;
+            border-top-color: #4f46e5;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .button {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background-color: #4338ca;
+        }
+    </style>
+</head>
+<body>
+    <div class="redirect-container">
+        <div class="loader"></div>
+        <h1>쇼핑 페이지로 이동 중...</h1>
+        <p>자동으로 메인 쇼핑 페이지로 이동합니다. 잠시만 기다려주세요.</p>
+        <p>자동으로 이동하지 않는 경우 아래 버튼을 클릭하세요.</p>
+        <a href="/" class="button">홈으로 이동</a>
+    </div>
+</body>
+</html>

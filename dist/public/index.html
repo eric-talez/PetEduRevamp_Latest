@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>Talez - 반려견 교육 플랫폼</title>
+    <meta name="description" content="Talez와 함께 전문 훈련사의 체계적인 교육으로 더 행복한 반려생활을 시작하세요." />
+    <meta name="keywords" content="반려견 교육, 반려동물 훈련, 펫 교육, 강아지 훈련, 반려견 트레이닝, 펫케어, 동물 행동" />
+    <meta name="author" content="Talez" />
+    <meta name="theme-color" content="#4f46e5" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="Talez - 반려견 교육 플랫폼" />
+    <meta property="og:description" content="전문 훈련사의 체계적인 교육으로 더 행복한 반려생활을 시작하세요." />
+    <meta property="og:image" content="/logo.svg" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:url" content="https://talez.app" />
+    <meta property="og:type" content="website" />
+    <!-- 카카오 맵 API 스크립트 추가 -->
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ce38e8a3c2b566aeb9faf4c60b0153d2&libraries=services,clusterer,drawing"></script>
+    <!-- 초기 테마 설정 스크립트 -->
+    <script>
+      // 저장된 테마 확인
+      const savedTheme = localStorage.getItem('petedu-theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.add('light');
+      }
+    </script>
+    <!-- Node.js 폴리필 (simple-peer 호환성) -->
+    <script>
+      window.global = window;
+      window.process = window.process || { env: {} };
+      window.Buffer = window.Buffer || { isBuffer: function() { return false; } };
+    </script>
+    <script type="module" crossorigin src="/assets/index-DeiSxaLH.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-5ctA9oI2.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
+    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+  </body>
+</html>

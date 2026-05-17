@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제하기 - 테일즈 쇼핑</title>
+  <meta name="description" content="반려동물을 위한 최고의 제품을 테일즈 쇼핑에서 구매하세요. 간편하고 안전한 결제 시스템을 제공합니다.">
+  <style>
+    :root {
+      /* 라이트 모드 기본 색상 */
+      --bg-color: #ffffff;
+      --text-color: #333333;
+      --primary-color: #4f46e5;
+      --primary-hover: #4338ca;
+      --secondary-color: #f3f4f6;
+      --border-color: #e5e7eb;
+      --card-bg: #ffffff;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --success-color: #10b981;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --info-color: #3b82f6;
+      --border-radius: 0.375rem;
+      --box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+    
+    /* 다크 모드 색상 */
+    .dark-mode {
+      --bg-color: #121212;
+      --text-color: #e5e7eb;
+      --secondary-color: #1f2937;
+      --border-color: #374151;
+      --card-bg: #1f2937;
+      --primary-color: #6366f1;
+      --primary-hover: #4f46e5;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    header {
+      background-color: var(--bg-color);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--box-shadow);
+      transition: background-color 0.3s ease;
+    }
+    
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 70px;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      font-size: 1.25rem;
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+    
+    .logo-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      margin-right: 0.5rem;
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 0.5rem;
+    }
+    
+    .logo-text {
+      color: var(--text-color);
+    }
+    
+    /* 다크모드 토글 버튼 - 본서비스와 동일한 스타일 */
+    .theme-toggle-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-600);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    
+    .theme-toggle-btn:hover {
+      background-color: var(--gray-100);
+      color: var(--primary-color);
+    }
+    
+    .dark-mode .theme-toggle-btn {
+      color: var(--gray-300);
+    }
+    
+    .dark-mode .theme-toggle-btn:hover {
+      background-color: var(--gray-700);
+      color: var(--primary-color);
+    }
+    
+    /* 다크모드 아이콘 */
+    #dark-mode-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #dark-mode-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    /* 체크아웃 스타일 */
+    .checkout-header {
+      margin: 2rem 0;
+      text-align: center;
+    }
+    
+    .checkout-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-color);
+      margin-bottom: 0.5rem;
+    }
+    
+    .checkout-subtitle {
+      color: var(--gray-500);
+      font-size: 1rem;
+    }
+    
+    .checkout-container {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    
+    @media (max-width: 768px) {
+      .checkout-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .checkout-section {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+    }
+    
+    .section-title svg {
+      margin-right: 0.5rem;
+    }
+    
+    .section-subtitle {
+      color: var(--gray-500);
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+    
+    /* 배송 정보 스타일 */
+    .shipping-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-label {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    .form-input {
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-size: 1rem;
+      transition: border-color 0.2s ease;
+    }
+    
+    .dark-mode .form-input {
+      background-color: var(--gray-800);
+      border-color: var(--gray-700);
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+    
+    .input-row {
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .input-row .form-group {
+      flex: 1;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    .checkbox-group input {
+      width: 1rem;
+      height: 1rem;
+      cursor: pointer;
+    }
+    
+    .checkbox-group label {
+      cursor: pointer;
+    }
+    
+    /* 주문 상품 스타일 */
+    .order-items {
+      margin-bottom: 1.5rem;
+    }
+    
+    .order-item {
+      display: flex;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .order-item:last-child {
+      border-bottom: none;
+    }
+    
+    .item-image {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+    
+    .item-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .item-details {
+      flex: 1;
+    }
+    
+    .item-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--text-color);
+    }
+    
+    .item-options {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+      margin-bottom: 0.25rem;
+    }
+    
+    .item-price {
+      display: flex;
+      align-items: baseline;
+    }
+    
+    .item-current-price {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+    
+    .item-original-price {
+      margin-left: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--gray-400);
+      text-decoration: line-through;
+    }
+    
+    .item-quantity {
+      margin-left: auto;
+      color: var(--gray-500);
+      font-size: 0.875rem;
+    }
+    
+    /* 결제 수단 스타일 */
+    .payment-methods {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .payment-method {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    
+    .payment-method:hover {
+      background-color: var(--gray-100);
+    }
+    
+    .dark-mode .payment-method:hover {
+      background-color: var(--gray-800);
+    }
+    
+    .payment-method.selected {
+      border-color: var(--primary-color);
+      background-color: rgba(79, 70, 229, 0.05);
+    }
+    
+    .dark-mode .payment-method.selected {
+      background-color: rgba(99, 102, 241, 0.1);
+    }
+    
+    .payment-method-radio {
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-right: 1rem;
+      cursor: pointer;
+    }
+    
+    .payment-method-logo {
+      width: 40px;
+      height: 24px;
+      margin-right: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .payment-method-logo img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    
+    .payment-method-name {
+      flex: 1;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    /* 주문 요약 스타일 */
+    .order-summary {
+      position: sticky;
+      top: 100px;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      color: var(--text-color);
+    }
+    
+    .summary-row:not(:last-child) {
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .summary-label {
+      color: var(--gray-600);
+    }
+    
+    .dark-mode .summary-label {
+      color: var(--gray-400);
+    }
+    
+    .summary-value {
+      font-weight: 500;
+    }
+    
+    .summary-total {
+      font-weight: 600;
+      font-size: 1.125rem;
+    }
+    
+    .summary-total .summary-value {
+      color: var(--primary-color);
+    }
+    
+    .checkout-btn {
+      width: 100%;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .checkout-btn:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .checkout-btn:disabled {
+      background-color: var(--gray-400);
+      cursor: not-allowed;
+    }
+    
+    .referral-code {
+      margin-top: 1.5rem;
+    }
+    
+    .referral-code-input {
+      display: flex;
+    }
+    
+    .referral-code-input input {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-right: none;
+      border-radius: var(--border-radius) 0 0 var(--border-radius);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    
+    .dark-mode .referral-code-input input {
+      background-color: var(--gray-800);
+      border-color: var(--gray-700);
+    }
+    
+    .referral-code-input button {
+      padding: 0 1rem;
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 500;
+      border: none;
+      border-radius: 0 var(--border-radius) var(--border-radius) 0;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .referral-code-input button:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .referral-code-info {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--success-color);
+    }
+    
+    /* 결제 완료 스타일 */
+    .payment-success {
+      text-align: center;
+      padding: 3rem 0;
+    }
+    
+    .success-icon {
+      font-size: 4rem;
+      color: var(--success-color);
+      margin-bottom: 1.5rem;
+    }
+    
+    .success-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-color);
+    }
+    
+    .success-message {
+      font-size: 1.125rem;
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+    }
+    
+    .dark-mode .success-message {
+      color: var(--gray-400);
+    }
+    
+    .success-details {
+      margin: 0 auto;
+      max-width: 500px;
+      text-align: left;
+      margin-bottom: 2rem;
+    }
+    
+    .success-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .success-detail-label {
+      color: var(--gray-600);
+    }
+    
+    .dark-mode .success-detail-label {
+      color: var(--gray-400);
+    }
+    
+    .success-detail-value {
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    .success-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+    
+    .success-btn {
+      padding: 0.75rem 1.5rem;
+      font-weight: 500;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .success-btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+    }
+    
+    .success-btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .success-btn-secondary {
+      background-color: var(--bg-color);
+      color: var(--gray-700);
+      border: 1px solid var(--border-color);
+    }
+    
+    .dark-mode .success-btn-secondary {
+      background-color: var(--gray-800);
+      color: var(--gray-300);
+      border-color: var(--gray-700);
+    }
+    
+    .success-btn-secondary:hover {
+      background-color: var(--gray-100);
+    }
+    
+    .dark-mode .success-btn-secondary:hover {
+      background-color: var(--gray-700);
+    }
+    
+    /* 토스트 메시지 스타일 */
+    .toast-message {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 20px;
+      border-radius: var(--border-radius);
+      font-size: 0.875rem;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    
+    .toast-message.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
+    .dark-mode .toast-message {
+      background-color: var(--primary-color);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    
+    /* 로딩 스타일 */
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    /* 모바일 반응형 */
+    @media (max-width: 640px) {
+      .input-row {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-container">
+      <a href="javascript:void(0)" onclick="goToHome()" class="logo">
+        <span class="logo-icon">T</span>
+        <span class="logo-text">테일즈 쇼핑</span>
+      </a>
+      
+      <button class="theme-toggle-btn" id="theme-toggle">
+        <div id="dark-mode-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </div>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="checkout-header">
+        <h1 class="checkout-title">결제하기</h1>
+        <p class="checkout-subtitle">안전하고 간편한 결제 시스템으로 빠르게 주문을 완료하세요.</p>
+      </div>
+      
+      <div id="checkout-page">
+        <div class="checkout-container">
+          <div class="checkout-left">
+            <div class="checkout-section">
+              <h2 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                배송 정보
+              </h2>
+              <p class="section-subtitle">주문 상품을 받으실 배송지 정보를 입력해주세요.</p>
+              
+              <form class="shipping-form">
+                <div class="form-group">
+                  <label for="recipient-name" class="form-label">받는 분 성함</label>
+                  <input type="text" id="recipient-name" class="form-input" placeholder="받는 분 성함" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="phone" class="form-label">연락처</label>
+                  <input type="tel" id="phone" class="form-input" placeholder="010-0000-0000" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="zipcode" class="form-label">우편번호</label>
+                  <div class="input-row">
+                    <input type="text" id="zipcode" class="form-input" placeholder="우편번호" readonly required>
+                    <button type="button" class="form-input" style="width: 120px; cursor: pointer;" onclick="findAddress()">주소 검색</button>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="address" class="form-label">주소</label>
+                  <input type="text" id="address" class="form-input" placeholder="기본 주소" readonly required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="address-detail" class="form-label">상세주소</label>
+                  <input type="text" id="address-detail" class="form-input" placeholder="상세 주소" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="delivery-request" class="form-label">배송 요청사항</label>
+                  <input type="text" id="delivery-request" class="form-input" placeholder="배송 시 요청사항을 입력해주세요.">
+                </div>
+                
+                <div class="checkbox-group">
+                  <input type="checkbox" id="save-address">
+                  <label for="save-address">기본 배송지로 저장</label>
+                </div>
+              </form>
+            </div>
+            
+            <div class="checkout-section">
+              <h2 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                주문 상품
+              </h2>
+              <p class="section-subtitle">주문하실 상품을 확인해주세요.</p>
+              
+              <div class="order-items" id="order-items-container">
+                <!-- 주문 상품 목록이 자바스크립트로 추가됩니다 -->
+              </div>
+            </div>
+            
+            <div class="checkout-section">
+              <h2 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
+                결제 수단
+              </h2>
+              <p class="section-subtitle">안전한 결제를 위해 결제 수단을 선택해주세요.</p>
+              
+              <div class="payment-methods">
+                <div class="payment-method selected" onclick="selectPaymentMethod(this, 'card')">
+                  <input type="radio" name="payment-method" class="payment-method-radio" value="card" checked>
+                  <div class="payment-method-logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                  </div>
+                  <div class="payment-method-name">신용/체크카드</div>
+                </div>
+                
+                <div class="payment-method" onclick="selectPaymentMethod(this, 'bank')">
+                  <input type="radio" name="payment-method" class="payment-method-radio" value="bank">
+                  <div class="payment-method-logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="3" y1="9" x2="21" y2="9"></line>
+                      <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                  </div>
+                  <div class="payment-method-name">무통장입금</div>
+                </div>
+                
+                <div class="payment-method" onclick="selectPaymentMethod(this, 'phone')">
+                  <input type="radio" name="payment-method" class="payment-method-radio" value="phone">
+                  <div class="payment-method-logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                  </div>
+                  <div class="payment-method-name">휴대폰 결제</div>
+                </div>
+                
+                <div class="payment-method" onclick="selectPaymentMethod(this, 'kakaopay')">
+                  <input type="radio" name="payment-method" class="payment-method-radio" value="kakaopay">
+                  <div class="payment-method-logo">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                      <path fill="currentColor" d="M12 3C7.03 3 3 6.16 3 10c0 2.3 1.3 4.3 3.28 5.62l-0.81 3.01c-0.11 0.42 0.39 0.75 0.75 0.48l3.41-2.53C10.27 16.85 11.11 17 12 17c4.97 0 9-3.16 9-7C21 6.16 16.97 3 12 3z"></path>
+                    </svg>
+                  </div>
+                  <div class="payment-method-name">카카오페이</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="checkout-right">
+            <div class="checkout-section order-summary">
+              <h2 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                주문 요약
+              </h2>
+              
+              <div class="summary-row">
+                <div class="summary-label">상품 금액</div>
+                <div class="summary-value" id="summary-subtotal">38,000원</div>
+              </div>
+              
+              <div class="summary-row">
+                <div class="summary-label">할인 금액</div>
+                <div class="summary-value" id="summary-discount">-8,200원</div>
+              </div>
+              
+              <div class="summary-row">
+                <div class="summary-label">배송비</div>
+                <div class="summary-value" id="summary-shipping">무료</div>
+              </div>
+              
+              <div class="summary-row">
+                <div class="summary-label">적립금 사용</div>
+                <div class="summary-value" id="summary-points">0원</div>
+              </div>
+              
+              <div class="summary-row summary-total">
+                <div class="summary-label">결제 금액</div>
+                <div class="summary-value" id="summary-total">29,800원</div>
+              </div>
+              
+              <div class="referral-code">
+                <div class="form-label">추천인 코드</div>
+                <div class="referral-code-input">
+                  <input type="text" id="referral-code" placeholder="추천인 코드를 입력하세요" class="form-input">
+                  <button onclick="applyReferralCode()">적용</button>
+                </div>
+                <div class="referral-code-info" id="referral-code-info" style="display: none;"></div>
+              </div>
+              
+              <button class="checkout-btn" onclick="processPayment()">결제하기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="success-page" style="display: none;">
+        <div class="payment-success">
+          <div class="success-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          
+          <h1 class="success-title">결제가 완료되었습니다!</h1>
+          <p class="success-message">주문이 성공적으로 접수되었습니다. 이메일로 주문 내역을 보내드렸습니다.</p>
+          
+          <div class="success-details">
+            <div class="success-detail-row">
+              <div class="success-detail-label">주문 번호</div>
+              <div class="success-detail-value" id="order-number"></div>
+            </div>
+            <div class="success-detail-row">
+              <div class="success-detail-label">주문 일시</div>
+              <div class="success-detail-value" id="order-date"></div>
+            </div>
+            <div class="success-detail-row">
+              <div class="success-detail-label">결제 금액</div>
+              <div class="success-detail-value" id="order-amount"></div>
+            </div>
+            <div class="success-detail-row">
+              <div class="success-detail-label">결제 수단</div>
+              <div class="success-detail-value" id="payment-method"></div>
+            </div>
+          </div>
+          
+          <div class="success-actions">
+            <button class="success-btn success-btn-secondary" onclick="goToOrderDetail()">주문 상세보기</button>
+            <button class="success-btn success-btn-primary" onclick="goToHome()">쇼핑 계속하기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="loading" class="loading" style="display: none;">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <script>
+    // 전역 변수
+    let selectedPaymentMethod = 'card';
+    let orderItems = [];
+    let totalAmount = 29800;
+    let originalAmount = 38000;
+    let discountAmount = 8200;
+    let shippingAmount = 0;
+    let pointsUsed = 0;
+    let appliedReferralCode = '';
+    
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+      // 테마 설정 가져오기
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        updateDarkModeIcon(true);
+      } else {
+        updateDarkModeIcon(false);
+      }
+      
+      // 테마 토글 버튼 이벤트
+      document.getElementById('theme-toggle').addEventListener('click', function() {
+        const isDarkMode = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        
+        // 아이콘 업데이트
+        updateDarkModeIcon(isDarkMode);
+        
+        // 부모 창에 메시지 전송
+        try {
+          window.parent.postMessage({
+            type: 'DARK_MODE_CHANGE',
+            data: { darkMode: isDarkMode }
+          }, '*');
+        } catch (error) {
+          console.warn('부모 창에 메시지 전송 실패:', error);
+        }
+      });
+      
+      // 주문 상품 데이터 로드
+      loadOrderItems();
+      
+      // URL 파라미터 확인
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref');
+      if (refCode) {
+        document.getElementById('referral-code').value = refCode;
+        applyReferralCode();
+      }
+    });
+    
+    // 다크모드 아이콘 업데이트
+    function updateDarkModeIcon(isDarkMode) {
+      const iconContainer = document.getElementById('dark-mode-icon');
+      if (isDarkMode) {
+        iconContainer.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        `;
+      } else {
+        iconContainer.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        `;
+      }
+    }
+    
+    // 주문 상품 로드 및 표시
+    function loadOrderItems() {
+      // 로컬 스토리지나 세션에서 상품 정보 가져오기 (예제)
+      const savedProduct = localStorage.getItem('buy_now_product');
+      if (savedProduct) {
+        orderItems = [JSON.parse(savedProduct)];
+      } else {
+        // 테스트용 샘플 상품
+        orderItems = [
+          {
+            id: 1,
+            productId: 1,
+            name: '프리미엄 기능성 강아지 훈련 장난감',
+            price: 38000,
+            discountedPrice: 29800,
+            quantity: 1,
+            size: '중형견용 (8-20kg)',
+            color: '블루',
+            imageUrl: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1000&auto=format&fit=crop&crop=edges&ixlib=rb-4.0.3'
+          }
+        ];
+      }
+      
+      // 주문 상품 목록 표시
+      displayOrderItems();
+      
+      // 주문 요약 업데이트
+      updateOrderSummary();
+    }
+    
+    // 주문 상품 목록 표시
+    function displayOrderItems() {
+      const container = document.getElementById('order-items-container');
+      container.innerHTML = '';
+      
+      orderItems.forEach(item => {
+        const orderItemHTML = `
+          <div class="order-item">
+            <div class="item-image">
+              <img src="${item.imageUrl}" alt="${item.name}">
+            </div>
+            <div class="item-details">
+              <div class="item-title">${item.name}</div>
+              <div class="item-options">
+                옵션: ${item.size}, ${item.color}
+              </div>
+              <div class="item-price">
+                <div class="item-current-price">${item.discountedPrice?.toLocaleString() || item.price.toLocaleString()}원</div>
+                ${item.discountedPrice ? `<div class="item-original-price">${item.price.toLocaleString()}원</div>` : ''}
+              </div>
+            </div>
+            <div class="item-quantity">${item.quantity}개</div>
+          </div>
+        `;
+        
+        container.innerHTML += orderItemHTML;
+      });
+    }
+    
+    // 주문 요약 업데이트
+    function updateOrderSummary() {
+      document.getElementById('summary-subtotal').textContent = originalAmount.toLocaleString() + '원';
+      document.getElementById('summary-discount').textContent = '-' + discountAmount.toLocaleString() + '원';
+      document.getElementById('summary-shipping').textContent = shippingAmount > 0 ? shippingAmount.toLocaleString() + '원' : '무료';
+      document.getElementById('summary-points').textContent = '-' + pointsUsed.toLocaleString() + '원';
+      document.getElementById('summary-total').textContent = totalAmount.toLocaleString() + '원';
+    }
+    
+    // 결제 수단 선택
+    function selectPaymentMethod(element, method) {
+      // 모든 결제 수단에서 selected 클래스 제거
+      const paymentMethods = document.querySelectorAll('.payment-method');
+      paymentMethods.forEach(method => {
+        method.classList.remove('selected');
+        method.querySelector('input').checked = false;
+      });
+      
+      // 선택한 결제 수단에 selected 클래스 추가
+      element.classList.add('selected');
+      element.querySelector('input').checked = true;
+      
+      // 선택한 결제 수단 저장
+      selectedPaymentMethod = method;
+    }
+    
+    // 주소 검색
+    function findAddress() {
+      // 실제 구현에서는 다음 주소 API 등 연동
+      // 현재는 테스트용 데이터로 대체
+      document.getElementById('zipcode').value = '12345';
+      document.getElementById('address').value = '서울특별시 강남구 테헤란로 123';
+      showToast('주소가 입력되었습니다.');
+    }
+    
+    // 추천인 코드 적용
+    function applyReferralCode() {
+      const codeInput = document.getElementById('referral-code');
+      const code = codeInput.value.trim();
+      
+      if (!code) {
+        showToast('추천인 코드를 입력해주세요.');
+        return;
+      }
+      
+      // 실제 구현에서는 서버에 추천인 코드 검증 요청
+      // 현재는 테스트용 처리
+      const infoElement = document.getElementById('referral-code-info');
+      infoElement.style.display = 'block';
+      infoElement.textContent = `추천인 코드 "${code}"가 적용되었습니다.`;
+      
+      appliedReferralCode = code;
+      localStorage.setItem('referralCode', code);
+      
+      showToast('추천인 코드가 적용되었습니다.');
+    }
+    
+    // 결제 처리
+    function processPayment() {
+      // 배송 정보 검증
+      const recipientName = document.getElementById('recipient-name').value;
+      const phone = document.getElementById('phone').value;
+      const zipcode = document.getElementById('zipcode').value;
+      const address = document.getElementById('address').value;
+      const addressDetail = document.getElementById('address-detail').value;
+      
+      if (!recipientName || !phone || !zipcode || !address || !addressDetail) {
+        showToast('모든 배송 정보를 입력해주세요.');
+        return;
+      }
+      
+      // 로딩 표시
+      document.getElementById('loading').style.display = 'flex';
+      
+      // 결제 처리 시뮬레이션 (실제 구현에서는 PG사 연동)
+      setTimeout(() => {
+        // 로딩 숨김
+        document.getElementById('loading').style.display = 'none';
+        
+        // 결제 성공 페이지로 전환
+        showPaymentSuccess();
+      }, 2000);
+    }
+    
+    // 결제 성공 페이지 표시
+    function showPaymentSuccess() {
+      // 체크아웃 페이지 숨김
+      document.getElementById('checkout-page').style.display = 'none';
+      
+      // 성공 페이지 표시
+      document.getElementById('success-page').style.display = 'block';
+      
+      // 주문 정보 설정
+      const orderNumber = 'ORDER' + Date.now().toString().slice(-8);
+      const orderDate = new Date().toLocaleString('ko-KR');
+      
+      document.getElementById('order-number').textContent = orderNumber;
+      document.getElementById('order-date').textContent = orderDate;
+      document.getElementById('order-amount').textContent = totalAmount.toLocaleString() + '원';
+      
+      // 결제 수단 표시
+      let paymentMethodText = '신용/체크카드';
+      if (selectedPaymentMethod === 'bank') {
+        paymentMethodText = '무통장입금';
+      } else if (selectedPaymentMethod === 'phone') {
+        paymentMethodText = '휴대폰 결제';
+      } else if (selectedPaymentMethod === 'kakaopay') {
+        paymentMethodText = '카카오페이';
+      }
+      
+      document.getElementById('payment-method').textContent = paymentMethodText;
+      
+      // 로컬 스토리지에서 처리 완료된 상품 정보 제거
+      localStorage.removeItem('buy_now_product');
+      
+      // 부모 창에 결제 완료 메시지 전송
+      try {
+        window.parent.postMessage({
+          type: 'PAYMENT_COMPLETE',
+          data: {
+            orderNumber,
+            orderDate,
+            amount: totalAmount,
+            paymentMethod: paymentMethodText,
+            items: orderItems
+          }
+        }, '*');
+      } catch (error) {
+        console.warn('부모 창에 메시지 전송 실패:', error);
+      }
+    }
+    
+    // 주문 상세페이지로 이동
+    function goToOrderDetail() {
+      // 부모 창에 메시지 전송
+      try {
+        window.parent.postMessage({
+          type: 'NAVIGATE_TO_ORDER_DETAIL',
+          data: { orderNumber: document.getElementById('order-number').textContent }
+        }, '*');
+      } catch (error) {
+        console.warn('부모 창에 메시지 전송 실패:', error);
+        // 대체 처리 - 직접 페이지 이동
+        window.location.href = '/mypage.html?tab=orders';
+      }
+    }
+    
+    // 홈으로 이동
+    function goToHome() {
+      // 부모 창에 메시지 전송
+      try {
+        window.parent.postMessage({
+          type: 'NAVIGATE_TO_HOME',
+          data: {}
+        }, '*');
+      } catch (error) {
+        console.warn('부모 창에 메시지 전송 실패:', error);
+        // 대체 처리 - 직접 페이지 이동
+        window.location.href = '/shop.html';
+      }
+    }
+    
+    // 토스트 메시지 표시
+    function showToast(message) {
+      // 이미 있는 토스트 제거
+      const existingToast = document.querySelector('.toast-message');
+      if (existingToast) {
+        existingToast.remove();
+      }
+      
+      const toast = document.createElement('div');
+      toast.className = 'toast-message';
+      toast.innerText = message;
+      
+      document.body.appendChild(toast);
+      
+      // 애니메이션 효과
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 100);
+      
+      // 3초 후 제거
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          toast.remove();
+        }, 500);
+      }, 3000);
+    }
+    
+    // 메시지 수신 이벤트 리스너
+    window.addEventListener('message', function(event) {
+      try {
+        const message = event.data;
+        
+        if (message && message.type) {
+          switch (message.type) {
+            case 'DARK_MODE_CHANGE':
+              // 다크 모드 변경 요청 처리
+              if (message.data && message.data.darkMode !== undefined) {
+                const isDarkMode = message.data.darkMode;
+                if (isDarkMode && !document.body.classList.contains('dark-mode')) {
+                  document.body.classList.add('dark-mode');
+                  updateDarkModeIcon(true);
+                  localStorage.setItem('theme', 'dark');
+                } else if (!isDarkMode && document.body.classList.contains('dark-mode')) {
+                  document.body.classList.remove('dark-mode');
+                  updateDarkModeIcon(false);
+                  localStorage.setItem('theme', 'light');
+                }
+              }
+              break;
+              
+            default:
+              console.log('알 수 없는 메시지 타입:', message.type);
+          }
+        }
+      } catch (error) {
+        console.error('메시지 처리 중 오류 발생:', error);
+      }
+    });
+  </script>
+</body>
+</html>

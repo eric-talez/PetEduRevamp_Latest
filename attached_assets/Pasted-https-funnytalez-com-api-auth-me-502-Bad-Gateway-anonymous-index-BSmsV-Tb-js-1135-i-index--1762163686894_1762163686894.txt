@@ -1,0 +1,163 @@
+https://funnytalez.com/api/auth/me 502 (Bad Gateway)
+(anonymous) @ index-BSmsV-Tb.js:1135
+i @ index-BSmsV-Tb.js:1135
+v @ index-BSmsV-Tb.js:1135
+start @ index-BSmsV-Tb.js:1135
+fetch @ index-BSmsV-Tb.js:1135
+vx @ index-BSmsV-Tb.js:1135
+onSubscribe @ index-BSmsV-Tb.js:1135
+subscribe @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+H8 @ index-BSmsV-Tb.js:39
+ay @ index-BSmsV-Tb.js:41
+Hu @ index-BSmsV-Tb.js:41
+J3 @ index-BSmsV-Tb.js:41
+yc @ index-BSmsV-Tb.js:39
+KH @ index-BSmsV-Tb.js:41
+Vc @ index-BSmsV-Tb.js:41
+kM @ index-BSmsV-Tb.js:41
+N @ index-BSmsV-Tb.js:26
+O @ index-BSmsV-Tb.js:26Understand this error
+index-BSmsV-Tb.js:1135  GET https://funnytalez.com/api/dashboard/system/status 502 (Bad Gateway)
+(anonymous) @ index-BSmsV-Tb.js:1135
+i @ index-BSmsV-Tb.js:1135
+v @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.then
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.catch
+v @ index-BSmsV-Tb.js:1135
+start @ index-BSmsV-Tb.js:1135
+fetch @ index-BSmsV-Tb.js:1135
+vx @ index-BSmsV-Tb.js:1135
+onSubscribe @ index-BSmsV-Tb.js:1135
+subscribe @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+H8 @ index-BSmsV-Tb.js:39
+ay @ index-BSmsV-Tb.js:41
+Hu @ index-BSmsV-Tb.js:41
+J3 @ index-BSmsV-Tb.js:41
+yc @ index-BSmsV-Tb.js:39
+KH @ index-BSmsV-Tb.js:41
+Vc @ index-BSmsV-Tb.js:41
+kM @ index-BSmsV-Tb.js:41
+N @ index-BSmsV-Tb.js:26
+O @ index-BSmsV-Tb.js:26Understand this error
+index-BSmsV-Tb.js:1135  GET https://funnytalez.com/api/institutes 502 (Bad Gateway)
+(anonymous) @ index-BSmsV-Tb.js:1135
+i @ index-BSmsV-Tb.js:1135
+v @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.then
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.catch
+v @ index-BSmsV-Tb.js:1135
+start @ index-BSmsV-Tb.js:1135
+fetch @ index-BSmsV-Tb.js:1135
+vx @ index-BSmsV-Tb.js:1135
+onSubscribe @ index-BSmsV-Tb.js:1135
+subscribe @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+H8 @ index-BSmsV-Tb.js:39
+ay @ index-BSmsV-Tb.js:41
+Hu @ index-BSmsV-Tb.js:41
+J3 @ index-BSmsV-Tb.js:41
+yc @ index-BSmsV-Tb.js:39
+KH @ index-BSmsV-Tb.js:41
+Vc @ index-BSmsV-Tb.js:41
+kM @ index-BSmsV-Tb.js:41
+N @ index-BSmsV-Tb.js:26
+O @ index-BSmsV-Tb.js:26Understand this error
+index-BSmsV-Tb.js:1135  GET https://funnytalez.com/api/dashboard/system/status 502 (Bad Gateway)
+(anonymous) @ index-BSmsV-Tb.js:1135
+i @ index-BSmsV-Tb.js:1135
+v @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.then
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.catch
+v @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.then
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.catch
+v @ index-BSmsV-Tb.js:1135
+start @ index-BSmsV-Tb.js:1135
+fetch @ index-BSmsV-Tb.js:1135
+vx @ index-BSmsV-Tb.js:1135
+onSubscribe @ index-BSmsV-Tb.js:1135
+subscribe @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+H8 @ index-BSmsV-Tb.js:39
+ay @ index-BSmsV-Tb.js:41
+Hu @ index-BSmsV-Tb.js:41
+J3 @ index-BSmsV-Tb.js:41
+yc @ index-BSmsV-Tb.js:39
+KH @ index-BSmsV-Tb.js:41
+Vc @ index-BSmsV-Tb.js:41
+kM @ index-BSmsV-Tb.js:41
+N @ index-BSmsV-Tb.js:26
+O @ index-BSmsV-Tb.js:26Understand this error
+index-BSmsV-Tb.js:1135  GET https://funnytalez.com/api/institutes 502 (Bad Gateway)
+(anonymous) @ index-BSmsV-Tb.js:1135
+i @ index-BSmsV-Tb.js:1135
+v @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.then
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.catch
+v @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.then
+(anonymous) @ index-BSmsV-Tb.js:1135
+Promise.catch
+v @ index-BSmsV-Tb.js:1135
+start @ index-BSmsV-Tb.js:1135
+fetch @ index-BSmsV-Tb.js:1135
+vx @ index-BSmsV-Tb.js:1135
+onSubscribe @ index-BSmsV-Tb.js:1135
+subscribe @ index-BSmsV-Tb.js:1135
+(anonymous) @ index-BSmsV-Tb.js:1135
+H8 @ index-BSmsV-Tb.js:39
+ay @ index-BSmsV-Tb.js:41
+Hu @ index-BSmsV-Tb.js:41
+J3 @ index-BSmsV-Tb.js:41
+yc @ index-BSmsV-Tb.js:39
+KH @ index-BSmsV-Tb.js:41
+Vc @ index-BSmsV-Tb.js:41
+kM @ index-BSmsV-Tb.js:41
+N @ index-BSmsV-Tb.js:26
+O @ index-BSmsV-Tb.js:26Understand this error
+index-BSmsV-Tb.js:1370  GET https://funnytalez.com/api/locations/search?query=%EB%B0%98%EB%A0%A4%EA%B2%AC%20%ED%9B%88%EB%A0%A8%EC%86%8C%20%EC%95%A0%EA%B2%AC%ED%9B%88%EB%A0%A8&lat=37.4276096&lng=126.746624 502 (Bad Gateway)
+ie @ index-BSmsV-Tb.js:1370
+await in ie
+onClick @ index-BSmsV-Tb.js:1370
+mq @ index-BSmsV-Tb.js:38
+xq @ index-BSmsV-Tb.js:38
+fq @ index-BSmsV-Tb.js:38
+w3 @ index-BSmsV-Tb.js:38
+E8 @ index-BSmsV-Tb.js:38
+(anonymous) @ index-BSmsV-Tb.js:38
+Tk @ index-BSmsV-Tb.js:41
+e8 @ index-BSmsV-Tb.js:38
+eN @ index-BSmsV-Tb.js:38
+ak @ index-BSmsV-Tb.js:38
+Tq @ index-BSmsV-Tb.js:38Understand this error
+index-BSmsV-Tb.js:1370 [Category Search] API 에러: 502 Bad Gateway
+ie @ index-BSmsV-Tb.js:1370
+await in ie
+onClick @ index-BSmsV-Tb.js:1370
+mq @ index-BSmsV-Tb.js:38
+xq @ index-BSmsV-Tb.js:38
+fq @ index-BSmsV-Tb.js:38
+w3 @ index-BSmsV-Tb.js:38
+E8 @ index-BSmsV-Tb.js:38
+(anonymous) @ index-BSmsV-Tb.js:38
+Tk @ index-BSmsV-Tb.js:41
+e8 @ index-BSmsV-Tb.js:38
+eN @ index-BSmsV-Tb.js:38
+ak @ index-BSmsV-Tb.js:38
+Tq @ index-BSmsV-Tb.js:38Understand this error
+index-BSmsV-Tb.js:1370 검색 오류: Error: 검색에 실패했습니다.
+    at ie (index-BSmsV-Tb.js:1370:76523)
+    at async onClick (index-BSmsV-Tb.js:1370:88872)
