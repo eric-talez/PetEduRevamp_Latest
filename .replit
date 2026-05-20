@@ -55,7 +55,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node optimize-production.cjs && npm run build && NODE_ENV=production node production-start.cjs"
+args = "node optimize-production.cjs && npm run build && rm -rf server/public && cp -r dist/public server/public && NODE_ENV=production node production-start.cjs"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
